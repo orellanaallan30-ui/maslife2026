@@ -3,11 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AgendaMaslife</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -34,169 +33,92 @@
         }
     </script>
     <style>
+        :root {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Manrope', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             font-size: 16px;
             color: #0f172a;
-            /* Slate 900 */
             background-color: #ffffff;
-            line-height: 1.6;
+            line-height: 1.5;
+            overflow-x: hidden; /* Evita el scroll horizontal en móviles */
         }
 
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
+        /* --- Ajustes de Tipografía para Móvil --- */
+        h1, h2, h3 {
             color: #0f172a !important;
             font-weight: 800 !important;
+            line-height: 1.2 !important;
         }
 
-        p,
-        span,
-        label {
+        h1 { font-size: 2.25rem; } /* Desktop */
+        h2 { font-size: 1.85rem; }
+
+        @media (max-width: 640px) {
+            h1 { font-size: 1.75rem !important; } /* Tamaño moderado en móvil */
+            h2 { font-size: 1.5rem !important; }
+            h3 { font-size: 1.25rem !important; }
+            
+            /* Ajuste de padding general para que nada toque los bordes */
+            .container-mobile {
+                padding-left: 1.25rem;
+                padding-right: 1.25rem;
+            }
+        }
+
+        p, span, label {
             color: #334155;
-            /* Slate 700 */
+        }
+
+        /* --- Fix para Menús y Capas --- */
+        #root {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Si tienes un menú de hamburguesa duplicado, asegúrate de que el fixed
+           tenga un z-index superior, pero controlado */
+        header {
+            z-index: 50;
         }
 
         .text-primary {
             color: #00a89e !important;
         }
 
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        input::placeholder {
-            color: #94a3b8 !important;
-            font-weight: 500;
-        }
-
+        /* --- Estilos de Impresión (Mantenidos y optimizados) --- */
         @media print {
-            @page {
-                margin: 2cm;
-                size: portrait;
-            }
-
-            aside,
-            nav,
-            header button,
-            .no-print,
-            .fixed,
-            .agente-mas-life-panel,
-            button,
-            .material-icons-round {
+            @page { margin: 1.5cm; size: portrait; }
+            aside, nav, .no-print, .fixed, button, .material-icons-round {
                 display: none !important;
             }
-
-            main {
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-                position: static !important;
-                overflow: visible !important;
-            }
-
-            .flex,
-            .grid {
-                display: block !important;
-            }
-
-            section,
-            .bg-white {
-                break-inside: avoid;
-                margin-bottom: 2rem !important;
-                border: 1px solid #e2e8f0 !important;
-                box-shadow: none !important;
-                padding: 1.5rem !important;
-                border-radius: 1rem !important;
-            }
-
-            h1,
-            h2,
-            h3,
-            h4 {
-                color: #000 !important;
-                margin-top: 1.5rem !important;
-            }
-
-            p,
-            span,
-            label,
-            input,
-            textarea {
-                color: #334155 !important;
-                /* slate-700 */
-                font-size: 10pt !important;
-            }
-
-            input,
-            textarea {
-                border: none !important;
-                background: none !important;
-                padding: 0 !important;
-                width: 100% !important;
-                height: auto !important;
-                min-height: auto !important;
-            }
-
-            /* Simular cabecera de informe */
-            header.sticky {
-                position: static !important;
-                border-bottom: 2px solid #00a89e !important;
-                margin-bottom: 3rem !important;
-                padding-bottom: 1rem !important;
-            }
-
-            header.sticky::after {
-                content: "INFORME PROFESIONAL - AGENDAMASLIFE";
-                display: block;
-                font-size: 8pt;
-                font-weight: 800;
-                color: #00a89e;
-                margin-top: 0.5rem;
-            }
-
-            .print-only {
-                display: block !important;
-            }
-
-            .animate-in,
-            .transition-all {
-                animation: none !important;
-                transition: none !important;
-            }
-
-            body {
-                background-color: white !important;
-                color: black !important;
-            }
+            main { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+            section { break-inside: avoid; border: 1px solid #e2e8f0 !important; padding: 1rem !important; border-radius: 0.5rem !important; }
         }
     </style>
     <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "recharts": "https://esm.sh/recharts@^3.7.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "react": "https://esm.sh/react@^19.2.4",
+        "recharts": "https://esm.sh/recharts@^3.7.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+        "@google/genai": "https://esm.sh/@google/genai@^1.40.0"
+      }
+    }
+    </script>
     <link rel="stylesheet" href="/index.css">
 </head>
 
-<body class="bg-white text-black min-h-screen">
+<body class="bg-white text-black min-h-screen selection:bg-teal-100">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 </body>
