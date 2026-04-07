@@ -1,0 +1,8 @@
+{
+  "name": "AgendaMaslife - Clinical Management System",
+  "description": "A comprehensive medical management platform for professionals and patients, featuring scheduling, clinical records, billing, and automated patient notifications.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
