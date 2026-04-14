@@ -23,6 +23,8 @@ interface ClinicContextType {
   appointments: Appointment[];
   setAppointments: (apps: Appointment[] | ((prev: Appointment[]) => Appointment[])) => void;
   addAppointment: (app: Appointment) => Promise<void>;
+  updateAppointment: (app: Appointment) => void;
+  deleteAppointment: (id: string) => void;
 
   // Pacientes
   patients: Patient[];
@@ -35,6 +37,8 @@ interface ClinicContextType {
 
   // Templates
   templates: ClinicalTemplate[];
+  setTemplates: React.Dispatch<React.SetStateAction<ClinicalTemplate[]>>;
+
   // Notifications
   notifications: Notification[];
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
@@ -226,6 +230,19 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     addNotification(`Nueva cita: ${app.patientName} (${app.time})`, 'appointment');
   };
 
+  const updateAppointment = (updated: Appointment) => {
+    setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
+    addNotification(`Cita actualizada: ${updated.patientName} (${updated.date} ${updated.time})`, 'appointment');
+  };
+
+  const deleteAppointment = (id: string) => {
+    const appointmentToDelete = appointments.find(a => a.id === id);
+    setAppointments(prev => prev.filter(a => a.id !== id));
+    if (appointmentToDelete) {
+      addNotification(`Cita cancelada: ${appointmentToDelete.patientName}`, 'appointment');
+    }
+  };
+
   const addNotification = (title: string, type: 'appointment' | 'payment' | 'system') => {
     const newNotif: Notification = {
       id: `notif-${Date.now()}`,
@@ -275,6 +292,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     appointments,
     setAppointments,
     addAppointment,
+    updateAppointment,
+    deleteAppointment,
     patients,
     setPatients,
     addPatient,
