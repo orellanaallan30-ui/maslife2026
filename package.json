@@ -1,0 +1,12 @@
+{
+  "name": "agendalife2026-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Wrapper root package for Vercel deployment - actual project is in maslife2026/",
+  "scripts": {
+    "install": "cd maslife2026 && npm install",
+    "build": "cd maslife2026 && npm run build",
+    "dev": "cd maslife2026 && npm run dev",
+    "preview": "cd maslife2026 && npm run preview"
+  }
+}
