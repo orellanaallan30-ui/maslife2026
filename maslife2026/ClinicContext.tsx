@@ -3,30 +3,45 @@ import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate } from './types';
 
 interface ClinicContextType {
+  // Estado de carga
+  isLoading: boolean;
+
+  // Admin
+  isAdmin: boolean;
+  setIsAdmin: (v: boolean) => void;
+
   // Profesionales
   professionals: ProfessionalProfile[];
+  setProfessionals: (pros: ProfessionalProfile[] | ((prev: ProfessionalProfile[]) => ProfessionalProfile[])) => void;
   loggedPro: ProfessionalProfile | null;
   setLoggedPro: (pro: ProfessionalProfile | null) => void;
   updateProfessional: (pro: ProfessionalProfile) => void;
-  
+  updatePro: (pro: ProfessionalProfile) => void; // alias
+  registerPro: (pro: ProfessionalProfile) => void;
+
   // Citas
   appointments: Appointment[];
   setAppointments: (apps: Appointment[] | ((prev: Appointment[]) => Appointment[])) => void;
   addAppointment: (app: Appointment) => Promise<void>;
-  
+
   // Pacientes
   patients: Patient[];
   setPatients: (patients: Patient[] | ((prev: Patient[]) => Patient[])) => void;
   addPatient: (patient: Patient) => void;
-  
+
   // Transacciones
   manualTransactions: Transaction[];
   addManualTransaction: (t: Transaction) => void;
-  
+
   // Templates
   templates: ClinicalTemplate[];
-  setTemplates: (t: ClinicalTemplate[] | ((prev: ClinicalTemplate[]) => ClinicalTemplate[])) => void;
-  
+  // Notifications
+  notifications: Notification[];
+  setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+  addNotification: (title: string, type: 'appointment' | 'payment' | 'system') => void;
+  markNotificationRead: (id: string) => void;
+  clearNotifications: () => void;
+
   // Métodos
   logout: (navigate: any, view: string) => void;
 }
@@ -34,6 +49,16 @@ interface ClinicContextType {
 const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
 
 export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdminState] = useState<boolean>(
+    () => localStorage.getItem('maslife_admin_auth') === 'true'
+  );
+
+  const setIsAdmin = (v: boolean) => {
+    setIsAdminState(v);
+    if (v) localStorage.setItem('maslife_admin_auth', 'true');
+    else localStorage.removeItem('maslife_admin_auth');
+  };
   // Estado inicial con profesional de prueba
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>(() => {
     const saved = localStorage.getItem('maslife_professionals');
@@ -55,6 +80,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       workingHours: { start: "08:00", end: "20:00" },
       modalities: { online: true, inPerson: true, home: true },
       isPublic: true,
+      paymentEnabled: true,
+      bookingPaymentLink: 'https://www.flow.cl/app/pay.php?token=reserva5000',
       createdAt: new Date().toISOString(),
       avatar: 'https://picsum.photos/seed/rodrigo/400/400',
       services: [
@@ -125,6 +152,13 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const [templates, setTemplates] = useState<ClinicalTemplate[]>([]);
 
+  const [notifications, setNotifications] = useState<Notification[]>(() => {
+    const saved = localStorage.getItem('maslife_notifications');
+    return saved ? JSON.parse(saved) : [
+      { id: '1', title: 'Sistema MasLife activo', time: 'Ahora', type: 'system', read: false }
+    ];
+  });
+
   // Persistencia automática
   useEffect(() => {
     localStorage.setItem('maslife_professionals', JSON.stringify(professionals));
@@ -151,6 +185,30 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, [loggedPro]);
 
+  useEffect(() => {
+    localStorage.setItem('maslife_notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  // Recordatorios Automáticos
+  useEffect(() => {
+    if (!loggedPro) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      appointments.forEach(app => {
+        if (app.professionalId === loggedPro.id && app.status === 'Confirmado') {
+          const appDateTime = new Date(`${app.date}T${app.time}`);
+          const diffMs = appDateTime.getTime() - now.getTime();
+          const diffMins = Math.floor(diffMs / 60000);
+          
+          if (diffMins === 30) {
+            addNotification(`Recordatorio: Cita en 30 minutos con ${app.patientName}`, 'system');
+          }
+        }
+      });
+    }, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [appointments, loggedPro]);
+
   // Métodos
   const updateProfessional = (updated: ProfessionalProfile) => {
     setProfessionals(prev => prev.map(p => p.id === updated.id ? updated : p));
@@ -159,8 +217,32 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
+  const registerPro = (pro: ProfessionalProfile) => {
+    setProfessionals(prev => [...prev, pro]);
+  };
+
   const addAppointment = async (app: Appointment) => {
     setAppointments(prev => [...prev, app]);
+    addNotification(`Nueva cita: ${app.patientName} (${app.time})`, 'appointment');
+  };
+
+  const addNotification = (title: string, type: 'appointment' | 'payment' | 'system') => {
+    const newNotif: Notification = {
+      id: `notif-${Date.now()}`,
+      title,
+      time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+      type,
+      read: false
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  const markNotificationRead = (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const clearNotifications = () => {
+    setNotifications([]);
   };
 
   const addPatient = (patient: Patient) => {
@@ -173,16 +255,23 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const logout = (navigate: any, view: string) => {
     setLoggedPro(null);
+    setIsAdmin(false);
     if (view === 'PROFESSIONAL') navigate('/pro/login');
     else if (view === 'ADMIN') navigate('/admin/login');
     else navigate('/');
   };
 
   const value: ClinicContextType = {
+    isLoading,
+    isAdmin,
+    setIsAdmin,
     professionals,
+    setProfessionals,
     loggedPro,
     setLoggedPro,
     updateProfessional,
+    updatePro: updateProfessional, // alias
+    registerPro,
     appointments,
     setAppointments,
     addAppointment,
@@ -193,6 +282,11 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     addManualTransaction,
     templates,
     setTemplates,
+    notifications,
+    setNotifications,
+    addNotification,
+    markNotificationRead,
+    clearNotifications,
     logout
   };
 

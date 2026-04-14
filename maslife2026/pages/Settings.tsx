@@ -14,8 +14,11 @@ const Settings: React.FC = () => {
   const [showSavedMsg, setShowSavedMsg] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [newService, setNewService] = useState<Partial<Service>>({ name: '', price: 0, duration: 45, description: '' });
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [showEditServiceModal, setShowEditServiceModal] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
-  const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
+  const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
 
   useEffect(() => {
     if (!profile) navigate('/pro/login');
@@ -50,27 +53,69 @@ const Settings: React.FC = () => {
   const handleAddService = () => {
     if (!newService.name || (newService.price || 0) <= 0) return;
     const service: Service = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
       name: newService.name!,
       price: Number(newService.price) || 0,
       duration: Number(newService.duration) || 45,
       description: newService.description || '',
-      image: `https://picsum.photos/seed/${Math.random()}/300/200`
+      image: newService.image || ''
     };
     handleUpdate({ services: [...localProfile.services, service] });
     setShowServiceModal(false);
-    setNewService({ name: '', price: 0, duration: 45, description: '' });
+    setNewService({ name: '', price: 0, duration: 45, description: '', image: '' });
   };
 
   const removeService = (id: string) => {
     handleUpdate({ services: localProfile.services.filter(s => s.id !== id) });
   };
 
+  const handleOpenEditService = (service: Service) => {
+    setEditingService({ ...service });
+    setShowEditServiceModal(true);
+  };
+
+  const handleSaveEditService = () => {
+    if (!editingService) return;
+    handleUpdate({
+      services: localProfile.services.map(s => s.id === editingService.id ? editingService : s)
+    });
+    setShowEditServiceModal(false);
+    setEditingService(null);
+  };
+
+  const handleServiceImageChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 5 MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target?.result as string;
+        if (isEdit && editingService) {
+          setEditingService(prev => prev ? { ...prev, image: result } : null);
+        } else {
+          setNewService(prev => ({ ...prev, image: result }));
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCopyLink = () => {
+    const link = `https://clinicamaslife.cl/pro/${localProfile.slug || localProfile.id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    });
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 500 * 1024) {
-        alert('La imagen es demasiado grande. Por favor selecciona una imagen menor a 500 KB.');
+      if (file.size > 5 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Por favor selecciona una imagen menor a 5 MB.');
         e.target.value = '';
         return;
       }
@@ -124,12 +169,50 @@ const Settings: React.FC = () => {
                   <div className="p-6 bg-slate-100 rounded-2xl border-2 border-slate-200 shadow-inner">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest block mb-3 ml-1">Slug Personalizado (URL)</label>
                     <div className="flex items-center bg-white border-2 border-slate-300 rounded-2xl px-6 py-4 shadow-sm group focus-within:ring-4 focus-within:ring-primary/10 transition-all">
-                      <span className="text-slate-500 font-black text-sm hidden sm:inline mr-1">agendamaslife.com/pro/</span>
+                      <span className="text-slate-500 font-black text-sm hidden sm:inline mr-1">clinicamaslife.cl/pro/</span>
                       <input
                         className="flex-1 bg-transparent border-none p-0 font-black text-primary focus:ring-0 text-base"
                         value={localProfile.slug}
                         onChange={e => handleUpdate({ slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
                       />
+                    </div>
+                  </div>
+
+                  {/* Mi Link — copiable/compartible */}
+                  <div className="p-5 bg-teal-50 border-2 border-teal-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <span className="material-icons-round text-teal-500 text-2xl shrink-0">link</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black text-teal-700 uppercase tracking-widest mb-1">Mi Link Profesional</p>
+                      <p className="text-sm font-bold text-teal-800 truncate">
+                        clinicamaslife.cl/pro/{localProfile.slug || localProfile.id}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={handleCopyLink}
+                        className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
+                          linkCopied
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-teal-500 text-white hover:bg-teal-600'
+                        }`}
+                      >
+                        <span className="material-icons-round text-sm">{linkCopied ? 'check_circle' : 'content_copy'}</span>
+                        {linkCopied ? 'Copiado' : 'Copiar'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const link = `https://clinicamaslife.cl/pro/${localProfile.slug || localProfile.id}`;
+                          if (navigator.share) {
+                            navigator.share({ title: `Agenda con ${localProfile.name}`, url: link });
+                          } else {
+                            window.open(`https://wa.me/?text=${encodeURIComponent(`Agenda conmigo en Clínica MasLife: ${link}`)}`, '_blank');
+                          }
+                        }}
+                        className="px-5 py-2.5 rounded-xl bg-slate-800 text-white font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center gap-2"
+                      >
+                        <span className="material-icons-round text-sm">share</span>
+                        Compartir
+                      </button>
                     </div>
                   </div>
 
@@ -164,16 +247,32 @@ const Settings: React.FC = () => {
                       </div>
 
                       {localProfile.paymentEnabled && (
-                        <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
-                          <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Link de Cobro Personalizado (Mercado Pago, PayPal, etc.)</label>
-                          <div className="flex items-center bg-white border-2 border-slate-300 rounded-2xl px-6 py-4 shadow-sm focus-within:ring-4 focus-within:ring-primary/10 transition-all">
-                            <span className="material-icons-round text-slate-400 mr-3">link</span>
-                            <input
-                              className="flex-1 bg-transparent border-none p-0 font-bold text-black focus:ring-0 text-base"
-                              placeholder="https://link.mercadopago.cl/tu-nombre"
-                              value={localProfile.subscriptionLink || ''}
-                              onChange={e => handleUpdate({ subscriptionLink: e.target.value })}
-                            />
+                        <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Link de Cobro General / Servicios Completos</label>
+                            <div className="flex items-center bg-white border-2 border-slate-300 rounded-2xl px-6 py-4 shadow-sm focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                              <span className="material-icons-round text-slate-400 mr-3">link</span>
+                              <input
+                                className="flex-1 bg-transparent border-none p-0 font-bold text-black focus:ring-0 text-base"
+                                placeholder="https://link.mercadopago.cl/tu-servicio-total"
+                                value={localProfile.subscriptionLink || ''}
+                                onChange={e => handleUpdate({ subscriptionLink: e.target.value })}
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Link de Bono de Reserva ($5.000)</label>
+                            <div className="flex items-center bg-white border-2 border-slate-300 rounded-2xl px-6 py-4 shadow-sm focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                              <span className="material-icons-round text-slate-400 mr-3">volunteer_activism</span>
+                              <input
+                                className="flex-1 bg-transparent border-none p-0 font-bold text-black focus:ring-0 text-base"
+                                placeholder="https://www.flow.cl/app/pay.php?token=reserva5000"
+                                value={localProfile.bookingPaymentLink || ''}
+                                onChange={e => handleUpdate({ bookingPaymentLink: e.target.value })}
+                              />
+                            </div>
+                            <p className="text-xs text-slate-500 font-bold ml-1">Este link será mostrado a los pacientes al momento de agendar para asegurar su cupo.</p>
                           </div>
                         </div>
                       )}
@@ -199,25 +298,41 @@ const Settings: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {localProfile.services.map((service) => (
-                    <div key={service.id} className="bg-slate-50 rounded-3xl p-8 border-2 border-slate-200 group hover:border-primary/30 transition-all flex flex-col justify-between">
-                      <div className="space-y-4">
+                    <div key={service.id} className="bg-slate-50 rounded-3xl p-8 border-2 border-slate-200 group hover:border-primary/30 transition-all flex flex-col justify-between relative overflow-hidden">
+                      {service.image && (
+                        <img src={service.image} alt={service.name} className="absolute inset-0 w-full h-full object-cover opacity-5 group-hover:opacity-10 transition-opacity" />
+                      )}
+                      <div className="relative space-y-4">
                         <div className="flex items-center justify-between">
                           <span className="px-4 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em]">{service.duration} min</span>
-                          <button onClick={() => removeService(service.id)} className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white flex items-center justify-center">
-                            <span className="material-icons-round text-xl">delete</span>
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleOpenEditService(service)}
+                              className="w-10 h-10 rounded-xl bg-primary/10 text-primary opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-white flex items-center justify-center"
+                              title="Editar servicio"
+                            >
+                              <span className="material-icons-round text-xl">edit</span>
+                            </button>
+                            <button onClick={() => removeService(service.id)} className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white flex items-center justify-center">
+                              <span className="material-icons-round text-xl">delete</span>
+                            </button>
+                          </div>
                         </div>
                         <h4 className="text-xl font-black text-black">{service.name}</h4>
                         <p className="text-sm text-slate-500 font-medium line-clamp-2">{service.description}</p>
                       </div>
-                      <div className="mt-8 flex items-end justify-between border-t-2 border-slate-100 pt-6">
+                      <div className="relative mt-8 flex items-end justify-between border-t-2 border-slate-100 pt-6">
                         <div className="space-y-1">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Precio</p>
                           <p className="text-2xl font-black text-black">${service.price.toLocaleString('es-CL')}</p>
                         </div>
-                        <div className="w-12 h-12 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-center text-slate-400 group-hover:border-primary/30 group-hover:text-primary transition-all shadow-sm">
+                        <button
+                          className="w-12 h-12 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-center text-primary hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm"
+                          onClick={() => handleOpenEditService(service)}
+                          title="Editar servicio"
+                        >
                           <span className="material-icons-round">edit</span>
-                        </div>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -343,7 +458,7 @@ const Settings: React.FC = () => {
           )}
           {showServiceModal && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-              <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200 scale-in-center">
+              <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200">
                 <div className="p-10 space-y-8">
                   <div className="flex items-center justify-between">
                     <h3 className="text-3xl font-black text-black tracking-tight">Nuevo Servicio</h3>
@@ -379,11 +494,88 @@ const Settings: React.FC = () => {
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Descripción</label>
                       <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[120px]" value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} placeholder="Describe brevemente de qué trata este servicio..." />
                     </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Imagen del Servicio (opcional)</label>
+                      {newService.image && (
+                        <img src={newService.image} alt="preview" className="w-full h-32 object-cover rounded-2xl mb-2 border-2 border-slate-200" />
+                      )}
+                      <label className="flex items-center gap-3 cursor-pointer w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl py-4 px-6 hover:border-primary hover:bg-primary/5 transition-all">
+                        <span className="material-icons-round text-slate-400">add_photo_alternate</span>
+                        <span className="text-sm font-bold text-slate-500">{newService.image ? 'Cambiar imagen' : 'Subir imagen (máx. 5MB)'}</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={e => handleServiceImageChange(e, false)} />
+                      </label>
+                    </div>
                   </div>
 
                   <div className="flex gap-4 pt-4">
                     <button onClick={() => setShowServiceModal(false)} className="flex-1 py-5 rounded-2xl bg-slate-100 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
                     <button onClick={handleAddService} className="flex-1 py-5 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Crear Servicio</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Editar Servicio */}
+          {showEditServiceModal && editingService && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+              <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200">
+                <div className="p-10 space-y-8">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-3xl font-black text-black tracking-tight">Editar Servicio</h3>
+                    <button onClick={() => setShowEditServiceModal(false)} className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all flex items-center justify-center">
+                      <span className="material-icons-round">close</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre del Servicio</label>
+                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Precio ($)</label>
+                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="number" value={editingService.price} onChange={e => setEditingService({ ...editingService, price: Number(e.target.value) })} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Duración (Min)</label>
+                        <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all appearance-none" value={editingService.duration} onChange={e => setEditingService({ ...editingService, duration: Number(e.target.value) })}>
+                          <option value={15}>15 minutos</option>
+                          <option value={30}>30 minutos</option>
+                          <option value={45}>45 minutos</option>
+                          <option value={60}>60 minutos</option>
+                          <option value={90}>90 minutos</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Descripción</label>
+                      <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[100px]" value={editingService.description} onChange={e => setEditingService({ ...editingService, description: e.target.value })} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Imagen del Servicio (opcional)</label>
+                      {editingService.image && (
+                        <img src={editingService.image} alt="preview" className="w-full h-32 object-cover rounded-2xl mb-2 border-2 border-slate-200" />
+                      )}
+                      <label className="flex items-center gap-3 cursor-pointer w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl py-4 px-6 hover:border-primary hover:bg-primary/5 transition-all">
+                        <span className="material-icons-round text-slate-400">add_photo_alternate</span>
+                        <span className="text-sm font-bold text-slate-500">{editingService.image ? 'Cambiar imagen' : 'Subir imagen (máx. 5MB)'}</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={e => handleServiceImageChange(e, true)} />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <button onClick={() => setShowEditServiceModal(false)} className="flex-1 py-5 rounded-2xl bg-slate-100 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
+                    <button onClick={handleSaveEditService} className="flex-1 py-5 rounded-2xl bg-emerald-500 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+                      <span className="material-icons-round text-sm">save</span>
+                      Guardar Cambios
+                    </button>
                   </div>
                 </div>
               </div>

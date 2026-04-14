@@ -24,16 +24,16 @@ import { PasswordRecovery, ResetPassword } from './pages/PasswordRecovery';
 import Sidebar        from './components/Sidebar';
 import GlobalAIPanel  from './components/GlobalAIPanel';
 import { ClinicProvider, useClinic } from './ClinicContext';
-import { AppView } from './types';
+import { AppView, Notification } from './types';
 
 // ── Guards ────────────────────────────────────────────────────
 const ProGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { loggedPro, isLoading } = useClinic();
-  if (isLoading) return null;
+  const { loggedPro } = useClinic();
   return loggedPro ? <>{children}</> : <Navigate to="/pro/login" replace />;
 };
+
 const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAdmin } = useClinic();
+  const isAdmin = localStorage.getItem('maslife_admin_auth') === 'true';
   return isAdmin ? <>{children}</> : <Navigate to="/admin/login" replace />;
 };
 
@@ -60,13 +60,14 @@ const ProLayout: React.FC = () => {
 const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ view, setView }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loggedPro, notifications, setNotifications } = useClinic();
+  const { loggedPro, notifications, markNotificationRead, clearNotifications } = useClinic();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
-  const publicPaths = ['/pro/login','/pro/register','/pro/recover','/pro/reset-password','/verify/','/consent/','/admin/login'];
+  const publicPaths = ['/pro/login','/pro/register','/pro/recover','/pro/reset-password','/verify/','/consent/','/admin/login', '/patient'];
   const isFullPublic = location.pathname === '/' || publicPaths.some(p => location.pathname.startsWith(p));
   const isAuthPage   = publicPaths.some(p => location.pathname.startsWith(p));
-  const showProActions = view === 'PROFESSIONAL' && !isAuthPage && loggedPro;
+  const showProActions = view === 'PROFESSIONAL' && !isAuthPage && !!loggedPro;
   const unread = notifications.filter(n => !n.read).length;
 
   const handleView = (v: AppView) => {
@@ -100,75 +101,198 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
       </div>
 
       <div className="flex items-center gap-2.5 shrink-0 justify-end">
+        {/* Menú hamburguesa — solo en vista pública (home) */}
         {isFullPublic && (
           <>
-            <button onClick={() => setMenuOpen(true)}
+            <button
+              id="hamburger-menu-btn"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Abrir menú"
               className="flex flex-col gap-1.5 items-center justify-center w-11 h-11 bg-slate-900 rounded-xl hover:bg-slate-700 transition-all group">
               {[0,1,2].map(i => <div key={i} className="w-5 h-[1.5px] bg-white rounded-full group-hover:bg-teal-400 transition-colors" />)}
             </button>
+
+            {/* Panel de menú lateral */}
             {menuOpen && (
-              <div className="fixed inset-0 z-[100] flex justify-end">
+              <div className="fixed inset-0 z-[200] flex justify-end">
                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-                <div className="relative w-72 h-full bg-white shadow-2xl flex flex-col">
+                <div className="relative w-80 h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+                  {/* Header del menú */}
                   <div className="bg-slate-900 p-6 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 bg-teal-500 rounded-xl flex items-center justify-center shrink-0">
-                        <span className="material-icons-round text-white text-base">medical_services</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-teal-500 rounded-xl flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-white text-lg">medical_services</span>
                       </div>
                       <div>
-                        <p className="text-white font-black text-sm">Clínica Mas Life</p>
-                        <p className="text-slate-400 text-xs">clinicamaslife.cl</p>
+                        <p className="text-white font-black text-sm leading-none">Clínica Mas Life</p>
+                        <p className="text-slate-400 text-xs mt-0.5">clinicamaslife.cl</p>
                       </div>
                     </div>
-                    <button onClick={() => setMenuOpen(false)} className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
-                      <span className="material-icons-round text-white text-base">close</span>
+                    <button
+                      onClick={() => setMenuOpen(false)}
+                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
+                      <span className="material-icons-round text-white text-lg">close</span>
                     </button>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-5 space-y-2">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Para Pacientes</p>
-                    <button onClick={() => { setMenuOpen(false); navigate('/patient/results'); }}
-                      className="w-full text-left p-4 rounded-2xl bg-teal-50 border border-teal-100 hover:bg-teal-100 transition-all flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center shrink-0">
+
+                  {/* Contenido del menú */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                    {/* Para Pacientes */}
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Para Pacientes</p>
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/patient/results'); }}
+                      className="w-full text-left p-4 rounded-2xl bg-teal-50 border border-teal-100 hover:bg-teal-100 transition-all flex items-center gap-3 group">
+                      <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                         <span className="material-icons-round text-white text-base">person_search</span>
                       </div>
                       <div>
-                        <p className="text-xs font-black text-slate-900 uppercase">Buscar Profesionales</p>
-                        <p className="text-xs text-teal-600 font-bold">Red verificada +Life</p>
+                        <p className="text-xs font-black text-slate-900 uppercase tracking-wide">Buscar Profesionales</p>
+                        <p className="text-xs text-teal-600 font-bold mt-0.5">Red verificada +Life</p>
                       </div>
                     </button>
-                    <div className="h-px bg-slate-100 my-3" />
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Acceso Sistema</p>
-                    {[{icon:'badge',label:'Portal Profesional',path:'/pro/login',bg:'bg-slate-800'},{icon:'admin_panel_settings',label:'Administración',path:'/admin/login',bg:'bg-rose-600'}].map(item => (
-                      <button key={item.path} onClick={() => { setMenuOpen(false); navigate(item.path); }}
-                        className="w-full text-left p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-all flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>
+
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/', { state: { openContact: true } }); }}
+                      className="w-full text-left p-4 rounded-2xl bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-all flex items-center gap-3 group">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <span className="material-icons-round text-white text-base">mark_email_unread</span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900 uppercase tracking-wide">Que me contacten</p>
+                        <p className="text-xs text-indigo-600 font-bold mt-0.5">Respuesta en menos de 1 hora</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/', { state: { openAgendar: true } }); }}
+                      className="w-full text-left p-4 rounded-2xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-all flex items-center gap-3 group">
+                      <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                        <span className="material-icons-round text-white text-base">calendar_month</span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-black text-slate-900 uppercase tracking-wide">Agendar Atención</p>
+                        <p className="text-xs text-orange-600 font-bold mt-0.5">Domicilio · Online · Presencial</p>
+                      </div>
+                    </button>
+
+                    <div className="h-px bg-slate-100 my-4" />
+
+                    {/* Acceso al Sistema */}
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Acceso Sistema</p>
+                    {[
+                      { icon: 'badge', label: 'Portal Profesional', sub: 'Ingresa a tu cuenta', path: '/pro/login', bg: 'bg-slate-800' },
+                      { icon: 'admin_panel_settings', label: 'Administración', sub: 'Panel de control', path: '/admin/login', bg: 'bg-rose-600' }
+                    ].map(item => (
+                      <button
+                        key={item.path}
+                        onClick={() => { setMenuOpen(false); navigate(item.path); }}
+                        className="w-full text-left p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-all flex items-center gap-3 group">
+                        <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
                           <span className="material-icons-round text-white text-base">{item.icon}</span>
                         </div>
-                        <p className="text-xs font-black text-slate-900 uppercase">{item.label}</p>
+                        <div>
+                          <p className="text-xs font-black text-slate-900 uppercase tracking-wide">{item.label}</p>
+                          <p className="text-xs text-slate-500 font-bold mt-0.5">{item.sub}</p>
+                        </div>
                       </button>
                     ))}
                   </div>
+
+                  {/* Footer del menú */}
                   <div className="border-t border-slate-100 p-4 text-center shrink-0">
-                    <p className="text-xs text-slate-400 font-bold">© 2026 Clínica Mas Life 🧡</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">© 2026 Clínica Mas Life 🧡</p>
                   </div>
                 </div>
               </div>
             )}
           </>
         )}
-        {showProActions && (
+
+        {/* Acciones de profesional logueado */}
+        {showProActions && loggedPro && (
           <>
-            <button
-              onClick={() => setNotifications(prev => prev.map(n => ({...n, read:true})))}
-              className="relative w-10 h-10 rounded-xl hover:bg-slate-100 transition-all flex items-center justify-center">
-              <span className="material-icons-round text-xl text-slate-700">notifications</span>
-              {unread > 0 && <span className="absolute top-1.5 right-1.5 w-[18px] h-[18px] bg-rose-500 rounded-full text-white text-[9px] font-black flex items-center justify-center">{unread}</span>}
-            </button>
-            <div onClick={() => navigate('/pro/settings')}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowNotifications(s => !s);
+                }}
+                className="relative w-10 h-10 rounded-xl hover:bg-slate-100 transition-all flex items-center justify-center"
+              >
+                <span className="material-icons-round text-xl text-slate-700">notifications</span>
+                {unread > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-[18px] h-[18px] bg-rose-500 rounded-full text-white text-[9px] font-black flex items-center justify-center">
+                    {unread}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-[150]" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute right-0 top-12 z-[200] w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50">
+                      <p className="font-black text-xs uppercase tracking-widest text-slate-700">Notificaciones</p>
+                      <div className="flex items-center gap-2">
+                        {unread > 0 && (
+                          <button
+                            onClick={() => notifications.forEach(n => !n.read && markNotificationRead(n.id))}
+                            className="text-[10px] font-black text-teal-600 uppercase tracking-wider hover:text-teal-800 transition-colors"
+                          >
+                            Marcar leídas
+                          </button>
+                        )}
+                        <button onClick={() => setShowNotifications(false)} className="w-7 h-7 rounded-lg hover:bg-slate-200 flex items-center justify-center transition-all">
+                          <span className="material-icons-round text-sm text-slate-500">close</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
+                      {notifications.length === 0 ? (
+                        <div className="p-8 text-center">
+                          <span className="material-icons-round text-slate-300 text-4xl block mb-2">notifications_none</span>
+                          <p className="text-xs text-slate-400 font-bold">Sin notificaciones</p>
+                        </div>
+                      ) : notifications.map(n => (
+                        <div
+                          key={n.id}
+                          onClick={() => !n.read && markNotificationRead(n.id)}
+                          className={`flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors hover:bg-slate-50 ${!n.read ? 'bg-teal-50/60' : ''}`}
+                        >
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${n.type === 'appointment' ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-500'}`}>
+                            <span className="material-icons-round text-base">
+                              {n.type === 'appointment' ? 'event' : 'info'}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm leading-snug ${!n.read ? 'font-black text-slate-900' : 'font-medium text-slate-600'}`}>{n.title}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
+                          </div>
+                          {!n.read && <div className="w-2 h-2 bg-teal-500 rounded-full shrink-0 mt-1.5" />}
+                        </div>
+                      ))}
+                    </div>
+                    {notifications.length > 0 && (
+                      <div className="border-t border-slate-100 p-3">
+                        <button
+                          onClick={() => { clearNotifications(); setShowNotifications(false); }}
+                          className="w-full text-center text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors py-2"
+                        >
+                          Borrar todas
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+            <div
+              onClick={() => navigate('/pro/settings')}
               className="w-10 h-10 rounded-xl bg-slate-100 border-2 border-slate-200 overflow-hidden cursor-pointer hover:border-teal-400 transition-all shrink-0">
               <img
                 src={loggedPro.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(loggedPro.name)}&background=00a89e&color=fff&size=80`}
-                alt={loggedPro.name} className="w-full h-full object-cover" />
+                alt={loggedPro.name}
+                className="w-full h-full object-cover"
+              />
             </div>
           </>
         )}
@@ -181,27 +305,13 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
 const AppContent: React.FC = () => {
   const [view, setView] = useState<AppView>('PATIENT');
   const location = useLocation();
-  const { isLoading, loggedPro, updatePro } = useClinic();
+  const { loggedPro, updateProfessional } = useClinic();
 
   useEffect(() => {
     if (location.pathname.startsWith('/admin')) setView('ADMIN');
     else if (location.pathname.startsWith('/pro')) setView('PROFESSIONAL');
     else setView('PATIENT');
   }, [location.pathname]);
-
-  if (isLoading) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-white gap-5">
-      <div className="relative w-16 h-16">
-        <div className="w-16 h-16 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="material-icons-round text-teal-500 text-2xl">medical_services</span>
-        </div>
-      </div>
-      <p className="text-[11px] font-black text-teal-600 uppercase tracking-[0.3em] animate-pulse">
-        Conectando con MasLife Cloud...
-      </p>
-    </div>
-  );
 
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans">
@@ -222,7 +332,7 @@ const AppContent: React.FC = () => {
           <Route path="/admin/login"         element={<AdminLogin />} />
           {/* Protegidas profesional */}
           <Route element={<ProGuard><ProLayout /></ProGuard>}>
-            <Route path="/pro/password-setup" element={loggedPro ? <PasswordSetup profile={loggedPro} onComplete={updatePro} /> : <Navigate to="/pro/login" />} />
+            <Route path="/pro/password-setup" element={loggedPro ? <PasswordSetup profile={loggedPro} onComplete={updateProfessional} /> : <Navigate to="/pro/login" />} />
             <Route path="/pro/dashboard"   element={<ProfessionalDashboard />} />
             <Route path="/pro/agenda"      element={<ProfessionalAgenda />} />
             <Route path="/pro/patients"    element={<PatientList />} />

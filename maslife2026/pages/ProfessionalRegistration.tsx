@@ -265,7 +265,7 @@ const ProfessionalRegistration: React.FC = () => {
                   <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className={inp} placeholder="Ej: María González"/></div>
                 <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Email *</label>
                   <input type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} className={inp} placeholder="correo@ejemplo.com" autoComplete="username"/></div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Contraseña *</label>
                     <input type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} className={inp} placeholder="Mín. 8 car." autoComplete="new-password"/></div>
                   <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Confirmar *</label>
@@ -308,10 +308,10 @@ const ProfessionalRegistration: React.FC = () => {
                 <h3 className="text-lg font-black text-slate-900">Modalidades y primer servicio</h3>
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Tipo de atención</label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[{k:'online',l:'Online',i:'videocam'},{k:'inPerson',l:'Presencial',i:'location_on'},{k:'home',l:'Domicilio',i:'home'}].map(m=>(
-                      <button key={m.k} type="button" onClick={()=>tog(m.k as any)}
-                        className={`p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all
+                       <button key={m.k} type="button" onClick={()=>tog(m.k as any)}
+                        className={`p-4 rounded-2xl border-2 flex sm:flex-col items-center justify-center gap-3 transition-all
                           ${form.modalities[m.k as keyof typeof form.modalities]?'border-teal-500 bg-teal-50 text-teal-700':'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300'}`}>
                         <span className="material-icons-round text-xl">{m.i}</span>
                         <span className="text-xs font-black uppercase tracking-widest">{m.l}</span>

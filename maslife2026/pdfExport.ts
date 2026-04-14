@@ -2,7 +2,8 @@
 // Usa jsPDF (CDN) + QR via qrcode.js
 // Importar en index.html: <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
 
-import { SOAPEntry, ProfessionalProfile, Patient, BolsetaGlosa } from './types_clinical';
+import { SOAPEntry, BolsetaGlosa } from './types_clinical';
+import { ProfessionalProfile, Patient } from './types';
 
 declare const window: Window & {
   jspdf?: { jsPDF: new (opts: object) => jsPDFInstance };
@@ -52,13 +53,13 @@ export function generateBoletaGlosa(
     day: '2-digit', month: '2-digit', year: 'numeric'
   });
 
-  const prestacion = soap.prestacion_code
-    ? ` [${soap.prestacion_code}]`
+  const prestacion = soap.prestacionCode
+    ? ` [${soap.prestacionCode}]`
     : '';
 
   return {
     descripcion: `Sesión de ${pro.specialty}${prestacion} - ${fecha} - Paciente: ${patient.name}`,
-    codigoPrestacion: soap.prestacion_code || '',
+    codigoPrestacion: soap.prestacionCode || '',
     monto: 0, // se completa desde la cita
     fecha: soap.date,
     rutProfesional: '', // se completa desde ProfessionalSignature
@@ -156,8 +157,8 @@ export async function exportSOAPtoPDF(
     doc.text(`Diagnóstico CIE-10: ${soap.icd10Code} — ${soap.diagnosis || ''}`, MARGIN, y);
     y += 4.5;
   }
-  if (soap.prestacion_code) {
-    doc.text(`Código Fonasa: ${soap.prestacion_code}`, MARGIN, y);
+  if (soap.prestacionCode) {
+    doc.text(`Código Fonasa: ${soap.prestacionCode}`, MARGIN, y);
     y += 4.5;
   }
 

@@ -14,6 +14,9 @@ const AdminManagement: React.FC = () => {
   const [allPros, setAllPros]         = useState<ProfessionalProfile[]>([]);
   const [loadingIds, setLoadingIds]   = useState<Set<string>>(new Set());
   const [toast, setToast]             = useState('');
+  const [linkCopied, setLinkCopied]   = useState(false);
+
+  const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
 
   // Guard
   useEffect(() => { if (!isAdmin) navigate('/admin/login'); }, [isAdmin, navigate]);
@@ -187,8 +190,9 @@ const AdminManagement: React.FC = () => {
                   {pending.length} profesional{pending.length !== 1 ? 'es' : ''} esperando aprobación
                 </p>
                 {pending.map(pro => (
-                  <div key={pro.id} className="bg-slate-900/60 rounded-2xl border border-white/10 p-6 flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+                  <div key={pro.id} className="bg-slate-900/60 rounded-2xl border border-white/10 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+                    <div className="flex gap-4 items-center sm:items-start flex-1 min-w-0">
+                      <div className="w-12 h-12 rounded-xl bg-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
                       {pro.avatar
                         ? <img src={pro.avatar} className="w-full h-full object-cover" alt={pro.name} />
                         : <span className="font-black text-white text-lg">{pro.name.charAt(0)}</span>}
@@ -200,8 +204,9 @@ const AdminManagement: React.FC = () => {
                       <p className="text-xs text-slate-600 mt-0.5">
                         Registrado: {new Date(pro.createdAt).toLocaleDateString('es-CL')}
                       </p>
+                      </div>
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex gap-2 shrink-0 border-t border-white/5 pt-4 sm:border-0 sm:pt-0 w-full sm:w-auto">
                       <button onClick={() => handleApprove(pro)} disabled={loadingIds.has(pro.id)}
                         className="px-4 py-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
                           rounded-xl text-xs font-black hover:bg-emerald-500 hover:text-white transition-all
@@ -209,14 +214,14 @@ const AdminManagement: React.FC = () => {
                         <span className="material-icons-round text-base">
                           {loadingIds.has(pro.id) ? 'sync' : 'check_circle'}
                         </span>
-                        Aprobar
+                        <span className="hidden sm:inline">Aprobar</span>
                       </button>
                       <button onClick={() => handleReject(pro)} disabled={loadingIds.has(pro.id)}
-                        className="px-4 py-2 bg-rose-500/10 text-rose-400 border border-rose-500/20
+                        className="flex-1 sm:flex-none justify-center px-4 py-3 sm:py-2 bg-rose-500/10 text-rose-400 border border-rose-500/20
                           rounded-xl text-xs font-black hover:bg-rose-500 hover:text-white transition-all
                           disabled:opacity-50 flex items-center gap-1.5">
                         <span className="material-icons-round text-base">cancel</span>
-                        Rechazar
+                        <span className="hidden sm:inline">Rechazar</span>
                       </button>
                     </div>
                   </div>
@@ -235,8 +240,9 @@ const AdminManagement: React.FC = () => {
                 <p className="text-slate-500 font-bold">Sin profesionales aprobados aún</p>
               </div>
             ) : (
-              <table className="w-full text-left">
-                <thead className="bg-slate-800/50 border-b border-white/5">
+              <div className="w-full overflow-x-auto hide-scrollbar">
+                <table className="w-full text-left min-w-[700px]">
+                  <thead className="bg-slate-800/50 border-b border-white/5">
                   <tr>
                     <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Especialista</th>
                     <th className="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-widest">Estado</th>
@@ -299,7 +305,8 @@ const AdminManagement: React.FC = () => {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             )}
           </div>
         )}
@@ -319,7 +326,7 @@ const AdminManagement: React.FC = () => {
 
             <div className="bg-slate-800/50 rounded-2xl p-5 border border-white/5">
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Estadísticas rápidas</p>
-              <div className="grid grid-cols-3 gap-4 mt-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
                 {[
                   { val: allPros.length,    label: 'Total profesionales' },
                   { val: approved.length,   label: 'Aprobados' },

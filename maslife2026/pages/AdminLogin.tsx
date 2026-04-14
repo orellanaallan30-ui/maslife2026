@@ -9,6 +9,18 @@ const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem('maslife_admin_saved');
+    if (saved) {
+      try {
+        const { u, p } = JSON.parse(saved);
+        if (u) setUsername(u);
+        if (p) { setPassword(p); setRememberMe(true); }
+      } catch (e) {}
+    }
+  }, []);
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,13 +29,18 @@ const AdminLogin: React.FC = () => {
     const normalizedUsername = username.toLowerCase().trim();
     const cleanPassword = password.trim();
 
-    // Credenciales desde variables de entorno (definidas en .env.local)
-    const adminUser = (import.meta.env.VITE_ADMIN_USER || 'rodrigo orellana').toLowerCase().trim();
-    const adminPass = import.meta.env.VITE_ADMIN_PASS || '';
+    // Hardcoded credenciales para solucionar fallos de cache de .env en Vite
+    const adminUser = 'orellanaallan30@gmail.com';
+    const adminPass = 'Roo1998.';
 
     if (normalizedUsername === adminUser && cleanPassword === adminPass) {
       setIsAdmin(true);
       localStorage.setItem('maslife_admin_auth', 'true');
+      if (rememberMe) {
+        localStorage.setItem('maslife_admin_saved', JSON.stringify({ u: username, p: password }));
+      } else {
+        localStorage.removeItem('maslife_admin_saved');
+      }
       navigate('/admin/management');
     } else {
       setError(true);
@@ -51,7 +68,7 @@ const AdminLogin: React.FC = () => {
         <div className="bg-slate-900/80 backdrop-blur-2xl p-8 md:p-12 rounded-[3rem] shadow-[0_48px_80px_-16px_rgba(0,0,0,0.5)] border border-white/10 relative">
           <form onSubmit={handleAdminLogin} className="space-y-6">
             <div className="space-y-3">
-              <label className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest ml-1">ID Administrador</label>
+              <label className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Correo Administrador</label>
               <div className="relative">
                 <span className="material-icons-round absolute left-5 top-1/2 -translate-y-1/2 text-slate-600">account_circle</span>
                 <input
@@ -59,7 +76,7 @@ const AdminLogin: React.FC = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 md:py-5 pl-14 pr-5 font-bold text-sm text-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-700 shadow-inner"
-                  placeholder="rodrigo orellana"
+                  placeholder="orellanaallan30@gmail.com"
                   required
                 />
               </div>
@@ -78,6 +95,19 @@ const AdminLogin: React.FC = () => {
                   required
                 />
               </div>
+            </div>
+
+            <div className="flex items-center gap-2 px-1">
+              <input
+                type="checkbox"
+                id="rememberAdmin"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-white/10 bg-slate-950/50 text-primary focus:ring-primary/20 transition-all cursor-pointer accent-primary"
+              />
+              <label htmlFor="rememberAdmin" className="text-xs font-bold text-slate-400 cursor-pointer select-none">
+                Mantener sesión y credenciales
+              </label>
             </div>
 
             {error && (

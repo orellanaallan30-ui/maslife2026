@@ -7,15 +7,29 @@ const PatientProfile: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { professionals, appointments, addAppointment } = useClinic();
+  
+  // Nuevo Estado de Pasos
+  const [step, setStep] = useState(1);
   const [selectedDay, setSelectedDay] = useState(0);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [selectedModality, setSelectedModality] = useState<'online' | 'inPerson' | 'home'>('inPerson');
+  const [patientData, setPatientData] = useState({
+    name: '', rut: '', reason: '', phone: '', email: '', city: '', address: '', houseNumber: ''
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  // Buscar el profesional real de la lista centralizada
+  // Buscar el profesional real
   const doctor = professionals.find(p => p.id === id || p.slug === id);
+
+  const isFormValid = patientData.name.trim() !== '' && 
+                      patientData.rut.trim() !== '' && 
+                      patientData.phone.trim() !== '' && 
+                      patientData.email.trim() !== '' && 
+                      patientData.city.trim() !== '' && 
+                      patientData.reason.trim() !== '' &&
+                      (selectedModality !== 'home' || (patientData.address.trim() !== '' && patientData.houseNumber.trim() !== ''));
 
   if (!doctor) {
     return (
@@ -27,7 +41,7 @@ const PatientProfile: React.FC = () => {
     );
   }
 
-  // Generar días disponibles basados en el horario real del profesional
+  // Generar días disponibles
   const availableDays = useMemo(() => {
     const daysArr = [];
     const today = new Date();
@@ -35,9 +49,8 @@ const PatientProfile: React.FC = () => {
     for (let i = 0; i < 14; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
-      const dayIdx = d.getDay(); // 0: Sun, 1: Mon...
+      const dayIdx = d.getDay();
 
-      // Horario por defecto si no existe (Lun-Vie 09-18)
       const defaultSched = { active: dayIdx !== 0 && dayIdx !== 6, start: '09:00', end: '18:00' };
       const sched = doctor.schedule?.[dayIdx] || defaultSched;
 
@@ -46,14 +59,12 @@ const PatientProfile: React.FC = () => {
         const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
         const name = i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : d.toLocaleDateString('es-ES', { weekday: 'short' });
 
-        // Generar slots cada 60 min
         const slots: string[] = [];
         const [startH] = sched.start.split(':').map(Number);
         const [endH] = sched.end.split(':').map(Number);
 
         for (let h = startH; h < endH; h++) {
           const timeStr = `${String(h).padStart(2, '0')}:00`;
-          // Filtrar si ya está ocupado
           const isBusy = appointments.some(a => a.professionalId === doctor.id && a.date === dateStr && a.time === timeStr);
           if (!isBusy) slots.push(timeStr);
         }
@@ -66,26 +77,25 @@ const PatientProfile: React.FC = () => {
     return daysArr;
   }, [doctor, appointments]);
 
-  const handleConfirmBooking = async () => {
-    if (!selectedService || !selectedSlot || availableDays.length === 0) return;
-    
+  const finalizeBooking = async () => {
     setIsProcessing(true);
     
-    // Simular guardado en DB
     const newApp: Appointment = {
-      id: Math.random().toString(36).substr(2, 9),
-      patientId: 'p-guest',
-      patientName: 'Paciente Invitado',
+      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
+      patientId: `p-${Date.now()}`,
+      patientName: patientData.name,
+      patientPhone: patientData.phone,
       doctorName: doctor.name,
       specialty: doctor.specialty,
-      serviceName: selectedService.name,
+      serviceName: selectedService!.name,
+      notes: patientData.reason,
       date: availableDays[selectedDay].date,
       time: selectedSlot!,
-      duration: selectedService.duration,
-      type: 'Online',
-      status: doctor.paymentEnabled ? 'Pendiente' : 'Confirmado',
-      price: selectedService.price,
-      paymentStatus: doctor.paymentEnabled ? 'Pendiente' : 'Pagado',
+      duration: selectedService!.duration,
+      type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
+      status: 'Confirmado',
+      price: selectedService!.price,
+      paymentStatus: doctor.paymentEnabled ? 'Pagado' : 'Pendiente',
       category: 'Medical',
       professionalId: doctor.id,
       bookingSource: 'web'
@@ -93,159 +103,449 @@ const PatientProfile: React.FC = () => {
 
     try {
       await addAppointment(newApp);
-      
-      if (doctor.paymentEnabled && doctor.subscriptionLink) {
-        // Redirigir al link de cobro del profesional
-        window.open(doctor.subscriptionLink, '_blank');
-      }
-
       setIsProcessing(false);
       setIsConfirmed(true);
-      
-      setTimeout(() => {
-        setIsCheckoutOpen(false);
-        navigate('/patient/search');
-      }, 3000);
     } catch (error) {
       console.error("Error booking appointment:", error);
       setIsProcessing(false);
     }
   };
 
-  return (
-    <div className="w-full bg-[#f8fafc] overflow-y-auto animate-in fade-in duration-700">
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <header className="mb-12">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-3 text-slate-500 hover:text-primary font-black text-xs uppercase tracking-[0.2em] transition-all">
-            <span className="material-icons-round text-sm">arrow_back</span>
-            Volver a la búsqueda
-          </button>
-        </header>
+  const generateGoogleCalendarLink = () => {
+    if (!selectedService || !selectedSlot) return '#';
+    const startDate = availableDays[selectedDay].date; 
+    const [hh, mm] = selectedSlot.split(':');
+    
+    // Crear objeto Date considerando el inicio
+    const startObj = new Date(`${startDate}T${hh}:${mm}:00`);
+    const endObj = new Date(startObj.getTime() + selectedService.duration * 60000);
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div className="lg:col-span-8 space-y-8">
-            {/* Cabecera Médico */}
-            <div className="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-100 flex flex-col md:flex-row gap-10 items-center">
-              <img className="w-40 h-40 rounded-[2.5rem] object-cover border-4 border-slate-50 shadow-xl" src={doctor.avatar || 'https://picsum.photos/seed/doc/400/400'} alt="Doctor" />
-              <div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">{doctor.name}</h1>
-                <p className="text-lg font-bold text-primary mb-4">{doctor.specialty}</p>
-                <div className="flex gap-4">
-                  <span className="text-xs font-black text-emerald-500 uppercase bg-emerald-50 px-3 py-1 rounded-lg">Disponible Hoy</span>
-                  <span className="text-xs font-black text-slate-500 uppercase border border-slate-100 px-3 py-1 rounded-lg">Agenda Sincronizada</span>
-                </div>
-              </div>
+    const fmt = (d: Date) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
+    const dates = `${fmt(startObj)}/${fmt(endObj)}`;
+    
+    const text = encodeURIComponent(`Atención Médica: ${doctor.name} - ${doctor.specialty}`);
+    const details = encodeURIComponent(`Servicio: ${selectedService.name}\nPaciente: ${patientData.name}\nMotivo: ${patientData.reason}\n\nAgendado vía Clínica Maslife.`);
+    const location = encodeURIComponent(doctor.city || 'Consulta Presencial / Online');
+    
+    return `https://calendar.google.com/calendar/r/eventedit?text=${text}&dates=${dates}&details=${details}&location=${location}`;
+  };
+
+  const handleDownloadImage = async () => {
+    setIsProcessing(true);
+    try {
+      const el = document.getElementById('receipt-ticket');
+      if (!el) return;
+      
+      if (!(window as any).html2canvas) {
+         await new Promise((resolve) => {
+           const script = document.createElement('script');
+           script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+           script.onload = resolve;
+           document.head.appendChild(script);
+         });
+      }
+
+      const actionsEl = document.getElementById('receipt-actions');
+      if (actionsEl) actionsEl.style.display = 'none';
+
+      const canvas = await (window as any).html2canvas(el, { scale: 2, backgroundColor: '#ffffff' });
+      
+      if (actionsEl) actionsEl.style.display = 'flex';
+
+      const link = document.createElement('a');
+      link.download = `Comprobante-Reserva-${patientData.name.replace(/\s+/g,'_')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch(e) {
+      console.error(e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const currentStepName = ["Servicios", "Horarios", "Formulario", "Pago"][step - 1];
+
+  // Si ya  está confirmado, mostramos directamente la pantalla de Ticket
+  if (isConfirmed) {
+    return (
+      <div className="w-full min-h-screen bg-slate-100 flex flex-col items-center justify-center p-6 animate-in fade-in duration-500">
+        
+        {/* Ticket Virtual */}
+        <div className="bg-white w-full max-w-xl rounded-[2.5rem] p-10 md:p-14 shadow-2xl relative overflow-hidden border border-slate-200" id="receipt-ticket">
+          {/* Cinta teal de éxito */}
+          <div className="absolute top-0 left-0 w-full h-4 bg-emerald-500"></div>
+          
+          <div className="flex flex-col items-center text-center">
+            <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-6 border-4 border-white shadow-lg">
+              <span className="material-icons-round text-5xl">check_circle</span>
             </div>
-
-            {/* Selección de Servicio */}
-            <div className="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-100">
-              <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                <span className="material-icons-round text-primary">medical_services</span>
-                ¿Qué atención necesitas?
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {doctor.services.length > 0 ? doctor.services.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => { setSelectedService(s); setSelectedSlot(null); }}
-                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${selectedService?.id === s.id ? 'border-primary bg-primary/5 shadow-lg' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}
-                  >
-                    <h4 className="font-black text-slate-900 mb-1">{s.name}</h4>
-                    <p className="text-xs text-slate-500 font-bold mb-4 line-clamp-2">{s.description}</p>
-                    <div className="flex justify-between items-end">
-                      <span className="text-lg font-black text-primary">${s.price.toLocaleString('es-CL')}</span>
-                      <span className="text-xs font-black text-slate-500 uppercase">{s.duration} MIN</span>
-                    </div>
-                  </button>
-                )) : (
-                  <p className="col-span-2 text-center text-slate-500 font-bold italic py-10">No hay servicios configurados actualmente.</p>
-                )}
-              </div>
-            </div>
-
-            {/* Calendario (Solo visible si hay servicio seleccionado) */}
-            {selectedService && (
-              <div className="bg-white rounded-[3rem] p-10 shadow-sm border border-slate-100 animate-in slide-in-from-top-10 duration-500">
-                <h3 className="text-xl font-black text-slate-900 mb-8">Selecciona tu horario para {selectedService.name}</h3>
-                <div className="flex gap-3 mb-8 overflow-x-auto pb-2">
-                  {availableDays.length > 0 ? availableDays.map((day, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedDay(i)}
-                      className={`flex-1 min-w-[120px] py-6 px-4 rounded-[2rem] flex flex-col items-center gap-2 border-2 transition-all ${selectedDay === i ? 'border-primary bg-primary/5 text-primary' : 'border-slate-50 bg-slate-50 text-slate-500'}`}
-                    >
-                      <span className="text-xs font-black uppercase">{day.name}</span>
-                      <span className="text-xl font-black tracking-tighter">{day.label}</span>
-                    </button>
-                  )) : (
-                    <p className="text-slate-500 font-bold italic py-4">No hay días disponibles en las próximas 2 semanas.</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {availableDays[selectedDay]?.slots.map((slot) => (
-                    <button
-                      key={slot}
-                      onClick={() => setSelectedSlot(slot)}
-                      className={`py-4 rounded-2xl text-xs font-black transition-all border-2 ${selectedSlot === slot ? 'bg-primary border-primary text-white shadow-xl' : 'bg-white border-slate-100 text-slate-700 hover:border-primary'}`}
-                    >
-                      {slot}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">¡Reserva Exitosa!</h2>
+            <p className="text-slate-500 font-bold">Tu hora ha quedado agendada correctamente en el sistema del profesional.</p>
           </div>
 
-          {/* Resumen Sidebar */}
-          <div className="lg:col-span-4">
-            <div className="bg-white rounded-[3rem] p-10 shadow-2xl border border-slate-200/50 sticky top-24">
-              <h3 className="text-xl font-black text-slate-900 mb-8">Resumen Cita</h3>
-              <div className="space-y-6 mb-10">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Servicio</span>
-                  <span className="text-sm font-black text-slate-800">{selectedService?.name || '---'}</span>
+          <div className="mt-10 bg-slate-50 border-2 border-slate-100 border-dashed rounded-3xl p-8 relative">
+            <div className="absolute -left-4 top-1/2 -mt-4 w-8 h-8 bg-white rounded-full border-r border-slate-200"></div>
+            <div className="absolute -right-4 top-1/2 -mt-4 w-8 h-8 bg-white rounded-full border-l border-slate-200"></div>
+            
+            <div className="space-y-6 relative z-10">
+              <div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Paciente</span>
+                <p className="text-lg font-black text-slate-900">{patientData.name}</p>
+                <p className="text-xs font-bold text-slate-500">RUT: {patientData.rut}</p>
+              </div>
+
+              <div className="h-px bg-slate-200/50 w-full"></div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fecha y Hora</span>
+                  <p className="text-sm font-black text-slate-900">{availableDays[selectedDay]?.label}</p>
+                  <p className="text-xl font-black text-primary">{selectedSlot}</p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Horario</span>
-                  <span className="text-sm font-black text-slate-800">{selectedSlot ? `${availableDays[selectedDay]?.label} @ ${selectedSlot}` : '---'}</span>
-                </div>
-                <div className="h-px bg-slate-100"></div>
-                <div className="flex justify-between items-end">
-                  <span className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Total</span>
-                  <span className="text-3xl font-black text-slate-900 tracking-tighter">${selectedService?.price.toLocaleString('es-CL') || '0'}</span>
+                <div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Profesional</span>
+                  <p className="text-sm font-black text-slate-900">{doctor.name}</p>
+                  <p className="text-xs font-bold text-slate-500">{doctor.specialty}</p>
                 </div>
               </div>
+
+              <div className="h-px bg-slate-200/50 w-full"></div>
+
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Servicio</span>
+                  <p className="text-sm font-black text-slate-900">{selectedService?.name}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Pagado</span>
+                  <p className="text-2xl font-black text-slate-900">${doctor.paymentEnabled ? '5.000' : '0'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-col gap-4 no-print" id="receipt-actions">
+            <a
+              href={generateGoogleCalendarLink()}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full py-4 bg-[#4285F4] hover:bg-[#3367D6] text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20"
+            >
+              <span className="material-icons-round">event</span>
+              Añadir a Google Calendar
+            </a>
+
+            <div className="flex flex-col sm:flex-row gap-4">
               <button
-                disabled={!selectedSlot}
-                onClick={handleConfirmBooking}
-                className="w-full py-5 bg-primary text-white font-black rounded-[1.8rem] shadow-xl shadow-primary/20 disabled:opacity-30 transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3"
+                onClick={handleDownloadImage}
+                disabled={isProcessing}
+                className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isProcessing ? 'Procesando...' : doctor.paymentEnabled ? 'PAGAR Y AGENDAR' : 'CONFIRMAR CITA'}
-                <span className="material-icons-round text-sm">{doctor.paymentEnabled ? 'payment' : 'check_circle'}</span>
+                <span className="material-icons-round text-sm">download</span>
+                {isProcessing ? 'Descargando...' : 'Guardar o Descargar'}
+              </button>
+              <button
+                onClick={() => navigate('/')}
+                className="flex-1 py-4 bg-slate-800 hover:bg-slate-900 text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2"
+              >
+                <span className="material-icons-round text-sm">home</span>
+                Finalizar
               </button>
             </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // Interfaz por Pasos (Wizard)
+  return (
+    <div className="w-full min-h-screen bg-[#f8fafc] flex flex-col items-center">
+      
+      {/* Cabecera del Profesional (Fija) */}
+      <div className="w-full bg-white border-b-2 border-slate-100 shadow-sm sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={() => { if(step > 1) setStep(step - 1); else navigate(-1); }} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-primary transition-all">
+              <span className="material-icons-round text-xl">arrow_back</span>
+            </button>
+            <div className="flex items-center gap-3 hidden sm:flex">
+                <img className="w-12 h-12 rounded-xl object-cover border border-slate-100 shadow-sm" src={doctor.avatar || 'https://picsum.photos/seed/doc/100/100'} alt="Doc" />
+                <div>
+                  <h1 className="text-sm font-black text-slate-900 leading-tight">{doctor.name}</h1>
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider">{doctor.specialty}</p>
+                </div>
+            </div>
+          </div>
+
+          {/* Stepper Indicator */}
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-1">
+               {[1, 2, 3, 4].map(num => (
+                 <div key={num} className="flex items-center group">
+                    <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black transition-all ${step === num ? 'bg-primary text-white scale-110 shadow-lg shadow-primary/30' : step > num ? 'bg-primary/20 text-primary' : 'bg-slate-100 text-slate-400'}`}>
+                      {step > num ? <span className="material-icons-round text-xs sm:text-sm">check</span> : num}
+                    </div>
+                    {num < 4 && <div className={`w-4 sm:w-8 h-[2px] mx-1 transition-all ${step > num ? 'bg-primary/40' : 'bg-slate-100'}`}></div>}
+                 </div>
+               ))}
+             </div>
           </div>
         </div>
       </div>
 
-      {isConfirmed && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[100] flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-xl rounded-[3.5rem] p-12 shadow-2xl relative overflow-hidden text-center scale-in-center">
-            <div className="w-24 h-24 bg-emerald-500 text-white rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/30 animate-bounce">
-              <span className="material-icons-round text-6xl">check_circle</span>
-            </div>
-            <h3 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">¡Cita agendada!</h3>
-            <p className="text-slate-500 font-bold mb-8 text-lg">
-              {doctor.paymentEnabled 
-                ? 'Te hemos redirigido al link de pago. Tu cita quedará confirmada una vez se procese el cobro.'
-                : `El profesional ${doctor.name} te espera el ${availableDays[selectedDay]?.label} a las ${selectedSlot}.`}
-            </p>
-            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 inline-block">
-               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Redirigiendo al inicio...</p>
-            </div>
+      <div className="w-full max-w-3xl mx-auto px-6 py-10 flex-1 flex flex-col">
+          <div className="mb-10 text-center animate-in slide-in-from-bottom-4 duration-500">
+            <span className="text-xs font-black text-primary uppercase tracking-widest bg-primary/10 px-4 py-1.5 rounded-full inline-block mb-4">Paso {step} de 4</span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              {step === 1 && 'Selecciona el Servicio'}
+              {step === 2 && 'Elige Fecha y Hora'}
+              {step === 3 && 'Tus Datos Personales'}
+              {step === 4 && 'Pago y Confirmación'}
+            </h2>
           </div>
-        </div>
-      )}
+
+          <div className="flex-1">
+            {/* ------------ PASO 1: SERVICIOS ------------ */}
+            {step === 1 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                  {doctor.services.length > 0 ? doctor.services.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => { setSelectedService(s); setSelectedSlot(null); setStep(2); }}
+                      className={`p-6 rounded-[2rem] border-2 text-left transition-all hover:border-primary hover:shadow-lg group ${selectedService?.id === s.id ? 'border-primary bg-primary/5 shadow-lg' : 'border-slate-100 bg-white'}`}
+                    >
+                      <h4 className="font-black text-slate-900 mb-2 group-hover:text-primary transition-colors">{s.name}</h4>
+                      <p className="text-xs text-slate-500 font-bold mb-6 line-clamp-3">{s.description}</p>
+                      <div className="flex justify-between items-end mt-auto">
+                        <span className="text-xl font-black text-primary">${s.price.toLocaleString('es-CL')}</span>
+                        <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-lg uppercase tracking-widest">{s.duration} MIN</span>
+                      </div>
+                    </button>
+                  )) : (
+                    <div className="col-span-2 text-center p-12 bg-white rounded-3xl border-2 border-slate-100">
+                       <span className="material-icons-round text-4xl text-slate-300 mb-3 block">event_busy</span>
+                       <p className="text-slate-500 font-bold">El profesional aún no ha configurado sus servicios.</p>
+                    </div>
+                  )}
+              </div>
+            )}
+
+            {/* ------------ PASO 2: HORARIO ------------ */}
+            {step === 2 && (
+              <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-sm border border-slate-100 animate-in slide-in-from-right-8 duration-300">
+                <div className="flex items-center gap-3 mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                   <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                     <span className="material-icons-round text-primary text-lg">medical_services</span>
+                   </div>
+                   <div>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">Servicio Elegido</p>
+                     <p className="text-sm font-bold text-slate-900">{selectedService?.name}</p>
+                   </div>
+                </div>
+
+                <div className="flex gap-3 mb-8 overflow-x-auto pb-4 custom-scrollbar">
+                  {availableDays.length > 0 ? availableDays.map((day, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedDay(i)}
+                      className={`flex-none w-28 py-5 px-2 rounded-[1.5rem] flex flex-col items-center gap-2 border-2 transition-all ${selectedDay === i ? 'border-primary bg-primary shadow-lg shadow-primary/20 text-white' : 'border-slate-100 bg-white text-slate-500 hover:border-primary/50'}`}
+                    >
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${selectedDay === i ? 'text-white/80' : 'text-slate-400'}`}>{day.name}</span>
+                      <span className="text-lg font-black tracking-tighter">{day.label.split(' ')[0]} {day.label.split(' ')[1]}</span>
+                    </button>
+                  )) : (
+                    <p className="text-slate-500 font-bold italic w-full text-center">No hay días disponibles.</p>
+                  )}
+                </div>
+                
+                <p className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">Horarios Disponibles</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {availableDays[selectedDay]?.slots.map((slot) => (
+                    <button
+                      key={slot}
+                      onClick={() => { setSelectedSlot(slot); setStep(3); }}
+                      className={`py-4 rounded-2xl text-sm font-black transition-all border-2 flex items-center justify-center gap-2 hover:-translate-y-1 ${selectedSlot === slot ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-700 hover:border-primary'}`}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                  {(!availableDays[selectedDay] || availableDays[selectedDay].slots.length === 0) && (
+                     <p className="col-span-full text-center text-slate-400 text-sm py-4">No hay horarios en este día.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ------------ PASO 3: DATOS PACIENTE ------------ */}
+            {step === 3 && (
+              <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-sm border border-slate-100 animate-in slide-in-from-right-8 duration-300">
+                {/* Selector Modalidad */}
+                <div className="mb-8">
+                  <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 mb-3 block">Modalidad de Atención</label>
+                  <div className="flex gap-4">
+                    {doctor.modalities?.inPerson && (
+                       <button onClick={() => setSelectedModality('inPerson')} className={`flex-1 py-4 border-2 rounded-2xl font-black text-sm transition-all flex flex-col items-center gap-2 ${selectedModality === 'inPerson' ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-500 hover:border-primary/50'}`}>
+                         <span className="material-icons-round">medical_information</span>
+                         Presencial
+                       </button>
+                    )}
+                    {doctor.modalities?.home && (
+                       <button onClick={() => setSelectedModality('home')} className={`flex-1 py-4 border-2 rounded-2xl font-black text-sm transition-all flex flex-col items-center gap-2 ${selectedModality === 'home' ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-500 hover:border-primary/50'}`}>
+                         <span className="material-icons-round">home_work</span>
+                         Domicilio
+                       </button>
+                    )}
+                    {doctor.modalities?.online && (
+                       <button onClick={() => setSelectedModality('online')} className={`flex-1 py-4 border-2 rounded-2xl font-black text-sm transition-all flex flex-col items-center gap-2 ${selectedModality === 'online' ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-500 hover:border-primary/50'}`}>
+                         <span className="material-icons-round">videocam</span>
+                         Online
+                       </button>
+                    )}
+                  </div>
+                  
+                  {/* Mensajes condicionales */}
+                  <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm font-bold text-slate-600 flex items-start gap-3">
+                     <span className="material-icons-round text-primary mt-0.5">info</span>
+                     <div>
+                       {selectedModality === 'inPerson' && <p>Serás atendido de forma presencial en la ciudad de: <span className="text-slate-900 border-b-2 border-primary">{doctor.city || 'No especificada'}</span>.</p>}
+                       {selectedModality === 'home' && <p>Iremos a tu ubicación. Por favor, rellena tu dirección exacta debajo para que el profesional llegue sin problemas.</p>}
+                       {selectedModality === 'online' && <p>Atención por videollamada. Nos contactaremos directamente a tu WhatsApp registrado con el enlace a la sesión.</p>}
+                     </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre Completo *</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Juan Pérez" value={patientData.name} onChange={e => setPatientData({ ...patientData, name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">RUT *</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: 12.345.678-9" value={patientData.rut} onChange={e => setPatientData({ ...patientData, rut: e.target.value })} />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Motivo de consulta / Diagnóstico *</label>
+                    <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[100px]" placeholder="Cuenta brevemente qué necesitas para que el profesional se prepare..." value={patientData.reason} onChange={e => setPatientData({ ...patientData, reason: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Celular *</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="+56 9 1234 5678" value={patientData.phone} onChange={e => setPatientData({ ...patientData, phone: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Correo Electrónico *</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="email" placeholder="correo@ejemplo.com" value={patientData.email} onChange={e => setPatientData({ ...patientData, email: e.target.value })} />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Ciudad *</label>
+                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Santiago" value={patientData.city} onChange={e => setPatientData({ ...patientData, city: e.target.value })} />
+                  </div>
+                  
+                  {selectedModality === 'home' && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Dirección (Calle) *</label>
+                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Av. Principal 123" value={patientData.address} onChange={e => setPatientData({ ...patientData, address: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Número Ext / Depto *</label>
+                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Depto 40" value={patientData.houseNumber} onChange={e => setPatientData({ ...patientData, houseNumber: e.target.value })} />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-slate-100 flex items-center justify-end">
+                   <button
+                     disabled={!isFormValid}
+                     onClick={() => setStep(4)}
+                     className="py-5 px-10 bg-slate-900 text-white font-black rounded-2xl disabled:opacity-30 transition-all uppercase text-xs tracking-widest flex items-center gap-3 hover:-translate-y-1 shadow-xl"
+                   >
+                     Continuar al Pago
+                     <span className="material-icons-round text-sm">arrow_forward</span>
+                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* ------------ PASO 4: PAGO / SIMULADOR ------------ */}
+            {step === 4 && (
+              <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-2xl border border-slate-200 animate-in slide-in-from-right-8 duration-300">
+                
+                {/* Resumen Final Box */}
+                <div className="bg-slate-50 rounded-3xl p-8 mb-8 border-2 border-slate-100">
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Resumen de tu Reserva</h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-slate-600">Servicio</span>
+                        <span className="text-sm font-black text-slate-900">{selectedService?.name}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-slate-600">Fecha y Hora</span>
+                        <span className="text-sm font-black text-slate-900">{availableDays[selectedDay]?.label} a las {selectedSlot}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-bold text-slate-600">Paciente</span>
+                        <span className="text-sm font-black text-slate-900 text-right">{patientData.name}<br/><span className="text-xs text-slate-400">{patientData.rut}</span></span>
+                      </div>
+                    </div>
+
+                    <div className="my-6 border-b-2 border-dashed border-slate-200"></div>
+
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">A pagar ahora</span>
+                        {doctor.paymentEnabled && <span className="text-xs font-bold text-slate-500">Bono de Reserva de Cupo</span>}
+                      </div>
+                      <span className="text-4xl font-black text-primary tracking-tighter">
+                        {doctor.paymentEnabled ? '$5.000' : 'Gratis'}
+                      </span>
+                    </div>
+                </div>
+
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-4 scale-in-center">
+                    <span className="material-icons-round text-3xl text-primary">{doctor.paymentEnabled ? 'account_balance_wallet' : 'verified'}</span>
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Confirmación de Cita</h3>
+                  <p className="text-slate-500 font-bold text-sm">Estás a un paso de asegurar tu atención en nuestra plataforma.</p>
+                </div>
+                
+                {doctor.paymentEnabled ? (
+                  <div className="space-y-4 w-full bg-blue-50/50 p-6 rounded-3xl border border-blue-50">
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest text-center mb-4">Sigue las instrucciones del profesional</p>
+                    <button
+                        onClick={() => window.open(doctor.bookingPaymentLink || doctor.subscriptionLink || '#', '_blank')}
+                        className="w-full py-5 bg-white hover:bg-slate-50 text-slate-800 font-black rounded-2xl border-2 border-slate-200 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center shadow-sm"
+                      >
+                        <span className="material-icons-round text-primary">open_in_new</span>
+                        1. Pagar Reserva en Flow/MercadoPago
+                    </button>
+        
+                    <button
+                        onClick={finalizeBooking}
+                        disabled={isProcessing}
+                        className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
+                      >
+                        {isProcessing ? 'CONFIRMANDO SISTEMA...' : '2. YA COMPLETÉ EL PAGO CON ÉXITO'}
+                        <span className="material-icons-round text-sm">check_circle</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                      onClick={finalizeBooking}
+                      disabled={isProcessing}
+                      className="w-full py-6 mt-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
+                    >
+                      {isProcessing ? 'PROCESANDO...' : 'CONFIRMAR CITA GRATUITAMENTE'}
+                      <span className="material-icons-round text-sm">check_circle</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+      </div>
     </div>
   );
 };

@@ -50,6 +50,19 @@ export async function loginProfessional(
     return { error: `Demasiados intentos fallidos. Espera ${min} minuto${min !== 1 ? 's' : ''}.` };
   }
 
+  // Bypass local para pruebas y demo del sistema sin conexión a BD activa
+  if (email === 'orellanaallan30@gmail.com' && password === 'Roo1998.') {
+    const localPros = localStorage.getItem('maslife_professionals');
+    if (localPros) {
+      const parsed = JSON.parse(localPros);
+      const testPro = parsed.find((p: any) => p.email === email);
+      if (testPro) {
+        clearRateLimit();
+        return { pro: testPro as ProfessionalProfile };
+      }
+    }
+  }
+
   // 1. Login con Supabase Auth
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
   if (authError || !authData.user) {

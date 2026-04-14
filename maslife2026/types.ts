@@ -62,6 +62,7 @@ export interface ProfessionalProfile {
   trialEndDate?: string; // Nuevo: Fin de 30 días gratis
   nextBillingDate?: string; // Nuevo: Fecha de cobro
   subscriptionLink?: string; // Link de pago personalizado
+  bookingPaymentLink?: string; // Link de pago para reservas ($5.000)
   specialty: string;
   city: string; 
   bio: string;
@@ -78,6 +79,9 @@ export interface ProfessionalProfile {
   services: Service[];
   isPublic: boolean;
   createdAt: string;
+  schedule?: any;
+  isApproved?: boolean;
+  paymentEnabled?: boolean;
 }
 
 export interface Appointment {
@@ -98,6 +102,10 @@ export interface Appointment {
   notes?: string;
   color?: string;
   category: 'Medical' | 'Personal';
+  professionalId?: string;
+  bookingSource?: string;
+  paidAt?: string;
+  paymentAmount?: number;
 }
 
 export interface Notification {
@@ -132,10 +140,11 @@ export interface Patient {
   archived: boolean;
   risk: 'Bajo' | 'Medio' | 'Alto';
   avatar?: string;
-  // Added diagnoses to satisfy ClinicalRecord usage
   diagnoses?: string;
   lastVisit?: string;
   emergencyContact?: string;
+  goals?: any[];
+  soap?: any;
 }
 
 export interface ClinicalTemplate {

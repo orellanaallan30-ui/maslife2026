@@ -364,7 +364,7 @@ const ProfessionalAgenda: React.FC = () => {
             </div>
 
             {isCreateModalOpen && (
-               <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] flex items-center justify-center p-6 overflow-y-auto">
+               <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] flex items-start justify-center p-6 pt-16 overflow-y-auto">
                   <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
                      <div className="p-8 md:p-10 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start">
                         <div>
@@ -471,7 +471,7 @@ const ProfessionalAgenda: React.FC = () => {
 
             {/* MODAL EDICIÓN */}
             {isEditModalOpen && editingApp && (
-               <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[100] flex items-center justify-center p-6 overflow-y-auto">
+               <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[100] flex items-start justify-center p-6 pt-12 overflow-y-auto">
                   <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
                      <div className={`p-8 md:p-10 ${editingApp.status === 'Bloqueado' ? 'bg-slate-800' : (editingApp.color || 'bg-primary')} text-white relative flex flex-col items-center text-center`}>
                         <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-95"><span className="material-icons-round text-2xl">close</span></button>

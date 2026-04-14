@@ -10,7 +10,7 @@ const ProfessionalDashboard: React.FC = () => {
   if (!loggedPro) return <Navigate to="/pro/login" />;
 
   const isPaused = loggedPro.subscriptionStatus === 'paused';
-  const MP_SUBSCRIPTION_LINK = "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
+  const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
 
   const today = new Date().toISOString().split('T')[0];
   const myTodayApps = React.useMemo(() =>
@@ -110,17 +110,28 @@ const ProfessionalDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-primary p-8 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(19,91,236,0.4)] border-b-8 border-blue-700 text-white cursor-pointer group relative overflow-hidden transform transition-all hover:-translate-y-2 hover:shadow-primary/60 active:border-b-0 active:translate-y-2" onClick={() => navigate('/pro/settings')}>
+            <div
+              className="bg-gradient-to-br from-teal-500 to-teal-600 p-8 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(20,184,166,0.5)] border-b-8 border-teal-700 text-white cursor-pointer group relative overflow-hidden transform transition-all hover:-translate-y-2 hover:shadow-teal-500/60 active:border-b-0 active:translate-y-2"
+              onClick={() => navigate('/pro/settings')}
+            >
               <div className="relative z-10 flex flex-col h-full justify-between">
                 <div>
-                  <span className="text-white/80 font-black text-[10px] uppercase tracking-[0.3em] block mb-2">Agenda Maslife</span>
-                  <h3 className="text-2xl font-black tracking-tight mb-4 uppercase drop-shadow-md">{loggedPro.subscriptionStatus}</h3>
+                  <span className="text-white/90 font-black text-[10px] uppercase tracking-[0.3em] block mb-3">Sistema de Agenda</span>
+                  <h3 className="text-3xl font-black tracking-tight uppercase drop-shadow-lg mb-2">
+                    AGENDA MASLIFE
+                  </h3>
+                  <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl border border-white/30 backdrop-blur-md">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">ACTIVE</span>
+                  </div>
                 </div>
-                <div className="bg-white/20 p-4 rounded-2xl border border-white/30 backdrop-blur-md inline-block group-hover:bg-white group-hover:text-primary transition-colors shadow-lg self-start">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em]">Configurar Plan</p>
+                <div className="mt-6 bg-white/20 p-4 rounded-2xl border border-white/30 backdrop-blur-md inline-block group-hover:bg-white group-hover:text-teal-600 transition-colors shadow-lg self-start">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    <span className="material-icons-round text-sm">settings</span>
+                    Configurar Plan
+                  </p>
                 </div>
               </div>
-              <span className="material-icons absolute -bottom-6 -right-6 text-[160px] opacity-10 group-hover:rotate-12 group-hover:scale-110 transition-transform duration-500">lock_clock</span>
             </div>
           </div>
 

@@ -4,24 +4,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Vitals } from '../types';
 import { useClinic } from '../ClinicContext';
 
-interface AiChatMessage {
-  role: 'user' | 'model';
-  text: string;
-}
+// Removed AI Chat Message Interface
 
 const ConsultationSession: React.FC = () => {
   const { logout } = useClinic();
   const navigate = useNavigate();
   const { id } = useParams();
-  const [transcription, setTranscription] = useState<{ text: string, type?: 'symptom' | 'drug' }[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [query, setQuery] = useState('');
-
-  // Nuevo Estado para Chat IA durante la sesión
-  const [aiChat, setAiChat] = useState<AiChatMessage[]>([
-    { role: 'model', text: 'Bienvenido a la sesión. Soy tu apoyo clínico IA. ¿Necesitas revisar algún protocolo o dosis mientras atiendes?' }
-  ]);
-  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   const [vitals, setVitals] = useState<Partial<Vitals>>({
     systolic: 120,
@@ -37,53 +26,7 @@ const ConsultationSession: React.FC = () => {
     plan: ''
   });
 
-  const lines = [
-    { text: "Paciente: Me he sentido con un dolor punzante en la espalda.", type: 'symptom' as const },
-    { text: "Médico: Vamos a tomar su presión primero.", type: undefined },
-    { text: "Médico: PA 120/80, frecuencia cardíaca normal.", type: undefined },
-  ];
 
-  useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < lines.length) {
-        setTranscription(prev => [...prev, lines[i]]);
-        i++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    chatScrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [aiChat]);
-
-  const talkToConsultant = async () => {
-    if (!query.trim()) return;
-
-    const userMsg = query;
-    setAiChat(prev => [...prev, { role: 'user', text: userMsg }]);
-    setQuery('');
-    setIsProcessing(true);
-
-    try {
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || '');
-      const context = `Contexto Sesión: Paciente ID ${id}. SOAP actual: Subj: ${soapData.subjective}, Plan: ${soapData.plan}.`;
-      const prompt = `${context}\n\nMédico pregunta en sesión: "${userMsg}". Responde como consultor profesional rápido.`;
-
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const response = await model.generateContent(prompt);
-      const resultText = response.response.text();
-
-      setAiChat(prev => [...prev, { role: 'model', text: resultText || "No logré obtener respuesta." }]);
-    } catch (error) {
-      setAiChat(prev => [...prev, { role: 'model', text: "Error de conexión con el consultor IA." }]);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   return (
     <div className="flex flex-col w-full h-full bg-slate-900 overflow-hidden font-sans text-white">
@@ -123,53 +66,7 @@ const ConsultationSession: React.FC = () => {
               <button className="w-full py-2 bg-teal-500/20 hover:bg-teal-500/40 text-xs font-black text-teal-300 rounded-xl uppercase tracking-widest border border-teal-500/30 transition-all">Sincronizar Vitales</button>
             </div>
 
-            {/* Transcripción por Voz */}
-            <div className="absolute top-8 left-8 w-80 bg-black/70 backdrop-blur-3xl rounded-3xl p-6 border border-white/10 h-72 overflow-y-auto custom-scrollbar shadow-2xl">
-              <div className="flex items-center gap-2 mb-6">
-                <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse shadow-[0_0_8px_teal]"></span>
-                <span className="text-xs font-black text-white/50 uppercase tracking-widest">Escucha Activa</span>
-              </div>
-              <div className="space-y-4">
-                {transcription.map((line, idx) => (
-                  <p key={idx} className={`text-xs font-bold leading-relaxed ${line.type === 'symptom' ? 'text-amber-300' : 'text-white/80'}`}>
-                    {line.text}
-                  </p>
-                ))}
-              </div>
-            </div>
-
-            {/* Burbuja del Consultor IA Flotante */}
-            <div className="absolute bottom-8 left-8 right-8 h-48 bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/10 shadow-2xl flex flex-col overflow-hidden">
-              <div className="px-6 py-3 border-b border-white/5 bg-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-icons-round text-sm text-indigo-400">psychology</span>
-                  <span className="text-xs font-black text-white/60 uppercase tracking-[0.2em]">Asistente Clínico Inteligente</span>
-                </div>
-                {isProcessing && <div className="text-xs font-black text-indigo-400 animate-pulse">Analizando caso...</div>}
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs font-medium custom-scrollbar">
-                {aiChat.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-4 py-2 rounded-2xl ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/10 text-white/80'}`}>
-                      {msg.text}
-                    </div>
-                  </div>
-                ))}
-                <div ref={chatScrollRef} />
-              </div>
-              <div className="p-3 bg-black/20 flex gap-2">
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && talkToConsultant()}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs focus:ring-1 focus:ring-indigo-500 placeholder-white/20"
-                  placeholder="Escribe tu duda: ¿Dosis para este peso? o ¿Protocolo para sospecha de...?"
-                />
-                <button onClick={talkToConsultant} className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center hover:bg-indigo-700">
-                  <span className="material-icons-round text-sm text-white">send</span>
-                </button>
-              </div>
-            </div>
+            {/* Panels eliminados por solicitud */}
           </div>
         </div>
 

@@ -39,6 +39,18 @@ const ProfessionalLogin: React.FC = () => {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [rl, setRl]             = useState(() => checkRateLimit());
+  const [rememberMe, setRememberMe] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('maslife_pro_saved');
+    if (saved) {
+      try {
+        const { u, p } = JSON.parse(saved);
+        if (u) setEmail(u);
+        if (p) { setPassword(p); setRememberMe(true); }
+      } catch(e) {}
+    }
+  }, []);
 
   const blocked = rl.blocked && rl.remainingMs > 0;
 
@@ -61,6 +73,11 @@ const ProfessionalLogin: React.FC = () => {
         setError(result.error);
         setRl(checkRateLimit());
       } else if ('pro' in result && result.pro) {
+        if (rememberMe) {
+          localStorage.setItem('maslife_pro_saved', JSON.stringify({ u: email, p: password }));
+        } else {
+          localStorage.removeItem('maslife_pro_saved');
+        }
         setLoggedPro(result.pro);
         navigate(result.pro.needsPasswordReset ? '/pro/password-setup' : '/pro/dashboard');
       }
@@ -72,9 +89,9 @@ const ProfessionalLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="flex-1 w-full bg-slate-50 flex items-center justify-center p-4 relative">
       {/* Fondo decorativo */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-teal-500/6 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-teal-500/4 rounded-full blur-3xl" />
       </div>
@@ -143,6 +160,20 @@ const ProfessionalLogin: React.FC = () => {
                     </span>
                   </button>
                 </div>
+              </div>
+
+              {/* Recordarme */}
+              <div className="flex items-center gap-2 mt-1 px-1">
+                <input
+                  type="checkbox"
+                  id="rememberPro"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-teal-500 focus:ring-teal-500 transition-all cursor-pointer accent-teal-500"
+                />
+                <label htmlFor="rememberPro" className="text-sm font-bold text-slate-500 cursor-pointer select-none">
+                  Recordarme en este equipo
+                </label>
               </div>
 
               {/* Error */}
