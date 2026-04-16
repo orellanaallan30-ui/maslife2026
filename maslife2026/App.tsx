@@ -69,69 +69,58 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
   const isAuthPage   = publicPaths.some(p => location.pathname.startsWith(p));
   const showProActions = view === 'PROFESSIONAL' && !isAuthPage && !!loggedPro;
   const unread = notifications.filter(n => !n.read).length;
+  const isRodrigo = loggedPro?.id === 'pro-rodrigo';
 
-  const handleView = (v: AppView) => {
-    setView(v);
-    navigate(v === 'PATIENT' ? '/' : v === 'PROFESSIONAL' ? '/pro/dashboard' : '/admin/login');
-  };
+  // Elegir logo según contexto
+  const logoSrc = (location.pathname.startsWith('/pro/agenda') || location.pathname === '/patient/results')
+    ? '/logo-agenda-online.svg'
+    : '/logo-clinica-maslife.svg';
+
+  // Ocultar navbar completamente en landing (MainHome tiene su propia)
+  if (location.pathname === '/') return null;
 
   return (
-    <nav className="bg-white border-b border-slate-200 flex items-center px-4 md:px-10 shrink-0 z-50 sticky top-0 shadow-sm" style={{height:72}}>
-      <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate('/')}>
-        <div className="bg-teal-500 w-11 h-11 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/20">
-          <span className="material-icons-round text-white text-2xl">medical_services</span>
-        </div>
-        <div>
-          <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest leading-none">PLATAFORMA</p>
-          <p className="text-xl font-black tracking-tight text-black leading-tight">Mas Life 🧡</p>
-        </div>
+    <nav className="bg-white border-b border-slate-200 flex items-center px-3 sm:px-6 md:px-10 shrink-0 z-50 sticky top-0 shadow-sm" style={{height: 56}}>
+      {/* Logo */}
+      <div className="flex items-center cursor-pointer shrink-0" onClick={() => navigate('/')}>
+        <img
+          src={logoSrc}
+          alt="Clínica Mas Life"
+          className="h-8 sm:h-10 w-auto object-contain"
+          onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }}
+        />
+        <span className="hidden text-lg font-extrabold tracking-tight text-slate-900">Mas<span className="text-blue-600">life</span></span>
       </div>
 
-      <div className="flex-1 flex justify-center gap-1 px-4 overflow-x-auto hide-scrollbar">
-        {!isFullPublic && (['PATIENT','PROFESSIONAL','ADMIN'] as AppView[]).map(v => (
-          <button key={v} onClick={() => handleView(v)}
-            className={`whitespace-nowrap px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all
-              ${view === v
-                ? v === 'PROFESSIONAL' ? 'bg-teal-500 text-white shadow-lg'
-                : v === 'ADMIN' ? 'bg-slate-800 text-white' : 'bg-black text-white'
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}>
-            {v === 'PATIENT' ? 'Paciente' : v === 'PROFESSIONAL' ? 'Profesional' : 'Admin'}
-          </button>
-        ))}
-      </div>
+      {/* Spacer */}
+      <div className="flex-1" />
 
-      <div className="flex items-center gap-2.5 shrink-0 justify-end">
-        {/* Menú hamburguesa — solo en vista pública (home) */}
+      <div className="flex items-center gap-2 shrink-0 justify-end">
+        {/* Menú hamburguesa — en vista pública */}
         {isFullPublic && (
           <>
             <button
               id="hamburger-menu-btn"
               onClick={() => setMenuOpen(true)}
               aria-label="Abrir menú"
-              className="flex flex-col gap-1.5 items-center justify-center w-11 h-11 bg-slate-900 rounded-xl hover:bg-slate-700 transition-all group">
-              {[0,1,2].map(i => <div key={i} className="w-5 h-[1.5px] bg-white rounded-full group-hover:bg-teal-400 transition-colors" />)}
+              className="flex flex-col gap-1 items-center justify-center w-10 h-10 bg-slate-900 rounded-xl hover:bg-slate-700 transition-all group">
+              {[0,1,2].map(i => <div key={i} className="w-4.5 h-[1.5px] bg-white rounded-full group-hover:bg-blue-400 transition-colors" style={{width:18}} />)}
             </button>
 
             {/* Panel de menú lateral */}
             {menuOpen && (
               <div className="fixed inset-0 z-[200] flex justify-end">
                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-                <div className="relative w-80 h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+                <div className="relative w-72 sm:w-80 h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
                   {/* Header del menú */}
-                  <div className="bg-slate-900 p-6 flex items-center justify-between shrink-0">
+                  <div className="bg-slate-900 p-5 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-teal-500 rounded-xl flex items-center justify-center shrink-0">
-                        <span className="material-icons-round text-white text-lg">medical_services</span>
-                      </div>
-                      <div>
-                        <p className="text-white font-black text-sm leading-none">Clínica Mas Life</p>
-                        <p className="text-slate-400 text-xs mt-0.5">clinicamaslife.cl</p>
-                      </div>
+                      <img src="/logo-clinica-maslife.svg" alt="Mas Life" className="h-8 w-auto brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
                     </div>
                     <button
                       onClick={() => setMenuOpen(false)}
-                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
-                      <span className="material-icons-round text-white text-lg">close</span>
+                      className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
+                      <span className="material-icons-round text-white text-base">close</span>
                     </button>
                   </div>
 
@@ -180,9 +169,9 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                     {/* Acceso al Sistema */}
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Acceso Sistema</p>
                     {[
-                      { icon: 'badge', label: 'Portal Profesional', sub: 'Ingresa a tu cuenta', path: '/pro/login', bg: 'bg-slate-800' },
-                      { icon: 'admin_panel_settings', label: 'Administración', sub: 'Panel de control', path: '/admin/login', bg: 'bg-rose-600' }
-                    ].map(item => (
+                      { icon: 'badge', label: 'Portal Profesional', sub: 'Ingresa a tu cuenta', path: '/pro/login', bg: 'bg-slate-800', adminOnly: false },
+                      { icon: 'admin_panel_settings', label: 'Administración', sub: 'Panel de control', path: '/admin/login', bg: 'bg-rose-600', adminOnly: true }
+                    ].filter(item => !item.adminOnly || isRodrigo).map(item => (
                       <button
                         key={item.path}
                         onClick={() => { setMenuOpen(false); navigate(item.path); }}
@@ -200,7 +189,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
 
                   {/* Footer del menú */}
                   <div className="border-t border-slate-100 p-4 text-center shrink-0">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">© 2026 Clínica Mas Life 🧡</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">© 2026 Clínica Mas Life</p>
                   </div>
                 </div>
               </div>

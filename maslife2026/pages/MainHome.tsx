@@ -44,7 +44,7 @@ const MainHome: React.FC = () => {
   const services = [
     { name: 'Kinesiología', icon: 'accessibility_new', color: 'from-teal-400 to-teal-600', bg: 'bg-teal-50' },
     { name: 'Nutrición', icon: 'restaurant', color: 'from-orange-400 to-orange-600', bg: 'bg-orange-50' },
-    { name: 'TENS', icon: 'medical_services', color: 'from-cyan-400 to-cyan-600', bg: 'bg-cyan-50' },
+    { name: 'Téc. Enfermería', icon: 'medical_services', color: 'from-cyan-400 to-cyan-600', bg: 'bg-cyan-50' },
     { name: 'Psicología', icon: 'psychology', color: 'from-indigo-400 to-indigo-600', bg: 'bg-indigo-50' },
     { name: 'Terapeuta Ocupacional', icon: 'handyman', color: 'from-rose-400 to-rose-600', bg: 'bg-rose-50' },
     { name: 'Podología', icon: 'directions_walk', color: 'from-blue-400 to-blue-600', bg: 'bg-blue-50' },
@@ -163,12 +163,19 @@ const MainHome: React.FC = () => {
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-100' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between h-16 sm:h-20">
-          {/* Logo */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollToSection('hero')}>
-            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
-              <span className="material-icons-round text-white text-base sm:text-lg">favorite</span>
-            </div>
-            <span className={`text-xl sm:text-2xl font-extrabold tracking-tight transition-colors ${scrollY > 50 ? 'text-slate-900' : 'text-slate-900'}`}>
+          {/* Logo Clínica Mas Life */}
+          <div className="flex items-center cursor-pointer shrink-0" onClick={() => scrollToSection('hero')}>
+            <img
+              src="/logo-clinica-maslife.svg"
+              alt="Clínica Mas Life"
+              className="h-10 sm:h-12 w-auto object-contain"
+              onError={(e) => {
+                // Fallback si no carga la imagen
+                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <span className={`hidden text-xl sm:text-2xl font-extrabold tracking-tight transition-colors text-slate-900`}>
               Mas<span className="text-blue-600">life</span>
             </span>
           </div>
@@ -351,7 +358,7 @@ const MainHome: React.FC = () => {
             {(activeSpecFilter === 'destacados' ? specialtyCards : specialtyCards.concat([
               { name: 'Terapia Ocupacional', desc: 'Rehabilitación funcional para actividades diarias.', img: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?q=80&w=600', cta: 'Buscar Profesional' },
               { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', cta: 'Buscar Profesional' },
-              { name: 'TENS / Electroterapia', desc: 'Terapia de estimulación eléctrica para dolor.', img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600', cta: 'Buscar Profesional' },
+              { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600', cta: 'Buscar Profesional' },
             ])).map((card, i) => (
               <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer" onClick={() => navigate('/patient/results')}>
                 <div className="aspect-[4/3] overflow-hidden">
@@ -462,10 +469,6 @@ const MainHome: React.FC = () => {
                   )}
                   <div className="mb-8">
                     <h3 className="text-lg font-extrabold text-slate-900 mb-4 tracking-tight">{plan.name}</h3>
-                    <div className="flex items-baseline gap-2 mb-3">
-                      <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">{plan.price}</span>
-                      <span className="text-xs font-bold text-slate-400 uppercase">CLP</span>
-                    </div>
                     <p className="text-sm text-slate-500 font-medium">{plan.desc}</p>
                   </div>
 
@@ -555,11 +558,9 @@ const MainHome: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10 sm:gap-12 mb-14">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1 space-y-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center">
-                  <span className="material-icons-round text-white text-base">favorite</span>
-                </div>
-                <span className="text-xl font-extrabold tracking-tight">Mas<span className="text-blue-400">life</span></span>
+              <div className="flex items-center">
+                <img src="/logo-clinica-maslife.svg" alt="Clínica Mas Life" className="h-10 w-auto object-contain brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
+                <span className="hidden text-xl font-extrabold tracking-tight">Mas<span className="text-blue-400">life</span></span>
               </div>
               <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs">
                 Rediseñando la experiencia de salud a través de la calidez clínica y el compromiso humano.
