@@ -1,46 +1,45 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const MainHome: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showKinePlans, setShowKinePlans] = useState(false);
   const [showPlanForm, setShowPlanForm] = useState<{ isOpen: boolean; planName: string }>({ isOpen: false, planName: '' });
   const [isGeneralFormOpen, setIsGeneralFormOpen] = useState(false);
   const [isContactFormOpen, setIsContactFormOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', condition: '' });
   const [contactData, setContactData] = useState({ name: '', phone: '', email: '', message: '' });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedNeed, setSelectedNeed] = useState('');
+  const [activeSpecFilter, setActiveSpecFilter] = useState<'destacados' | 'todos'>('destacados');
+  const [assignFormData, setAssignFormData] = useState({ name: '', contact: '', symptoms: '' });
+  const [scrollY, setScrollY] = useState(0);
+  const heroRef = useRef<HTMLElement>(null);
 
-  const bgImages = [
-    "https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=2070",
-    "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2070",
-    "https://images.unsplash.com/photo-1584515933487-779824d29309?q=80&w=2070",
-    "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?q=80&w=2070"
-  ];
-
-  const [bgIndex, setBgIndex] = useState(0);
-  const location = useLocation();
+  // Scroll tracking for navbar
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY || document.documentElement.scrollTop);
+    const container = document.getElementById('main-home-scroll');
+    if (container) {
+      container.addEventListener('scroll', () => setScrollY(container.scrollTop));
+    }
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (container) container.removeEventListener('scroll', () => {});
+    };
+  }, []);
 
   useEffect(() => {
     if (location.state) {
       const state = location.state as { openContact?: boolean; openAgendar?: boolean };
-      if (state.openContact) {
-        setIsContactFormOpen(true);
-      }
-      if (state.openAgendar) {
-        setIsGeneralFormOpen(true);
-      }
-      // Limpiamos el estado para que no se reabra al recargar o navegar atrás
+      if (state.openContact) setIsContactFormOpen(true);
+      if (state.openAgendar) setIsGeneralFormOpen(true);
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setBgIndex((prev) => (prev + 1) % bgImages.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [bgImages.length]);
 
   const services = [
     { name: 'Kinesiología', icon: 'accessibility_new', color: 'from-teal-400 to-teal-600', bg: 'bg-teal-50' },
@@ -52,12 +51,39 @@ const MainHome: React.FC = () => {
     { name: 'Masoterapeuta', icon: 'spa', color: 'from-amber-400 to-amber-600', bg: 'bg-amber-50' },
   ];
 
+  const specialtyCards = [
+    {
+      name: 'Kinesiología Integral',
+      desc: 'Especialistas capacitados para rehabilitación integral y física.',
+      img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=600',
+      cta: 'Buscar Profesional'
+    },
+    {
+      name: 'Psicología',
+      desc: 'Especialistas en salud psicoemocional y bienestar mental.',
+      img: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?q=80&w=600',
+      cta: 'Buscar profesional'
+    },
+    {
+      name: 'Nutrición',
+      desc: 'Planificación nutricional personalizada para hábitos saludables.',
+      img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600',
+      cta: 'Buscar Profesional'
+    },
+    {
+      name: 'Fonoaudiología',
+      desc: 'Especialistas en comunicación, habla y deglución.',
+      img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600',
+      cta: 'Ver Especialistas'
+    }
+  ];
+
   const kinePlans = [
     {
       name: 'PLAN ESENCIAL',
       price: '$120.500',
       desc: 'Para lesiones leves o mantenimiento preventivo.',
-      color: 'border-slate-100',
+      color: 'border-slate-200',
       btnColor: 'border-slate-800 text-slate-800 hover:bg-slate-800 hover:text-white',
       features: ['5 Sesiones a Domicilio', 'Evaluación Kinesiológica', 'Diagnóstico Kinesiológico', 'Tratamiento Personalizado', 'Educación al paciente', 'Seguimiento 24/7 vía WhatsApp', 'Informe Kinesiológico Final']
     },
@@ -65,19 +91,27 @@ const MainHome: React.FC = () => {
       name: '+LIFE PRO',
       price: '$265.000',
       desc: 'Recuperación completa y asegurada con enfoque intensivo.',
-      color: 'border-orange-500 ring-8 ring-orange-500/5 scale-105 z-10 shadow-2xl shadow-orange-500/20',
-      btnColor: 'bg-orange-600 text-white hover:bg-orange-700',
-      badge: 'PLAN MÁS SOLICITADO',
+      color: 'border-blue-500 ring-4 ring-blue-100 scale-[1.02] z-10 shadow-xl shadow-blue-500/10',
+      btnColor: 'bg-blue-600 text-white hover:bg-blue-700',
+      badge: 'MÁS SOLICITADO',
       features: ['10 Sesiones a Domicilio', 'Evaluación Kinesiológica Completa', 'Diagnóstico y Plan Avanzado', 'Tratamiento Personalizado', 'Seguimiento 24/7 vía WhatsApp', 'Material de Apoyo Digital', 'Informe Kinesiológico Final']
     },
     {
       name: 'PLAN PREMIUM',
       price: '$295.000',
       desc: 'Post-operatorios complejos y cuadros crónicos.',
-      color: 'border-slate-100',
+      color: 'border-slate-200',
       btnColor: 'border-slate-800 text-slate-800 hover:bg-slate-800 hover:text-white',
       features: ['13 Sesiones a Domicilio', 'Evaluación Kinesiológica Completa', 'Tratamiento Intensivo', 'Seguimiento 24/7 vía WhatsApp', 'Evaluación Nutricional', 'Material de Apoyo Digital', 'Informe Kinesiológico Final Detallado']
     }
+  ];
+
+  const testimonials = [
+    { text: 'Buscaba algo que no solo me diera una dieta, sino que entendiera mi relación con la comida. El equipo de nutrición ha sido mi mejor aliado este año.', name: 'Ricardo P.', role: 'PACIENTE DE NUTRICIÓN', stars: 5 },
+    { text: 'Después de meses de ansiedad, encontré en mi psicóloga de +Life un espacio seguro y profesional. La asignación guiada fue increíblemente acertada.', name: 'Elena S.', role: 'PACIENTE PSICOLOGÍA', stars: 5 },
+    { text: 'Siempre nos costó encontrar la especialista adecuada para su terapia de fonoaudiología y ha sido un alivio para toda la familia.', name: 'Javier M.', role: 'FAMILIAR DE PACIENTE', stars: 5 },
+    { text: 'La atención domiciliaria de kinesiología fue increíble. Puntualidad, profesionalismo y sobre todo mucha empatía durante todo mi proceso de rehabilitación.', name: 'Carolina V.', role: 'PACIENTE KINESIOLOGÍA', stars: 5 },
+    { text: 'Recomiendo a cualquiera que necesite atención de salud en casa. El sistema de asignación es muy eficiente y los profesionales son de primer nivel.', name: 'Miguel A.', role: 'PACIENTE GENERAL', stars: 5 },
   ];
 
   const handleShowPlans = () => {
@@ -103,349 +137,601 @@ const MainHome: React.FC = () => {
     setContactData({ name: '', phone: '', email: '', message: '' });
   };
 
+  const handleAssignSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const need = selectedNeed || 'Consulta General';
+    const message = `Hola Clínica Mas Life! Quiero que me asignen un profesional.\n\nÁrea: ${need}\nNombre: ${assignFormData.name}\nContacto: ${assignFormData.contact}\nSíntomas: ${assignFormData.symptoms}`;
+    window.open(`https://wa.me/56965329974?text=${encodeURIComponent(message)}`, '_blank');
+    setAssignFormData({ name: '', contact: '', symptoms: '' });
+  };
+
+  const scrollToSection = (id: string) => {
+    setMobileMenuOpen(false);
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const needOptions = [
+    { label: 'Salud Mental y Emocional', icon: 'psychology', value: 'Salud Mental y Emocional' },
+    { label: 'Recuperación Física', icon: 'fitness_center', value: 'Recuperación Física' },
+    { label: 'Hábitos y Nutrición', icon: 'restaurant', value: 'Hábitos y Nutrición' },
+    { label: 'Consulta General', icon: 'local_hospital', value: 'Consulta General' },
+  ];
+
   return (
-    <div className="w-full h-full overflow-y-auto bg-white font-sans scroll-smooth custom-scrollbar relative">
+    <div id="main-home-scroll" className="w-full h-full overflow-y-auto bg-white font-sans scroll-smooth relative">
 
-      {/* HERO SECTION */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 py-20 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          {bgImages.map((img, idx) => (
-            <div key={idx} className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === bgIndex ? 'opacity-100' : 'opacity-0'}`}>
-              <img src={img} className="w-full h-full object-cover" alt="Background Gallery" />
+      {/* ═══════════════════ NAVBAR ═══════════════════ */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-100' : 'bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between h-16 sm:h-20">
+          {/* Logo */}
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => scrollToSection('hero')}>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20">
+              <span className="material-icons-round text-white text-base sm:text-lg">favorite</span>
             </div>
-          ))}
-          <div className="absolute inset-0 bg-[#0f172a]/75 backdrop-blur-[2px] bg-gradient-to-b from-[#0f172a]/90 via-[#1e293b]/70 to-white/5"></div>
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto flex flex-col items-center text-center space-y-10 px-4">
-          <div className="bg-white/10 backdrop-blur-2xl text-white px-8 py-3 rounded-full border border-white/20 text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3 animate-in slide-in-from-top-4 duration-1000">
-            <span className="material-icons-round text-[#ff6d00] text-lg">verified_user</span>
-            Servicios domiciliarios de alto estándar
+            <span className={`text-xl sm:text-2xl font-extrabold tracking-tight transition-colors ${scrollY > 50 ? 'text-slate-900' : 'text-slate-900'}`}>
+              Mas<span className="text-blue-600">life</span>
+            </span>
           </div>
 
-          <h1 className="text-6xl md:text-9xl font-black text-white leading-[0.95] tracking-tighter max-w-6xl animate-in zoom-in duration-1000">
-            Profesionales con <br className="hidden md:block"/> 
-            Sello <span className="text-[#ff6d00] drop-shadow-[0_0_30px_rgba(255,109,0,0.4)]">+LIFE</span>
-          </h1>
-          
-          <p className="text-xl md:text-4xl text-slate-100 font-black max-w-4xl leading-snug animate-in fade-in duration-1000 delay-300 uppercase tracking-widest italic opacity-90">
-            Mas empatía • Mas personalizado • Mas efectivo
-          </p>
-          
-          <div className="flex flex-wrap justify-center gap-6 pt-10 animate-in slide-in-from-bottom-6 duration-1000 delay-500">
-            <button 
-              onClick={handleShowPlans} 
-              className="bg-[#ff6d00] text-white px-14 py-6 rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-[0_25px_60px_-15px_rgba(255,109,0,0.7)] hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
-            >
-              Ver mas planes
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-10">
+            <button onClick={() => scrollToSection('como-funciona')} className={`text-sm font-semibold transition-colors ${scrollY > 50 ? 'text-slate-600 hover:text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}>
+              Cómo funciona
             </button>
-            <button 
-              onClick={() => navigate('/patient/results')} 
-              className="bg-white/10 backdrop-blur-2xl text-white border-2 border-white/40 px-14 py-6 rounded-full font-black text-xs uppercase tracking-[0.2em] hover:bg-white hover:text-slate-900 transition-all active:scale-95 flex items-center gap-4"
-            >
-              <span className="material-icons-round text-base">search</span>
-              buscar otros profesionales
+            <button onClick={() => scrollToSection('especialidades')} className={`text-sm font-semibold transition-colors ${scrollY > 50 ? 'text-slate-600 hover:text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}>
+              Profesionales
             </button>
+            <button onClick={handleShowPlans} className={`text-sm font-semibold transition-colors ${scrollY > 50 ? 'text-slate-600 hover:text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}>
+              Planes
+            </button>
+            <button onClick={() => navigate('/pro/login')} className="bg-blue-600 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30">
+              Portal Profesional
+            </button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-colors">
+            <span className="material-icons-round text-slate-700">{mobileMenuOpen ? 'close' : 'menu'}</span>
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-t border-slate-100 shadow-xl animate-in slide-in-from-top-2 duration-200">
+            <div className="px-6 py-4 space-y-1">
+              <button onClick={() => scrollToSection('como-funciona')} className="w-full text-left py-3 text-sm font-semibold text-slate-700 hover:text-blue-600">Cómo funciona</button>
+              <button onClick={() => scrollToSection('especialidades')} className="w-full text-left py-3 text-sm font-semibold text-slate-700 hover:text-blue-600">Profesionales</button>
+              <button onClick={() => { handleShowPlans(); setMobileMenuOpen(false); }} className="w-full text-left py-3 text-sm font-semibold text-slate-700 hover:text-blue-600">Planes</button>
+              <button onClick={() => { navigate('/pro/login'); setMobileMenuOpen(false); }} className="w-full mt-2 bg-blue-600 text-white py-3 rounded-xl text-sm font-bold text-center">Portal Profesional</button>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* ═══════════════════ HERO SECTION ═══════════════════ */}
+      <section ref={heroRef} id="hero" className="relative pt-28 sm:pt-32 pb-16 sm:pb-24 px-5 sm:px-8 bg-gradient-to-b from-slate-50/80 via-white to-white overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-blue-50 rounded-full blur-3xl opacity-50 -translate-y-1/4 translate-x-1/4"></div>
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-50 rounded-full blur-3xl opacity-40 translate-y-1/4 -translate-x-1/4"></div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+            {/* Left: Text + Need Selector */}
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
+                <span className="material-icons-round text-sm">verified</span>
+                Tu salud nos importa
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
+                Recupera tu salud<br />
+                Con Profesionales<br />
+                Mas cercanos &<br />
+                <span className="text-blue-600">empaticos.</span>
+              </h1>
+
+              {/* Need Selector Card */}
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl shadow-slate-200/50 max-w-lg">
+                <p className="text-sm font-bold text-slate-500 mb-5">Para comenzar, ¿cuál es tu prioridad hoy?</p>
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  {needOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setSelectedNeed(opt.value)}
+                      className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl text-left text-xs sm:text-sm font-semibold border-2 transition-all ${
+                        selectedNeed === opt.value
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-slate-100 bg-slate-50/50 text-slate-600 hover:border-slate-200'
+                      }`}
+                    >
+                      <span className={`material-icons-round text-lg ${selectedNeed === opt.value ? 'text-blue-500' : 'text-slate-400'}`}>{opt.icon}</span>
+                      <span className="leading-tight">{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => {
+                    if (selectedNeed) {
+                      setFormData({ ...formData, condition: selectedNeed });
+                      setIsGeneralFormOpen(true);
+                    } else {
+                      setIsGeneralFormOpen(true);
+                    }
+                  }}
+                  className="w-full bg-blue-600 text-white py-3.5 rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
+                >
+                  Siguiente paso
+                  <span className="material-icons-round text-base">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Hero Image + Badge */}
+            <div className="relative hidden lg:block">
+              <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-300/30 aspect-[4/5] max-h-[580px]">
+                <img
+                  src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800"
+                  className="w-full h-full object-cover"
+                  alt="Profesionales de salud"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
+              </div>
+              {/* Floating badge */}
+              <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl px-5 py-4 shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center gap-3 max-w-[280px]">
+                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="material-icons-round text-blue-600 text-xl">verified_user</span>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900 leading-tight">Profesionales con sello +Life</p>
+                  <p className="text-xs text-slate-500 font-medium">verificados & certificados</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* SECCIÓN ¿CÓMO LO HACEMOS? */}
-      <section className="px-6 py-40 md:px-24 bg-white relative">
+      {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
+      <section id="como-funciona" className="px-5 sm:px-8 py-20 sm:py-28 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-28 space-y-6">
-            <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-none">¿Cómo lo hacemos?</h2>
-            <p className="text-slate-500 font-bold text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed italic opacity-80">Un camino diseñado para tu bienestar, sin fricciones.</p>
+          <div className="text-center mb-4">
+            <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-3">PROCESO SIMPLE</p>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">¿CÓMO FUNCIONA?</h2>
+            <p className="text-slate-500 font-medium text-base sm:text-lg max-w-2xl mx-auto mt-4 leading-relaxed">
+              Contamos con distintas modalidades para que puedas recibir atención desde la comodidad de tu hogar o en tu ciudad.
+            </p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mt-2">MODALIDAD DOMICILIARIA · ONLINE · PRESENCIAL</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-14">
             {[
-              { id: '1', title: 'Solicitud de Atención', desc: 'Recibimos tu solicitud, verificamos cobertura en tu ciudad y analizamos tus requerimientos clínicos.', icon: 'assignment_turned_in', color: 'from-teal-500 to-emerald-500' },
-              { id: '2', title: 'Agendamiento Flexible', desc: 'Coordinamos la sesión en base a tu disponibilidad horaria y nuestra red de especialistas certificados.', icon: 'event_available', color: 'from-orange-500 to-amber-500' },
-              { id: '3', title: 'Visita y Seguimiento', desc: 'El profesional asignado realiza la visita con equipamiento clínico y genera un plan de evolución continuo.', icon: 'medical_information', color: 'from-indigo-500 to-blue-500' }
-            ].map((step) => (
-              <div key={step.id} className="bg-slate-50/50 rounded-[4rem] p-12 border border-slate-100 relative group hover:bg-white hover:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] transition-all duration-700 flex flex-col items-start overflow-hidden">
-                <span className={`absolute -top-10 -right-4 text-[12rem] font-black opacity-[0.03] group-hover:opacity-10 transition-opacity bg-gradient-to-br ${step.color} bg-clip-text text-transparent`}>{step.id}</span>
-                <div className={`w-20 h-20 bg-gradient-to-br ${step.color} text-white rounded-[1.8rem] flex items-center justify-center mb-10 shadow-2xl shadow-slate-200 group-hover:rotate-12 transition-transform`}>
-                  <span className="material-icons-round text-4xl">{step.icon}</span>
+              { icon: 'assignment', title: 'RELLENAS FORMULARIO', desc: 'Rellenas el formulario con tu información y requerimiento.', color: 'bg-violet-100 text-violet-600' },
+              { icon: 'groups', title: 'ASIGNACIÓN PROFESIONAL', desc: 'Un agente revisa tu información y te asigna un profesional apto a tus requerimientos.', color: 'bg-blue-100 text-blue-600' },
+              { icon: 'event_available', title: 'CITA PROFESIONAL', desc: 'El profesional asignado te contacta y coordina con una primera cita.', color: 'bg-rose-100 text-rose-600' }
+            ].map((step, i) => (
+              <div key={i} className="bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg transition-all duration-300 text-center group">
+                <div className={`w-14 h-14 sm:w-16 sm:h-16 ${step.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
+                  <span className="material-icons-round text-2xl sm:text-3xl">{step.icon}</span>
                 </div>
-                <h4 className="text-2xl font-black text-slate-900 mb-6 uppercase tracking-tight leading-tight">{step.title}</h4>
-                <p className="text-lg text-slate-600 leading-relaxed font-semibold">{step.desc}</p>
+                <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mb-3 tracking-tight">{step.title}</h4>
+                <p className="text-sm text-slate-500 font-medium leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* PLANES KINESIOLOGICOS - CONDICIONAL */}
+      {/* ═══════════════════ ÁREAS PROFESIONALES ═══════════════════ */}
+      <section id="especialidades" className="px-5 sm:px-8 py-20 sm:py-28 bg-slate-50/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
+            <div>
+              <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">NUESTRO EQUIPO</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Áreas profesionales</h2>
+            </div>
+            <div className="flex bg-white rounded-full p-1 border border-slate-200 shadow-sm">
+              <button
+                onClick={() => setActiveSpecFilter('destacados')}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${activeSpecFilter === 'destacados' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Destacados
+              </button>
+              <button
+                onClick={() => setActiveSpecFilter('todos')}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${activeSpecFilter === 'todos' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Todos
+              </button>
+            </div>
+          </div>
+
+          {/* Specialty Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {(activeSpecFilter === 'destacados' ? specialtyCards : specialtyCards.concat([
+              { name: 'Terapia Ocupacional', desc: 'Rehabilitación funcional para actividades diarias.', img: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?q=80&w=600', cta: 'Buscar Profesional' },
+              { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', cta: 'Buscar Profesional' },
+              { name: 'TENS / Electroterapia', desc: 'Terapia de estimulación eléctrica para dolor.', img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600', cta: 'Buscar Profesional' },
+            ])).map((card, i) => (
+              <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer" onClick={() => navigate('/patient/results')}>
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img src={card.img} alt={card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                </div>
+                <div className="p-4 sm:p-5">
+                  <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mb-1 tracking-tight">{card.name}</h4>
+                  <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed mb-3 line-clamp-2">{card.desc}</p>
+                  <button className="flex items-center gap-1.5 text-blue-600 text-xs font-bold hover:gap-2.5 transition-all">
+                    {card.cta}
+                    <span className="material-icons-round text-sm">arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* All Services Grid (compact) */}
+          {activeSpecFilter === 'todos' && (
+            <div className="mt-10 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
+              {services.map((s, i) => (
+                <div key={i} className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center text-center cursor-pointer group" onClick={() => navigate('/patient/results')}>
+                  <div className={`${s.bg} w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform`}>
+                    <span className={`material-icons-round text-2xl bg-gradient-to-br ${s.color} bg-clip-text text-transparent`}>{s.icon}</span>
+                  </div>
+                  <h4 className="text-[10px] sm:text-xs font-bold text-slate-700 leading-tight">{s.name}</h4>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ═══════════════════ ASIGNACIÓN PROFESIONAL ═══════════════════ */}
+      <section className="px-5 sm:px-8 py-20 sm:py-28 bg-white">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-3xl sm:rounded-[2rem] border border-slate-200 p-8 sm:p-12 shadow-xl shadow-slate-200/30 relative overflow-hidden">
+            {/* Decorative */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full blur-2xl opacity-60 translate-x-1/3 -translate-y-1/3"></div>
+
+            <div className="text-center mb-8 relative z-10">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">¿Te asignamos un profesional?</h2>
+              <p className="text-sm text-slate-500 font-medium max-w-md mx-auto">Deja tus datos y un curador clínico analizará tu consulta guiada para asignarte al profesional ideal en menos de 24 horas.</p>
+            </div>
+
+            <form onSubmit={handleAssignSubmit} className="space-y-4 relative z-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Tu nombre</label>
+                  <input
+                    required
+                    value={assignFormData.name}
+                    onChange={e => setAssignFormData({ ...assignFormData, name: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="Ej. Sofía Martínez"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Tu contacto</label>
+                  <input
+                    required
+                    value={assignFormData.contact}
+                    onChange={e => setAssignFormData({ ...assignFormData, contact: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="hola@ejemplo.com"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Comparte tus inquietudes o síntomas actuales</label>
+                <textarea
+                  required
+                  value={assignFormData.symptoms}
+                  onChange={e => setAssignFormData({ ...assignFormData, symptoms: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24 resize-none transition-all"
+                  placeholder="¿Qué te gustaría cambiar o controlar en tu salud?"
+                />
+              </div>
+              <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
+                Confirmar Asignación Profesional
+              </button>
+              <p className="text-center text-[11px] text-slate-400 font-medium">Atención: nuestros agentes y tu expediente médico base para la mejor recomendación posible.</p>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ PLANES KINESIOLÓGICOS (CONDICIONAL) ═══════════════════ */}
       {showKinePlans && (
-        <section id="kine-plans" className="px-6 py-40 md:px-24 bg-[#f8fafc] animate-in slide-in-from-bottom-10 duration-1000">
-             <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-28 space-y-6">
-                   <div className="bg-orange-600 text-white px-8 py-3 rounded-full inline-block text-xs font-black uppercase tracking-[0.3em] shadow-xl shadow-orange-600/20 mb-4">MÁXIMA EFECTIVIDAD</div>
-                   <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-none">Planes Domiciliarios</h2>
-                   <p className="text-slate-500 font-bold text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed italic">Rehabilitación profesional en casa, reembolsable por seguros e Isapre.</p>
-                </div>
+        <section id="kine-plans" className="px-5 sm:px-8 py-20 sm:py-28 bg-slate-50 animate-in slide-in-from-bottom-8 duration-700">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider mb-4 shadow-lg shadow-blue-600/20">
+                <span className="material-icons-round text-sm">star</span>
+                Máxima Efectividad
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">Planes Domiciliarios</h2>
+              <p className="text-slate-500 font-medium text-base sm:text-lg max-w-2xl mx-auto mt-4">Rehabilitación profesional en casa, reembolsable por seguros e Isapre.</p>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-stretch">
-                   {kinePlans.map((plan, i) => (
-                     <div key={i} className={`bg-white rounded-[4rem] p-14 border-2 ${plan.color} flex flex-col h-full relative group hover:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.12)] transition-all duration-700`}>
-                        {plan.badge && (
-                          <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-10 py-3 rounded-full text-xs font-black uppercase tracking-[0.3em] shadow-2xl whitespace-nowrap">
-                            {plan.badge}
-                          </div>
-                        )}
-                        <div className="mb-14">
-                          <h3 className="text-2xl font-black text-slate-900 mb-8 tracking-tight">{plan.name}</h3>
-                          <div className="flex items-baseline gap-3 mb-6">
-                             <span className="text-6xl font-black text-slate-900 tracking-tighter">{plan.price}</span>
-                             <span className="text-sm font-black text-slate-500 uppercase tracking-widest">CLP</span>
-                          </div>
-                          <p className="text-lg text-slate-500 font-semibold leading-relaxed">{plan.desc}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
+              {kinePlans.map((plan, i) => (
+                <div key={i} className={`bg-white rounded-3xl p-8 sm:p-10 border-2 ${plan.color} flex flex-col h-full relative group hover:shadow-xl transition-all duration-300`}>
+                  {plan.badge && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg whitespace-nowrap">
+                      {plan.badge}
+                    </div>
+                  )}
+                  <div className="mb-8">
+                    <h3 className="text-lg font-extrabold text-slate-900 mb-4 tracking-tight">{plan.name}</h3>
+                    <div className="flex items-baseline gap-2 mb-3">
+                      <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">{plan.price}</span>
+                      <span className="text-xs font-bold text-slate-400 uppercase">CLP</span>
+                    </div>
+                    <p className="text-sm text-slate-500 font-medium">{plan.desc}</p>
+                  </div>
+
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                        <div className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                          <span className="material-icons-round text-xs">check</span>
                         </div>
+                        {feat}
+                      </li>
+                    ))}
+                  </ul>
 
-                        <ul className="space-y-6 mb-16 flex-1">
-                           {plan.features.map((feat, idx) => (
-                             <li key={idx} className="flex items-start gap-4 text-base font-bold text-slate-600 leading-relaxed">
-                                <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center shrink-0 mt-0.5">
-                                  <span className="material-icons-round text-sm">check</span>
-                                </div>
-                                {feat}
-                             </li>
-                           ))}
-                        </ul>
-
-                        <button 
-                          onClick={() => setShowPlanForm({ isOpen: true, planName: plan.name })}
-                          className={`w-full py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] border-2 transition-all active:scale-95 ${plan.btnColor} shadow-xl`}
-                        >
-                          {plan.badge ? 'Comenzar Rehabilitación' : `Solicitar ${plan.name.split(' ')[1]}`}
-                        </button>
-                     </div>
-                   ))}
+                  <button
+                    onClick={() => setShowPlanForm({ isOpen: true, planName: plan.name })}
+                    className={`w-full py-4 rounded-2xl font-bold text-sm border-2 transition-all active:scale-95 ${plan.btnColor}`}
+                  >
+                    {plan.badge ? 'Comenzar Rehabilitación' : `Solicitar Plan`}
+                  </button>
                 </div>
-             </div>
+              ))}
+            </div>
+          </div>
         </section>
       )}
 
-      {/* ESPECIALIDADES MEJORADAS */}
-      <section className="px-6 py-40 md:px-24 bg-white">
-        <div className="max-w-7xl mx-auto space-y-28">
-          <div className="text-center space-y-6">
-            <h2 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-none">Especialidades +Life</h2>
-            <p className="text-slate-500 font-bold text-xl md:text-2xl max-w-3xl mx-auto opacity-80 italic">Profesionales certificados bajo estándares de calidad internacional.</p>
+      {/* ═══════════════════ TESTIMONIOS ═══════════════════ */}
+      <section className="px-5 sm:px-8 py-20 sm:py-28 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">TESTIMONIOS REALES</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Lo que dicen nuestros pacientes</h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-8">
-            {services.map((s, i) => (
-              <div key={i} className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] hover:-translate-y-4 transition-all flex flex-col items-center text-center group cursor-pointer relative overflow-hidden">
-                <div className={`absolute inset-0 bg-gradient-to-br ${s.color} opacity-0 group-hover:opacity-[0.03] transition-opacity`}></div>
-                <div className={`${s.bg} w-20 h-20 rounded-[1.8rem] flex items-center justify-center mb-8 group-hover:rotate-[15deg] transition-transform duration-500 shadow-inner`}>
-                  <span className={`material-icons-round text-4xl bg-gradient-to-br ${s.color} bg-clip-text text-transparent`}>{s.icon}</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.slice(0, 3).map((t, i) => (
+              <div key={i} className="bg-slate-50 rounded-2xl sm:rounded-3xl p-8 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all">
+                <div className="flex gap-1 text-amber-400 mb-5">
+                  {Array.from({ length: t.stars }).map((_, s) => (
+                    <span key={s} className="material-icons-round text-sm">star</span>
+                  ))}
                 </div>
-                <h4 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] leading-tight group-hover:text-slate-900">{s.name}</h4>
+                <p className="text-sm sm:text-base text-slate-700 font-medium leading-relaxed mb-6 italic">"{t.text}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 font-bold text-sm">{t.name.charAt(0)}</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{t.name}</p>
+                    <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">{t.role}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* TESTIMONIOS MARQUEE */}
-      <section className="bg-slate-950 py-48 overflow-hidden relative">
-         <div className="text-center mb-28 relative z-10 px-6 space-y-4">
-            <h2 className="text-4xl md:text-6xl font-black text-white tracking-tighter leading-[0.9]">
-              Testimonios Reales <br/>
-              <span className="text-[#ff6d00] drop-shadow-[0_0_20px_rgba(255,109,0,0.3)]">Resultados Efectivos</span>
-            </h2>
-         </div>
-         
-         <div className="flex gap-10 px-10 animate-marquee whitespace-nowrap">
-            {[1,2,3,4,5,1,2,3,4,5].map((_, i) => (
-              <div key={i} className="inline-block w-[450px] bg-white/5 backdrop-blur-3xl border border-white/10 p-16 rounded-[4rem] whitespace-normal flex-shrink-0 group hover:border-white/30 transition-colors">
-                 <div className="flex gap-2 text-[#ff6d00] mb-10">
-                    {[1,2,3,4,5].map(star => <span key={star} className="material-icons-round text-base">star</span>)}
-                 </div>
-                 <p className="text-slate-100 text-xl font-medium leading-relaxed italic mb-12 opacity-90">“Excelente atención, el profesional fue muy empático y puntual. Mi proceso de recuperación fue mucho más rápido de lo esperado.”</p>
-                 <div className="space-y-2">
-                    <p className="text-[#ff6d00] font-black text-sm uppercase tracking-[0.3em]">Ignacia Valenzuela</p>
-                    <p className="text-slate-500 text-xs font-black uppercase tracking-[0.2em]">Rehabilitación de Rodilla</p>
-                 </div>
-              </div>
-            ))}
-         </div>
-         <style>{`
-           @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-           .animate-marquee { animation: marquee 50s linear infinite; }
-         `}</style>
+      {/* ═══════════════════ CTA FINAL ═══════════════════ */}
+      <section className="px-5 sm:px-8 py-20 bg-blue-600 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-5">¿Listo para sentirte mejor?</h2>
+          <p className="text-blue-100 text-base sm:text-lg font-medium max-w-2xl mx-auto mb-10">Nuestros profesionales certificados están listos para atenderte. Agenda tu primera consulta hoy.</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <button
+              onClick={() => setIsGeneralFormOpen(true)}
+              className="bg-white text-blue-700 px-8 py-4 rounded-2xl font-bold text-sm hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/20"
+            >
+              Agendar Atención
+            </button>
+            <button
+              onClick={() => navigate('/patient/results')}
+              className="bg-white/10 backdrop-blur text-white border-2 border-white/30 px-8 py-4 rounded-2xl font-bold text-sm hover:bg-white/20 transition-all"
+            >
+              Buscar Profesional
+            </button>
+          </div>
+        </div>
       </section>
 
-      {/* FOOTER OFICIAL */}
-      <footer className="bg-white border-t border-slate-100 pt-48 pb-16 px-6 md:px-24">
-         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-24 mb-32">
-            <div className="space-y-12">
-               <div className="flex items-center gap-4">
-                  <div className="bg-teal-500 w-12 h-12 rounded-[1.2rem] flex items-center justify-center shadow-2xl shadow-teal-500/30">
-                    <span className="material-icons-round text-white text-2xl">medical_services</span>
-                  </div>
-                  <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">Clínica Mas Life🧡</span>
-               </div>
-               <p className="text-slate-500 font-semibold text-lg leading-relaxed max-w-xs opacity-80">
-                  Revolucionando el cuidado domiciliario con tecnología avanzada y calidez humana.
-               </p>
-               <div className="flex gap-5">
-                  {['instagram', 'facebook', 'linkedin'].map(social => (
-                    <div key={social} className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-500 hover:text-teal-500 hover:bg-teal-50 transition-all cursor-pointer shadow-sm">
-                      <span className="material-icons-round text-xl">public</span>
-                    </div>
-                  ))}
-               </div>
+      {/* ═══════════════════ FOOTER ═══════════════════ */}
+      <footer className="bg-slate-900 text-white pt-16 sm:pt-20 pb-8 px-5 sm:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 sm:gap-12 mb-14">
+            {/* Brand */}
+            <div className="col-span-2 md:col-span-1 space-y-5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center">
+                  <span className="material-icons-round text-white text-base">favorite</span>
+                </div>
+                <span className="text-xl font-extrabold tracking-tight">Mas<span className="text-blue-400">life</span></span>
+              </div>
+              <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs">
+                Rediseñando la experiencia de salud a través de la calidez clínica y el compromiso humano.
+              </p>
             </div>
 
+            {/* Servicios */}
             <div>
-               <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.4em] mb-12 opacity-50">Navegación</h4>
-               <ul className="space-y-6 text-slate-500 font-black text-xs uppercase tracking-[0.2em]">
-                  <li className="hover:text-teal-600 cursor-pointer transition-colors" onClick={() => navigate('/patient/results')}>buscar otros profesionales</li>
-                  <li className="hover:text-teal-600 cursor-pointer transition-colors">Convenios ISAPRE</li>
-                  <li className="hover:text-teal-600 cursor-pointer transition-colors" onClick={() => navigate('/pro/login')}>Portal Profesional</li>
-               </ul>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-5">Servicios</h4>
+              <ul className="space-y-3">
+                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={() => setIsGeneralFormOpen(true)}>Consulta Guiada</li>
+                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={() => navigate('/patient/results')}>Especialistas</li>
+                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={handleShowPlans}>Planes</li>
+              </ul>
             </div>
 
-            <div className="md:col-span-2">
-               <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.4em] mb-12 opacity-50">Canales Directos</h4>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                  <div className="bg-slate-50/50 p-10 rounded-[3rem] border border-slate-100 flex flex-col gap-6 hover:shadow-xl transition-all">
-                     <span className="material-icons-round text-teal-500 text-4xl">chat</span>
-                     <div>
-                        <p className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-2">WhatsApp Oficial</p>
-                        <p className="text-lg font-black text-slate-900">+56 9 6532 9974</p>
-                     </div>
-                  </div>
-                  <div className="bg-slate-50/50 p-10 rounded-[3rem] border border-slate-100 flex flex-col gap-6 hover:shadow-xl transition-all">
-                     <span className="material-icons-round text-orange-500 text-4xl">alternate_email</span>
-                     <div>
-                        <p className="text-xs font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Email Clínico</p>
-                        <p className="text-lg font-black text-slate-900">clinicamaslife@gmail.com</p>
-                     </div>
-                  </div>
-               </div>
+            {/* Compañía */}
+            <div>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-5">Compañía</h4>
+              <ul className="space-y-3">
+                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium">Método Life</li>
+                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={() => setIsContactFormOpen(true)}>Nosotros</li>
+                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={() => navigate('/pro/login')}>Portal Profesional</li>
+              </ul>
             </div>
-         </div>
-         <div className="text-center pt-16 border-t border-slate-100">
-            <p className="text-xs font-black text-slate-300 uppercase tracking-[0.6em]">© 2024 CLÍNICA MAS LIFE GLOBAL • CHILE</p>
-         </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-5">Legal</h4>
+              <ul className="space-y-3">
+                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium">Privacidad</li>
+                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium">Términos</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-xs text-slate-500 font-medium">© 2026 Clínica Mas Life · Santiago, Chile</p>
+            <div className="flex gap-3">
+              <a href="https://wa.me/56965329974" target="_blank" rel="noreferrer" className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors">
+                <svg className="w-4 h-4 fill-current text-slate-400" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/></svg>
+              </a>
+              <div className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center cursor-pointer transition-colors">
+                <span className="material-icons-round text-slate-400 text-base">public</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </footer>
 
-      {/* WHATSAPP FLOTANTE */}
-      <a 
-        href="https://wa.me/56965329974?text=Hola! Me gustaría hablar con un ejecutivo de Clínica Mas Life." 
-        target="_blank" 
+      {/* ═══════════════════ WHATSAPP FLOTANTE ═══════════════════ */}
+      <a
+        href="https://wa.me/56965329974?text=Hola! Me gustaría que me asignen un profesional de Clínica Mas Life o hacer una consulta."
+        target="_blank"
         rel="noreferrer"
-        className="fixed bottom-10 right-10 z-[100] bg-[#25D366] text-white w-20 h-20 rounded-full shadow-[0_25px_60px_-10px_rgba(37,211,102,0.5)] hover:scale-110 active:scale-95 transition-all flex items-center justify-center group"
+        className="fixed bottom-6 right-6 z-[100] group"
       >
-        <div className="absolute inset-0 bg-[#25D366] animate-ping opacity-20 rounded-full"></div>
-        <svg viewBox="0 0 24 24" className="w-10 h-10 fill-current" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/>
-          <path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/>
-        </svg>
+        {/* Pulse animation */}
+        <div className="absolute inset-0 bg-[#25D366] rounded-full animate-ping opacity-20"></div>
+        {/* Button */}
+        <div className="relative bg-[#25D366] text-white w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-xl shadow-green-600/30 hover:shadow-green-600/50 hover:scale-110 active:scale-95 transition-all flex items-center justify-center">
+          <svg viewBox="0 0 24 24" className="w-7 h-7 sm:w-8 sm:h-8 fill-current" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/>
+            <path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/>
+          </svg>
+        </div>
+        {/* Tooltip */}
+        <div className="absolute bottom-full right-0 mb-3 bg-white text-slate-800 px-4 py-2 rounded-xl shadow-xl border border-slate-100 text-xs font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+          Escríbenos por WhatsApp
+          <div className="absolute top-full right-6 w-2 h-2 bg-white border-r border-b border-slate-100 transform rotate-45 -translate-y-1"></div>
+        </div>
       </a>
 
-      {/* MODAL FORMULARIO AGENDAR */}
+      {/* ═══════════════════ MODAL: FORMULARIO AGENDAR ═══════════════════ */}
       {(showPlanForm.isOpen || isGeneralFormOpen) && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-6">
-           <div className="bg-white w-full max-w-xl rounded-[4rem] p-16 shadow-2xl animate-in zoom-in-95 duration-500">
-              <div className="flex justify-between items-center mb-12">
-                 <div className="flex items-center gap-4">
-                   <div className="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center">
-                     <span className="material-icons-round text-[#ff6d00] text-2xl">calendar_month</span>
-                   </div>
-                   <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                      {showPlanForm.isOpen ? `Solicitud ${showPlanForm.planName}` : 'Agendar Atención'}
-                   </h3>
-                 </div>
-                 <button 
-                   onClick={() => { setShowPlanForm({ isOpen: false, planName: '' }); setIsGeneralFormOpen(false); }}
-                   className="w-14 h-14 rounded-2xl hover:bg-slate-100 flex items-center justify-center transition-all"
-                 >
-                    <span className="material-icons-round">close</span>
-                 </button>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 sm:p-6" onClick={(e) => { if (e.target === e.currentTarget) { setShowPlanForm({ isOpen: false, planName: '' }); setIsGeneralFormOpen(false); } }}>
+          <div className="bg-white w-full max-w-lg rounded-3xl p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
+                  <span className="material-icons-round text-blue-600 text-xl">calendar_month</span>
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                    {showPlanForm.isOpen ? `Solicitud ${showPlanForm.planName}` : 'Agendar Atención'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Completa tus datos para continuar</p>
+                </div>
               </div>
-              
-              <form onSubmit={(e) => handleFormSubmit(e, showPlanForm.isOpen ? showPlanForm.planName : 'Consulta General')} className="space-y-8">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Completo</label>
-                       <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl py-5 px-6 font-bold text-sm" placeholder="Ej: Juan Pérez" />
-                    </div>
-                    <div className="space-y-3">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp</label>
-                       <input required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl py-5 px-6 font-bold text-sm" placeholder="+56 9..." />
-                    </div>
-                    <div className="md:col-span-2 space-y-3">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Email</label>
-                       <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl py-5 px-6 font-bold text-sm" placeholder="correo@ejemplo.com" />
-                    </div>
-                    <div className="md:col-span-2 space-y-3">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Condición o Motivo</label>
-                       <textarea required value={formData.condition} onChange={e => setFormData({...formData, condition: e.target.value})} className="w-full bg-slate-50 border-none rounded-3xl py-6 px-8 font-medium text-sm h-40 resize-none" placeholder="Breve descripción de tu situación..." />
-                    </div>
-                 </div>
-                 
-                 <button type="submit" className="w-full py-7 bg-orange-600 text-white rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-orange-600/30 hover:scale-[1.02] transition-all">
-                    VERIFICAR COBERTURA Y AGENDA
-                 </button>
-              </form>
-           </div>
+              <button
+                onClick={() => { setShowPlanForm({ isOpen: false, planName: '' }); setIsGeneralFormOpen(false); }}
+                className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-all flex-shrink-0"
+              >
+                <span className="material-icons-round text-slate-400">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={(e) => handleFormSubmit(e, showPlanForm.isOpen ? showPlanForm.planName : 'Consulta General')} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Nombre</label>
+                  <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Juan Pérez" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">WhatsApp</label>
+                  <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+56 9..." />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Email</label>
+                <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="correo@ejemplo.com" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Condición o Motivo</label>
+                <textarea required value={formData.condition} onChange={e => setFormData({ ...formData, condition: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Describe brevemente tu situación..." />
+              </div>
+              <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+                <span className="material-icons-round text-base">send</span>
+                Verificar Cobertura y Agenda
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* MODAL FORMULARIO CONTACTO */}
+      {/* ═══════════════════ MODAL: FORMULARIO CONTACTO ═══════════════════ */}
       {isContactFormOpen && (
-        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[300] flex items-center justify-center p-6">
-           <div className="bg-white w-full max-w-xl rounded-[4rem] p-16 shadow-2xl animate-in zoom-in-95 duration-500">
-              <div className="flex justify-between items-center mb-12">
-                 <div className="flex items-center gap-4">
-                   <div className="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center">
-                     <span className="material-icons-round text-indigo-600 text-2xl">mark_email_unread</span>
-                   </div>
-                   <div>
-                     <h3 className="text-3xl font-black text-slate-900 tracking-tight">Contáctenos</h3>
-                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Te llamamos a la brevedad</p>
-                   </div>
-                 </div>
-                 <button 
-                   onClick={() => setIsContactFormOpen(false)}
-                   className="w-14 h-14 rounded-2xl hover:bg-slate-100 flex items-center justify-center transition-all"
-                 >
-                    <span className="material-icons-round">close</span>
-                 </button>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4 sm:p-6" onClick={(e) => { if (e.target === e.currentTarget) setIsContactFormOpen(false); }}>
+          <div className="bg-white w-full max-w-lg rounded-3xl p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center">
+                  <span className="material-icons-round text-violet-600 text-xl">mark_email_unread</span>
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Contáctenos</h3>
+                  <p className="text-xs text-slate-500 font-medium">Te llamamos a la brevedad</p>
+                </div>
               </div>
-              
-              <form onSubmit={handleContactSubmit} className="space-y-8">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-3">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Completo</label>
-                       <input required value={contactData.name} onChange={e => setContactData({...contactData, name: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl py-5 px-6 font-bold text-sm" placeholder="Ej: María González" />
-                    </div>
-                    <div className="space-y-3">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp / Teléfono</label>
-                       <input required value={contactData.phone} onChange={e => setContactData({...contactData, phone: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl py-5 px-6 font-bold text-sm" placeholder="+56 9..." />
-                    </div>
-                    <div className="md:col-span-2 space-y-3">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Email</label>
-                       <input required type="email" value={contactData.email} onChange={e => setContactData({...contactData, email: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl py-5 px-6 font-bold text-sm" placeholder="correo@ejemplo.com" />
-                    </div>
-                    <div className="md:col-span-2 space-y-3">
-                       <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">¿En qué te podemos ayudar?</label>
-                       <textarea required value={contactData.message} onChange={e => setContactData({...contactData, message: e.target.value})} className="w-full bg-slate-50 border-none rounded-3xl py-6 px-8 font-medium text-sm h-40 resize-none" placeholder="Cuéntanos tu caso o consulta..." />
-                    </div>
-                 </div>
-                 
-                 <button type="submit" className="w-full py-7 bg-indigo-600 text-white rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl shadow-indigo-600/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
-                    <span className="material-icons-round text-base">send</span>
-                    ENVIAR SOLICITUD DE CONTACTO
-                 </button>
-              </form>
-           </div>
+              <button
+                onClick={() => setIsContactFormOpen(false)}
+                className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-all flex-shrink-0"
+              >
+                <span className="material-icons-round text-slate-400">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleContactSubmit} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Nombre</label>
+                  <input required value={contactData.name} onChange={e => setContactData({ ...contactData, name: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="María González" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">WhatsApp / Teléfono</label>
+                  <input required value={contactData.phone} onChange={e => setContactData({ ...contactData, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+56 9..." />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Email</label>
+                <input required type="email" value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="correo@ejemplo.com" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">¿En qué te podemos ayudar?</label>
+                <textarea required value={contactData.message} onChange={e => setContactData({ ...contactData, message: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Cuéntanos tu caso o consulta..." />
+              </div>
+              <button type="submit" className="w-full py-4 bg-violet-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center justify-center gap-2">
+                <span className="material-icons-round text-base">send</span>
+                Enviar Solicitud de Contacto
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>

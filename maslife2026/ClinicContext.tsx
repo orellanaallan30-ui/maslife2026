@@ -67,7 +67,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>(() => {
     const saved = localStorage.getItem('maslife_professionals');
     if (saved) return JSON.parse(saved);
-    
+
     return [{
       id: 'pro-rodrigo',
       slug: 'rodrigo-orellana',
@@ -203,7 +203,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           const appDateTime = new Date(`${app.date}T${app.time}`);
           const diffMs = appDateTime.getTime() - now.getTime();
           const diffMins = Math.floor(diffMs / 60000);
-          
+
           if (diffMins === 30) {
             addNotification(`Recordatorio: Cita en 30 minutos con ${app.patientName}`, 'system');
           }
