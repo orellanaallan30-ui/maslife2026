@@ -6,121 +6,221 @@ const PatientResults: React.FC = () => {
   const navigate = useNavigate();
   const { professionals } = useClinic();
   const [citySearch, setCitySearch] = useState('');
+  const [selectedArea, setSelectedArea] = useState('');
+  const [selectedModality, setSelectedModality] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const areas = [
+    { value: '', label: 'Todas las áreas' },
+    { value: 'Kinesiología', label: 'Kinesiología' },
+    { value: 'Psicología', label: 'Psicología' },
+    { value: 'Nutrición', label: 'Nutrición' },
+    { value: 'Fonoaudiología', label: 'Fonoaudiología' },
+    { value: 'Terapia Ocupacional', label: 'Terapia Ocupacional' },
+    { value: 'Podología', label: 'Podología' },
+    { value: 'Técnico en Enfermería', label: 'Téc. Enfermería (TENS)' },
+    { value: 'Masoterapia', label: 'Masoterapia' },
+  ];
+
+  const toggleModality = (mode: string) => {
+    setSelectedModality(prev =>
+      prev.includes(mode) ? prev.filter(m => m !== mode) : [...prev, mode]
+    );
+  };
 
   const visibleDoctors = professionals.filter(p => {
-    const isPublic = p.isPublic;
-    const matchesCity = !citySearch ||
-      (p.city && p.city.toLowerCase().includes(citySearch.toLowerCase().trim()));
-    return isPublic && matchesCity;
+    if (!p.isPublic) return false;
+    if (citySearch && !(p.city && p.city.toLowerCase().includes(citySearch.toLowerCase().trim()))) return false;
+    if (selectedArea && !p.specialty?.toLowerCase().includes(selectedArea.toLowerCase())) return false;
+    if (selectedModality.length > 0) {
+      const hasModality = selectedModality.some(m => {
+        if (m === 'Online') return p.modalities?.online;
+        if (m === 'Presencial') return p.modalities?.inPerson;
+        if (m === 'Domicilio') return p.modalities?.homeVisit;
+        return false;
+      });
+      if (!hasModality) return false;
+    }
+    return true;
   });
 
-  const clearCityFilter = () => setCitySearch('');
+  const clearFilters = () => {
+    setCitySearch('');
+    setSelectedArea('');
+    setSelectedModality([]);
+  };
+
+  const hasActiveFilters = citySearch || selectedArea || selectedModality.length > 0;
 
   return (
-    <div className="w-full bg-[#f8fafc] overflow-y-auto animate-in fade-in duration-700">
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8">
-          <aside className="lg:col-span-3 space-y-6">
-            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
-              <h3 className="font-black text-slate-800 text-xs uppercase tracking-[0.2em] mb-8">Filtros de Búsqueda</h3>
+    <div className="w-full bg-slate-50 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 80px)' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-              <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Especialistas Disponibles</h2>
+            <p className="text-sm font-medium text-slate-500">{visibleDoctors.length} profesionales encontrados</p>
+          </div>
+          {/* Mobile filter toggle */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-200 text-sm font-bold text-slate-700 shadow-sm"
+          >
+            <span className="material-icons-round text-base">tune</span>
+            Filtros
+            {hasActiveFilters && <span className="w-2 h-2 bg-blue-600 rounded-full"></span>}
+          </button>
+        </div>
+
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-5">
+
+          {/* ── Filtros ── */}
+          <aside className={`lg:col-span-3 space-y-4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Filtros de Búsqueda</h3>
+                {hasActiveFilters && (
+                  <button onClick={clearFilters} className="text-[10px] font-bold text-blue-600 uppercase tracking-wider hover:underline">
+                    Limpiar
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-5">
+                {/* Área */}
                 <div>
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Ubicación</label>
-                  <div className="relative group">
-                    <span className="material-icons-round absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 group-focus-within:text-primary transition-colors text-lg">location_on</span>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Área profesional</label>
+                  <select
+                    value={selectedArea}
+                    onChange={(e) => setSelectedArea(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    {areas.map(a => (
+                      <option key={a.value} value={a.value}>{a.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Ciudad */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ciudad</label>
+                  <div className="relative">
+                    <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">location_on</span>
                     <input
                       type="text"
                       value={citySearch}
                       onChange={(e) => setCitySearch(e.target.value)}
-                      placeholder="Ciudad..."
-                      className="w-full bg-slate-50 border-slate-100 rounded-2xl py-4 pl-12 pr-10 text-sm font-bold text-slate-700 placeholder:text-slate-400 focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all"
+                      placeholder="Buscar ciudad..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-9 text-sm font-medium text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     {citySearch && (
-                      <button onClick={clearCityFilter} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-rose-500">
+                      <button onClick={() => setCitySearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500">
                         <span className="material-icons-round text-sm">close</span>
                       </button>
                     )}
                   </div>
                 </div>
 
+                {/* Modalidad */}
                 <div>
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Modalidad</label>
-                  <div className="space-y-3">
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Modalidad</label>
+                  <div className="flex flex-wrap gap-2">
                     {['Online', 'Presencial', 'Domicilio'].map(mode => (
-                      <label key={mode} className="flex items-center gap-3 cursor-pointer group">
-                        <input type="checkbox" className="rounded-lg text-primary focus:ring-primary/20 border-slate-200 w-5 h-5" defaultChecked={mode === 'Online'} />
-                        <span className="text-sm font-bold text-slate-600 group-hover:text-primary transition-colors">{mode}</span>
-                      </label>
+                      <button
+                        key={mode}
+                        onClick={() => toggleModality(mode)}
+                        className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
+                          selectedModality.includes(mode)
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                        }`}
+                      >
+                        {mode}
+                      </button>
                     ))}
                   </div>
                 </div>
               </div>
             </div>
-
-            <div className="bg-primary rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-primary/20">
-              <div className="relative z-10">
-                <h4 className="font-black text-lg mb-2">¿Necesitas ayuda?</h4>
-                <p className="text-xs text-teal-50 leading-relaxed mb-6 opacity-80">Nuestro equipo te ayuda a encontrar al especialista ideal para tu caso.</p>
-                <button className="w-full py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-xl text-xs font-black uppercase tracking-widest transition-all">Hablar con Asesor</button>
-              </div>
-              <span className="material-icons absolute -bottom-8 -right-8 text-[120px] opacity-10 rotate-12">support_agent</span>
-            </div>
           </aside>
 
-          <div className="lg:col-span-9 space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Especialistas Disponibles</h2>
-                <p className="text-sm font-bold text-slate-500">{visibleDoctors.length} profesionales encontrados</p>
+          {/* ── Resultados ── */}
+          <div className="lg:col-span-9 space-y-4">
+            {/* Chips de filtros activos */}
+            {hasActiveFilters && (
+              <div className="flex flex-wrap gap-2">
+                {selectedArea && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold">
+                    {selectedArea}
+                    <button onClick={() => setSelectedArea('')}><span className="material-icons-round text-xs">close</span></button>
+                  </span>
+                )}
+                {citySearch && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold">
+                    {citySearch}
+                    <button onClick={() => setCitySearch('')}><span className="material-icons-round text-xs">close</span></button>
+                  </span>
+                )}
+                {selectedModality.map(m => (
+                  <span key={m} className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold">
+                    {m}
+                    <button onClick={() => toggleModality(m)}><span className="material-icons-round text-xs">close</span></button>
+                  </span>
+                ))}
               </div>
-            </div>
+            )}
 
-            <div className="grid grid-cols-1 gap-6">
-              {visibleDoctors.length > 0 ? visibleDoctors.map((doc) => {
-                const mainService = doc.services[0];
-                return (
-                  <div
-                    key={doc.id}
-                    onClick={() => navigate(`/patient/profile/${doc.id}`)}
-                    className="bg-white p-6 sm:p-8 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all group flex flex-col md:flex-row gap-8 items-center cursor-pointer"
-                  >
-                    <div className="relative shrink-0">
-                      <img className="w-32 h-32 rounded-[2rem] object-cover shadow-xl group-hover:scale-105 transition-transform duration-500" src={doc.avatar || 'https://picsum.photos/seed/doctor/200/200'} alt={doc.name} />
-                      <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white p-1.5 rounded-xl border-4 border-white shadow-lg">
-                        <span className="material-icons-round text-xs">verified</span>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 text-center md:text-left">
-                      <h3 className="text-xl font-black text-slate-900 group-hover:text-primary transition-colors">{doc.name}</h3>
-                      <p className="text-sm font-bold text-slate-500 mb-2">{doc.specialty}</p>
-                      <div className="flex items-center justify-center md:justify-start gap-1.5 mb-6 text-primary">
-                        <span className="material-icons-round text-sm">location_on</span>
-                        <span className="text-xs font-black uppercase tracking-widest">{doc.city || 'Chile'}</span>
-                      </div>
-                      <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                        {doc.modalities.online && <span className="px-4 py-1.5 bg-primary/5 text-primary text-xs font-black rounded-full uppercase tracking-widest border border-primary/10">Telemedicina</span>}
-                        {doc.modalities.inPerson && <span className="px-4 py-1.5 bg-slate-50 text-slate-500 text-xs font-black rounded-full uppercase tracking-widest border border-slate-100">Presencial</span>}
-                      </div>
-                    </div>
-
-                    <div className="w-full md:w-64 bg-slate-50 rounded-[2.5rem] p-8 flex flex-col items-center justify-center gap-4 border border-slate-100">
-                      <div className="text-center">
-                        <p className="text-2xl font-black text-slate-900 tracking-tighter">${mainService?.price.toLocaleString('es-CL') || '---'}</p>
-                        <p className="text-xs font-bold text-slate-500 uppercase">Valor consulta</p>
-                      </div>
-                      <button className="w-full py-4 bg-primary text-white text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:brightness-110 transition-all active:scale-95">
-                        AGENDAR AHORA
-                      </button>
+            {/* Cards de profesionales */}
+            <div className="grid grid-cols-1 gap-4">
+              {visibleDoctors.length > 0 ? visibleDoctors.map((doc) => (
+                <div
+                  key={doc.id}
+                  onClick={() => navigate(`/patient/profile/${doc.id}`)}
+                  className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex flex-col sm:flex-row gap-4 sm:gap-6 items-center cursor-pointer"
+                >
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <img
+                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover group-hover:scale-105 transition-transform duration-300"
+                      src={doc.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=2563eb&color=fff&size=200`}
+                      alt={doc.name}
+                    />
+                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-lg border-2 border-white">
+                      <span className="material-icons-round text-[10px]">verified</span>
                     </div>
                   </div>
-                );
-              }) : (
-                <div className="py-24 text-center bg-white rounded-[4rem] border border-slate-100">
-                  <span className="material-icons-round text-slate-200 text-6xl mb-6">person_search</span>
-                  <p className="text-slate-500 font-bold text-lg">No hay especialistas que coincidan con tu búsqueda.</p>
-                  <button onClick={clearCityFilter} className="mt-8 px-10 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20">Ver todos</button>
+
+                  {/* Info */}
+                  <div className="flex-1 text-center sm:text-left min-w-0">
+                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{doc.name}</h3>
+                    <p className="text-sm font-medium text-slate-500 mb-2">{doc.specialty}</p>
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 mb-3">
+                      <span className="material-icons-round text-blue-500 text-sm">location_on</span>
+                      <span className="text-xs font-bold text-slate-500">{doc.city || 'Chile'}</span>
+                    </div>
+                    <div className="flex flex-wrap justify-center sm:justify-start gap-1.5">
+                      {doc.modalities?.online && <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md">Online</span>}
+                      {doc.modalities?.inPerson && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md">Presencial</span>}
+                      {doc.modalities?.homeVisit && <span className="px-2.5 py-1 bg-teal-50 text-teal-600 text-[10px] font-bold rounded-md">Domicilio</span>}
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <div className="w-full sm:w-auto shrink-0">
+                    <button className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95">
+                      Agendar Ahora
+                    </button>
+                  </div>
+                </div>
+              )) : (
+                <div className="py-16 text-center bg-white rounded-2xl border border-slate-100">
+                  <span className="material-icons-round text-slate-200 text-5xl mb-4 block">person_search</span>
+                  <p className="text-slate-500 font-bold text-base mb-2">No hay especialistas que coincidan.</p>
+                  <p className="text-sm text-slate-400 mb-6">Intenta cambiar los filtros de búsqueda</p>
+                  <button onClick={clearFilters} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-lg shadow-blue-600/20">
+                    Ver todos
+                  </button>
                 </div>
               )}
             </div>

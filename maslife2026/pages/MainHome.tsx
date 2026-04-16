@@ -112,7 +112,29 @@ const MainHome: React.FC = () => {
     { text: 'Siempre nos costó encontrar la especialista adecuada para su terapia de fonoaudiología y ha sido un alivio para toda la familia.', name: 'Javier M.', role: 'FAMILIAR DE PACIENTE', stars: 5 },
     { text: 'La atención domiciliaria de kinesiología fue increíble. Puntualidad, profesionalismo y sobre todo mucha empatía durante todo mi proceso de rehabilitación.', name: 'Carolina V.', role: 'PACIENTE KINESIOLOGÍA', stars: 5 },
     { text: 'Recomiendo a cualquiera que necesite atención de salud en casa. El sistema de asignación es muy eficiente y los profesionales son de primer nivel.', name: 'Miguel A.', role: 'PACIENTE GENERAL', stars: 5 },
+    { text: 'Mi terapeuta ocupacional me ayudó a recuperar la independencia después de mi accidente. Eternamente agradecida con Mas Life.', name: 'Patricia L.', role: 'PACIENTE TERAPIA OCUPACIONAL', stars: 5 },
+    { text: 'La consulta online fue tan profesional como una presencial. Muy cómodo para quienes trabajamos todo el día y no tenemos tiempo de ir a una clínica.', name: 'Andrés F.', role: 'PACIENTE ONLINE', stars: 5 },
+    { text: 'Mi hijo de 4 años avanzó mucho más rápido con la fonoaudióloga de Mas Life. La paciencia y dedicación fueron extraordinarias.', name: 'Camila R.', role: 'MADRE DE PACIENTE', stars: 5 },
+    { text: 'El seguimiento por WhatsApp después de cada sesión es un detalle que marca la diferencia. Te sientes acompañado todo el proceso.', name: 'Fernando G.', role: 'PACIENTE KINESIOLOGÍA', stars: 5 },
+    { text: 'Probé con varios nutricionistas antes y ninguno entendió mis necesidades como la profesional que me asignaron aquí.', name: 'Valentina M.', role: 'PACIENTE DE NUTRICIÓN', stars: 5 },
+    { text: 'La podóloga que me atendió fue muy profesional. Resolvió un problema que arrastraba hace meses en solo 3 sesiones.', name: 'Roberto C.', role: 'PACIENTE PODOLOGÍA', stars: 5 },
+    { text: 'Excelente plataforma. Reservé en minutos y el profesional llegó puntual a mi domicilio. Así debería ser la salud siempre.', name: 'Isidora P.', role: 'PACIENTE DOMICILIO', stars: 5 },
+    { text: 'Mi psicólogo de Mas Life me ayudó a manejar el estrés laboral de una forma que nunca imaginé posible. Gracias por existir.', name: 'Diego T.', role: 'PACIENTE PSICOLOGÍA', stars: 5 },
+    { text: 'Después de la cirugía de rodilla, la rehabilitación domiciliaria fue clave. Los kinesiólogos de +Life son de otro nivel.', name: 'Marcela H.', role: 'PACIENTE POST-QUIRÚRGICO', stars: 5 },
+    { text: 'Como persona mayor, valoro mucho que vengan a mi casa. El masajista fue muy respetuoso y profesional con mi tratamiento.', name: 'Jorge V.', role: 'PACIENTE MASOTERAPIA', stars: 5 },
   ];
+
+  // Carrusel automático de testimonios
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const testimonialsPerView = typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 3;
+  const maxIndex = Math.ceil(testimonials.length / testimonialsPerView) - 1;
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTestimonialIndex(prev => prev >= maxIndex ? 0 : prev + 1);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [maxIndex]);
 
   const handleShowPlans = () => {
     setShowKinePlans(true);
@@ -335,7 +357,8 @@ const MainHome: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
             <div>
               <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">NUESTRO EQUIPO</p>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Áreas profesionales</h2>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Selecciona un área y agenda</h2>
+              <p className="text-sm text-slate-500 font-medium mt-1">con un profesional directamente</p>
             </div>
             <div className="flex bg-white rounded-full p-1 border border-slate-200 shadow-sm">
               <button
@@ -496,7 +519,7 @@ const MainHome: React.FC = () => {
         </section>
       )}
 
-      {/* ═══════════════════ TESTIMONIOS ═══════════════════ */}
+      {/* ═══════════════════ TESTIMONIOS CARRUSEL ═══════════════════ */}
       <section className="px-5 sm:px-8 py-20 sm:py-28 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
@@ -504,26 +527,63 @@ const MainHome: React.FC = () => {
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Lo que dicen nuestros pacientes</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.slice(0, 3).map((t, i) => (
-              <div key={i} className="bg-slate-50 rounded-2xl sm:rounded-3xl p-8 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all">
-                <div className="flex gap-1 text-amber-400 mb-5">
-                  {Array.from({ length: t.stars }).map((_, s) => (
-                    <span key={s} className="material-icons-round text-sm">star</span>
-                  ))}
-                </div>
-                <p className="text-sm sm:text-base text-slate-700 font-medium leading-relaxed mb-6 italic">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-bold text-sm">{t.name.charAt(0)}</span>
+          {/* Carrusel */}
+          <div className="relative">
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-700 ease-in-out"
+                style={{ transform: `translateX(-${testimonialIndex * 100}%)` }}
+              >
+                {Array.from({ length: maxIndex + 1 }).map((_, pageIdx) => (
+                  <div key={pageIdx} className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-5 px-1">
+                    {testimonials.slice(pageIdx * testimonialsPerView, pageIdx * testimonialsPerView + testimonialsPerView).map((t, i) => (
+                      <div key={i} className="bg-slate-50 rounded-2xl p-6 sm:p-7 border border-slate-100">
+                        <div className="flex gap-0.5 text-amber-400 mb-4">
+                          {Array.from({ length: t.stars }).map((_, s) => (
+                            <span key={s} className="material-icons-round text-sm">star</span>
+                          ))}
+                        </div>
+                        <p className="text-sm text-slate-700 font-medium leading-relaxed mb-5 italic line-clamp-4">"{t.text}"</p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-blue-600 font-bold text-xs">{t.name.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{t.name}</p>
+                            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{t.role}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">{t.name}</p>
-                    <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider">{t.role}</p>
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Indicadores */}
+            <div className="flex justify-center gap-2 mt-8">
+              {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setTestimonialIndex(i)}
+                  className={`h-2 rounded-full transition-all duration-300 ${i === testimonialIndex ? 'w-8 bg-blue-600' : 'w-2 bg-slate-300 hover:bg-slate-400'}`}
+                />
+              ))}
+            </div>
+
+            {/* Flechas */}
+            <button
+              onClick={() => setTestimonialIndex(prev => prev > 0 ? prev - 1 : maxIndex)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 bg-white rounded-full shadow-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-all hidden sm:flex"
+            >
+              <span className="material-icons-round text-slate-600 text-lg">chevron_left</span>
+            </button>
+            <button
+              onClick={() => setTestimonialIndex(prev => prev < maxIndex ? prev + 1 : 0)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 bg-white rounded-full shadow-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-all hidden sm:flex"
+            >
+              <span className="material-icons-round text-slate-600 text-lg">chevron_right</span>
+            </button>
           </div>
         </div>
       </section>
