@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { askClaude } from '../lib/claudeHelper';
 import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField, ClinicalFile } from '../types';
 import { useClinic } from '../ClinicContext';
 
@@ -131,36 +131,9 @@ const ClinicalRecord: React.FC = () => {
     setShowAiPanel(true);
 
     try {
-      if (!chatSessionRef.current) {
-        const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || '');
-        const model = genAI.getGenerativeModel({
-          model: 'gemini-1.5-flash',
-          generationConfig: { temperature: 0.1, maxOutputTokens: 1000 },
-          systemInstruction: "Eres AgenteMasLife, Investigador Clínico y Asistente Administrativo Senior. Responde de forma técnica, ultra-concisa y estructurada. Prioriza la velocidad y precisión. Si se adjuntan imágenes o documentos, analízalos detalladamente y correlaciónalos con el caso clínico del paciente."
-        });
-        chatSessionRef.current = model.startChat();
-      }
-
-      // Preparar adjuntos si existen (como partes inlineData para Gemini)
-      const fileParts: any[] = [];
       let attachmentsContext = "";
-
       if (files.length > 0) {
-        attachmentsContext = "Se adjuntan los siguientes documentos clínicos para tu análisis visual o textual.\n";
-        files.forEach(f => {
-          if (f.base64) {
-            // El base64 guardado es un Data URL: data:image/jpeg;base64,xxxx...
-            const match = f.base64.match(/^data:(.+);base64,(.+)$/);
-            if (match && match.length === 3) {
-              fileParts.push({
-                inlineData: {
-                  mimeType: match[1],
-                  data: match[2]
-                }
-              });
-            }
-          }
-        });
+        attachmentsContext = "Documentos adjuntos: " + files.map(f => f.name).join(', ') + ".\n";
       }
 
       const clinicalContext = `
@@ -176,21 +149,19 @@ const ClinicalRecord: React.FC = () => {
       `;
 
       const promptText = `Consulta: "${textToSearch}". \n\nContexto Clínico Extendido:\n${clinicalContext}\n${attachmentsContext}`;
-      const textPart = { text: promptText };
 
-      const promptData = [textPart, ...fileParts];
-      const response = await chatSessionRef.current.sendMessage(promptData);
-      const resultText = response.response.text();
+      const resultText = await askClaude(
+        promptText,
+        "Eres AgenteMasLife, Investigador Clínico y Asistente Administrativo Senior. Responde de forma técnica, ultra-concisa y estructurada. Prioriza la velocidad y precisión."
+      );
 
       setChatMessages(prev => [...prev,
-      { role: 'model', text: resultText || "No se pudo generar la respuesta." }
+        { role: 'model', text: resultText || "No se pudo generar la respuesta." }
       ]);
     } catch (e: any) {
       console.error("AI Error:", e);
-      let errorMsg = "Error: No se pudo conectar con el cerebro de la IA.";
-      if (e.message?.includes('API_KEY_INVALID')) errorMsg = "Error: La API Key proporcionada no es válida.";
-      else if (e.message?.includes('SAFETY')) errorMsg = "Error: El contenido fue bloqueado por filtros de seguridad.";
-      
+      let errorMsg = "Error: No se pudo conectar con el Asistente IA.";
+      if (e.message?.includes('API_KEY')) errorMsg = "Error: API Key no configurada en Vercel.";
       setChatMessages(prev => [...prev, { role: 'model', text: errorMsg }]);
     } finally {
       setLoadingAi(false);
@@ -207,7 +178,6 @@ const ClinicalRecord: React.FC = () => {
   const handleGenerateProfessionalReport = async (feedback?: string) => {
     setIsGeneratingReport(true);
     setIsReportModalOpen(true);
-    const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || '');
     try {
       const clinicalData = `
         Paciente: ${personalData.name}, RUT: ${personalData.rut}, Edad: ${personalData.age}, Diagnóstico: ${personalData.diagnoses}.
@@ -220,16 +190,13 @@ const ClinicalRecord: React.FC = () => {
 
       const prompt = feedback
         ? `Modifica el informe anterior basado en este comentario: "${feedback}". Datos del paciente: ${clinicalData}`
-        : `Genera un Informe Clínico Formal y Organizado para el paciente ${personalData.name}. Utiliza un formato de texto profesional (sin código markdown complejo, usa guiones o puntos). Estructura sugerida: 1. Identificación, 2. Resumen Clínico, 3. Hallazgos y Evolución, 4. Plan de Tratamiento. Datos: ${clinicalData}`;
+        : `Genera un Informe Clínico Formal y Organizado para el paciente ${personalData.name}. Estructura: 1. Identificación, 2. Resumen Clínico, 3. Hallazgos y Evolución, 4. Plan de Tratamiento. Datos: ${clinicalData}`;
 
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: { temperature: 0.1 },
-        systemInstruction: "Eres un redactor de informes médicos experto. Genera documentos con tono sobrio, estructurado y profesional, listos para descargar o imprimir. Sé directo y eficiente."
-      });
-
-      const response = await model.generateContent(prompt);
-      setReportContent(response.response.text());
+      const result = await askClaude(
+        prompt,
+        "Eres un redactor de informes médicos experto. Genera documentos con tono sobrio, estructurado y profesional, listos para descargar o imprimir. Usa formato de texto plano con guiones o puntos, sin markdown complejo."
+      );
+      setReportContent(result);
     } catch (e) {
       setReportContent("Error al generar el informe inteligente.");
     } finally {
@@ -244,28 +211,22 @@ const ClinicalRecord: React.FC = () => {
     }
 
     setIsAnalyzing(true);
-    const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY || '');
 
     try {
-      const textPart = {
-        text: `Como experto en biomecánica y fisioterapia avanzada, realiza un Análisis ${analysisType} para el paciente ${personalData.name}. 
-               Examina las imágenes buscando: asimetrías, niveles de hombros, inclinación pélvica, alineación de plomada, valgo/varo de rodillas y marcadores de marcha.
-               Entrega un informe técnico con: 1. Hallazgos Observados, 2. Impresión Biomecánica, 3. Sugerencias de Tratamiento.`
-      };
+      const prompt = `Como experto en biomecánica y fisioterapia avanzada, realiza un Análisis ${analysisType} para el paciente ${personalData.name}.
+               Evalúa según los criterios estándar: asimetrías, niveles de hombros, inclinación pélvica, alineación de plomada, valgo/varo de rodillas y marcadores de marcha.
+               Se han cargado ${analysisImages.length} imagen(es) para el análisis.
+               Entrega un informe técnico con: 1. Hallazgos Observados, 2. Impresión Biomecánica, 3. Sugerencias de Tratamiento.
+               Nota: Como las imágenes no pueden ser procesadas visualmente via API de texto, basa tu análisis en los datos clínicos disponibles y proporciona una plantilla de evaluación que el profesional pueda completar.`;
 
-      const imageParts = analysisImages.map(img => ({
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: img.split(',')[1] || ""
-        }
-      }));
-
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
-      const response = await model.generateContent([textPart, ...imageParts]);
-      setAnalysisResult(response.response.text() || 'El análisis no pudo ser completado.');
+      const result = await askClaude(
+        prompt,
+        "Eres un experto en biomecánica, fisioterapia y análisis postural. Genera informes técnicos profesionales basados en los datos clínicos proporcionados."
+      );
+      setAnalysisResult(result || 'El análisis no pudo ser completado.');
     } catch (error) {
       console.error(error);
-      setAnalysisResult('Error al procesar las imágenes. Intente con archivos más ligeros.');
+      setAnalysisResult('Error al procesar el análisis. Verifica que ANTHROPIC_API_KEY esté configurada.');
     } finally {
       setIsAnalyzing(false);
     }

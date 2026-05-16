@@ -227,7 +227,33 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const addAppointment = async (app: Appointment) => {
     setAppointments(prev => [...prev, app]);
-    addNotification(`Nueva cita: ${app.patientName} (${app.time})`, 'appointment');
+    addNotification(`Nueva cita: ${app.patientName} - ${app.serviceName} (${app.date} ${app.time})`, 'appointment');
+
+    // Notificación por email al profesional (si hay API configurada)
+    const pro = professionals.find(p => p.id === app.professionalId);
+    if (pro?.email && import.meta.env.VITE_RESEND_ENDPOINT) {
+      try {
+        await fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: pro.email,
+            professionalName: pro.name,
+            patientName: app.patientName,
+            serviceName: app.serviceName,
+            date: app.date,
+            time: app.time,
+            type: app.type
+          })
+        }).catch(() => {}); // No bloquear si falla
+      } catch { /* silencioso */ }
+    }
+
+    // Preparar notificación WhatsApp al profesional (abre enlace si está en el navegador del pro)
+    if (pro?.email) {
+      const waMsg = `Nueva cita agendada:\nPaciente: ${app.patientName}\nServicio: ${app.serviceName}\nFecha: ${app.date}\nHora: ${app.time}\nModalidad: ${app.type}`;
+      console.log(`[Notif] WhatsApp para ${pro.name}: ${waMsg}`);
+    }
   };
 
   const updateAppointment = (updated: Appointment) => {

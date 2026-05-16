@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { askClaude } from '../lib/claudeHelper';
 import { Vitals } from '../types';
 import { useClinic } from '../ClinicContext';
 

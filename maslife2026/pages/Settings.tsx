@@ -34,7 +34,21 @@ const Settings: React.FC = () => {
 
   const handleSave = () => {
     if (localProfile) {
-      onSave(localProfile);
+      // Auto-generar slug si no tiene o está vacío
+      let profileToSave = { ...localProfile };
+      if (!profileToSave.slug || profileToSave.slug.trim() === '') {
+        profileToSave.slug = profileToSave.name
+          .toLowerCase()
+          .normalize('NFD').replace(/[̀-ͯ]/g, '') // remover acentos
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+      }
+      // Marcar como público si tiene datos mínimos completos
+      if (profileToSave.name && profileToSave.specialty && profileToSave.services.length > 0) {
+        profileToSave.isPublic = true;
+      }
+      setLocalProfile(profileToSave);
+      onSave(profileToSave);
       setHasChanges(false);
       setShowSavedMsg(true);
       setTimeout(() => setShowSavedMsg(false), 3000);
@@ -103,12 +117,25 @@ const Settings: React.FC = () => {
     }
   };
 
+  const getShareableLink = () => {
+    const base = window.location.origin + window.location.pathname;
+    return `${base}#/patient/profile/${localProfile.slug || localProfile.id}`;
+  };
+
   const handleCopyLink = () => {
-    const link = `https://clinicamaslife.cl/pro/${localProfile.slug || localProfile.id}`;
-    navigator.clipboard.writeText(link).then(() => {
+    navigator.clipboard.writeText(getShareableLink()).then(() => {
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 2500);
     });
+  };
+
+  const handleShareLink = () => {
+    const link = getShareableLink();
+    if (navigator.share) {
+      navigator.share({ title: `Agenda con ${localProfile.name}`, text: 'Agenda tu hora conmigo', url: link });
+    } else {
+      handleCopyLink();
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,11 +210,20 @@ const Settings: React.FC = () => {
                     <span className="material-icons-round text-teal-500 text-2xl shrink-0">link</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-black text-teal-700 uppercase tracking-widest mb-1">Mi Link Profesional</p>
-                      <p className="text-sm font-bold text-teal-800 truncate">
-                        clinicamaslife.cl/pro/{localProfile.slug || localProfile.id}
+                      <p className="text-[11px] sm:text-sm font-bold text-teal-800 truncate">
+                        {getShareableLink()}
                       </p>
+                      {(!localProfile.slug || !localProfile.specialty || localProfile.services.length === 0) && (
+                        <p className="text-[10px] text-amber-600 font-bold mt-1">Completa tu perfil (nombre, especialidad y servicios) para activar tu link</p>
+                      )}
                     </div>
                     <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={handleShareLink}
+                        className="px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 bg-white text-teal-600 border border-teal-200 hover:bg-teal-100"
+                      >
+                        <span className="material-icons-round text-sm">share</span>
+                      </button>
                       <button
                         onClick={handleCopyLink}
                         className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
