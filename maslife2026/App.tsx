@@ -25,6 +25,8 @@ import Sidebar        from './components/Sidebar';
 import GlobalAIPanel  from './components/GlobalAIPanel';
 import { ClinicProvider, useClinic } from './ClinicContext';
 import { AppView, Notification } from './types';
+import logoClinica from './assets/logo-clinica.png';
+import logoAgenda  from './assets/logo-agenda.png';
 
 // ── Guards ────────────────────────────────────────────────────
 const ProGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -71,25 +73,20 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
   const unread = notifications.filter(n => !n.read).length;
   const isRodrigo = loggedPro?.id === 'pro-rodrigo';
 
-  // Elegir logo según contexto
-  const logoSrc = (location.pathname.startsWith('/pro/agenda') || location.pathname === '/patient/results')
-    ? '/logo-agenda-online.svg'
-    : '/logo-clinica-maslife.svg';
-
   // Ocultar navbar completamente en landing (MainHome tiene su propia)
   if (location.pathname === '/') return null;
+
+  const isPublicView = isFullPublic;
 
   return (
     <nav className="bg-white border-b border-slate-200 flex items-center px-3 sm:px-6 md:px-10 shrink-0 z-50 sticky top-0 shadow-sm" style={{height: 56}}>
       {/* Logo */}
-      <div className="flex items-center cursor-pointer shrink-0" onClick={() => navigate('/')}>
+      <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate('/')}>
         <img
-          src={logoSrc}
-          alt="Clínica Mas Life"
-          className="h-8 sm:h-10 w-auto object-contain"
-          onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }}
+          src={isPublicView ? logoClinica : logoAgenda}
+          alt="Mas Life Logo"
+          className="h-12 w-auto object-contain"
         />
-        <span className="hidden text-lg font-extrabold tracking-tight text-slate-900">Mas<span className="text-blue-600">life</span></span>
       </div>
 
       {/* Spacer */}
