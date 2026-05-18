@@ -28,6 +28,10 @@ const ProfessionalAgenda: React.FC = () => {
    const [blockNote, setBlockNote] = useState('');
    const [blockDuration, setBlockDuration] = useState(60);
    const [selectedColor, setSelectedColor] = useState('bg-primary');
+   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+   const [appointmentNotes, setAppointmentNotes] = useState('');
+
+   const selectedService = loggedPro?.services.find(s => s.id === selectedServiceId) || loggedPro?.services[0] || null;
 
    const chileanHolidays = useMemo(() => {
       const year = currentDate.getFullYear();
@@ -93,6 +97,8 @@ const ProfessionalAgenda: React.FC = () => {
       setSelectedColor('bg-primary');
       setBlockNote('');
       setActiveTab('existing');
+      setSelectedServiceId('');
+      setAppointmentNotes('');
       setIsCreateModalOpen(true);
    };
 
@@ -111,13 +117,14 @@ const ProfessionalAgenda: React.FC = () => {
          patientPhone: patient?.phone,
          doctorName: loggedPro?.name || '',
          specialty: loggedPro?.specialty || '',
-         serviceName: isBlock ? 'Bloqueo' : (loggedPro?.services[0]?.name || 'Consulta'),
+         serviceName: isBlock ? 'Bloqueo' : (selectedService?.name || loggedPro?.services[0]?.name || 'Consulta'),
          date: selectedSlot.date,
          time: selectedSlot.time,
-         duration: isBlock ? blockDuration : 60,
+         duration: isBlock ? blockDuration : (selectedService?.duration || 60),
          type: isBlock ? 'Personal' : 'Presencial',
          status: isBlock ? 'Bloqueado' : 'Confirmado',
-         price: isBlock ? 0 : (loggedPro?.services[0]?.price || 0),
+         price: isBlock ? 0 : (selectedService?.price || loggedPro?.services[0]?.price || 0),
+         notes: isBlock ? undefined : appointmentNotes || undefined,
          paymentStatus: isBlock ? 'Pagado' : 'Pendiente',
          category: isBlock ? 'Personal' : 'Medical',
          color: isBlock ? 'bg-slate-800' : selectedColor,
@@ -155,6 +162,16 @@ const ProfessionalAgenda: React.FC = () => {
          };
       }
 
+      if (status === 'Cancelado') {
+         return {
+            bg: 'bg-rose-50',
+            border: 'border-rose-200',
+            text: 'text-rose-700 font-bold',
+            iconBg: 'bg-rose-500',
+            icon: 'cancel'
+         };
+      }
+
       const baseColor = appColor || 'bg-primary';
 
       // Mapping for reliable Tailwind classes
@@ -176,8 +193,7 @@ const ProfessionalAgenda: React.FC = () => {
             status === 'Llegado' ? 'hail' :
                status === 'En Sesión' ? 'psychology' :
                   status === 'Finalizado' ? 'task_alt' :
-                     status === 'Cancelado' ? 'cancel' :
-                        'help_outline'
+                     'help_outline'
       };
    };
 
@@ -227,6 +243,45 @@ const ProfessionalAgenda: React.FC = () => {
                       </div>
                    </div>
                 </header>
+
+               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-xl">event</span>
+                     </div>
+                     <div>
+                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').length}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Citas hoy</p>
+                     </div>
+                  </div>
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-xl">check_circle</span>
+                     </div>
+                     <div>
+                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => a.date === formatDate(currentDate) && a.status === 'Confirmado').length}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Confirmadas</p>
+                     </div>
+                  </div>
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-xl">payments</span>
+                     </div>
+                     <div>
+                        <p className="text-2xl font-black text-slate-900 leading-none">${appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').reduce((sum, a) => sum + (a.price || 0), 0).toLocaleString('es-CL')}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Ingreso esperado hoy</p>
+                     </div>
+                  </div>
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-xl">date_range</span>
+                     </div>
+                     <div>
+                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => weekDays.some(d => formatDate(d) === a.date) && a.status !== 'Cancelado').length}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Citas esta semana</p>
+                     </div>
+                  </div>
+               </div>
 
                <div className="bg-white rounded-[3rem] shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] border border-slate-100 overflow-hidden">
                   {viewMode === 'day' ? (
@@ -402,6 +457,27 @@ const ProfessionalAgenda: React.FC = () => {
                         ))}
                      </div>
 
+                     {activeTab !== 'block' && loggedPro?.services && loggedPro.services.length > 1 && (
+                        <div className="px-8 md:px-10 pb-2 mt-6">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Servicio</label>
+                           <div className="flex flex-wrap gap-2">
+                              {loggedPro.services.map(s => (
+                                 <button
+                                    key={s.id}
+                                    onClick={() => setSelectedServiceId(s.id)}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-black border transition-all ${
+                                       (selectedServiceId || loggedPro.services[0]?.id) === s.id
+                                          ? 'bg-primary text-white border-primary shadow-md'
+                                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-primary hover:text-primary'
+                                    }`}
+                                 >
+                                    {s.name} <span className="opacity-60 font-semibold">${s.price.toLocaleString('es-CL')}</span>
+                                 </button>
+                              ))}
+                           </div>
+                        </div>
+                     )}
+
                      <div className="p-8 md:p-10">
                         {activeTab === 'existing' && (
                            <div className="space-y-6">
@@ -423,6 +499,16 @@ const ProfessionalAgenda: React.FC = () => {
                                     </button>
                                  ))}
                               </div>
+                              <div className="mt-4">
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
+                                 <textarea
+                                    value={appointmentNotes}
+                                    onChange={e => setAppointmentNotes(e.target.value)}
+                                    placeholder="Notas para la cita..."
+                                    rows={2}
+                                    className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-3 px-5 font-medium text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400 resize-none"
+                                 />
+                              </div>
                            </div>
                         )}
 
@@ -442,7 +528,41 @@ const ProfessionalAgenda: React.FC = () => {
                                     <input value={newPatientForm.phone} onChange={e => setNewPatientForm({ ...newPatientForm, phone: e.target.value })} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400" placeholder="+56 9..." />
                                  </div>
                               </div>
-                              <button onClick={() => { if (!newPatientForm.name) return; const p = { id: Math.random().toString(), ...newPatientForm } as any; onAddPatient(p); handleAddAppointment(p); }} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg">schedule</span> Agendar Cita</button>
+                              <div className="mt-4">
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
+                                 <textarea
+                                    value={appointmentNotes}
+                                    onChange={e => setAppointmentNotes(e.target.value)}
+                                    placeholder="Notas para la cita..."
+                                    rows={2}
+                                    className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-3 px-5 font-medium text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400 resize-none"
+                                 />
+                              </div>
+                              <button onClick={() => {
+                                 if (!newPatientForm.name) return;
+                                 const newPat: Patient = {
+                                    id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
+                                    name: newPatientForm.name,
+                                    rut: newPatientForm.rut || '',
+                                    phone: newPatientForm.phone || '',
+                                    email: '',
+                                    age: 0,
+                                    gender: '',
+                                    prevision: '',
+                                    birthDate: '',
+                                    address: '',
+                                    allergies: [],
+                                    medicalHistory: '',
+                                    customFields: [],
+                                    attachments: [],
+                                    archived: false,
+                                    risk: 'Bajo',
+                                    status: 'Nuevo',
+                                    professionalId: loggedPro?.id,
+                                 };
+                                 onAddPatient(newPat);
+                                 handleAddAppointment(newPat);
+                              }} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg">schedule</span> Agendar Cita</button>
                            </div>
                         )}
 
@@ -497,7 +617,53 @@ const ProfessionalAgenda: React.FC = () => {
                                  {s}
                               </button>
                            ))}
+                           <button
+                              onClick={() => handleStatusChange('Cancelado')}
+                              className={`col-span-2 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-b-[3px] active:border-b-0 active:translate-y-[3px] transition-all shadow-sm flex items-center justify-center gap-2 ${
+                                 editingApp.status === 'Cancelado'
+                                    ? 'bg-rose-500 border-rose-700 text-white scale-[1.02]'
+                                    : 'bg-rose-50 border-rose-200 text-rose-400 hover:bg-rose-500 hover:border-rose-600 hover:text-white'
+                              }`}
+                           >
+                              {editingApp.status === 'Cancelado' && <span className="material-icons-round text-sm">check_circle</span>}
+                              <span className="material-icons-round text-sm">cancel</span>
+                              Cancelar Cita
+                           </button>
                         </div>
+
+                        {editingApp.status !== 'Bloqueado' && (
+                           <div className={`rounded-2xl border-2 p-5 flex items-center justify-between transition-all
+                              ${editingApp.paymentStatus === 'Pagado' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                              <div className="flex items-center gap-3">
+                                 <span className={`material-icons-round text-2xl ${editingApp.paymentStatus === 'Pagado' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                    {editingApp.paymentStatus === 'Pagado' ? 'check_circle' : 'pending'}
+                                 </span>
+                                 <div>
+                                    <p className={`text-sm font-black ${editingApp.paymentStatus === 'Pagado' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                       {editingApp.paymentStatus === 'Pagado' ? 'Pago Recibido' : 'Pago Pendiente'}
+                                    </p>
+                                    <p className="text-xs font-semibold text-slate-500">${editingApp.price?.toLocaleString('es-CL') || '0'}</p>
+                                 </div>
+                              </div>
+                              <button
+                                 onClick={() => {
+                                    const updatedApp = {
+                                       ...editingApp,
+                                       paymentStatus: editingApp.paymentStatus === 'Pagado' ? 'Pendiente' : 'Pagado',
+                                       paidAt: editingApp.paymentStatus === 'Pagado' ? undefined : new Date().toISOString()
+                                    } as Appointment;
+                                    setEditingApp(updatedApp);
+                                    updateAppointment(updatedApp);
+                                 }}
+                                 className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-b-2
+                                    ${editingApp.paymentStatus === 'Pagado'
+                                       ? 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                                       : 'bg-emerald-500 text-white border-emerald-700 hover:bg-emerald-600 shadow-md'}`}
+                              >
+                                 {editingApp.paymentStatus === 'Pagado' ? 'Revertir' : 'Marcar Pagado'}
+                              </button>
+                           </div>
+                        )}
 
                         <div className="mt-8 flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Color:</label>
