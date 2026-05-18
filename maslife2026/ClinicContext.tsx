@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate } from './types';
-import { supabase, getPatients, getAppointments } from './supabaseService';
+import { supabase, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, saveTransaction } from './supabaseService';
 
 interface ClinicContextType {
   // Estado de carga
@@ -194,29 +194,34 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   // Cargar datos del profesional desde Supabase al iniciar sesión
   useEffect(() => {
     if (!loggedPro) {
-      // Al cerrar sesión: limpiar datos para no mezclar con el próximo profesional
+      // Al cerrar sesión: limpiar datos para no filtrar a la próxima sesión
       setPatients([]);
       setAppointments([]);
+      setManualTransactions([]);
       return;
     }
 
     const loadProData = async () => {
       try {
-        const [supaPatients, supaApps] = await Promise.all([
+        const [supaPatients, supaApps, supaTransactions] = await Promise.all([
           getPatients(loggedPro.id),
           getAppointments(loggedPro.id),
+          getTransactions(loggedPro.id),
         ]);
-        // Si Supabase devuelve datos, reemplazar localStorage
-        if (supaPatients.length > 0) setPatients(supaPatients);
-        if (supaApps.length > 0) setAppointments(supaApps);
-        // Si Supabase no devuelve datos: mantener localStorage filtrado
-        else setAppointments(prev =>
-          prev.filter(a => !a.professionalId || a.professionalId === loggedPro.id)
-        );
+        // Reemplazar con datos de Supabase si hay resultados
+        setPatients(supaPatients);
+        setAppointments(supaApps);
+        if (supaTransactions.length > 0) setManualTransactions(supaTransactions);
       } catch {
-        // Sin conexión a Supabase: filtrar localStorage por este profesional
+        // Sin conexión: filtrar localStorage por este profesional
         setAppointments(prev =>
           prev.filter(a => !a.professionalId || a.professionalId === loggedPro.id)
+        );
+        setPatients(prev =>
+          prev.filter(p => !p.professionalId || p.professionalId === loggedPro.id)
+        );
+        setManualTransactions(prev =>
+          prev.filter(t => !t.professionalId || t.professionalId === loggedPro.id)
         );
       }
     };
@@ -263,6 +268,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addAppointment = async (app: Appointment) => {
     setAppointments(prev => [...prev, app]);
     addNotification(`Nueva cita: ${app.patientName} - ${app.serviceName} (${app.date} ${app.time})`, 'appointment');
+    // Persistir en Supabase
+    saveAppointment(app).catch(() => {});
 
     // Notificación por email al profesional (si hay API configurada)
     const pro = professionals.find(p => p.id === app.professionalId);
@@ -324,11 +331,15 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const addPatient = (patient: Patient) => {
-    setPatients(prev => [...prev, patient]);
+    const withPro = loggedPro ? { ...patient, professionalId: loggedPro.id } : patient;
+    setPatients(prev => [...prev, withPro]);
+    if (loggedPro) savePatient(withPro, loggedPro.id).catch(() => {});
   };
 
   const addManualTransaction = (transaction: Transaction) => {
-    setManualTransactions(prev => [...prev, transaction]);
+    const withPro = loggedPro ? { ...transaction, professionalId: loggedPro.id } : transaction;
+    setManualTransactions(prev => [...prev, withPro]);
+    if (loggedPro) saveTransaction(withPro, loggedPro.id).catch(() => {});
   };
 
   const logout = (navigate: any, view: string) => {

@@ -16,6 +16,7 @@ export interface Transaction {
   amount: number;
   description: string;
   type: 'Ingreso' | 'Gasto';
+  professionalId?: string;
 }
 
 export type SubscriptionStatus = 'active' | 'paused' | 'trial';
@@ -147,6 +148,7 @@ export interface Patient {
   goals?: any[];
   soap?: any;
   specialtyData?: Record<string, unknown>;
+  professionalId?: string;
 }
 
 export interface ClinicalTemplate {

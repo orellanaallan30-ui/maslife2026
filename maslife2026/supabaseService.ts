@@ -302,6 +302,7 @@ function mapDBtoPatient(p: Record<string, unknown>): Patient {
     vitals: p.vitals as Patient['vitals'], soap: p.soap as Patient['soap'],
     goals: (p.goals as Patient['goals']) || [], sessionLogs: (p.session_logs as Patient['sessionLogs']) || [],
     lastVisit: (p.last_visit as string) || '', emergencyContact: (p.emergency_contact as string) || '',
+    professionalId: (p.professional_id as string) || undefined,
   };
 }
 
@@ -316,6 +317,7 @@ function mapPatientToDB(p: Patient): Record<string, unknown> {
     vitals: p.vitals || null, soap: p.soap || null,
     goals: p.goals || [], session_logs: p.sessionLogs || [],
     last_visit: p.lastVisit || '', emergency_contact: p.emergencyContact || '',
+    professional_id: p.professionalId || null,
   };
 }
 
