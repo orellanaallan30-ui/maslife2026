@@ -101,11 +101,35 @@ const PatientProfile: React.FC = () => {
       paidAt: (doctor.paymentEnabled && transactionRef.trim()) ? new Date().toISOString() : undefined,
       category: 'Medical',
       professionalId: doctor.id,
-      bookingSource: 'web'
+      bookingSource: 'web',
+      patientEmail: patientData.email || undefined
     };
 
     try {
       await addAppointment(newApp);
+
+      // Enviar comprobante de pago al paciente si pagó con código de transacción
+      if (doctor.paymentEnabled && transactionRef.trim() && patientData.email && import.meta.env.VITE_RESEND_ENDPOINT) {
+        const pro = professionals.find(p => p.id === doctor.id);
+        fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: pro?.email || doctor.email,
+            professionalName: doctor.name,
+            patientName: patientData.name,
+            serviceName: selectedService!.name,
+            date: availableDays[selectedDay].date,
+            time: selectedSlot!,
+            type: newApp.type,
+            patientEmail: patientData.email,
+            isReceipt: true,
+            transactionRef: transactionRef.trim(),
+            price: selectedService!.price
+          })
+        }).catch(() => {});
+      }
+
       setIsProcessing(false);
       setIsConfirmed(true);
     } catch (error) {
@@ -228,15 +252,21 @@ const PatientProfile: React.FC = () => {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 no-print" id="receipt-actions">
-            <a
-              href={generateGoogleCalendarLink()}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full py-4 bg-[#4285F4] hover:bg-[#3367D6] text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20"
-            >
-              <span className="material-icons-round">event</span>
-              Añadir a Google Calendar
-            </a>
+            {/* Google Calendar — Card prominente */}
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-[2rem] p-6 text-center">
+              <span className="material-icons-round text-blue-500 text-4xl mb-2 block">event_available</span>
+              <h3 className="font-black text-blue-900 text-base mb-1">¿Lo agendamos en tu calendario?</h3>
+              <p className="text-blue-700 text-xs mb-4 font-bold">Para no olvidar tu cita</p>
+              <a
+                href={generateGoogleCalendarLink()}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-2xl font-black text-xs tracking-widest shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <span className="material-icons-round text-sm">calendar_month</span>
+                Agregar a Google Calendar
+              </a>
+            </div>
 
             {/* WhatsApp notification to professional */}
             {doctor.phone && (

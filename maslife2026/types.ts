@@ -108,6 +108,7 @@ export interface Appointment {
   bookingSource?: string;
   paidAt?: string;
   paymentAmount?: number;
+  patientEmail?: string;
 }
 
 export interface Notification {

@@ -647,13 +647,37 @@ const ProfessionalAgenda: React.FC = () => {
                               </div>
                               <button
                                  onClick={() => {
+                                    const markingAsPaid = editingApp.paymentStatus !== 'Pagado';
                                     const updatedApp = {
                                        ...editingApp,
-                                       paymentStatus: editingApp.paymentStatus === 'Pagado' ? 'Pendiente' : 'Pagado',
-                                       paidAt: editingApp.paymentStatus === 'Pagado' ? undefined : new Date().toISOString()
+                                       paymentStatus: markingAsPaid ? 'Pagado' : 'Pendiente',
+                                       paidAt: markingAsPaid ? new Date().toISOString() : undefined
                                     } as Appointment;
                                     setEditingApp(updatedApp);
                                     updateAppointment(updatedApp);
+
+                                    // Enviar comprobante de pago al paciente al marcar como Pagado
+                                    if (markingAsPaid && import.meta.env.VITE_RESEND_ENDPOINT && loggedPro?.email) {
+                                       const pat = patients.find(p => p.id === editingApp.patientId);
+                                       if (pat?.email) {
+                                          fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+                                             method: 'POST',
+                                             headers: { 'Content-Type': 'application/json' },
+                                             body: JSON.stringify({
+                                                to: loggedPro.email,
+                                                professionalName: loggedPro.name,
+                                                patientName: editingApp.patientName,
+                                                serviceName: editingApp.serviceName,
+                                                date: editingApp.date,
+                                                time: editingApp.time,
+                                                type: editingApp.type,
+                                                patientEmail: pat.email,
+                                                isReceipt: true,
+                                                price: editingApp.price
+                                             })
+                                          }).catch(() => {});
+                                       }
+                                    }
                                  }}
                                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-b-2
                                     ${editingApp.paymentStatus === 'Pagado'

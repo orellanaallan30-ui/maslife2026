@@ -285,7 +285,9 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             serviceName: app.serviceName,
             date: app.date,
             time: app.time,
-            type: app.type
+            type: app.type,
+            patientEmail: app.patientEmail,
+            price: app.price
           })
         }).catch(() => {}); // No bloquear si falla
       } catch { /* silencioso */ }
