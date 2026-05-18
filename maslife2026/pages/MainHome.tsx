@@ -80,25 +80,29 @@ const MainHome: React.FC = () => {
     {
       name: 'Kinesiología Integral',
       desc: 'Especialistas capacitados para rehabilitación integral y física.',
-      img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=600',
+      img: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=600',
+      alt: 'Kinesiólogo guiando ejercicio de rehabilitación en Ovalle y Coquimbo',
       cta: 'Buscar Profesional'
     },
     {
       name: 'Psicología',
       desc: 'Especialistas en salud psicoemocional y bienestar mental.',
-      img: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?q=80&w=600',
+      img: 'https://images.unsplash.com/photo-1573497019236-17f8177b81e8?q=80&w=600',
+      alt: 'Psicóloga escuchando a paciente en consulta presencial y online en La Serena',
       cta: 'Buscar profesional'
     },
     {
       name: 'Nutrición',
       desc: 'Planificación nutricional personalizada para hábitos saludables.',
       img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600',
+      alt: 'Nutricionista consulta presencial y online en Región de Coquimbo',
       cta: 'Buscar Profesional'
     },
     {
       name: 'Fonoaudiología',
       desc: 'Especialistas en comunicación, habla y deglución.',
-      img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600',
+      img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600',
+      alt: 'Fonoaudiólogo atendiendo paciente niño y adulto',
       cta: 'Ver Especialistas'
     }
   ];
@@ -279,11 +283,16 @@ const MainHome: React.FC = () => {
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
-                Recupera tu salud<br />
+                Kinesiología &amp; Salud<br />
                 Con Profesionales<br />
-                Mas cercanos &<br />
-                <span className="text-blue-600">empaticos.</span>
+                Más cercanos &amp;<br />
+                <span className="text-blue-600">empáticos.</span>
               </h1>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
+                Kinesiólogos, psicólogos, nutricionistas y quiroprácticos en{' '}
+                <strong className="text-slate-700">Ovalle, Coquimbo y La Serena</strong>.
+                Atención presencial, online y a domicilio.
+              </p>
 
               {/* 2-Path Choice */}
               <div className="space-y-4 max-w-lg">
@@ -378,9 +387,9 @@ const MainHome: React.FC = () => {
             <div className="relative hidden lg:block">
               <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-300/30 aspect-[4/5] max-h-[580px]">
                 <img
-                  src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800"
+                  src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=800"
                   className="w-full h-full object-cover"
-                  alt="Profesionales de salud"
+                  alt="Kinesiólogo atendiendo paciente en rehabilitación física en Ovalle"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
               </div>
@@ -455,6 +464,7 @@ const MainHome: React.FC = () => {
               <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">NUESTRO EQUIPO</p>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Selecciona un área y agenda</h2>
               <p className="text-sm text-slate-500 font-medium mt-1">con un profesional directamente</p>
+              <p className="text-xs text-slate-400 mt-1">Rehabilitación · Dolor lumbar · Tendinitis · Salud mental · Nutrición · Región de Coquimbo</p>
             </div>
             <div className="flex bg-white rounded-full p-1 border border-slate-200 shadow-sm">
               <button
@@ -475,13 +485,13 @@ const MainHome: React.FC = () => {
           {/* Specialty Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {(activeSpecFilter === 'destacados' ? specialtyCards : specialtyCards.concat([
-              { name: 'Terapia Ocupacional', desc: 'Rehabilitación funcional para actividades diarias.', img: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?q=80&w=600', cta: 'Buscar Profesional' },
-              { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', cta: 'Buscar Profesional' },
-              { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600', cta: 'Buscar Profesional' },
+              { name: 'Terapia Ocupacional', desc: 'Rehabilitación funcional para actividades diarias.', img: 'https://images.unsplash.com/photo-1576671285-d9df3bc08e01?q=80&w=600', alt: 'Terapeuta ocupacional con paciente adulto mayor en rehabilitación', cta: 'Buscar Profesional' },
+              { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', alt: 'Podólogo cuidado especializado de pies en Ovalle', cta: 'Buscar Profesional' },
+              { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600', alt: 'Enfermera tomando signos vitales atención a domicilio', cta: 'Buscar Profesional' },
             ])).map((card, i) => (
               <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer" onClick={() => navigate('/patient/results')}>
                 <div className="aspect-[4/3] overflow-hidden">
-                  <img src={card.img} alt={card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={card.img} alt={card.alt || card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4 sm:p-5">
                   <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mb-1 tracking-tight">{card.name}</h4>
