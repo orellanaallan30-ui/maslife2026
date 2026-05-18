@@ -5,6 +5,7 @@ import { askClaude } from '../lib/claudeHelper';
 import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField, ClinicalFile, MealPlanRow } from '../types';
 import { useClinic } from '../ClinicContext';
 import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
+import { toast } from '../lib/toast';
 
 interface Message {
   role: 'user' | 'model';
@@ -181,49 +182,131 @@ const ClinicalRecord: React.FC = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  const handleAiAnalysis = async (type: string, query?: string) => {
-    const textToSearch = query || type;
-    if (!textToSearch.trim()) return;
+  // Construye el contexto clínico completo para el agente
+  const buildClinicalContext = (): string => {
+    const nutData = savedSpec as any;
+    const soapLine = (label: string, val: string) => val?.trim() ? `${label}: ${val}` : '';
 
-    // Feedback instantáneo: Agregamos el mensaje del usuario y limpiamos el input de inmediato
-    setChatMessages(prev => [...prev, { role: 'user', text: textToSearch }]);
+    const sections: string[] = [
+      `═══ DATOS DEL PACIENTE ═══`,
+      `Nombre: ${personalData.name} | Edad: ${personalData.age} años | RUT: ${personalData.rut}`,
+      `Diagnóstico: ${personalData.diagnoses || 'No registrado'}`,
+      `Previsión: ${personalData.prevision || '—'} | Última visita: ${safePatient.lastVisit || 'No registrada'}`,
+      '',
+      `═══ SIGNOS VITALES ═══`,
+      `FC: ${vitals.heartRate} lpm | PA: ${vitals.systolic}/${vitals.diastolic} mmHg | SatO2: ${vitals.oxygenSaturation}% | T°: ${vitals.temperature}°C`,
+      '',
+      `═══ NOTA CLÍNICA (SOAP) ═══`,
+      soapLine('S', soap.subjective),
+      soapLine('O', soap.objective),
+      soapLine('A', soap.assessment),
+      soapLine('P', soap.plan),
+    ].filter(Boolean);
+
+    if (anamnesis?.trim()) {
+      sections.push('', `═══ ANAMNESIS ═══`, anamnesis.substring(0, 600));
+    }
+
+    if (goals.length > 0) {
+      sections.push('', `═══ OBJETIVOS TERAPÉUTICOS ═══`);
+      goals.forEach(g => sections.push(`• ${g.name}: ${g.progress}% — ${g.status}`));
+    }
+
+    if (sessionLogs.length > 0) {
+      sections.push('', `═══ ÚLTIMAS SESIONES (${Math.min(5, sessionLogs.length)}) ═══`);
+      sessionLogs.slice(0, 5).forEach(s => sections.push(`[${s.date}] ${s.note?.substring(0, 200) || '—'}`));
+    }
+
+    if (specialtyKey === 'nutricion' && nutMetrics) {
+      sections.push('', `═══ EVALUACIÓN NUTRICIONAL ═══`);
+      sections.push(`Peso: ${nutPeso} kg | Talla: ${nutTalla} cm`);
+      sections.push(`IMC: ${nutMetrics.bmi} (${nutMetrics.bmiClassification.label})`);
+      sections.push(`TMB: ${nutMetrics.bmr} kcal/día | GET: ${nutMetrics.totalCalories} kcal/día`);
+      if (nutCintura && nutCadera) sections.push(`Rel. Cintura/Cadera: ${nutMetrics.whr} (${nutMetrics.whrClassification.label})`);
+      if (nutGoals) sections.push(`Objetivos nutricionales: ${nutGoals}`);
+      const planTotal = mealPlan.reduce((s, r) => s + (parseFloat(r.kcal) || 0), 0);
+      sections.push(`Plan alimentario — Total: ${planTotal} kcal estimadas`);
+    }
+
+    if (specialtyKey === 'psicologia') {
+      sections.push('', `═══ EVALUACIÓN PSICOLÓGICA ═══`);
+      sections.push(`Escala de ánimo EVA: ${psychMood}/10`);
+      if (psychPsychHistory) sections.push(`Antecedentes psiquiátricos: ${psychPsychHistory.substring(0, 300)}`);
+      if (psychIntervention)  sections.push(`Técnica aplicada: ${psychIntervention.substring(0, 300)}`);
+      if (psychNextObjective) sections.push(`Objetivo próxima sesión: ${psychNextObjective}`);
+    }
+
+    if (files.length > 0) {
+      sections.push('', `Documentos adjuntos: ${files.map(f => f.name).join(', ')}`);
+    }
+
+    return sections.join('\n');
+  };
+
+  // Prompts diferenciados por acción del agente clínico
+  const ACTION_PROMPTS: Record<string, string> = {
+    'Análisis Evolutivo':
+      'Analiza la evolución clínica del paciente basándote en el historial de sesiones y la nota SOAP actual. Identifica tendencias, progreso o deterioro. Compara con los objetivos terapéuticos y señala qué está avanzando bien y qué requiere ajuste. Sé específico y clínico.',
+    'Protocolo Médico':
+      'Busca en internet el protocolo clínico más actualizado para el diagnóstico principal de este paciente. Adapta las recomendaciones al sistema de salud chileno (MINSAL, GES si aplica). Incluye criterios de evaluación, técnicas recomendadas y frecuencia de sesiones.',
+    'Diagnóstico Diferencial':
+      'Basándote en los síntomas del SOAP subjetivo y objetivo, lista los principales diagnósticos diferenciales ordenados por probabilidad. Para los 2-3 más probables, indica qué criterios los apoyan o descartan. Busca en internet si necesitas criterios diagnósticos actualizados.',
+    'Triaje':
+      'Evalúa la urgencia del caso. Revisa los signos vitales y síntomas actuales. Determina: ¿requiere derivación urgente, atención pronto o puede continuar plan habitual? Indica señales de alarma específicas que justifiquen cambios en el plan.',
+    'Buscar Guía Clínica':
+      'Busca en internet la guía clínica o protocolo más reciente para este caso. Prioriza fuentes oficiales (MINSAL Chile, GPC, NICE, UpToDate). Reporta el título, año, recomendación principal y el enlace fuente.',
+    'Generar Informe Formal':
+      'Genera un Informe Clínico Profesional completo con el siguiente formato:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\nUsa tono formal y técnico, listo para imprimir. Sin markdown complejo.',
+    'Consulta': '',
+  };
+
+  const handleAiAnalysis = async (action: string, query?: string) => {
+    const userText = query?.trim() || action;
+    if (!userText) return;
+
+    setChatMessages(prev => [...prev, { role: 'user', text: userText }]);
     setUserInput('');
     setLoadingAi(true);
     setShowAiPanel(true);
 
     try {
-      let attachmentsContext = "";
-      if (files.length > 0) {
-        attachmentsContext = "Documentos adjuntos: " + files.map(f => f.name).join(', ') + ".\n";
-      }
+      const clinicalContext = buildClinicalContext();
+      const actionPrompt = ACTION_PROMPTS[action] || '';
+      const systemPrompt = `Eres AgenteMasLife, asistente clínico inteligente integrado en el software MasLife (Chile).
+Especialidad del profesional: ${loggedPro?.specialty || 'Salud General'}.
+Fecha actual: ${new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}.
 
-      const clinicalContext = `
-        Paciente: ${personalData.name}, RUT: ${personalData.rut}, Edad: ${personalData.age} años.
-        Contacto: Tel ${personalData.phone}, Email ${personalData.email}.
-        Dirección: ${personalData.address}.
-        Última visita: ${safePatient.lastVisit || 'No registrada'}.
-        DX: ${personalData.diagnoses}.
-        Signos Vitales: FC=${vitals.heartRate}, PA=${vitals.systolic}/${vitals.diastolic}, SatO2=${vitals.oxygenSaturation}, T°=${vitals.temperature}.
-        Notas SOAP: S: ${soap.subjective}, O: ${soap.objective}, A: ${soap.assessment}, P: ${soap.plan}.
-        Anamnesis: ${anamnesis}.
-        Objetivos actuales: ${goals.map(g => `${g.name} (${g.progress}%)`).join(', ')}.
-      `;
+CONTEXTO CLÍNICO DEL PACIENTE:
+${clinicalContext}
 
-      const promptText = `Consulta: "${textToSearch}". \n\nContexto Clínico Extendido:\n${clinicalContext}\n${attachmentsContext}`;
+INSTRUCCIONES:
+- Responde en español, con terminología clínica apropiada para la especialidad
+- Puedes buscar en internet usando la herramienta web_search cuando necesites información actualizada
+- Cita las fuentes cuando uses resultados de búsqueda
+- Sé conciso pero completo — el profesional tiene poco tiempo
+- Ante dudas, recomienda consultar guías MINSAL o derivar
+- No prescribas medicamentos, sugiere consultar médico tratante
+${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
-      const resultText = await askClaude(
-        promptText,
-        "Eres AgenteMasLife, Investigador Clínico y Asistente Administrativo Senior. Responde de forma técnica, ultra-concisa y estructurada. Prioriza la velocidad y precisión."
-      );
+      const r = await fetch('/api/clinical-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: userText === action ? (actionPrompt || userText) : userText }],
+          system: systemPrompt,
+        }),
+      });
 
-      setChatMessages(prev => [...prev,
-        { role: 'model', text: resultText || "No se pudo generar la respuesta." }
-      ]);
+      if (!r.ok) throw new Error(`Error ${r.status}`);
+      const data = await r.json();
+      const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n') || 'Sin respuesta.';
+
+      setChatMessages(prev => [...prev, { role: 'model', text }]);
     } catch (e: any) {
-      console.error("AI Error:", e);
-      let errorMsg = "Error: No se pudo conectar con el Asistente IA.";
-      if (e.message?.includes('API_KEY')) errorMsg = "Error: API Key no configurada en Vercel.";
-      setChatMessages(prev => [...prev, { role: 'model', text: errorMsg }]);
+      const msg = e.message?.includes('API_KEY')
+        ? 'Error: ANTHROPIC_API_KEY no configurada en Vercel.'
+        : 'Error al conectar con el AgenteMasLife.';
+      setChatMessages(prev => [...prev, { role: 'model', text: msg }]);
     } finally {
       setLoadingAi(false);
     }
@@ -240,29 +323,45 @@ const ClinicalRecord: React.FC = () => {
     setIsGeneratingReport(true);
     setIsReportModalOpen(true);
     try {
-      const clinicalData = `
-        Paciente: ${personalData.name}, RUT: ${personalData.rut}, Edad: ${personalData.age}, Diagnóstico: ${personalData.diagnoses}.
-        Signos Vitales: FC=${vitals.heartRate}, PA=${vitals.systolic}/${vitals.diastolic}, SatO2=${vitals.oxygenSaturation}, T°=${vitals.temperature}.
-        Notas SOAP: S: ${soap.subjective}, O: ${soap.objective}, A: ${soap.assessment}, P: ${soap.plan}.
-        Anamnesis: ${anamnesis}.
-        Objetivos: ${goals.map(g => `${g.name} (${g.progress}%)`).join(', ')}.
-        Adjuntos: ${files.map(f => f.name).join(', ')}.
-      `;
-
+      const clinicalContext = buildClinicalContext();
       const prompt = feedback
-        ? `Modifica el informe anterior basado en este comentario: "${feedback}". Datos del paciente: ${clinicalData}`
-        : `Genera un Informe Clínico Formal y Organizado para el paciente ${personalData.name}. Estructura: 1. Identificación, 2. Resumen Clínico, 3. Hallazgos y Evolución, 4. Plan de Tratamiento. Datos: ${clinicalData}`;
+        ? `Modifica el siguiente informe basándote en este comentario del profesional: "${feedback}".\n\nINFORME ANTERIOR:\n${reportContent}\n\nDATOS DEL PACIENTE:\n${clinicalContext}`
+        : `Genera un Informe Clínico Profesional completo para el paciente ${personalData.name}.\n\nEstructura obligatoria:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\n\nDATOS CLÍNICOS:\n${clinicalContext}`;
 
-      const result = await askClaude(
-        prompt,
-        "Eres un redactor de informes médicos experto. Genera documentos con tono sobrio, estructurado y profesional, listos para descargar o imprimir. Usa formato de texto plano con guiones o puntos, sin markdown complejo."
-      );
-      setReportContent(result);
-    } catch (e) {
-      setReportContent("Error al generar el informe inteligente.");
+      const r = await fetch('/api/clinical-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          system: `Eres un redactor de informes clínicos experto. Genera documentos con tono sobrio, estructurado y profesional, listos para imprimir. Usa texto plano con guiones o numeración. Sin markdown complejo. Especialidad: ${loggedPro?.specialty || 'Salud'}.`,
+        }),
+      });
+      if (!r.ok) throw new Error('Error al generar');
+      const data = await r.json();
+      const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n') || 'Error al generar el informe.';
+      setReportContent(text);
+    } catch {
+      setReportContent('Error al generar el informe. Verifica la conexión con el AgenteMasLife.');
     } finally {
       setIsGeneratingReport(false);
     }
+  };
+
+  // Guarda el informe generado como documento adjunto en la ficha
+  const handleSaveReportAsFile = () => {
+    if (!reportContent.trim()) return;
+    const newFile: ClinicalFile = {
+      id: Date.now().toString(),
+      name: `Informe_${personalData.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`,
+      size: `${(reportContent.length / 1024).toFixed(1)} KB`,
+      date: new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' }),
+      type: 'pdf',
+      url: '#',
+      base64: `data:text/plain;base64,${btoa(unescape(encodeURIComponent(reportContent)))}`,
+    };
+    setFiles(prev => [newFile, ...prev]);
+    setIsDirtyTrue();
+    toast.success('Informe guardado como documento en la ficha');
   };
 
   const runAdvancedAnalysis = async () => {
@@ -415,7 +514,7 @@ const ClinicalRecord: React.FC = () => {
     setIsDirty(false);
     setAutoSaveStatus('idle');
     setIsSaving(false);
-    alert('Ficha Clínica guardada correctamente.');
+    toast.success(`Ficha de ${personalData.name} guardada correctamente`);
     navigate('/pro/patients');
   };
 
@@ -983,7 +1082,10 @@ const ClinicalRecord: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-1">AgenteMasLife</h3>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Investigador Clínico IA</p>
+                <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse inline-block"></span>
+                  IA Clínica + Búsqueda Web
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1002,13 +1104,21 @@ const ClinicalRecord: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/50 custom-scrollbar flex flex-col">
             <div className="grid grid-cols-2 gap-3 mb-4">
-              {['Análisis Evolutivo', 'Protocolo Médico', 'Triaje', 'Generar Informe Formal'].map(t => (
+              {[
+                { label: 'Análisis Evolutivo', icon: 'trending_up',      color: 'bg-white border-slate-100 text-slate-600 hover:border-primary hover:text-primary' },
+                { label: 'Protocolo Médico',   icon: 'medical_services', color: 'bg-white border-slate-100 text-slate-600 hover:border-teal-500 hover:text-teal-600' },
+                { label: 'Diagnóstico Diferencial', icon: 'biotech',     color: 'bg-white border-slate-100 text-slate-600 hover:border-indigo-500 hover:text-indigo-600' },
+                { label: 'Triaje',             icon: 'emergency',        color: 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100' },
+                { label: 'Buscar Guía Clínica',icon: 'travel_explore',   color: 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100' },
+                { label: 'Generar Informe Formal', icon: 'description',  color: 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100' },
+              ].map(btn => (
                 <button
-                  key={t}
-                  onClick={() => t === 'Generar Informe Formal' ? handleGenerateProfessionalReport() : handleAiAnalysis(t)}
-                  className={`p-4 border rounded-2xl text-xs font-black uppercase transition-all shadow-sm ${t === 'Generar Informe Formal' ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100' : 'bg-white border-slate-100 text-slate-500 hover:border-primary hover:text-primary'}`}
+                  key={btn.label}
+                  onClick={() => btn.label === 'Generar Informe Formal' ? handleGenerateProfessionalReport() : handleAiAnalysis(btn.label)}
+                  className={`p-3.5 border rounded-2xl text-[10px] font-black uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 ${btn.color}`}
                 >
-                  {t}
+                  <span className="material-icons-round text-sm">{btn.icon}</span>
+                  {btn.label}
                 </button>
               ))}
             </div>
@@ -1052,6 +1162,9 @@ const ClinicalRecord: React.FC = () => {
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Revisa, Edita y Descarga el Documento</p>
               </div>
               <div className="flex gap-4">
+                <button onClick={handleSaveReportAsFile} className="bg-teal-500 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-teal-600 transition-all shadow-xl">
+                  <span className="material-icons-round text-base">save_alt</span> GUARDAR EN FICHA
+                </button>
                 <button onClick={() => window.print()} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl">
                   <span className="material-icons-round text-base">print</span> IMPRIMIR / PDF
                 </button>

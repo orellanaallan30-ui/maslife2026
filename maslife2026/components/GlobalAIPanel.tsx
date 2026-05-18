@@ -89,10 +89,21 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
         required: ['patient_name', 'new_date', 'new_time']
       }
     },
+    {
+      name: 'web_search',
+      description: 'Busca información en internet sobre protocolos clínicos, fármacos, guías MINSAL, diagnósticos, o cualquier información médica actualizada. Usa cuando el profesional pregunte algo que requiera datos actualizados.',
+      input_schema: {
+        type: 'object' as const,
+        properties: {
+          query: { type: 'string', description: 'Consulta de búsqueda en español o inglés' },
+        },
+        required: ['query'],
+      },
+    },
   ];
 
-  // --- Ejecutores de funciones (misma lógica que antes) ---
-  const executeFunction = (name: string, args: any): string => {
+  // --- Ejecutores de funciones ---
+  const executeFunction = async (name: string, args: any): Promise<string> => {
     switch (name) {
       case 'query_agenda': {
         const { date_from, date_to } = args;
@@ -139,15 +150,8 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
         };
 
         if (!matchedPatient && !is_block) {
-          const patientId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9);
-          addPatient({
-            id: patientId, name: patient_name, rut: 'Sin RUT', email: '', phone: '',
-            risk: 'Medio', status: 'Evaluación', archived: false, customFields: [], attachments: [],
-            allergies: [], medicalHistory: 'Registrado vía Asistente IA', age: 0, prevision: 'Particular',
-            gender: 'No especificado', birthDate: '', address: '', vitals: null, soap: null,
-            goals: [], sessionLogs: [], lastVisit: date
-          } as any);
-          newApp.patientId = patientId;
+          // No crear paciente automáticamente — pedimos confirmación
+          return `⚠️ No encontré a "${patient_name}" en la lista de pacientes. ¿Quieres que lo registre como paciente nuevo para agendar la cita? Responde "Sí, registrar a ${patient_name}" para confirmar.`;
         }
 
         addAppointment(newApp);
@@ -204,6 +208,21 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
         const oldTime = match.time;
         updateAppointment({ ...match, date: new_date, time: new_time });
         return `✅ Cita de ${match.patientName} reagendada de ${oldDate} ${oldTime} → ${new_date} ${new_time}.`;
+      }
+
+      case 'web_search': {
+        try {
+          const r = await fetch('/api/web-search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: args.query }),
+          });
+          if (!r.ok) return 'Error al buscar en internet.';
+          const d = await r.json();
+          return d.result || 'Sin resultados.';
+        } catch {
+          return 'Error de conexión al buscar en internet.';
+        }
       }
 
       default:
@@ -294,7 +313,7 @@ REGLAS:
         const toolResults: any[] = [];
 
         for (const toolBlock of toolUseBlocks) {
-          const functionResult = executeFunction(toolBlock.name, toolBlock.input);
+          const functionResult = await executeFunction(toolBlock.name, toolBlock.input);
 
           // Audit log
           void supabaseService.saveAuditLog({
@@ -365,7 +384,7 @@ REGLAS:
             <h3 className="text-sm font-extrabold tracking-wide">Asistente MasLife</h3>
             <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-              Claude IA · Agenda
+              Claude IA · Agenda + Búsqueda Web
             </p>
           </div>
         </div>

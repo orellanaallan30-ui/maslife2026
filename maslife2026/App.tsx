@@ -21,8 +21,9 @@ import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
 import { ConsentAcceptPage } from './pages/ConsentAcceptPage';
 import { PasswordRecovery, ResetPassword } from './pages/PasswordRecovery';
-import Sidebar        from './components/Sidebar';
-import GlobalAIPanel  from './components/GlobalAIPanel';
+import Sidebar          from './components/Sidebar';
+import GlobalAIPanel    from './components/GlobalAIPanel';
+import ToastContainer   from './components/ToastContainer';
 import { ClinicProvider, useClinic } from './ClinicContext';
 import { AppView, Notification } from './types';
 import logoClinica from './assets/logo-clinica.png';
@@ -342,6 +343,7 @@ const App: React.FC = () => (
   <HashRouter>
     <ClinicProvider>
       <AppContent />
+      <ToastContainer />
     </ClinicProvider>
   </HashRouter>
 );
