@@ -139,78 +139,54 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
                 <div className="relative w-72 sm:w-80 h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
                   {/* Header del menú */}
-                  <div className="bg-slate-900 p-5 flex items-center justify-between shrink-0">
+                  <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-5 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-3">
-                      <img src="/logo-clinica-maslife.svg" alt="Mas Life" className="h-8 w-auto brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
+                      <img src="/logo-clinica-maslife.svg" alt="Mas Life" className="h-9 w-auto brightness-0 invert opacity-95" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
                     </div>
                     <button
                       onClick={() => setMenuOpen(false)}
-                      className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all">
-                      <span className="material-icons-round text-white text-base">close</span>
+                      className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center hover:bg-white/20 active:scale-95 transition-all">
+                      <span className="material-icons-round text-white text-lg">close</span>
                     </button>
                   </div>
 
                   {/* Contenido del menú */}
-                  <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                    {/* Para Pacientes */}
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Para Pacientes</p>
+                  <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3">
+                    {/* Tagline */}
+                    <div className="text-center py-3">
+                      <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                        Red de salud verificada en<br />
+                        <span className="font-bold text-slate-700">Ovalle · Coquimbo · La Serena</span>
+                      </p>
+                    </div>
+
+                    {/* Buscar Profesional */}
                     <button
                       onClick={() => { setMenuOpen(false); navigate('/patient/results'); }}
-                      className="w-full text-left p-4 rounded-2xl bg-teal-50 border border-teal-100 hover:bg-teal-100 transition-all flex items-center gap-3 group">
-                      <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                        <span className="material-icons-round text-white text-base">person_search</span>
+                      className="w-full text-left p-4 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg shadow-teal-200 hover:shadow-teal-300 hover:scale-[1.02] transition-all flex items-center gap-4 group">
+                      <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-white text-xl">person_search</span>
                       </div>
                       <div>
-                        <p className="text-xs font-black text-slate-900 uppercase tracking-wide">Buscar Profesionales</p>
-                        <p className="text-xs text-teal-600 font-bold mt-0.5">Red verificada +Life</p>
+                        <p className="text-sm font-black text-white uppercase tracking-wide">Buscar Profesional</p>
+                        <p className="text-xs text-teal-100 font-medium mt-0.5">Encuentra tu especialista</p>
                       </div>
+                      <span className="material-icons-round text-white/50 text-base ml-auto group-hover:translate-x-1 transition-transform">chevron_right</span>
                     </button>
 
+                    {/* Panel Profesional */}
                     <button
-                      onClick={() => { setMenuOpen(false); navigate('/', { state: { openContact: true } }); }}
-                      className="w-full text-left p-4 rounded-2xl bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-all flex items-center gap-3 group">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                        <span className="material-icons-round text-white text-base">mark_email_unread</span>
+                      onClick={() => { setMenuOpen(false); navigate('/pro/login'); }}
+                      className="w-full text-left p-4 rounded-2xl bg-slate-900 shadow-lg shadow-slate-200 hover:shadow-slate-300 hover:scale-[1.02] transition-all flex items-center gap-4 group">
+                      <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-white text-xl">badge</span>
                       </div>
                       <div>
-                        <p className="text-xs font-black text-slate-900 uppercase tracking-wide">Que me contacten</p>
-                        <p className="text-xs text-indigo-600 font-bold mt-0.5">Respuesta en menos de 1 hora</p>
+                        <p className="text-sm font-black text-white uppercase tracking-wide">Panel Profesional</p>
+                        <p className="text-xs text-slate-400 font-medium mt-0.5">Acceso para profesionales</p>
                       </div>
+                      <span className="material-icons-round text-white/30 text-base ml-auto group-hover:translate-x-1 transition-transform">chevron_right</span>
                     </button>
-
-                    <button
-                      onClick={() => { setMenuOpen(false); navigate('/', { state: { openAgendar: true } }); }}
-                      className="w-full text-left p-4 rounded-2xl bg-orange-50 border border-orange-100 hover:bg-orange-100 transition-all flex items-center gap-3 group">
-                      <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                        <span className="material-icons-round text-white text-base">calendar_month</span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-slate-900 uppercase tracking-wide">Agendar Atención</p>
-                        <p className="text-xs text-orange-600 font-bold mt-0.5">Domicilio · Online · Presencial</p>
-                      </div>
-                    </button>
-
-                    <div className="h-px bg-slate-100 my-4" />
-
-                    {/* Acceso al Sistema */}
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Acceso Sistema</p>
-                    {[
-                      { icon: 'badge', label: 'Portal Profesional', sub: 'Ingresa a tu cuenta', path: '/pro/login', bg: 'bg-slate-800', adminOnly: false },
-                      { icon: 'admin_panel_settings', label: 'Administración', sub: 'Panel de control', path: '/admin/login', bg: 'bg-rose-600', adminOnly: true }
-                    ].filter(item => !item.adminOnly || isRodrigo).map(item => (
-                      <button
-                        key={item.path}
-                        onClick={() => { setMenuOpen(false); navigate(item.path); }}
-                        className="w-full text-left p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-slate-100 transition-all flex items-center gap-3 group">
-                        <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
-                          <span className="material-icons-round text-white text-base">{item.icon}</span>
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-slate-900 uppercase tracking-wide">{item.label}</p>
-                          <p className="text-xs text-slate-500 font-bold mt-0.5">{item.sub}</p>
-                        </div>
-                      </button>
-                    ))}
                   </div>
 
                   {/* Footer del menú */}
