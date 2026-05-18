@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import logoClinica from '../assets/logo-clinica.png';
 
 const MainHome: React.FC = () => {
   const navigate = useNavigate();
@@ -188,7 +189,7 @@ const MainHome: React.FC = () => {
           {/* Logo Clínica Mas Life */}
           <div className="flex items-center cursor-pointer shrink-0" onClick={() => scrollToSection('hero')}>
             <img
-              src="/logo-clinica-maslife.svg"
+              src={logoClinica}
               alt="Clínica Mas Life"
               className="h-10 sm:h-12 w-auto object-contain"
               onError={(e) => {
@@ -619,7 +620,7 @@ const MainHome: React.FC = () => {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1 space-y-5">
               <div className="flex items-center">
-                <img src="/logo-clinica-maslife.svg" alt="Clínica Mas Life" className="h-10 w-auto object-contain brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
+                <img src={logoClinica} alt="Clínica Mas Life" className="h-10 w-auto object-contain brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
                 <span className="hidden text-xl font-extrabold tracking-tight">Mas<span className="text-blue-400">life</span></span>
               </div>
               <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs">

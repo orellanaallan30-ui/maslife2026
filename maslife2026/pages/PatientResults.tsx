@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
+import logoAgenda from '../assets/logo-agenda.png';
 
 const PatientResults: React.FC = () => {
   const navigate = useNavigate();
@@ -56,11 +57,14 @@ const PatientResults: React.FC = () => {
     <div className="w-full bg-slate-50 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 80px)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-        {/* Header */}
+        {/* Header con logo Agenda Online */}
         <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Especialistas Disponibles</h2>
-            <p className="text-sm font-medium text-slate-500">{visibleDoctors.length} profesionales encontrados</p>
+          <div className="flex items-center gap-4">
+            <img src={logoAgenda} alt="Agenda Online ClinicaMaslife" className="h-10 w-auto object-contain" />
+            <div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Especialistas Disponibles</h2>
+              <p className="text-sm font-medium text-slate-500">{visibleDoctors.length} profesionales encontrados</p>
+            </div>
           </div>
           {/* Mobile filter toggle */}
           <button
