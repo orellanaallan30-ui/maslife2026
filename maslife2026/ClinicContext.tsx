@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate } from './types';
+import { supabase, getPatients, getAppointments } from './supabaseService';
 
 interface ClinicContextType {
   // Estado de carga
@@ -190,6 +191,39 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   }, [loggedPro]);
 
+  // Cargar datos del profesional desde Supabase al iniciar sesión
+  useEffect(() => {
+    if (!loggedPro) {
+      // Al cerrar sesión: limpiar datos para no mezclar con el próximo profesional
+      setPatients([]);
+      setAppointments([]);
+      return;
+    }
+
+    const loadProData = async () => {
+      try {
+        const [supaPatients, supaApps] = await Promise.all([
+          getPatients(loggedPro.id),
+          getAppointments(loggedPro.id),
+        ]);
+        // Si Supabase devuelve datos, reemplazar localStorage
+        if (supaPatients.length > 0) setPatients(supaPatients);
+        if (supaApps.length > 0) setAppointments(supaApps);
+        // Si Supabase no devuelve datos: mantener localStorage filtrado
+        else setAppointments(prev =>
+          prev.filter(a => !a.professionalId || a.professionalId === loggedPro.id)
+        );
+      } catch {
+        // Sin conexión a Supabase: filtrar localStorage por este profesional
+        setAppointments(prev =>
+          prev.filter(a => !a.professionalId || a.professionalId === loggedPro.id)
+        );
+      }
+    };
+
+    loadProData();
+  }, [loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     localStorage.setItem('maslife_notifications', JSON.stringify(notifications));
   }, [notifications]);
@@ -298,6 +332,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const logout = (navigate: any, view: string) => {
+    supabase.auth.signOut().catch(() => {});
     setLoggedPro(null);
     setIsAdmin(false);
     if (view === 'PROFESSIONAL') navigate('/pro/login');

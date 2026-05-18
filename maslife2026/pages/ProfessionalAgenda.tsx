@@ -5,7 +5,13 @@ import { useClinic } from '../ClinicContext';
 
 const ProfessionalAgenda: React.FC = () => {
    const navigate = useNavigate();
-   const { appointments, patients, addAppointment, updateAppointment, deleteAppointment: onRemoveApp, setPatients: setContextPatients, loggedPro, logout } = useClinic();
+   const { appointments: allAppointments, patients, addAppointment, updateAppointment, deleteAppointment: onRemoveApp, setPatients: setContextPatients, loggedPro, logout } = useClinic();
+
+   // Solo citas de este profesional
+   const appointments = useMemo(
+     () => allAppointments.filter(a => !a.professionalId || a.professionalId === loggedPro?.id),
+     [allAppointments, loggedPro?.id]
+   );
 
    const onAddPatient = (p: Patient) => setContextPatients(prev => [...prev, p]);
    const onLogout = () => logout(navigate, 'PROFESSIONAL');
