@@ -55,14 +55,14 @@ const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
 
 export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdmin, setIsAdminState] = useState<boolean>(
-    () => localStorage.getItem('maslife_admin_auth') === 'true'
-  );
+  // isAdmin nunca se persiste en localStorage — su validez la garantiza el JWT en sessionStorage
+  const [isAdmin, setIsAdminState] = useState<boolean>(false);
 
   const setIsAdmin = (v: boolean) => {
     setIsAdminState(v);
-    if (v) localStorage.setItem('maslife_admin_auth', 'true');
-    else localStorage.removeItem('maslife_admin_auth');
+    if (!v) sessionStorage.removeItem('maslife_admin_token');
+    // Limpiar la clave legacy por si existía
+    localStorage.removeItem('maslife_admin_auth');
   };
   // Estado inicial con profesional de prueba
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>(() => {
@@ -74,7 +74,6 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       slug: 'rodrigo-orellana',
       name: 'Rodrigo Orellana',
       email: 'orellanaallan30@gmail.com',
-      password: 'Roo1998.',
       needsPasswordReset: false,
       isVerified: true,
       isSubscribed: true,
@@ -167,7 +166,9 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Persistencia automática
   useEffect(() => {
-    localStorage.setItem('maslife_professionals', JSON.stringify(professionals));
+    // Nunca persistir contraseñas en localStorage
+    const safePros = professionals.map(({ password: _pw, ...rest }) => rest);
+    localStorage.setItem('maslife_professionals', JSON.stringify(safePros));
   }, [professionals]);
 
   useEffect(() => {

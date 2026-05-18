@@ -1,11 +1,27 @@
 // Vercel Serverless Function — Proxy a Claude API para el agente IA
 // Configura ANTHROPIC_API_KEY en Vercel Environment Variables
+// Requiere sesión Supabase activa (profesional logueado)
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // Rate limiting por IP: 30 llamadas por minuto (previene abuso de costos)
+  if (!checkIpRateLimit(req.headers as Record<string, string | string[] | undefined>, 30, 60 * 1000)) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en un momento.' });
+  }
+
+  // Requerir sesión de Supabase (profesional autenticado)
+  // Si SUPABASE_SERVICE_ROLE_KEY no está configurada, permite el acceso (modo desarrollo)
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const auth = await requireSupabaseAuth(req.headers as Record<string, string | string[] | undefined>);
+    if (!auth) {
+      return res.status(401).json({ error: 'No autorizado. Inicia sesión para usar el asistente IA.' });
+    }
   }
 
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;

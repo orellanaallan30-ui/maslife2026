@@ -324,9 +324,10 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     setIsReportModalOpen(true);
     try {
       const clinicalContext = buildClinicalContext();
+      const sanitize = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const prompt = feedback
-        ? `Modifica el siguiente informe basándote en este comentario del profesional: "${feedback}".\n\nINFORME ANTERIOR:\n${reportContent}\n\nDATOS DEL PACIENTE:\n${clinicalContext}`
-        : `Genera un Informe Clínico Profesional completo para el paciente ${personalData.name}.\n\nEstructura obligatoria:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\n\nDATOS CLÍNICOS:\n${clinicalContext}`;
+        ? `Modifica el siguiente informe basándote en el comentario del profesional:\n<comentario>${sanitize(feedback)}</comentario>\n\nINFORME ANTERIOR:\n${reportContent}\n\nDATOS DEL PACIENTE:\n${clinicalContext}`
+        : `Genera un Informe Clínico Profesional completo para el paciente ${sanitize(personalData.name)}.\n\nEstructura obligatoria:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\n\nDATOS CLÍNICOS:\n${clinicalContext}`;
 
       const r = await fetch('/api/clinical-agent', {
         method: 'POST',

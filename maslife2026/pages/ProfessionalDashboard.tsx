@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Appointment } from '../types';
 import { useClinic } from '../ClinicContext';
+import { supabase } from '../supabaseClient';
 
 const ProfessionalDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -9,7 +10,26 @@ const ProfessionalDashboard: React.FC = () => {
 
   if (!loggedPro) return <Navigate to="/pro/login" />;
 
-  const isPaused = loggedPro.subscriptionStatus === 'paused';
+  // Verificar estado de suscripción desde el servidor (no confiar solo en localStorage)
+  const [serverSubStatus, setServerSubStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('professionals')
+      .select('subscription_status')
+      .eq('id', loggedPro.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.subscription_status) setServerSubStatus(data.subscription_status);
+      })
+      .catch(() => {
+        // Sin conexión: usar estado local como fallback
+        setServerSubStatus(loggedPro.subscriptionStatus);
+      });
+  }, [loggedPro.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // El estado del servidor tiene precedencia; fallback al local mientras carga
+  const isPaused = (serverSubStatus ?? loggedPro.subscriptionStatus) === 'paused';
 
   const [linkCopied, setLinkCopied] = useState(false);
 

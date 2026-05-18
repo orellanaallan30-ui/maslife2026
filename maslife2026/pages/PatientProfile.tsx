@@ -272,7 +272,7 @@ const PatientProfile: React.FC = () => {
             {doctor.phone && (
               <a
                 href={`https://wa.me/${doctor.phone.replace(/\D/g,'')}?text=${encodeURIComponent(
-                  `📅 Nueva reserva confirmada\n\nProfesional: ${doctor.name}\nPaciente: ${patientData.name}\nServicio: ${selectedService?.name}\nFecha: ${availableDays[selectedDay]?.label}\nHora: ${selectedSlot}\nModalidad: ${selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial'}${transactionRef ? `\nRef. Pago: ${transactionRef}` : ''}`
+                  `📅 Nueva reserva confirmada\n\nServicio: ${selectedService?.name}\nFecha: ${availableDays[selectedDay]?.label}\nHora: ${selectedSlot}\nModalidad: ${selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial'}`
                 )}`}
                 target="_blank"
                 rel="noreferrer"

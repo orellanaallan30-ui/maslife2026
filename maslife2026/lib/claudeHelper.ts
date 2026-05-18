@@ -1,6 +1,8 @@
 // Helper para llamar a Claude API via serverless function
 // Centraliza todas las llamadas IA del proyecto
 
+import { supabase } from '../supabaseClient';
+
 export interface ClaudeRequest {
   messages: Array<{ role: 'user' | 'assistant'; content: any }>;
   system?: string;
@@ -11,9 +13,14 @@ export interface ClaudeRequest {
 export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
   const endpoint = import.meta.env.VITE_AI_ENDPOINT || '/api/ai-agent';
 
+  // Incluir token de sesión para que el endpoint valide al profesional
+  const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }));
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
       messages: request.messages,
       system: request.system || '',

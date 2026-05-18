@@ -2,6 +2,9 @@
 // Requiere RESEND_API_KEY en Vercel Environment Variables (resend.com)
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { checkIpRateLimit } from './_lib/auth';
+
+const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
 
 const BASE_STYLE = `font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#f8fafc;padding:24px;`;
 const CARD_STYLE = `background:white;padding:32px;border-radius:0 0 16px 16px;border:1px solid #e2e8f0;`;
@@ -106,11 +109,20 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  // Rate limiting: 20 emails por IP por hora (previene spam masivo)
+  if (!checkIpRateLimit(req.headers as Record<string, string | string[] | undefined>, 20, 60 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en una hora.' });
+  }
+
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_API_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
 
   const { to, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price } = req.body;
   if (!to || !patientName) return res.status(400).json({ error: 'Faltan campos requeridos' });
+
+  // Validar formato de email para prevenir uso como spam relay
+  if (!EMAIL_RE.test(to)) return res.status(400).json({ error: 'Email de destinatario inválido' });
+  if (patientEmail && !EMAIL_RE.test(patientEmail)) return res.status(400).json({ error: 'Email de paciente inválido' });
 
   const FROM = process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@maslife2026.vercel.app>';
 
