@@ -237,17 +237,17 @@ const Settings: React.FC = () => {
                       </button>
                       <button
                         onClick={() => {
-                          const link = `https://clinicamaslife.cl/pro/${localProfile.slug || localProfile.id}`;
+                          const link = getShareableLink();
                           if (navigator.share) {
-                            navigator.share({ title: `Agenda con ${localProfile.name}`, url: link });
+                            navigator.share({ title: `Agenda con ${localProfile.name}`, text: '¡Agenda tu hora conmigo!', url: link });
                           } else {
-                            window.open(`https://wa.me/?text=${encodeURIComponent(`Agenda conmigo en Clínica MasLife: ${link}`)}`, '_blank');
+                            window.open(`https://wa.me/?text=${encodeURIComponent(`¡Hola! Puedes agendar conmigo directamente aquí: ${link}`)}`, '_blank');
                           }
                         }}
-                        className="px-5 py-2.5 rounded-xl bg-slate-800 text-white font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center gap-2"
+                        className="px-5 py-2.5 rounded-xl bg-[#25D366] text-white font-black text-xs uppercase tracking-widest hover:bg-[#1ebe5d] transition-all flex items-center gap-2"
                       >
-                        <span className="material-icons-round text-sm">share</span>
-                        Compartir
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current flex-shrink-0"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
+                        WhatsApp
                       </button>
                     </div>
                   </div>

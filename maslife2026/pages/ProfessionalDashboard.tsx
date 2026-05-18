@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Appointment } from '../types';
 import { useClinic } from '../ClinicContext';
@@ -10,6 +10,39 @@ const ProfessionalDashboard: React.FC = () => {
   if (!loggedPro) return <Navigate to="/pro/login" />;
 
   const isPaused = loggedPro.subscriptionStatus === 'paused';
+
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const bookingLink = (() => {
+    const base = window.location.origin + window.location.pathname;
+    return `${base}#/patient/profile/${loggedPro.slug || loggedPro.id}`;
+  })();
+
+  const handleCopyBookingLink = useCallback(() => {
+    navigator.clipboard.writeText(bookingLink).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    }).catch(() => {
+      const el = document.createElement('textarea');
+      el.value = bookingLink;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    });
+  }, [bookingLink]);
+
+  const handleShareBookingLink = useCallback(() => {
+    if (navigator.share) {
+      navigator.share({ title: `Agenda con ${loggedPro.name}`, text: '¡Agenda tu hora conmigo!', url: bookingLink });
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(`¡Hola! Puedes agendar una cita conmigo directamente aquí: ${bookingLink}`)}`, '_blank');
+    }
+  }, [bookingLink, loggedPro.name]);
+
+  const profileComplete = !!(loggedPro.slug && loggedPro.specialty && loggedPro.services?.length > 0);
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
 
   const today = new Date().toISOString().split('T')[0];
@@ -78,9 +111,75 @@ const ProfessionalDashboard: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-slate-50/50 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-10 text-center md:text-left">
+          <div className="mb-8 text-center md:text-left">
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 leading-tight">Hola, {loggedPro.name}</h1>
             <p className="text-primary font-black text-xs uppercase tracking-[0.4em] mt-3 opacity-80">Panel de Control Clínico</p>
+          </div>
+
+          {/* ── Tu Link de Reservas ── */}
+          <div className={`mb-8 rounded-[2.5rem] border p-6 md:p-7 flex flex-col md:flex-row items-start md:items-center gap-5 transition-all ${
+            profileComplete
+              ? 'bg-white border-slate-100 shadow-sm'
+              : 'bg-amber-50 border-amber-200'
+          }`}>
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
+              profileComplete ? 'bg-blue-50' : 'bg-amber-100'
+            }`}>
+              <span className={`material-icons-round text-2xl ${profileComplete ? 'text-blue-600' : 'text-amber-600'}`}>
+                {profileComplete ? 'link' : 'warning'}
+              </span>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Tu Link de Reservas Online</p>
+                {profileComplete ? (
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-widest">
+                    ✓ Activo
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] font-black rounded-lg uppercase tracking-widest">
+                    Perfil incompleto
+                  </span>
+                )}
+              </div>
+              <p className="text-sm font-bold text-blue-600 truncate">{bookingLink}</p>
+              {!profileComplete && (
+                <p className="text-[10px] text-amber-700 font-bold mt-1">
+                  Completa en{' '}
+                  <button onClick={() => navigate('/pro/settings')} className="underline">Configuración</button>
+                  {': '}
+                  {!loggedPro.specialty && 'especialidad · '}
+                  {(!loggedPro.services || loggedPro.services.length === 0) && 'al menos 1 servicio'}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2 shrink-0">
+              <button
+                onClick={() => window.open(bookingLink, '_blank')}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
+              >
+                <span className="material-icons-round text-sm">visibility</span>
+                Ver Perfil
+              </button>
+              <button
+                onClick={handleCopyBookingLink}
+                className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  linkCopied ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                <span className="material-icons-round text-sm">{linkCopied ? 'check_circle' : 'content_copy'}</span>
+                {linkCopied ? '¡Copiado!' : 'Copiar Link'}
+              </button>
+              <button
+                onClick={handleShareBookingLink}
+                className="w-10 h-10 rounded-xl bg-[#25D366] text-white font-black text-xs hover:bg-[#1ebe5d] transition-all flex items-center justify-center"
+                title="Compartir por WhatsApp"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
