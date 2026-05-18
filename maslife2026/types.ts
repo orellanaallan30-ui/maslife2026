@@ -145,10 +145,32 @@ export interface Patient {
   emergencyContact?: string;
   goals?: any[];
   soap?: any;
+  specialtyData?: Record<string, unknown>;
 }
 
 export interface ClinicalTemplate {
   id: string;
   name: string;
-  fields: string[]; 
+  fields: string[];
+}
+
+// Archivo adjunto en ficha clínica
+export interface ClinicalFile {
+  id: string;
+  name: string;
+  size: string;
+  date: string;
+  type: 'pdf' | 'image';
+  url: string;
+  base64?: string;
+}
+
+// Fila de plan alimentario (ficha nutricional)
+export interface MealPlanRow {
+  id: string;
+  meal: string;       // Desayuno, Almuerzo, etc.
+  food: string;       // Preparación / alimento
+  quantity: string;   // Cantidad (g, ml, unidades)
+  kcal: string;       // Kcal estimadas
+  notes: string;      // Observaciones
 }
