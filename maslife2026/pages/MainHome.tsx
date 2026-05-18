@@ -435,7 +435,7 @@ const MainHome: React.FC = () => {
               { icon: 'groups', title: 'ASIGNACIÓN PROFESIONAL', desc: 'Un agente revisa tu información y te asigna un profesional apto a tus requerimientos.', color: 'bg-blue-100 text-blue-600' },
               { icon: 'event_available', title: 'CITA PROFESIONAL', desc: 'El profesional asignado te contacta y coordina con una primera cita.', color: 'bg-rose-100 text-rose-600' }
             ].map((step, i) => (
-              <div key={i} className="bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg transition-all duration-300 text-center group">
+              <div key={i} data-reveal={`step-${i}`} className={`bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg text-center group ${rv(`step-${i}`)}`} style={{ transitionDelay: `${i * 150}ms` }}>
                 <div className={`w-14 h-14 sm:w-16 sm:h-16 ${step.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
                   <span className="material-icons-round text-2xl sm:text-3xl">{step.icon}</span>
                 </div>

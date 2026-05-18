@@ -206,7 +206,7 @@ const PatientResults: React.FC = () => {
                     <div className="flex flex-wrap justify-center sm:justify-start gap-1.5">
                       {doc.modalities?.online && <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md">Online</span>}
                       {doc.modalities?.inPerson && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md">Presencial</span>}
-                      {doc.modalities?.homeVisit && <span className="px-2.5 py-1 bg-teal-50 text-teal-600 text-[10px] font-bold rounded-md">Domicilio</span>}
+                      {doc.modalities?.home && <span className="px-2.5 py-1 bg-teal-50 text-teal-600 text-[10px] font-bold rounded-md">Domicilio</span>}
                     </div>
                   </div>
 
