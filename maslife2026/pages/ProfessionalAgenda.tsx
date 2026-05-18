@@ -5,7 +5,13 @@ import { useClinic } from '../ClinicContext';
 
 const ProfessionalAgenda: React.FC = () => {
    const navigate = useNavigate();
-   const { appointments, patients, addAppointment, updateAppointment, deleteAppointment: onRemoveApp, setPatients: setContextPatients, loggedPro, logout } = useClinic();
+   const { appointments: allAppointments, patients, addAppointment, updateAppointment, deleteAppointment: onRemoveApp, setPatients: setContextPatients, loggedPro, logout } = useClinic();
+
+   // Solo citas de este profesional
+   const appointments = useMemo(
+     () => allAppointments.filter(a => !a.professionalId || a.professionalId === loggedPro?.id),
+     [allAppointments, loggedPro?.id]
+   );
 
    const onAddPatient = (p: Patient) => setContextPatients(prev => [...prev, p]);
    const onLogout = () => logout(navigate, 'PROFESSIONAL');
@@ -22,6 +28,10 @@ const ProfessionalAgenda: React.FC = () => {
    const [blockNote, setBlockNote] = useState('');
    const [blockDuration, setBlockDuration] = useState(60);
    const [selectedColor, setSelectedColor] = useState('bg-primary');
+   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+   const [appointmentNotes, setAppointmentNotes] = useState('');
+
+   const selectedService = loggedPro?.services.find(s => s.id === selectedServiceId) || loggedPro?.services[0] || null;
 
    const chileanHolidays = useMemo(() => {
       const year = currentDate.getFullYear();
@@ -87,6 +97,8 @@ const ProfessionalAgenda: React.FC = () => {
       setSelectedColor('bg-primary');
       setBlockNote('');
       setActiveTab('existing');
+      setSelectedServiceId('');
+      setAppointmentNotes('');
       setIsCreateModalOpen(true);
    };
 
@@ -105,13 +117,14 @@ const ProfessionalAgenda: React.FC = () => {
          patientPhone: patient?.phone,
          doctorName: loggedPro?.name || '',
          specialty: loggedPro?.specialty || '',
-         serviceName: isBlock ? 'Bloqueo' : (loggedPro?.services[0]?.name || 'Consulta'),
+         serviceName: isBlock ? 'Bloqueo' : (selectedService?.name || loggedPro?.services[0]?.name || 'Consulta'),
          date: selectedSlot.date,
          time: selectedSlot.time,
-         duration: isBlock ? blockDuration : 60,
+         duration: isBlock ? blockDuration : (selectedService?.duration || 60),
          type: isBlock ? 'Personal' : 'Presencial',
          status: isBlock ? 'Bloqueado' : 'Confirmado',
-         price: isBlock ? 0 : (loggedPro?.services[0]?.price || 0),
+         price: isBlock ? 0 : (selectedService?.price || loggedPro?.services[0]?.price || 0),
+         notes: isBlock ? undefined : appointmentNotes || undefined,
          paymentStatus: isBlock ? 'Pagado' : 'Pendiente',
          category: isBlock ? 'Personal' : 'Medical',
          color: isBlock ? 'bg-slate-800' : selectedColor,
@@ -149,6 +162,16 @@ const ProfessionalAgenda: React.FC = () => {
          };
       }
 
+      if (status === 'Cancelado') {
+         return {
+            bg: 'bg-rose-50',
+            border: 'border-rose-200',
+            text: 'text-rose-700 font-bold',
+            iconBg: 'bg-rose-500',
+            icon: 'cancel'
+         };
+      }
+
       const baseColor = appColor || 'bg-primary';
 
       // Mapping for reliable Tailwind classes
@@ -170,8 +193,7 @@ const ProfessionalAgenda: React.FC = () => {
             status === 'Llegado' ? 'hail' :
                status === 'En Sesión' ? 'psychology' :
                   status === 'Finalizado' ? 'task_alt' :
-                     status === 'Cancelado' ? 'cancel' :
-                        'help_outline'
+                     'help_outline'
       };
    };
 
@@ -221,6 +243,45 @@ const ProfessionalAgenda: React.FC = () => {
                       </div>
                    </div>
                 </header>
+
+               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-xl">event</span>
+                     </div>
+                     <div>
+                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').length}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Citas hoy</p>
+                     </div>
+                  </div>
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-xl">check_circle</span>
+                     </div>
+                     <div>
+                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => a.date === formatDate(currentDate) && a.status === 'Confirmado').length}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Confirmadas</p>
+                     </div>
+                  </div>
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-xl">payments</span>
+                     </div>
+                     <div>
+                        <p className="text-2xl font-black text-slate-900 leading-none">${appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').reduce((sum, a) => sum + (a.price || 0), 0).toLocaleString('es-CL')}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Ingreso esperado hoy</p>
+                     </div>
+                  </div>
+                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
+                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-xl">date_range</span>
+                     </div>
+                     <div>
+                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => weekDays.some(d => formatDate(d) === a.date) && a.status !== 'Cancelado').length}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Citas esta semana</p>
+                     </div>
+                  </div>
+               </div>
 
                <div className="bg-white rounded-[3rem] shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] border border-slate-100 overflow-hidden">
                   {viewMode === 'day' ? (
@@ -396,6 +457,27 @@ const ProfessionalAgenda: React.FC = () => {
                         ))}
                      </div>
 
+                     {activeTab !== 'block' && loggedPro?.services && loggedPro.services.length > 1 && (
+                        <div className="px-8 md:px-10 pb-2 mt-6">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Servicio</label>
+                           <div className="flex flex-wrap gap-2">
+                              {loggedPro.services.map(s => (
+                                 <button
+                                    key={s.id}
+                                    onClick={() => setSelectedServiceId(s.id)}
+                                    className={`px-4 py-2.5 rounded-xl text-xs font-black border transition-all ${
+                                       (selectedServiceId || loggedPro.services[0]?.id) === s.id
+                                          ? 'bg-primary text-white border-primary shadow-md'
+                                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-primary hover:text-primary'
+                                    }`}
+                                 >
+                                    {s.name} <span className="opacity-60 font-semibold">${s.price.toLocaleString('es-CL')}</span>
+                                 </button>
+                              ))}
+                           </div>
+                        </div>
+                     )}
+
                      <div className="p-8 md:p-10">
                         {activeTab === 'existing' && (
                            <div className="space-y-6">
@@ -417,6 +499,16 @@ const ProfessionalAgenda: React.FC = () => {
                                     </button>
                                  ))}
                               </div>
+                              <div className="mt-4">
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
+                                 <textarea
+                                    value={appointmentNotes}
+                                    onChange={e => setAppointmentNotes(e.target.value)}
+                                    placeholder="Notas para la cita..."
+                                    rows={2}
+                                    className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-3 px-5 font-medium text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400 resize-none"
+                                 />
+                              </div>
                            </div>
                         )}
 
@@ -436,7 +528,41 @@ const ProfessionalAgenda: React.FC = () => {
                                     <input value={newPatientForm.phone} onChange={e => setNewPatientForm({ ...newPatientForm, phone: e.target.value })} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400" placeholder="+56 9..." />
                                  </div>
                               </div>
-                              <button onClick={() => { if (!newPatientForm.name) return; const p = { id: Math.random().toString(), ...newPatientForm } as any; onAddPatient(p); handleAddAppointment(p); }} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg">schedule</span> Agendar Cita</button>
+                              <div className="mt-4">
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
+                                 <textarea
+                                    value={appointmentNotes}
+                                    onChange={e => setAppointmentNotes(e.target.value)}
+                                    placeholder="Notas para la cita..."
+                                    rows={2}
+                                    className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-3 px-5 font-medium text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400 resize-none"
+                                 />
+                              </div>
+                              <button onClick={() => {
+                                 if (!newPatientForm.name) return;
+                                 const newPat: Patient = {
+                                    id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
+                                    name: newPatientForm.name,
+                                    rut: newPatientForm.rut || '',
+                                    phone: newPatientForm.phone || '',
+                                    email: '',
+                                    age: 0,
+                                    gender: '',
+                                    prevision: '',
+                                    birthDate: '',
+                                    address: '',
+                                    allergies: [],
+                                    medicalHistory: '',
+                                    customFields: [],
+                                    attachments: [],
+                                    archived: false,
+                                    risk: 'Bajo',
+                                    status: 'Nuevo',
+                                    professionalId: loggedPro?.id,
+                                 };
+                                 onAddPatient(newPat);
+                                 handleAddAppointment(newPat);
+                              }} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg">schedule</span> Agendar Cita</button>
                            </div>
                         )}
 
@@ -491,7 +617,77 @@ const ProfessionalAgenda: React.FC = () => {
                                  {s}
                               </button>
                            ))}
+                           <button
+                              onClick={() => handleStatusChange('Cancelado')}
+                              className={`col-span-2 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-b-[3px] active:border-b-0 active:translate-y-[3px] transition-all shadow-sm flex items-center justify-center gap-2 ${
+                                 editingApp.status === 'Cancelado'
+                                    ? 'bg-rose-500 border-rose-700 text-white scale-[1.02]'
+                                    : 'bg-rose-50 border-rose-200 text-rose-400 hover:bg-rose-500 hover:border-rose-600 hover:text-white'
+                              }`}
+                           >
+                              {editingApp.status === 'Cancelado' && <span className="material-icons-round text-sm">check_circle</span>}
+                              <span className="material-icons-round text-sm">cancel</span>
+                              Cancelar Cita
+                           </button>
                         </div>
+
+                        {editingApp.status !== 'Bloqueado' && (
+                           <div className={`rounded-2xl border-2 p-5 flex items-center justify-between transition-all
+                              ${editingApp.paymentStatus === 'Pagado' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+                              <div className="flex items-center gap-3">
+                                 <span className={`material-icons-round text-2xl ${editingApp.paymentStatus === 'Pagado' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                    {editingApp.paymentStatus === 'Pagado' ? 'check_circle' : 'pending'}
+                                 </span>
+                                 <div>
+                                    <p className={`text-sm font-black ${editingApp.paymentStatus === 'Pagado' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                                       {editingApp.paymentStatus === 'Pagado' ? 'Pago Recibido' : 'Pago Pendiente'}
+                                    </p>
+                                    <p className="text-xs font-semibold text-slate-500">${editingApp.price?.toLocaleString('es-CL') || '0'}</p>
+                                 </div>
+                              </div>
+                              <button
+                                 onClick={() => {
+                                    const markingAsPaid = editingApp.paymentStatus !== 'Pagado';
+                                    const updatedApp = {
+                                       ...editingApp,
+                                       paymentStatus: markingAsPaid ? 'Pagado' : 'Pendiente',
+                                       paidAt: markingAsPaid ? new Date().toISOString() : undefined
+                                    } as Appointment;
+                                    setEditingApp(updatedApp);
+                                    updateAppointment(updatedApp);
+
+                                    // Enviar comprobante de pago al paciente al marcar como Pagado
+                                    if (markingAsPaid && import.meta.env.VITE_RESEND_ENDPOINT && loggedPro?.email) {
+                                       const pat = patients.find(p => p.id === editingApp.patientId);
+                                       if (pat?.email) {
+                                          fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+                                             method: 'POST',
+                                             headers: { 'Content-Type': 'application/json' },
+                                             body: JSON.stringify({
+                                                to: loggedPro.email,
+                                                professionalName: loggedPro.name,
+                                                patientName: editingApp.patientName,
+                                                serviceName: editingApp.serviceName,
+                                                date: editingApp.date,
+                                                time: editingApp.time,
+                                                type: editingApp.type,
+                                                patientEmail: pat.email,
+                                                isReceipt: true,
+                                                price: editingApp.price
+                                             })
+                                          }).catch(() => {});
+                                       }
+                                    }
+                                 }}
+                                 className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 border-b-2
+                                    ${editingApp.paymentStatus === 'Pagado'
+                                       ? 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                                       : 'bg-emerald-500 text-white border-emerald-700 hover:bg-emerald-600 shadow-md'}`}
+                              >
+                                 {editingApp.paymentStatus === 'Pagado' ? 'Revertir' : 'Marcar Pagado'}
+                              </button>
+                           </div>
+                        )}
 
                         <div className="mt-8 flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Color:</label>
@@ -512,6 +708,19 @@ const ProfessionalAgenda: React.FC = () => {
                               <button onClick={() => navigate(`/pro/record/${editingApp.patientId}`)} className="py-5 bg-slate-50 text-slate-600 border-b-[3px] border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-900 hover:border-slate-800 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">description</span> Ficha Médica</button>
                            )}
                            <button onClick={deleteAppointment} className="py-5 bg-rose-50 text-rose-500 border-b-[3px] border-rose-200 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-rose-500 hover:border-rose-600 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">delete</span> Anular Evento</button>
+                           {editingApp.patientPhone && editingApp.status !== 'Bloqueado' && (
+                              <a
+                                 href={`https://wa.me/${editingApp.patientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${editingApp.patientName}, te recordamos tu cita el ${editingApp.date} a las ${editingApp.time}. ¡Te esperamos!`)}`}
+                                 target="_blank"
+                                 rel="noreferrer"
+                                 className="py-5 bg-[#25D366] text-white border-b-[3px] border-green-700 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110 active:border-b-0 active:translate-y-[3px] shadow-sm"
+                              >
+                                 <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                 </svg>
+                                 Recordatorio WA
+                              </a>
+                           )}
                         </div>
                      </div>
                   </div>

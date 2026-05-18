@@ -19,6 +19,8 @@ const PatientProfile: React.FC = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [paymentLinkOpened, setPaymentLinkOpened] = useState(false);
+  const [transactionRef, setTransactionRef] = useState('');
 
   // Buscar el profesional real
   const doctor = professionals.find(p => p.id === id || p.slug === id);
@@ -95,14 +97,39 @@ const PatientProfile: React.FC = () => {
       type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
       status: 'Confirmado',
       price: selectedService!.price,
-      paymentStatus: doctor.paymentEnabled ? 'Pagado' : 'Pendiente',
+      paymentStatus: (doctor.paymentEnabled && transactionRef.trim()) ? 'Pagado' : 'Pendiente',
+      paidAt: (doctor.paymentEnabled && transactionRef.trim()) ? new Date().toISOString() : undefined,
       category: 'Medical',
       professionalId: doctor.id,
-      bookingSource: 'web'
+      bookingSource: 'web',
+      patientEmail: patientData.email || undefined
     };
 
     try {
       await addAppointment(newApp);
+
+      // Enviar comprobante de pago al paciente si pagó con código de transacción
+      if (doctor.paymentEnabled && transactionRef.trim() && patientData.email && import.meta.env.VITE_RESEND_ENDPOINT) {
+        const pro = professionals.find(p => p.id === doctor.id);
+        fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: pro?.email || doctor.email,
+            professionalName: doctor.name,
+            patientName: patientData.name,
+            serviceName: selectedService!.name,
+            date: availableDays[selectedDay].date,
+            time: selectedSlot!,
+            type: newApp.type,
+            patientEmail: patientData.email,
+            isReceipt: true,
+            transactionRef: transactionRef.trim(),
+            price: selectedService!.price
+          })
+        }).catch(() => {});
+      }
+
       setIsProcessing(false);
       setIsConfirmed(true);
     } catch (error) {
@@ -225,15 +252,36 @@ const PatientProfile: React.FC = () => {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 no-print" id="receipt-actions">
-            <a
-              href={generateGoogleCalendarLink()}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full py-4 bg-[#4285F4] hover:bg-[#3367D6] text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20"
-            >
-              <span className="material-icons-round">event</span>
-              Añadir a Google Calendar
-            </a>
+            {/* Google Calendar — Card prominente */}
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-[2rem] p-6 text-center">
+              <span className="material-icons-round text-blue-500 text-4xl mb-2 block">event_available</span>
+              <h3 className="font-black text-blue-900 text-base mb-1">¿Lo agendamos en tu calendario?</h3>
+              <p className="text-blue-700 text-xs mb-4 font-bold">Para no olvidar tu cita</p>
+              <a
+                href={generateGoogleCalendarLink()}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-2xl font-black text-xs tracking-widest shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <span className="material-icons-round text-sm">calendar_month</span>
+                Agregar a Google Calendar
+              </a>
+            </div>
+
+            {/* WhatsApp notification to professional */}
+            {doctor.phone && (
+              <a
+                href={`https://wa.me/${doctor.phone.replace(/\D/g,'')}?text=${encodeURIComponent(
+                  `📅 Nueva reserva confirmada\n\nServicio: ${selectedService?.name}\nFecha: ${availableDays[selectedDay]?.label}\nHora: ${selectedSlot}\nModalidad: ${selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial'}`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-4 bg-[#25D366] hover:bg-[#1ebe5d] text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-green-500/20"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current flex-shrink-0"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
+                Notificar al Profesional
+              </a>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4">
               <button
@@ -513,24 +561,56 @@ const PatientProfile: React.FC = () => {
                 </div>
                 
                 {doctor.paymentEnabled ? (
-                  <div className="space-y-4 w-full bg-blue-50/50 p-6 rounded-3xl border border-blue-50">
-                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest text-center mb-4">Sigue las instrucciones del profesional</p>
+                  <div className="space-y-4 w-full">
+                    {/* Paso 1: Ir a pagar */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="material-icons-round text-blue-500 text-sm">info</span>
+                      <p className="text-xs font-bold text-blue-600">Completa los 2 pasos para confirmar tu cita</p>
+                    </div>
                     <button
-                        onClick={() => window.open(doctor.bookingPaymentLink || doctor.subscriptionLink || '#', '_blank')}
-                        className="w-full py-5 bg-white hover:bg-slate-50 text-slate-800 font-black rounded-2xl border-2 border-slate-200 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center shadow-sm"
-                      >
-                        <span className="material-icons-round text-primary">open_in_new</span>
-                        1. Pagar Reserva en Flow/MercadoPago
+                      onClick={() => {
+                        window.open(doctor.bookingPaymentLink || doctor.subscriptionLink || '#', '_blank');
+                        setPaymentLinkOpened(true);
+                      }}
+                      className={`w-full py-5 font-black rounded-2xl border-2 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center
+                        ${paymentLinkOpened
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                          : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-sm'
+                        }`}
+                    >
+                      <span className={`material-icons-round ${paymentLinkOpened ? 'text-emerald-600' : 'text-primary'}`}>
+                        {paymentLinkOpened ? 'check_circle' : 'open_in_new'}
+                      </span>
+                      {paymentLinkOpened ? 'Paso 1 ✓ — Pago iniciado' : '1. Pagar Bono de Reserva ($5.000)'}
                     </button>
-        
-                    <button
-                        onClick={finalizeBooking}
-                        disabled={isProcessing}
-                        className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
-                      >
-                        {isProcessing ? 'CONFIRMANDO SISTEMA...' : '2. YA COMPLETÉ EL PAGO CON ÉXITO'}
-                        <span className="material-icons-round text-sm">check_circle</span>
-                    </button>
+
+                    {/* Paso 2: Código de transacción — solo visible tras ir al pago */}
+                    {paymentLinkOpened && (
+                      <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                          2. Ingresa tu código de transacción
+                        </label>
+                        <input
+                          type="text"
+                          value={transactionRef}
+                          onChange={e => setTransactionRef(e.target.value)}
+                          placeholder="Ej: 123456789 (código de Flow o MercadoPago)"
+                          className="w-full bg-white border-2 border-slate-200 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:font-normal placeholder:text-slate-400"
+                          autoFocus
+                        />
+                        <button
+                          onClick={finalizeBooking}
+                          disabled={isProcessing || !transactionRef.trim()}
+                          className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-40 disabled:translate-y-0 disabled:cursor-not-allowed transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
+                        >
+                          {isProcessing ? (
+                            <><span className="material-icons-round text-base animate-spin">sync</span>Confirmando...</>
+                          ) : (
+                            <>Confirmar Reserva<span className="material-icons-round text-sm">verified</span></>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <button

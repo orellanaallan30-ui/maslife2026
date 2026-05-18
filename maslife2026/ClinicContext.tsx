@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate } from './types';
+import { supabase, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, saveTransaction } from './supabaseService';
 
 interface ClinicContextType {
   // Estado de carga
@@ -54,14 +55,14 @@ const ClinicContext = createContext<ClinicContextType | undefined>(undefined);
 
 export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdmin, setIsAdminState] = useState<boolean>(
-    () => localStorage.getItem('maslife_admin_auth') === 'true'
-  );
+  // isAdmin nunca se persiste en localStorage — su validez la garantiza el JWT en sessionStorage
+  const [isAdmin, setIsAdminState] = useState<boolean>(false);
 
   const setIsAdmin = (v: boolean) => {
     setIsAdminState(v);
-    if (v) localStorage.setItem('maslife_admin_auth', 'true');
-    else localStorage.removeItem('maslife_admin_auth');
+    if (!v) sessionStorage.removeItem('maslife_admin_token');
+    // Limpiar la clave legacy por si existía
+    localStorage.removeItem('maslife_admin_auth');
   };
   // Estado inicial con profesional de prueba
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>(() => {
@@ -73,7 +74,6 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       slug: 'rodrigo-orellana',
       name: 'Rodrigo Orellana',
       email: 'orellanaallan30@gmail.com',
-      password: 'Roo1998.',
       needsPasswordReset: false,
       isVerified: true,
       isSubscribed: true,
@@ -86,6 +86,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       isPublic: true,
       paymentEnabled: true,
       bookingPaymentLink: 'https://www.flow.cl/app/pay.php?token=reserva5000',
+      phone: '+56965329974',
       createdAt: new Date().toISOString(),
       avatar: 'https://picsum.photos/seed/rodrigo/400/400',
       services: [
@@ -165,7 +166,9 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Persistencia automática
   useEffect(() => {
-    localStorage.setItem('maslife_professionals', JSON.stringify(professionals));
+    // Nunca persistir contraseñas en localStorage
+    const safePros = professionals.map(({ password: _pw, ...rest }) => rest);
+    localStorage.setItem('maslife_professionals', JSON.stringify(safePros));
   }, [professionals]);
 
   useEffect(() => {
@@ -188,6 +191,44 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       localStorage.removeItem('maslife_logged_pro');
     }
   }, [loggedPro]);
+
+  // Cargar datos del profesional desde Supabase al iniciar sesión
+  useEffect(() => {
+    if (!loggedPro) {
+      // Al cerrar sesión: limpiar datos para no filtrar a la próxima sesión
+      setPatients([]);
+      setAppointments([]);
+      setManualTransactions([]);
+      return;
+    }
+
+    const loadProData = async () => {
+      try {
+        const [supaPatients, supaApps, supaTransactions] = await Promise.all([
+          getPatients(loggedPro.id),
+          getAppointments(loggedPro.id),
+          getTransactions(loggedPro.id),
+        ]);
+        // Reemplazar con datos de Supabase si hay resultados
+        setPatients(supaPatients);
+        setAppointments(supaApps);
+        if (supaTransactions.length > 0) setManualTransactions(supaTransactions);
+      } catch {
+        // Sin conexión: filtrar localStorage por este profesional
+        setAppointments(prev =>
+          prev.filter(a => !a.professionalId || a.professionalId === loggedPro.id)
+        );
+        setPatients(prev =>
+          prev.filter(p => !p.professionalId || p.professionalId === loggedPro.id)
+        );
+        setManualTransactions(prev =>
+          prev.filter(t => !t.professionalId || t.professionalId === loggedPro.id)
+        );
+      }
+    };
+
+    loadProData();
+  }, [loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     localStorage.setItem('maslife_notifications', JSON.stringify(notifications));
@@ -228,6 +269,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addAppointment = async (app: Appointment) => {
     setAppointments(prev => [...prev, app]);
     addNotification(`Nueva cita: ${app.patientName} - ${app.serviceName} (${app.date} ${app.time})`, 'appointment');
+    // Persistir en Supabase
+    saveAppointment(app).catch(() => {});
 
     // Notificación por email al profesional (si hay API configurada)
     const pro = professionals.find(p => p.id === app.professionalId);
@@ -243,7 +286,9 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             serviceName: app.serviceName,
             date: app.date,
             time: app.time,
-            type: app.type
+            type: app.type,
+            patientEmail: app.patientEmail,
+            price: app.price
           })
         }).catch(() => {}); // No bloquear si falla
       } catch { /* silencioso */ }
@@ -289,14 +334,19 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const addPatient = (patient: Patient) => {
-    setPatients(prev => [...prev, patient]);
+    const withPro = loggedPro ? { ...patient, professionalId: loggedPro.id } : patient;
+    setPatients(prev => [...prev, withPro]);
+    if (loggedPro) savePatient(withPro, loggedPro.id).catch(() => {});
   };
 
   const addManualTransaction = (transaction: Transaction) => {
-    setManualTransactions(prev => [...prev, transaction]);
+    const withPro = loggedPro ? { ...transaction, professionalId: loggedPro.id } : transaction;
+    setManualTransactions(prev => [...prev, withPro]);
+    if (loggedPro) saveTransaction(withPro, loggedPro.id).catch(() => {});
   };
 
   const logout = (navigate: any, view: string) => {
+    supabase.auth.signOut().catch(() => {});
     setLoggedPro(null);
     setIsAdmin(false);
     if (view === 'PROFESSIONAL') navigate('/pro/login');

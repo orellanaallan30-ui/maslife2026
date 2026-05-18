@@ -15,34 +15,42 @@ const AdminLogin: React.FC = () => {
     const saved = localStorage.getItem('maslife_admin_saved');
     if (saved) {
       try {
-        const { u, p } = JSON.parse(saved);
-        if (u) setUsername(u);
-        if (p) { setPassword(p); setRememberMe(true); }
-      } catch (e) {}
+        const { u } = JSON.parse(saved);
+        if (u) { setUsername(u); setRememberMe(true); }
+        // La contraseña nunca se restaura automáticamente
+      } catch { /* ignorar datos corruptos */ }
     }
   }, []);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(false);
 
-    // Normalización para evitar fallos por espacios o mayúsculas
-    const normalizedUsername = username.toLowerCase().trim();
-    const cleanPassword = password.trim();
+    try {
+      const res = await fetch('/api/admin-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password })
+      });
+      const data = await res.json();
 
-    // Hardcoded credenciales para solucionar fallos de cache de .env en Vite
-    const adminUser = 'orellanaallan30@gmail.com';
-    const adminPass = 'Roo1998.';
+      if (!res.ok || !data.token) {
+        setError(true);
+        setTimeout(() => setError(false), 3000);
+        return;
+      }
 
-    if (normalizedUsername === adminUser && cleanPassword === adminPass) {
+      // Guardar token en sessionStorage (se borra al cerrar la pestaña, más seguro que localStorage)
+      sessionStorage.setItem('maslife_admin_token', data.token);
       setIsAdmin(true);
-      localStorage.setItem('maslife_admin_auth', 'true');
       if (rememberMe) {
-        localStorage.setItem('maslife_admin_saved', JSON.stringify({ u: username, p: password }));
+        // Solo guardar usuario (nunca la contraseña)
+        localStorage.setItem('maslife_admin_saved', JSON.stringify({ u: username }));
       } else {
         localStorage.removeItem('maslife_admin_saved');
       }
       navigate('/admin/management');
-    } else {
+    } catch {
       setError(true);
       setTimeout(() => setError(false), 3000);
     }

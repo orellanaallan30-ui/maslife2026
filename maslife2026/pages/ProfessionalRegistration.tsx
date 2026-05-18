@@ -14,7 +14,6 @@ const CHILEAN_CITIES = [
   'Villa Alemana','Viña del Mar','Ñuñoa','Otra ciudad'
 ].sort();
 
-const CLINIC_CODE = (import.meta.env.VITE_CLINIC_AUTH_CODE || 'MASLIFE2026').toUpperCase().trim();
 
 const STEPS = [
   { label: 'Código',    icon: 'shield' },
@@ -63,11 +62,26 @@ const ProfessionalRegistration: React.FC = () => {
     match:  form.password === form.confirm && form.confirm !== '',
   };
 
-  const handleCodeNext = () => {
-    if (authCode.trim().toUpperCase() !== CLINIC_CODE) {
-      setCodeError('Código incorrecto. Solicítalo a la administración.'); return;
+  const handleCodeNext = async () => {
+    setLoading(true);
+    setCodeError('');
+    try {
+      const res = await fetch('/api/validate-clinic-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: authCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        setCodeError(data.error || 'Código incorrecto. Solicítalo a la administración.');
+        return;
+      }
+      setStep(2);
+    } catch {
+      setCodeError('Error de conexión. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
     }
-    setCodeError(''); setStep(2);
   };
 
   const handleProfileNext = () => {

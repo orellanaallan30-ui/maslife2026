@@ -45,9 +45,8 @@ const ProfessionalLogin: React.FC = () => {
     const saved = localStorage.getItem('maslife_pro_saved');
     if (saved) {
       try {
-        const { u, p } = JSON.parse(saved);
-        if (u) setEmail(u);
-        if (p) { setPassword(p); setRememberMe(true); }
+        const { u } = JSON.parse(saved);
+        if (u) { setEmail(u); setRememberMe(true); }
       } catch(e) {}
     }
   }, []);
@@ -73,8 +72,9 @@ const ProfessionalLogin: React.FC = () => {
         setError(result.error);
         setRl(checkRateLimit());
       } else if ('pro' in result && result.pro) {
+        // Solo guardamos el email, nunca la contraseña en localStorage
         if (rememberMe) {
-          localStorage.setItem('maslife_pro_saved', JSON.stringify({ u: email, p: password }));
+          localStorage.setItem('maslife_pro_saved', JSON.stringify({ u: email }));
         } else {
           localStorage.removeItem('maslife_pro_saved');
         }

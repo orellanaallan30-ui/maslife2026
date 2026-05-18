@@ -21,8 +21,10 @@ const PatientList: React.FC = () => {
   });
 
   const filteredPatients = patients.filter(p => {
+    // Solo mostrar pacientes de este profesional
+    if (p.professionalId && p.professionalId !== loggedPro?.id) return false;
     const matchesArchive = p.archived === filterArchived;
-    const matchesSearch = 
+    const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.rut.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.email && p.email.toLowerCase().includes(searchQuery.toLowerCase()));

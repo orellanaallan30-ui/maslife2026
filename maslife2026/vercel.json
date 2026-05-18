@@ -14,7 +14,8 @@
         { "key": "X-XSS-Protection",          "value": "1; mode=block" },
         { "key": "Referrer-Policy",           "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy",        "value": "camera=(), microphone=(), geolocation=()" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: https://picsum.photos https://ui-avatars.com https://lh3.googleusercontent.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://api.anthropic.com https://api.ipify.org https://api.brave.com; frame-src 'none'; object-src 'none'; base-uri 'self';" }
       ]
     }
   ]

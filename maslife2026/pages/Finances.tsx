@@ -6,7 +6,11 @@ import { useClinic } from '../ClinicContext';
 
 const Finances: React.FC = () => {
   const navigate = useNavigate();
-  const { appointments, manualTransactions, deleteAppointment, deleteTransaction, setManualTransactions, logout } = useClinic();
+  const { appointments: allAppointments, manualTransactions: allTransactions, deleteAppointment, deleteTransaction, setManualTransactions, logout, loggedPro } = useClinic();
+
+  // Solo mostrar datos financieros de este profesional
+  const appointments = allAppointments.filter(a => !a.professionalId || a.professionalId === loggedPro?.id);
+  const manualTransactions = allTransactions.filter(t => !t.professionalId || t.professionalId === loggedPro?.id);
 
   const onAddTransaction = (t: Transaction) => setManualTransactions(prev => [...prev, t]);
   const onDeleteTransaction = (id: string) => setManualTransactions(prev => prev.filter(item => item.id !== id));

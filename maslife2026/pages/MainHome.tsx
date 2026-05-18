@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import logoClinica from '../assets/logo-clinica.png';
 
 const MainHome: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ const MainHome: React.FC = () => {
   const [activeSpecFilter, setActiveSpecFilter] = useState<'destacados' | 'todos'>('destacados');
   const [assignFormData, setAssignFormData] = useState({ name: '', contact: '', symptoms: '' });
   const [scrollY, setScrollY] = useState(0);
+  const [heroPath, setHeroPath] = useState<'browse' | 'assign' | null>(null);
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const heroRef = useRef<HTMLElement>(null);
 
   // Scroll tracking for navbar
@@ -31,6 +34,28 @@ const MainHome: React.FC = () => {
       if (container) container.removeEventListener('scroll', () => {});
     };
   }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = (entry.target as HTMLElement).dataset.reveal;
+            if (id) setRevealed(prev => new Set([...prev, id]));
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }
+    );
+    setTimeout(() => {
+      const cont = document.getElementById('main-home-scroll') || document.documentElement;
+      cont.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
+    }, 150);
+    return () => observer.disconnect();
+  }, []);
+
+  const rv = (id: string, extra = '') =>
+    `transition-all duration-700 ease-out ${extra} ${revealed.has(id) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`;
 
   useEffect(() => {
     if (location.state) {
@@ -55,25 +80,29 @@ const MainHome: React.FC = () => {
     {
       name: 'Kinesiología Integral',
       desc: 'Especialistas capacitados para rehabilitación integral y física.',
-      img: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=600',
+      img: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=600',
+      alt: 'Kinesiólogo guiando ejercicio de rehabilitación en Ovalle y Coquimbo',
       cta: 'Buscar Profesional'
     },
     {
       name: 'Psicología',
       desc: 'Especialistas en salud psicoemocional y bienestar mental.',
-      img: 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?q=80&w=600',
+      img: 'https://images.unsplash.com/photo-1573497019236-17f8177b81e8?q=80&w=600',
+      alt: 'Psicóloga escuchando a paciente en consulta presencial y online en La Serena',
       cta: 'Buscar profesional'
     },
     {
       name: 'Nutrición',
       desc: 'Planificación nutricional personalizada para hábitos saludables.',
       img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600',
+      alt: 'Nutricionista consulta presencial y online en Región de Coquimbo',
       cta: 'Buscar Profesional'
     },
     {
       name: 'Fonoaudiología',
       desc: 'Especialistas en comunicación, habla y deglución.',
-      img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600',
+      img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600',
+      alt: 'Fonoaudiólogo atendiendo paciente niño y adulto',
       cta: 'Ver Especialistas'
     }
   ];
@@ -188,7 +217,7 @@ const MainHome: React.FC = () => {
           {/* Logo Clínica Mas Life */}
           <div className="flex items-center cursor-pointer shrink-0" onClick={() => scrollToSection('hero')}>
             <img
-              src="/logo-clinica-maslife.svg"
+              src={logoClinica}
               alt="Clínica Mas Life"
               className="h-10 sm:h-12 w-auto object-contain"
               onError={(e) => {
@@ -254,45 +283,103 @@ const MainHome: React.FC = () => {
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
-                Recupera tu salud<br />
+                Kinesiología &amp; Salud<br />
                 Con Profesionales<br />
-                Mas cercanos &<br />
-                <span className="text-blue-600">empaticos.</span>
+                Más cercanos &amp;<br />
+                <span className="text-blue-600">empáticos.</span>
               </h1>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
+                Kinesiólogos, psicólogos, nutricionistas y quiroprácticos en{' '}
+                <strong className="text-slate-700">Ovalle, Coquimbo y La Serena</strong>.
+                Atención presencial, online y a domicilio.
+              </p>
 
-              {/* Need Selector Card */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl shadow-slate-200/50 max-w-lg">
-                <p className="text-sm font-bold text-slate-500 mb-5">Para comenzar, ¿cuál es tu prioridad hoy?</p>
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  {needOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => setSelectedNeed(opt.value)}
-                      className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl text-left text-xs sm:text-sm font-semibold border-2 transition-all ${
-                        selectedNeed === opt.value
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-slate-100 bg-slate-50/50 text-slate-600 hover:border-slate-200'
-                      }`}
-                    >
-                      <span className={`material-icons-round text-lg ${selectedNeed === opt.value ? 'text-blue-500' : 'text-slate-400'}`}>{opt.icon}</span>
-                      <span className="leading-tight">{opt.label}</span>
-                    </button>
-                  ))}
+              {/* 2-Path Choice */}
+              <div className="space-y-4 max-w-lg">
+                <p className="text-sm font-bold text-slate-500">¿Cómo prefieres comenzar?</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Path A: Browse */}
+                  <button
+                    onClick={() => navigate('/patient/results')}
+                    className="group p-6 bg-white rounded-3xl border-2 border-slate-100 hover:border-blue-400 hover:shadow-xl shadow-sm transition-all duration-300 text-left"
+                  >
+                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <span className="material-icons-round text-blue-600 text-2xl">search</span>
+                    </div>
+                    <h3 className="font-extrabold text-slate-900 text-sm mb-1 leading-tight">Explorar Especialistas</h3>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed mb-4">Filtra por área, ciudad y modalidad. Tú eliges a tu profesional.</p>
+                    <div className="flex items-center gap-1.5 text-blue-600 text-xs font-bold group-hover:gap-3 transition-all">
+                      Ver especialistas <span className="material-icons-round text-sm">arrow_forward</span>
+                    </div>
+                  </button>
+
+                  {/* Path B: Agent assignment */}
+                  <button
+                    onClick={() => setHeroPath(heroPath === 'assign' ? null : 'assign')}
+                    className={`group p-6 rounded-3xl border-2 shadow-sm transition-all duration-300 text-left ${
+                      heroPath === 'assign'
+                        ? 'bg-blue-600 border-blue-600 shadow-xl shadow-blue-600/30'
+                        : 'bg-white border-slate-100 hover:border-indigo-400 hover:shadow-xl'
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${
+                      heroPath === 'assign' ? 'bg-white/20' : 'bg-indigo-50'
+                    }`}>
+                      <span className={`material-icons-round text-2xl ${heroPath === 'assign' ? 'text-white' : 'text-indigo-600'}`}>auto_awesome</span>
+                    </div>
+                    <h3 className={`font-extrabold text-sm mb-1 leading-tight ${heroPath === 'assign' ? 'text-white' : 'text-slate-900'}`}>
+                      Ser Asignado
+                    </h3>
+                    <p className={`text-xs font-medium leading-relaxed mb-4 ${heroPath === 'assign' ? 'text-blue-100' : 'text-slate-500'}`}>
+                      Cuéntanos tu situación y te asignamos al profesional ideal.
+                    </p>
+                    <div className={`flex items-center gap-1.5 text-xs font-bold group-hover:gap-3 transition-all ${heroPath === 'assign' ? 'text-blue-100' : 'text-indigo-600'}`}>
+                      {heroPath === 'assign' ? 'Cerrar formulario' : 'Comenzar'}
+                      <span className="material-icons-round text-sm">{heroPath === 'assign' ? 'keyboard_arrow_up' : 'arrow_forward'}</span>
+                    </div>
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    if (selectedNeed) {
-                      setFormData({ ...formData, condition: selectedNeed });
-                      setIsGeneralFormOpen(true);
-                    } else {
-                      setIsGeneralFormOpen(true);
-                    }
-                  }}
-                  className="w-full bg-blue-600 text-white py-3.5 rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
-                >
-                  Siguiente paso
-                  <span className="material-icons-round text-base">arrow_forward</span>
-                </button>
+
+                {/* Inline assignment form */}
+                {heroPath === 'assign' && (
+                  <div className="animate-in slide-in-from-top-4 duration-300">
+                    <form onSubmit={handleAssignSubmit} className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center">
+                          <span className="material-icons-round text-indigo-600 text-xs">auto_awesome</span>
+                        </div>
+                        <p className="text-sm font-bold text-slate-700">Te asignamos al profesional ideal</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {needOptions.map(opt => (
+                          <button type="button" key={opt.value} onClick={() => setSelectedNeed(opt.value)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                              selectedNeed === opt.value
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
+                            }`}
+                          >
+                            <span className={`material-icons-round text-sm ${selectedNeed === opt.value ? 'text-blue-500' : 'text-slate-400'}`}>{opt.icon}</span>
+                            <span className="leading-tight">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <input required value={assignFormData.name} onChange={e => setAssignFormData({ ...assignFormData, name: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400"
+                        placeholder="Tu nombre..." />
+                      <input required value={assignFormData.contact} onChange={e => setAssignFormData({ ...assignFormData, contact: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400"
+                        placeholder="WhatsApp o email de contacto..." />
+                      <textarea required value={assignFormData.symptoms} onChange={e => setAssignFormData({ ...assignFormData, symptoms: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-20 placeholder:text-slate-400"
+                        placeholder="¿Qué necesitas? Describe brevemente tu situación..." />
+                      <button type="submit" className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
+                        <span className="material-icons-round text-base">send</span>
+                        Enviar y ser contactado por WhatsApp
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -300,9 +387,9 @@ const MainHome: React.FC = () => {
             <div className="relative hidden lg:block">
               <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-300/30 aspect-[4/5] max-h-[580px]">
                 <img
-                  src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=800"
+                  src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=800"
                   className="w-full h-full object-cover"
-                  alt="Profesionales de salud"
+                  alt="Kinesiólogo atendiendo paciente en rehabilitación física en Ovalle"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
               </div>
@@ -320,6 +407,24 @@ const MainHome: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* ═══════════════════ STATS BAR ═══════════════════ */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 py-10 px-5 sm:px-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+          {[
+            { num: '500+', label: 'Sesiones Realizadas', icon: 'event_available' },
+            { num: '8', label: 'Especialidades Médicas', icon: 'medical_services' },
+            { num: '4.9★', label: 'Satisfacción Promedio', icon: 'star' },
+            { num: 'Chile', label: 'Online · Presencial · Domicilio', icon: 'location_on' },
+          ].map((stat, i) => (
+            <div key={i} data-reveal={`stat-${i}`} className={`text-center text-white ${rv(`stat-${i}`, `delay-${i*100}`)}`} style={{ transitionDelay: `${i * 100}ms` }}>
+              <span className="material-icons-round text-blue-200 text-2xl mb-2 block">{stat.icon}</span>
+              <p className="text-3xl sm:text-4xl font-black tracking-tight">{stat.num}</p>
+              <p className="text-xs font-bold text-blue-100 uppercase tracking-wider mt-1">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
       <section id="como-funciona" className="px-5 sm:px-8 py-20 sm:py-28 bg-white">
@@ -339,7 +444,7 @@ const MainHome: React.FC = () => {
               { icon: 'groups', title: 'ASIGNACIÓN PROFESIONAL', desc: 'Un agente revisa tu información y te asigna un profesional apto a tus requerimientos.', color: 'bg-blue-100 text-blue-600' },
               { icon: 'event_available', title: 'CITA PROFESIONAL', desc: 'El profesional asignado te contacta y coordina con una primera cita.', color: 'bg-rose-100 text-rose-600' }
             ].map((step, i) => (
-              <div key={i} className="bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg transition-all duration-300 text-center group">
+              <div key={i} data-reveal={`step-${i}`} className={`bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg text-center group ${rv(`step-${i}`)}`} style={{ transitionDelay: `${i * 150}ms` }}>
                 <div className={`w-14 h-14 sm:w-16 sm:h-16 ${step.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
                   <span className="material-icons-round text-2xl sm:text-3xl">{step.icon}</span>
                 </div>
@@ -359,6 +464,7 @@ const MainHome: React.FC = () => {
               <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">NUESTRO EQUIPO</p>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Selecciona un área y agenda</h2>
               <p className="text-sm text-slate-500 font-medium mt-1">con un profesional directamente</p>
+              <p className="text-xs text-slate-400 mt-1">Rehabilitación · Dolor lumbar · Tendinitis · Salud mental · Nutrición · Región de Coquimbo</p>
             </div>
             <div className="flex bg-white rounded-full p-1 border border-slate-200 shadow-sm">
               <button
@@ -379,13 +485,13 @@ const MainHome: React.FC = () => {
           {/* Specialty Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {(activeSpecFilter === 'destacados' ? specialtyCards : specialtyCards.concat([
-              { name: 'Terapia Ocupacional', desc: 'Rehabilitación funcional para actividades diarias.', img: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?q=80&w=600', cta: 'Buscar Profesional' },
-              { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', cta: 'Buscar Profesional' },
-              { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600', cta: 'Buscar Profesional' },
+              { name: 'Terapia Ocupacional', desc: 'Rehabilitación funcional para actividades diarias.', img: 'https://images.unsplash.com/photo-1576671285-d9df3bc08e01?q=80&w=600', alt: 'Terapeuta ocupacional con paciente adulto mayor en rehabilitación', cta: 'Buscar Profesional' },
+              { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', alt: 'Podólogo cuidado especializado de pies en Ovalle', cta: 'Buscar Profesional' },
+              { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600', alt: 'Enfermera tomando signos vitales atención a domicilio', cta: 'Buscar Profesional' },
             ])).map((card, i) => (
               <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer" onClick={() => navigate('/patient/results')}>
                 <div className="aspect-[4/3] overflow-hidden">
-                  <img src={card.img} alt={card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={card.img} alt={card.alt || card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4 sm:p-5">
                   <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mb-1 tracking-tight">{card.name}</h4>
@@ -619,7 +725,7 @@ const MainHome: React.FC = () => {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1 space-y-5">
               <div className="flex items-center">
-                <img src="/logo-clinica-maslife.svg" alt="Clínica Mas Life" className="h-10 w-auto object-contain brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
+                <img src={logoClinica} alt="Clínica Mas Life" className="h-10 w-auto object-contain brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
                 <span className="hidden text-xl font-extrabold tracking-tight">Mas<span className="text-blue-400">life</span></span>
               </div>
               <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs">

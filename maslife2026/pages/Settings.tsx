@@ -19,6 +19,13 @@ const Settings: React.FC = () => {
   const [linkCopied, setLinkCopied] = useState(false);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
+  const SUPPORT_PHONE = import.meta.env.VITE_SUPPORT_PHONE || '+56965329974';
+
+  const daysLeft = (() => {
+    if (!localProfile?.trialEndDate) return null;
+    const diff = new Date(localProfile.trialEndDate).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  })();
 
   useEffect(() => {
     if (!profile) navigate('/pro/login');
@@ -237,17 +244,17 @@ const Settings: React.FC = () => {
                       </button>
                       <button
                         onClick={() => {
-                          const link = `https://clinicamaslife.cl/pro/${localProfile.slug || localProfile.id}`;
+                          const link = getShareableLink();
                           if (navigator.share) {
-                            navigator.share({ title: `Agenda con ${localProfile.name}`, url: link });
+                            navigator.share({ title: `Agenda con ${localProfile.name}`, text: '¡Agenda tu hora conmigo!', url: link });
                           } else {
-                            window.open(`https://wa.me/?text=${encodeURIComponent(`Agenda conmigo en Clínica MasLife: ${link}`)}`, '_blank');
+                            window.open(`https://wa.me/?text=${encodeURIComponent(`¡Hola! Puedes agendar conmigo directamente aquí: ${link}`)}`, '_blank');
                           }
                         }}
-                        className="px-5 py-2.5 rounded-xl bg-slate-800 text-white font-black text-xs uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center gap-2"
+                        className="px-5 py-2.5 rounded-xl bg-[#25D366] text-white font-black text-xs uppercase tracking-widest hover:bg-[#1ebe5d] transition-all flex items-center gap-2"
                       >
-                        <span className="material-icons-round text-sm">share</span>
-                        Compartir
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current flex-shrink-0"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
+                        WhatsApp
                       </button>
                     </div>
                   </div>
@@ -435,61 +442,145 @@ const Settings: React.FC = () => {
           )}
 
           {activeTab === 'suscripcion' && (
-            <div className="space-y-10 animate-in fade-in duration-500">
-              <div className="bg-primary rounded-[3rem] p-8 md:p-14 shadow-[0_48px_100px_-20px_rgba(19,91,236,0.4)] relative overflow-hidden text-white">
+            <div className="space-y-8 animate-in fade-in duration-500">
+
+              {/* Hero card */}
+              <div className={`rounded-[3rem] p-8 md:p-14 relative overflow-hidden text-white
+                ${localProfile.subscriptionStatus === 'paused'
+                  ? 'bg-rose-600 shadow-[0_48px_100px_-20px_rgba(220,38,38,0.4)]'
+                  : localProfile.subscriptionStatus === 'trial' && daysLeft !== null && daysLeft <= 7
+                  ? 'bg-amber-500 shadow-[0_48px_100px_-20px_rgba(245,158,11,0.4)]'
+                  : 'bg-primary shadow-[0_48px_100px_-20px_rgba(19,91,236,0.4)]'}`}>
+
                 <div className="flex flex-col md:flex-row gap-10 items-center relative z-10">
                   <div className="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xl border border-white/30">
                     <span className="material-icons-round text-6xl text-white">
-                      {localProfile.subscriptionStatus === 'paused' ? 'pause_circle' : 'verified'}
+                      {localProfile.subscriptionStatus === 'paused' ? 'pause_circle' : localProfile.subscriptionStatus === 'trial' ? 'hourglass_top' : 'verified'}
                     </span>
                   </div>
-                  <div className="flex-1 text-center md:text-left space-y-6">
-                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-                      <h3 className="text-4xl font-black tracking-tight">Estatus de Agenda Maslife</h3>
-                      <span className="px-6 py-2 rounded-full bg-white text-primary text-xs font-black uppercase tracking-[0.2em] shadow-lg">
-                        {localProfile.subscriptionStatus === 'trial' ? 'Prueba Gratis' : localProfile.subscriptionStatus.toUpperCase()}
+                  <div className="flex-1 text-center md:text-left space-y-4">
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                      <h3 className="text-3xl md:text-4xl font-black tracking-tight">Estatus de Agenda Maslife</h3>
+                      <span className="px-5 py-2 rounded-full bg-white/20 border border-white/30 text-white text-xs font-black uppercase tracking-[0.2em]">
+                        {localProfile.subscriptionStatus === 'trial' ? 'Prueba Gratis'
+                          : localProfile.subscriptionStatus === 'active' ? 'Activo'
+                          : 'Pausado'}
                       </span>
                     </div>
-                    <p className="text-white/90 font-black text-xl max-w-2xl leading-relaxed">
+                    <p className="text-white/90 font-semibold text-lg max-w-2xl leading-relaxed">
                       {localProfile.subscriptionStatus === 'trial'
-                        ? `Tu acceso premium está activo. Periodo de regalo hasta el ${new Date(localProfile.trialEndDate!).toLocaleDateString()}.`
+                        ? `Tu acceso premium está activo hasta el ${localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : '---'}.`
                         : localProfile.subscriptionStatus === 'paused'
-                          ? 'Tu perfil se encuentra pausado y no eres visible en la red. Regulariza tu pago para volver a recibir pacientes.'
-                          : 'Tu suscripción profesional se encuentra activa y tu agenda está visible en todo Chile.'}
+                          ? 'Tu perfil está pausado y no eres visible para nuevos pacientes. Regulariza tu pago para reactivarlo.'
+                          : 'Tu suscripción está activa. Tu agenda es visible en toda la red MasLife.'}
+                    </p>
+                    {/* Countdown urgency banner */}
+                    {localProfile.subscriptionStatus === 'trial' && daysLeft !== null && (
+                      <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-black
+                        ${daysLeft <= 3 ? 'bg-white text-red-600' : daysLeft <= 7 ? 'bg-white/20 text-white border border-white/30' : 'bg-white/10 text-white/80 border border-white/20'}`}>
+                        <span className="material-icons-round text-base">timer</span>
+                        {daysLeft === 0
+                          ? '¡Tu período de prueba termina hoy!'
+                          : daysLeft === 1
+                          ? '¡Queda 1 día de prueba!'
+                          : `Quedan ${daysLeft} días de prueba`}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stats grid */}
+                <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Próximo Cobro</h4>
+                    <p className="text-xl font-black tracking-tight">
+                      {localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '---'}
                     </p>
                   </div>
+                  <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Días Restantes</h4>
+                    <p className={`text-xl font-black tracking-tight ${daysLeft !== null && daysLeft <= 3 ? 'text-yellow-300' : ''}`}>
+                      {daysLeft !== null ? `${daysLeft} días` : '---'}
+                    </p>
+                  </div>
+                  <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Plan</h4>
+                    <p className="text-xl font-black tracking-tight">Pro</p>
+                  </div>
+                  <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Mensual</h4>
+                    <p className="text-xl font-black tracking-tight">$35.000</p>
+                  </div>
                 </div>
 
-                <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="p-8 rounded-[2rem] bg-white/10 border border-white/20 backdrop-blur-md shadow-inner group hover:bg-white hover:text-primary transition-all text-center">
-                    <h4 className="text-xs font-black uppercase tracking-widest mb-3 opacity-70 group-hover:opacity-100">Próximo Cobro</h4>
-                    <p className="text-3xl font-black tracking-tighter">{localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString() : '---'}</p>
-                  </div>
-                  <div className="p-8 rounded-[2rem] bg-white/10 border border-white/20 backdrop-blur-md shadow-inner group hover:bg-white hover:text-primary transition-all text-center">
-                    <h4 className="text-xs font-black uppercase tracking-widest mb-3 opacity-70 group-hover:opacity-100">Suscripción Mensual</h4>
-                    <p className="text-3xl font-black tracking-tighter">$35.000 <span className="text-xs font-black uppercase tracking-widest ml-1 opacity-50">/ mes</span></p>
-                  </div>
-                </div>
-
-                <div className="mt-14 pt-14 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                      <span className="material-icons-round text-white">security</span>
+                {/* CTA footer */}
+                <div className="mt-10 pt-10 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+                      <span className="material-icons-round text-white text-base">security</span>
                     </div>
-                    <p className="text-xs font-black text-white/70 max-w-[200px] leading-relaxed uppercase">Pago Seguro vía Mercado Pago Chile</p>
+                    <p className="text-xs font-bold text-white/60 leading-relaxed uppercase">Pago Seguro vía<br/>Mercado Pago Chile</p>
                   </div>
                   <a
                     href={MP_SUBSCRIPTION_LINK}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full sm:w-auto px-16 py-6 bg-white text-primary border-b-4 border-slate-200 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-4"
+                    className="w-full sm:w-auto px-12 py-5 bg-white text-primary border-b-4 border-slate-200 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
                   >
-                    PAGAR SUSCRIPCIÓN
                     <span className="material-icons-round">payment</span>
+                    {localProfile.subscriptionStatus === 'paused' ? 'REACTIVAR SUSCRIPCIÓN' : 'PAGAR SUSCRIPCIÓN'}
                   </a>
                 </div>
+
                 <span className="material-icons absolute -bottom-12 -right-12 text-[250px] opacity-[0.07] rotate-12">card_membership</span>
               </div>
+
+              {/* Incluido en tu plan */}
+              <div className="bg-white rounded-[2rem] border border-slate-100 p-7 shadow-sm">
+                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-5">Incluido en tu plan Pro</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { icon: 'calendar_month', label: 'Agenda inteligente ilimitada' },
+                    { icon: 'group', label: 'Gestión de pacientes completa' },
+                    { icon: 'payments', label: 'Control de finanzas y transacciones' },
+                    { icon: 'notifications', label: 'Notificaciones automáticas' },
+                    { icon: 'public', label: 'Perfil público en la red MasLife' },
+                    { icon: 'support_agent', label: 'Soporte prioritario 24/7' },
+                  ].map(f => (
+                    <div key={f.icon} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
+                      <span className="material-icons-round text-primary text-lg">{f.icon}</span>
+                      <span className="text-sm font-semibold text-slate-700">{f.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Soporte */}
+              <div className="bg-white rounded-[2rem] border border-slate-100 p-7 shadow-sm">
+                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-5">Soporte y Ayuda</h4>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <a
+                    href={`https://wa.me/${SUPPORT_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola MasLife! Soy ${localProfile.name} y necesito ayuda con mi cuenta.`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 flex items-center justify-center gap-3 p-5 rounded-[1.5rem] bg-[#25D366] text-white font-black text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-green-200"
+                  >
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current shrink-0">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                    Chatear con Soporte
+                  </a>
+                  <a
+                    href={`mailto:soporte@maslife.cl?subject=Ayuda con mi cuenta - ${localProfile.name}`}
+                    className="flex-1 flex items-center justify-center gap-3 p-5 rounded-[1.5rem] bg-slate-100 text-slate-700 font-black text-sm hover:bg-slate-200 active:scale-95 transition-all"
+                  >
+                    <span className="material-icons-round text-slate-500">mail</span>
+                    Enviar Email
+                  </a>
+                </div>
+                <p className="text-xs text-slate-400 text-center mt-4">Tiempo de respuesta: menos de 2 horas en horario hábil</p>
+              </div>
+
             </div>
           )}
           {showServiceModal && (

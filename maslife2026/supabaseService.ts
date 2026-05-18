@@ -50,19 +50,6 @@ export async function loginProfessional(
     return { error: `Demasiados intentos fallidos. Espera ${min} minuto${min !== 1 ? 's' : ''}.` };
   }
 
-  // Bypass local para pruebas y demo del sistema sin conexión a BD activa
-  if (email === 'orellanaallan30@gmail.com' && password === 'Roo1998.') {
-    const localPros = localStorage.getItem('maslife_professionals');
-    if (localPros) {
-      const parsed = JSON.parse(localPros);
-      const testPro = parsed.find((p: any) => p.email === email);
-      if (testPro) {
-        clearRateLimit();
-        return { pro: testPro as ProfessionalProfile };
-      }
-    }
-  }
-
   // 1. Login con Supabase Auth
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
   if (authError || !authData.user) {
@@ -182,7 +169,11 @@ export async function saveProfessional(pro: ProfessionalProfile): Promise<void> 
 }
 
 export async function getAllPublicProfessionals(): Promise<ProfessionalProfile[]> {
-  const { data, error } = await supabase.from('professionals').select('*').eq('is_public', true);
+  const { data, error } = await supabase
+    .from('professionals')
+    .select('*')
+    .eq('is_public', true)
+    .eq('is_approved', true); // Solo profesionales aprobados son visibles públicamente
   if (error || !data) return [];
   return data.map(mapDBtoPro);
 }
@@ -302,6 +293,7 @@ function mapDBtoPatient(p: Record<string, unknown>): Patient {
     vitals: p.vitals as Patient['vitals'], soap: p.soap as Patient['soap'],
     goals: (p.goals as Patient['goals']) || [], sessionLogs: (p.session_logs as Patient['sessionLogs']) || [],
     lastVisit: (p.last_visit as string) || '', emergencyContact: (p.emergency_contact as string) || '',
+    professionalId: (p.professional_id as string) || undefined,
   };
 }
 
@@ -316,6 +308,7 @@ function mapPatientToDB(p: Patient): Record<string, unknown> {
     vitals: p.vitals || null, soap: p.soap || null,
     goals: p.goals || [], session_logs: p.sessionLogs || [],
     last_visit: p.lastVisit || '', emergency_contact: p.emergencyContact || '',
+    professional_id: p.professionalId || null,
   };
 }
 

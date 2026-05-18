@@ -16,6 +16,7 @@ export interface Transaction {
   amount: number;
   description: string;
   type: 'Ingreso' | 'Gasto';
+  professionalId?: string;
 }
 
 export type SubscriptionStatus = 'active' | 'paused' | 'trial';
@@ -63,6 +64,7 @@ export interface ProfessionalProfile {
   nextBillingDate?: string; // Nuevo: Fecha de cobro
   subscriptionLink?: string; // Link de pago personalizado
   bookingPaymentLink?: string; // Link de pago para reservas ($5.000)
+  phone?: string;
   specialty: string;
   city: string; 
   bio: string;
@@ -106,6 +108,7 @@ export interface Appointment {
   bookingSource?: string;
   paidAt?: string;
   paymentAmount?: number;
+  patientEmail?: string;
 }
 
 export interface Notification {
@@ -145,10 +148,33 @@ export interface Patient {
   emergencyContact?: string;
   goals?: any[];
   soap?: any;
+  specialtyData?: Record<string, unknown>;
+  professionalId?: string;
 }
 
 export interface ClinicalTemplate {
   id: string;
   name: string;
-  fields: string[]; 
+  fields: string[];
+}
+
+// Archivo adjunto en ficha clínica
+export interface ClinicalFile {
+  id: string;
+  name: string;
+  size: string;
+  date: string;
+  type: 'pdf' | 'image';
+  url: string;
+  base64?: string;
+}
+
+// Fila de plan alimentario (ficha nutricional)
+export interface MealPlanRow {
+  id: string;
+  meal: string;       // Desayuno, Almuerzo, etc.
+  food: string;       // Preparación / alimento
+  quantity: string;   // Cantidad (g, ml, unidades)
+  kcal: string;       // Kcal estimadas
+  notes: string;      // Observaciones
 }

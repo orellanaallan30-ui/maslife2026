@@ -1,9 +1,11 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { askClaude } from '../lib/claudeHelper';
-import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField, ClinicalFile } from '../types';
+import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField, ClinicalFile, MealPlanRow } from '../types';
 import { useClinic } from '../ClinicContext';
+import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
+import { toast } from '../lib/toast';
 
 interface Message {
   role: 'user' | 'model';
@@ -29,7 +31,7 @@ interface TherapeuticGoal {
 const ClinicalRecord: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { patients, appointments, templates, setTemplates, setPatients, logout } = useClinic();
+  const { patients, appointments, templates, setTemplates, setPatients, logout, loggedPro } = useClinic();
 
   const onUpdatePatient = (p: Patient) => setPatients(prev => prev.map(old => old.id === p.id ? p : old));
   const onSaveTemplate = (t: ClinicalTemplate) => setTemplates(prev => [...prev, t]);
@@ -49,6 +51,8 @@ const ClinicalRecord: React.FC = () => {
   const safePatient = initialPatient || { name: '', age: 0, rut: '', birthDate: '', prevision: '', diagnoses: '', address: '', phone: '', email: '', emergencyContact: '', customFields: [], vitals: null, medicalHistory: '', sessionLogs: [], goals: [] } as any;
 
   const [isDirty, setIsDirty] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -61,7 +65,20 @@ const ClinicalRecord: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  const setIsDirtyTrue = () => setIsDirty(true);
+  // Ref que apunta siempre al paciente actualizado con los valores más recientes
+  const buildPatientRef = useRef<() => Patient>(() => safePatient as Patient);
+
+  const setIsDirtyTrue = () => {
+    setIsDirty(true);
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      setAutoSaveStatus('saving');
+      buildPatientRef.current && onUpdatePatient(buildPatientRef.current());
+      setIsDirty(false);
+      setAutoSaveStatus('saved');
+      setTimeout(() => setAutoSaveStatus('idle'), 3000);
+    }, 2500);
+  };
 
   const [personalData, setPersonalData] = useState({
     name: safePatient.name,
@@ -92,6 +109,51 @@ const ClinicalRecord: React.FC = () => {
     oxygenSaturation: 98, respiratoryRate: 16, weight: 64.2, height: 1.70, bmi: 24.2, glucose: 95
   });
 
+  // ── Detección de especialidad ──────────────────────────────────────────────
+  const specialtyKey = useMemo(() => {
+    const s = (loggedPro?.specialty || '').toLowerCase();
+    if (s.includes('psicolog') || s.includes('psiquiat')) return 'psicologia';
+    if (s.includes('nutrici') || s.includes('dietét') || s.includes('dietista')) return 'nutricion';
+    if (s.includes('ocupacional') || s.includes('t.o.')) return 'to';
+    return 'kinesiologia';
+  }, [loggedPro?.specialty]);
+
+  // ── Estado: datos especialidad guardados ───────────────────────────────────
+  const savedSpec = (safePatient.specialtyData || {}) as Record<string, any>;
+
+  // Estado nutrición
+  const DEFAULT_MEAL_PLAN: MealPlanRow[] = [
+    { id: '1', meal: 'Desayuno',         food: '', quantity: '', kcal: '', notes: '' },
+    { id: '2', meal: 'Media Mañana',     food: '', quantity: '', kcal: '', notes: '' },
+    { id: '3', meal: 'Almuerzo',         food: '', quantity: '', kcal: '', notes: '' },
+    { id: '4', meal: 'Once',             food: '', quantity: '', kcal: '', notes: '' },
+    { id: '5', meal: 'Cena',             food: '', quantity: '', kcal: '', notes: '' },
+    { id: '6', meal: 'Colación Nocturna',food: '', quantity: '', kcal: '', notes: '' },
+  ];
+  const [nutPeso,         setNutPeso]         = useState<number>(savedSpec.nutPeso         || 0);
+  const [nutTalla,        setNutTalla]        = useState<number>(savedSpec.nutTalla        || 0);
+  const [nutCintura,      setNutCintura]      = useState<number>(savedSpec.nutCintura      || 0);
+  const [nutCadera,       setNutCadera]       = useState<number>(savedSpec.nutCadera       || 0);
+  const [nutGender,       setNutGender]       = useState<Gender>(savedSpec.nutGender       || 'Femenino');
+  const [nutActivity,     setNutActivity]     = useState<ActivityLevel>(savedSpec.nutActivity || 'moderado');
+  const [nutGoals,        setNutGoals]        = useState<string>(savedSpec.nutGoals        || '');
+  const [nutSupplements,  setNutSupplements]  = useState<string>(savedSpec.nutSupplements  || '');
+  const [mealPlan, setMealPlan] = useState<MealPlanRow[]>(
+    (savedSpec.mealPlan as MealPlanRow[]) || DEFAULT_MEAL_PLAN
+  );
+
+  // Cálculos automáticos de nutrición (se recalculan en cada render)
+  const nutMetrics = useMemo(
+    () => calcAllMetrics(nutPeso, nutTalla, nutCintura, nutCadera, safePatient.age || 0, nutGender, nutActivity),
+    [nutPeso, nutTalla, nutCintura, nutCadera, nutGender, nutActivity, safePatient.age]
+  );
+
+  // Estado psicología
+  const [psychMood,          setPsychMood]          = useState<number>(savedSpec.psychMood ?? 5);
+  const [psychPsychHistory,  setPsychPsychHistory]  = useState<string>(savedSpec.psychPsychHistory  || '');
+  const [psychIntervention,  setPsychIntervention]  = useState<string>(savedSpec.psychIntervention  || '');
+  const [psychNextObjective, setPsychNextObjective] = useState<string>(savedSpec.psychNextObjective || '');
+
   const [soap, setSoap] = useState({ subjective: '', objective: '', assessment: '', plan: '' });
 
   const [goals, setGoals] = useState<TherapeuticGoal[]>([
@@ -120,49 +182,131 @@ const ClinicalRecord: React.FC = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  const handleAiAnalysis = async (type: string, query?: string) => {
-    const textToSearch = query || type;
-    if (!textToSearch.trim()) return;
+  // Construye el contexto clínico completo para el agente
+  const buildClinicalContext = (): string => {
+    const nutData = savedSpec as any;
+    const soapLine = (label: string, val: string) => val?.trim() ? `${label}: ${val}` : '';
 
-    // Feedback instantáneo: Agregamos el mensaje del usuario y limpiamos el input de inmediato
-    setChatMessages(prev => [...prev, { role: 'user', text: textToSearch }]);
+    const sections: string[] = [
+      `═══ DATOS DEL PACIENTE ═══`,
+      `Nombre: ${personalData.name} | Edad: ${personalData.age} años | RUT: ${personalData.rut}`,
+      `Diagnóstico: ${personalData.diagnoses || 'No registrado'}`,
+      `Previsión: ${personalData.prevision || '—'} | Última visita: ${safePatient.lastVisit || 'No registrada'}`,
+      '',
+      `═══ SIGNOS VITALES ═══`,
+      `FC: ${vitals.heartRate} lpm | PA: ${vitals.systolic}/${vitals.diastolic} mmHg | SatO2: ${vitals.oxygenSaturation}% | T°: ${vitals.temperature}°C`,
+      '',
+      `═══ NOTA CLÍNICA (SOAP) ═══`,
+      soapLine('S', soap.subjective),
+      soapLine('O', soap.objective),
+      soapLine('A', soap.assessment),
+      soapLine('P', soap.plan),
+    ].filter(Boolean);
+
+    if (anamnesis?.trim()) {
+      sections.push('', `═══ ANAMNESIS ═══`, anamnesis.substring(0, 600));
+    }
+
+    if (goals.length > 0) {
+      sections.push('', `═══ OBJETIVOS TERAPÉUTICOS ═══`);
+      goals.forEach(g => sections.push(`• ${g.name}: ${g.progress}% — ${g.status}`));
+    }
+
+    if (sessionLogs.length > 0) {
+      sections.push('', `═══ ÚLTIMAS SESIONES (${Math.min(5, sessionLogs.length)}) ═══`);
+      sessionLogs.slice(0, 5).forEach(s => sections.push(`[${s.date}] ${s.note?.substring(0, 200) || '—'}`));
+    }
+
+    if (specialtyKey === 'nutricion' && nutMetrics) {
+      sections.push('', `═══ EVALUACIÓN NUTRICIONAL ═══`);
+      sections.push(`Peso: ${nutPeso} kg | Talla: ${nutTalla} cm`);
+      sections.push(`IMC: ${nutMetrics.bmi} (${nutMetrics.bmiClassification.label})`);
+      sections.push(`TMB: ${nutMetrics.bmr} kcal/día | GET: ${nutMetrics.totalCalories} kcal/día`);
+      if (nutCintura && nutCadera) sections.push(`Rel. Cintura/Cadera: ${nutMetrics.whr} (${nutMetrics.whrClassification.label})`);
+      if (nutGoals) sections.push(`Objetivos nutricionales: ${nutGoals}`);
+      const planTotal = mealPlan.reduce((s, r) => s + (parseFloat(r.kcal) || 0), 0);
+      sections.push(`Plan alimentario — Total: ${planTotal} kcal estimadas`);
+    }
+
+    if (specialtyKey === 'psicologia') {
+      sections.push('', `═══ EVALUACIÓN PSICOLÓGICA ═══`);
+      sections.push(`Escala de ánimo EVA: ${psychMood}/10`);
+      if (psychPsychHistory) sections.push(`Antecedentes psiquiátricos: ${psychPsychHistory.substring(0, 300)}`);
+      if (psychIntervention)  sections.push(`Técnica aplicada: ${psychIntervention.substring(0, 300)}`);
+      if (psychNextObjective) sections.push(`Objetivo próxima sesión: ${psychNextObjective}`);
+    }
+
+    if (files.length > 0) {
+      sections.push('', `Documentos adjuntos: ${files.map(f => f.name).join(', ')}`);
+    }
+
+    return sections.join('\n');
+  };
+
+  // Prompts diferenciados por acción del agente clínico
+  const ACTION_PROMPTS: Record<string, string> = {
+    'Análisis Evolutivo':
+      'Analiza la evolución clínica del paciente basándote en el historial de sesiones y la nota SOAP actual. Identifica tendencias, progreso o deterioro. Compara con los objetivos terapéuticos y señala qué está avanzando bien y qué requiere ajuste. Sé específico y clínico.',
+    'Protocolo Médico':
+      'Busca en internet el protocolo clínico más actualizado para el diagnóstico principal de este paciente. Adapta las recomendaciones al sistema de salud chileno (MINSAL, GES si aplica). Incluye criterios de evaluación, técnicas recomendadas y frecuencia de sesiones.',
+    'Diagnóstico Diferencial':
+      'Basándote en los síntomas del SOAP subjetivo y objetivo, lista los principales diagnósticos diferenciales ordenados por probabilidad. Para los 2-3 más probables, indica qué criterios los apoyan o descartan. Busca en internet si necesitas criterios diagnósticos actualizados.',
+    'Triaje':
+      'Evalúa la urgencia del caso. Revisa los signos vitales y síntomas actuales. Determina: ¿requiere derivación urgente, atención pronto o puede continuar plan habitual? Indica señales de alarma específicas que justifiquen cambios en el plan.',
+    'Buscar Guía Clínica':
+      'Busca en internet la guía clínica o protocolo más reciente para este caso. Prioriza fuentes oficiales (MINSAL Chile, GPC, NICE, UpToDate). Reporta el título, año, recomendación principal y el enlace fuente.',
+    'Generar Informe Formal':
+      'Genera un Informe Clínico Profesional completo con el siguiente formato:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\nUsa tono formal y técnico, listo para imprimir. Sin markdown complejo.',
+    'Consulta': '',
+  };
+
+  const handleAiAnalysis = async (action: string, query?: string) => {
+    const userText = query?.trim() || action;
+    if (!userText) return;
+
+    setChatMessages(prev => [...prev, { role: 'user', text: userText }]);
     setUserInput('');
     setLoadingAi(true);
     setShowAiPanel(true);
 
     try {
-      let attachmentsContext = "";
-      if (files.length > 0) {
-        attachmentsContext = "Documentos adjuntos: " + files.map(f => f.name).join(', ') + ".\n";
-      }
+      const clinicalContext = buildClinicalContext();
+      const actionPrompt = ACTION_PROMPTS[action] || '';
+      const systemPrompt = `Eres AgenteMasLife, asistente clínico inteligente integrado en el software MasLife (Chile).
+Especialidad del profesional: ${loggedPro?.specialty || 'Salud General'}.
+Fecha actual: ${new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}.
 
-      const clinicalContext = `
-        Paciente: ${personalData.name}, RUT: ${personalData.rut}, Edad: ${personalData.age} años.
-        Contacto: Tel ${personalData.phone}, Email ${personalData.email}.
-        Dirección: ${personalData.address}.
-        Última visita: ${safePatient.lastVisit || 'No registrada'}.
-        DX: ${personalData.diagnoses}.
-        Signos Vitales: FC=${vitals.heartRate}, PA=${vitals.systolic}/${vitals.diastolic}, SatO2=${vitals.oxygenSaturation}, T°=${vitals.temperature}.
-        Notas SOAP: S: ${soap.subjective}, O: ${soap.objective}, A: ${soap.assessment}, P: ${soap.plan}.
-        Anamnesis: ${anamnesis}.
-        Objetivos actuales: ${goals.map(g => `${g.name} (${g.progress}%)`).join(', ')}.
-      `;
+CONTEXTO CLÍNICO DEL PACIENTE:
+${clinicalContext}
 
-      const promptText = `Consulta: "${textToSearch}". \n\nContexto Clínico Extendido:\n${clinicalContext}\n${attachmentsContext}`;
+INSTRUCCIONES:
+- Responde en español, con terminología clínica apropiada para la especialidad
+- Puedes buscar en internet usando la herramienta web_search cuando necesites información actualizada
+- Cita las fuentes cuando uses resultados de búsqueda
+- Sé conciso pero completo — el profesional tiene poco tiempo
+- Ante dudas, recomienda consultar guías MINSAL o derivar
+- No prescribas medicamentos, sugiere consultar médico tratante
+${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
-      const resultText = await askClaude(
-        promptText,
-        "Eres AgenteMasLife, Investigador Clínico y Asistente Administrativo Senior. Responde de forma técnica, ultra-concisa y estructurada. Prioriza la velocidad y precisión."
-      );
+      const r = await fetch('/api/clinical-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: userText === action ? (actionPrompt || userText) : userText }],
+          system: systemPrompt,
+        }),
+      });
 
-      setChatMessages(prev => [...prev,
-        { role: 'model', text: resultText || "No se pudo generar la respuesta." }
-      ]);
+      if (!r.ok) throw new Error(`Error ${r.status}`);
+      const data = await r.json();
+      const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n') || 'Sin respuesta.';
+
+      setChatMessages(prev => [...prev, { role: 'model', text }]);
     } catch (e: any) {
-      console.error("AI Error:", e);
-      let errorMsg = "Error: No se pudo conectar con el Asistente IA.";
-      if (e.message?.includes('API_KEY')) errorMsg = "Error: API Key no configurada en Vercel.";
-      setChatMessages(prev => [...prev, { role: 'model', text: errorMsg }]);
+      const msg = e.message?.includes('API_KEY')
+        ? 'Error: ANTHROPIC_API_KEY no configurada en Vercel.'
+        : 'Error al conectar con el AgenteMasLife.';
+      setChatMessages(prev => [...prev, { role: 'model', text: msg }]);
     } finally {
       setLoadingAi(false);
     }
@@ -179,29 +323,46 @@ const ClinicalRecord: React.FC = () => {
     setIsGeneratingReport(true);
     setIsReportModalOpen(true);
     try {
-      const clinicalData = `
-        Paciente: ${personalData.name}, RUT: ${personalData.rut}, Edad: ${personalData.age}, Diagnóstico: ${personalData.diagnoses}.
-        Signos Vitales: FC=${vitals.heartRate}, PA=${vitals.systolic}/${vitals.diastolic}, SatO2=${vitals.oxygenSaturation}, T°=${vitals.temperature}.
-        Notas SOAP: S: ${soap.subjective}, O: ${soap.objective}, A: ${soap.assessment}, P: ${soap.plan}.
-        Anamnesis: ${anamnesis}.
-        Objetivos: ${goals.map(g => `${g.name} (${g.progress}%)`).join(', ')}.
-        Adjuntos: ${files.map(f => f.name).join(', ')}.
-      `;
-
+      const clinicalContext = buildClinicalContext();
+      const sanitize = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const prompt = feedback
-        ? `Modifica el informe anterior basado en este comentario: "${feedback}". Datos del paciente: ${clinicalData}`
-        : `Genera un Informe Clínico Formal y Organizado para el paciente ${personalData.name}. Estructura: 1. Identificación, 2. Resumen Clínico, 3. Hallazgos y Evolución, 4. Plan de Tratamiento. Datos: ${clinicalData}`;
+        ? `Modifica el siguiente informe basándote en el comentario del profesional:\n<comentario>${sanitize(feedback)}</comentario>\n\nINFORME ANTERIOR:\n${reportContent}\n\nDATOS DEL PACIENTE:\n${clinicalContext}`
+        : `Genera un Informe Clínico Profesional completo para el paciente ${sanitize(personalData.name)}.\n\nEstructura obligatoria:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\n\nDATOS CLÍNICOS:\n${clinicalContext}`;
 
-      const result = await askClaude(
-        prompt,
-        "Eres un redactor de informes médicos experto. Genera documentos con tono sobrio, estructurado y profesional, listos para descargar o imprimir. Usa formato de texto plano con guiones o puntos, sin markdown complejo."
-      );
-      setReportContent(result);
-    } catch (e) {
-      setReportContent("Error al generar el informe inteligente.");
+      const r = await fetch('/api/clinical-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          system: `Eres un redactor de informes clínicos experto. Genera documentos con tono sobrio, estructurado y profesional, listos para imprimir. Usa texto plano con guiones o numeración. Sin markdown complejo. Especialidad: ${loggedPro?.specialty || 'Salud'}.`,
+        }),
+      });
+      if (!r.ok) throw new Error('Error al generar');
+      const data = await r.json();
+      const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n') || 'Error al generar el informe.';
+      setReportContent(text);
+    } catch {
+      setReportContent('Error al generar el informe. Verifica la conexión con el AgenteMasLife.');
     } finally {
       setIsGeneratingReport(false);
     }
+  };
+
+  // Guarda el informe generado como documento adjunto en la ficha
+  const handleSaveReportAsFile = () => {
+    if (!reportContent.trim()) return;
+    const newFile: ClinicalFile = {
+      id: Date.now().toString(),
+      name: `Informe_${personalData.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`,
+      size: `${(reportContent.length / 1024).toFixed(1)} KB`,
+      date: new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: 'numeric' }),
+      type: 'pdf',
+      url: '#',
+      base64: `data:text/plain;base64,${btoa(unescape(encodeURIComponent(reportContent)))}`,
+    };
+    setFiles(prev => [newFile, ...prev]);
+    setIsDirtyTrue();
+    toast.success('Informe guardado como documento en la ficha');
   };
 
   const runAdvancedAnalysis = async () => {
@@ -313,34 +474,48 @@ const ClinicalRecord: React.FC = () => {
     setSessionLogs([newLog, ...sessionLogs]);
   };
 
+  // Construye el objeto Patient con todos los valores de estado actuales
+  const buildUpdatedPatient = (): Patient => ({
+    ...initialPatient,
+    name: personalData.name,
+    rut: personalData.rut,
+    age: personalData.age,
+    birthDate: personalData.birthDate,
+    prevision: personalData.prevision,
+    diagnoses: personalData.diagnoses,
+    address: personalData.address,
+    phone: personalData.phone,
+    email: personalData.email,
+    emergencyContact: personalData.emergencyContact,
+    vitals,
+    soap,
+    goals,
+    sessionLogs,
+    customFields,
+    attachments: files,
+    medicalHistory: anamnesis,
+    status: 'En Tratamiento',
+    lastVisit: new Date().toISOString().split('T')[0],
+    specialtyData: {
+      // Nutrición
+      nutPeso, nutTalla, nutCintura, nutCadera, nutGender, nutActivity,
+      nutGoals, nutSupplements, mealPlan,
+      // Psicología
+      psychMood, psychPsychHistory, psychIntervention, psychNextObjective,
+    },
+  } as Patient);
+
+  // Mantiene el ref actualizado para que el auto-save siempre use los últimos valores
+  buildPatientRef.current = buildUpdatedPatient;
+
   const handleSaveAttention = async () => {
     setIsSaving(true);
-    const updatedPatient: Patient = {
-      ...initialPatient,
-      name: personalData.name,
-      rut: personalData.rut,
-      age: personalData.age,
-      birthDate: personalData.birthDate,
-      prevision: personalData.prevision,
-      diagnoses: personalData.diagnoses,
-      address: personalData.address,
-      phone: personalData.phone,
-      email: personalData.email,
-      emergencyContact: personalData.emergencyContact,
-      vitals,
-      soap,
-      goals,
-      sessionLogs,
-      customFields,
-      attachments: files,
-      medicalHistory: anamnesis,
-      status: 'En Tratamiento',
-      lastVisit: new Date().toISOString().split('T')[0]
-    } as Patient;
-    onUpdatePatient(updatedPatient);
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    onUpdatePatient(buildUpdatedPatient());
     setIsDirty(false);
+    setAutoSaveStatus('idle');
     setIsSaving(false);
-    alert("Ficha Clínica actualizada correctamente.");
+    toast.success(`Ficha de ${personalData.name} guardada correctamente`);
     navigate('/pro/patients');
   };
 
@@ -371,7 +546,26 @@ const ClinicalRecord: React.FC = () => {
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Paciente Maslife Premium</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Indicador de auto-guardado */}
+            {autoSaveStatus !== 'idle' && (
+              <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 transition-all ${autoSaveStatus === 'saving' ? 'text-amber-500' : 'text-emerald-500'}`}>
+                <span className={`material-icons-round text-sm ${autoSaveStatus === 'saving' ? 'animate-spin' : ''}`}>
+                  {autoSaveStatus === 'saving' ? 'sync' : 'check_circle'}
+                </span>
+                {autoSaveStatus === 'saving' ? 'Auto-guardando...' : 'Guardado automáticamente'}
+              </span>
+            )}
+            {/* Descargar PDF */}
+            <button
+              onClick={() => window.print()}
+              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-white border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 transition-all border-b-4 border-slate-200 active:border-b-0 active:translate-y-1"
+              title="Imprimir / Guardar como PDF"
+            >
+              <span className="material-icons-round text-lg">picture_as_pdf</span>
+              PDF
+            </button>
+            {/* Guardar manualmente */}
             <button
               onClick={handleSaveAttention}
               className={`px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-400 border-b-4 border-slate-200 cursor-not-allowed shadow-none'}`}
@@ -452,6 +646,7 @@ const ClinicalRecord: React.FC = () => {
             </div>
           </section>
 
+          {specialtyKey === 'kinesiologia' && (
           <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100 overflow-hidden relative">
             <div className="flex justify-between items-center mb-10">
               <div>
@@ -515,7 +710,9 @@ const ClinicalRecord: React.FC = () => {
               </div>
             </div>
           </section>
+          )}
 
+          {/* ── Signos Vitales ─────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[
               { l: 'FC (LPM)', k: 'heartRate', c: 'text-rose-500' },
@@ -531,22 +728,235 @@ const ClinicalRecord: React.FC = () => {
             ))}
           </div>
 
+          {/* ── Sección Nutrición ──────────────────────────────────────────── */}
+          {specialtyKey === 'nutricion' && (
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100 space-y-10">
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
+
+            {/* Inputs antropométricos */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { l: 'Peso (kg)',        v: nutPeso,    set: (n: number) => { setNutPeso(n);    setIsDirtyTrue(); } },
+                { l: 'Talla (cm)',       v: nutTalla,   set: (n: number) => { setNutTalla(n);   setIsDirtyTrue(); } },
+                { l: 'Circ. Cintura (cm)', v: nutCintura, set: (n: number) => { setNutCintura(n); setIsDirtyTrue(); } },
+                { l: 'Circ. Cadera (cm)', v: nutCadera,  set: (n: number) => { setNutCadera(n);  setIsDirtyTrue(); } },
+              ].map(f => (
+                <div key={f.l} className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</label>
+                  <input type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
+                </div>
+              ))}
+            </div>
+
+            {/* Género y nivel de actividad */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Género Biológico</label>
+                <div className="flex gap-3">
+                  {(['Femenino', 'Masculino'] as Gender[]).map(g => (
+                    <button key={g} onClick={() => { setNutGender(g); setIsDirtyTrue(); }}
+                      className={`flex-1 py-4 rounded-2xl font-black text-sm border-2 transition-all ${nutGender === g ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
+                      {g === 'Femenino' ? '♀ Femenino' : '♂ Masculino'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel de Actividad Física</label>
+                <select value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
+                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
+                  {(Object.entries(ACTIVITY_FACTORS) as [ActivityLevel, { label: string; factor: number }][]).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Resultados calculados */}
+            {nutMetrics ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { l: 'IMC',             val: nutMetrics.bmi,           unit: 'kg/m²', sub: nutMetrics.bmiClassification.label,  col: nutMetrics.bmiClassification.color },
+                  { l: 'TMB (Mifflin)',   val: nutMetrics.bmr,           unit: 'kcal/día', sub: 'Tasa metabólica basal',          col: 'text-primary' },
+                  { l: 'GET',             val: nutMetrics.totalCalories,  unit: 'kcal/día', sub: 'Gasto energético total',         col: 'text-teal-500' },
+                  { l: 'Rel. C/C',        val: nutMetrics.whr || '—',     unit: '',      sub: nutMetrics.whrClassification.label, col: nutMetrics.whrClassification.color },
+                ].map(card => (
+                  <div key={card.l} className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 text-center shadow-inner">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{card.l}</p>
+                    <p className={`text-3xl font-black ${card.col}`}>{card.val}</p>
+                    {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
+                    <p className={`text-xs font-black mt-2 ${card.col}`}>{card.sub}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200 text-slate-400 text-sm font-bold">
+                Ingresa peso y talla para calcular automáticamente IMC, TMB y GET
+              </div>
+            )}
+
+            {/* Objetivos nutricionales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objetivos Nutricionales</label>
+                <textarea value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
+                  placeholder="Ej: Reducir peso corporal 5 kg en 3 meses, normalizar glicemia..."
+                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suplementación Indicada</label>
+                <textarea value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
+                  placeholder="Ej: Vitamina D 2000 UI/día, Omega-3 1g/día..."
+                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+              </div>
+            </div>
+
+            {/* Plan alimentario editable */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Plan Alimentario — Tabla Editable</h3>
+                <button onClick={() => {
+                  setMealPlan(p => [...p, { id: Date.now().toString(), meal: 'Nueva Comida', food: '', quantity: '', kcal: '', notes: '' }]);
+                  setIsDirtyTrue();
+                }} className="text-[10px] bg-emerald-500 text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-1 no-print">
+                  <span className="material-icons-round text-sm">add</span> Agregar fila
+                </button>
+              </div>
+              <div className="overflow-x-auto rounded-[2rem] border border-slate-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-emerald-50 border-b border-slate-200">
+                    <tr>
+                      {['Tiempo', 'Preparación / Alimento', 'Cantidad', 'Kcal est.', 'Observaciones', ''].map(h => (
+                        <th key={h} className="px-5 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mealPlan.map((row, idx) => (
+                      <tr key={row.id} className={`border-b border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                        <td className="px-4 py-3">
+                          <input value={row.meal} onChange={e => { setMealPlan(p => p.map(r => r.id === row.id ? { ...r, meal: e.target.value } : r)); setIsDirtyTrue(); }}
+                            className="w-28 bg-transparent border-none font-black text-slate-700 text-xs focus:ring-0 p-0" />
+                        </td>
+                        {(['food', 'quantity', 'kcal', 'notes'] as const).map(key => (
+                          <td key={key} className="px-4 py-3">
+                            <input value={row[key]} onChange={e => { setMealPlan(p => p.map(r => r.id === row.id ? { ...r, [key]: e.target.value } : r)); setIsDirtyTrue(); }}
+                              placeholder={key === 'kcal' ? '0' : '...'}
+                              className="w-full bg-transparent border-none text-slate-600 text-sm focus:ring-0 p-0" />
+                          </td>
+                        ))}
+                        <td className="px-4 py-3 no-print">
+                          <button onClick={() => { setMealPlan(p => p.filter(r => r.id !== row.id)); setIsDirtyTrue(); }}
+                            className="text-slate-300 hover:text-rose-500 transition-all">
+                            <span className="material-icons-round text-base">delete</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {/* Total Kcal */}
+                    <tr className="bg-emerald-50 font-black">
+                      <td colSpan={3} className="px-5 py-4 text-xs text-slate-500 uppercase tracking-widest">Total estimado</td>
+                      <td className="px-5 py-4 text-emerald-700 font-black">
+                        {mealPlan.reduce((sum, r) => sum + (parseFloat(r.kcal) || 0), 0)} kcal
+                      </td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+          )}
+
+          {/* ── Sección Psicología ─────────────────────────────────────────── */}
+          {specialtyKey === 'psicologia' && (
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100 space-y-8">
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
+
+            {/* Escala de ánimo */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
+                <span className={`text-3xl font-black ${psychMood <= 3 ? 'text-rose-500' : psychMood <= 6 ? 'text-amber-500' : 'text-emerald-500'}`}>{psychMood}/10</span>
+              </div>
+              <input type="range" min={0} max={10} step={1} value={psychMood}
+                onChange={e => { setPsychMood(Number(e.target.value)); setIsDirtyTrue(); }}
+                className="w-full accent-violet-500 h-3 rounded-full" />
+              <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                <span>😔 Muy bajo</span><span>😐 Neutro</span><span>😊 Muy alto</span>
+              </div>
+            </div>
+
+            {/* Antecedentes psiquiátricos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
+                <textarea value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
+                  placeholder="Diagnósticos previos, hospitalizaciones, intentos de autolesión, medicación psiquiátrica..."
+                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
+                <textarea value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
+                  placeholder="Ej: TCC — reestructuración cognitiva de pensamientos automáticos negativos. EMDR fase 3..."
+                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+              </div>
+            </div>
+
+            {/* Objetivo próxima sesión */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objetivo Próxima Sesión</label>
+              <textarea value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
+                placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
+                className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+            </div>
+          </section>
+          )}
+
+          {/* ── Evolución SOAP (labels dinámicos por especialidad) ──────────── */}
+          {(() => {
+            const SOAP_LABELS: Record<string, Array<{ l: string; c: string; k: string; bg: string; ph: string }>> = {
+              kinesiologia: [
+                { l: 'Subjetivo',             c: 'S', k: 'subjective', bg: 'bg-primary',     ph: 'Lo que reporta el paciente: dolor EVA, funcionalidad...' },
+                { l: 'Objetivo',              c: 'O', k: 'objective',  bg: 'bg-teal-500',    ph: 'ROM, fuerza muscular (Daniels), test especiales...' },
+                { l: 'Evaluación',            c: 'A', k: 'assessment', bg: 'bg-indigo-500',  ph: 'Diagnóstico kinésico, evolución clínica...' },
+                { l: 'Plan',                  c: 'P', k: 'plan',       bg: 'bg-slate-800',   ph: 'Técnicas, ejercicios, pauta domiciliaria...' },
+              ],
+              psicologia: [
+                { l: 'Motivo de Consulta',    c: 'S', k: 'subjective', bg: 'bg-violet-500',  ph: 'Describir motivo referido por el paciente en sus palabras...' },
+                { l: 'Estado Mental',         c: 'O', k: 'objective',  bg: 'bg-teal-500',    ph: 'Orientación, memoria, atención, lenguaje, afecto, juicio...' },
+                { l: 'Impresión Diagnóstica', c: 'A', k: 'assessment', bg: 'bg-indigo-500',  ph: 'Diagnóstico presuntivo DSM-5/CIE-11, hipótesis clínica...' },
+                { l: 'Plan Terapéutico',      c: 'P', k: 'plan',       bg: 'bg-slate-800',   ph: 'Técnica de intervención, frecuencia, objetivos próxima sesión...' },
+              ],
+              nutricion: [
+                { l: 'Anamnesis Alimentaria', c: 'S', k: 'subjective', bg: 'bg-emerald-500', ph: 'Hábitos, horarios, aversiones, preferencias, hidratación...' },
+                { l: 'Evaluación Clínica',    c: 'O', k: 'objective',  bg: 'bg-teal-500',    ph: 'Los datos antropométricos están en la calculadora superior...' },
+                { l: 'Diagnóstico Nutricional',c: 'A', k: 'assessment', bg: 'bg-indigo-500', ph: 'Estado nutricional, diagnóstico, factores de riesgo...' },
+                { l: 'Indicaciones Dietéticas',c: 'P', k: 'plan',      bg: 'bg-slate-800',   ph: 'Indicaciones, restricciones, suplementación, metas calóricas...' },
+              ],
+              to: [
+                { l: 'Desempeño Ocupacional', c: 'S', k: 'subjective', bg: 'bg-amber-500',   ph: 'AVD, AVDI, trabajo, juego, ocio, participación social...' },
+                { l: 'Áreas de Intervención', c: 'O', k: 'objective',  bg: 'bg-teal-500',    ph: 'Áreas a trabajar, capacidades observadas, test funcionales...' },
+                { l: 'Análisis Funcional',    c: 'A', k: 'assessment', bg: 'bg-indigo-500',  ph: 'Barreras, facilitadores, nivel de independencia...' },
+                { l: 'Plan de Intervención',  c: 'P', k: 'plan',       bg: 'bg-slate-800',   ph: 'Estrategias, adaptaciones, ortesis, entrenamiento...' },
+              ],
+            };
+            const fields = SOAP_LABELS[specialtyKey] || SOAP_LABELS.kinesiologia;
+            return (
           <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {[
-              { l: 'Subjetivo', c: 'S', k: 'subjective', bg: 'bg-primary' },
-              { l: 'Objetivo', c: 'O', k: 'objective', bg: 'bg-teal-500' },
-              { l: 'Evaluación', c: 'A', k: 'assessment', bg: 'bg-indigo-500' },
-              { l: 'Plan', c: 'P', k: 'plan', bg: 'bg-slate-800' }
-            ].map(f => (
+            {fields.map(f => (
               <div key={f.k} className="bg-white rounded-[3rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
                 <div className="px-10 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl ${f.bg} text-white flex items-center justify-center font-black text-sm shadow-sm`}>{f.c}</div>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800">{f.l}</h4>
                 </div>
-                <textarea value={(soap as any)[f.k]} onChange={e => { setSoap({ ...soap, [f.k]: e.target.value }); setIsDirtyTrue(); }} className="p-10 h-56 border-none text-sm font-bold text-slate-600 focus:ring-4 focus:ring-primary/5 inset-0 resize-none leading-relaxed" placeholder="Registrar notas médicas relevantes..." />
+                <textarea value={(soap as any)[f.k]} onChange={e => { setSoap({ ...soap, [f.k]: e.target.value }); setIsDirtyTrue(); }} className="p-10 h-56 border-none text-sm font-bold text-slate-600 focus:ring-4 focus:ring-primary/5 inset-0 resize-none leading-relaxed" placeholder={f.ph} />
               </div>
             ))}
           </section>
+            );
+          })()}
 
           <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100">
             <div className="flex justify-between items-center mb-10">
@@ -673,7 +1083,10 @@ const ClinicalRecord: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-1">AgenteMasLife</h3>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Investigador Clínico IA</p>
+                <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse inline-block"></span>
+                  IA Clínica + Búsqueda Web
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -692,13 +1105,21 @@ const ClinicalRecord: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/50 custom-scrollbar flex flex-col">
             <div className="grid grid-cols-2 gap-3 mb-4">
-              {['Análisis Evolutivo', 'Protocolo Médico', 'Triaje', 'Generar Informe Formal'].map(t => (
+              {[
+                { label: 'Análisis Evolutivo', icon: 'trending_up',      color: 'bg-white border-slate-100 text-slate-600 hover:border-primary hover:text-primary' },
+                { label: 'Protocolo Médico',   icon: 'medical_services', color: 'bg-white border-slate-100 text-slate-600 hover:border-teal-500 hover:text-teal-600' },
+                { label: 'Diagnóstico Diferencial', icon: 'biotech',     color: 'bg-white border-slate-100 text-slate-600 hover:border-indigo-500 hover:text-indigo-600' },
+                { label: 'Triaje',             icon: 'emergency',        color: 'bg-rose-50 border-rose-100 text-rose-600 hover:bg-rose-100' },
+                { label: 'Buscar Guía Clínica',icon: 'travel_explore',   color: 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100' },
+                { label: 'Generar Informe Formal', icon: 'description',  color: 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100' },
+              ].map(btn => (
                 <button
-                  key={t}
-                  onClick={() => t === 'Generar Informe Formal' ? handleGenerateProfessionalReport() : handleAiAnalysis(t)}
-                  className={`p-4 border rounded-2xl text-xs font-black uppercase transition-all shadow-sm ${t === 'Generar Informe Formal' ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100' : 'bg-white border-slate-100 text-slate-500 hover:border-primary hover:text-primary'}`}
+                  key={btn.label}
+                  onClick={() => btn.label === 'Generar Informe Formal' ? handleGenerateProfessionalReport() : handleAiAnalysis(btn.label)}
+                  className={`p-3.5 border rounded-2xl text-[10px] font-black uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 ${btn.color}`}
                 >
-                  {t}
+                  <span className="material-icons-round text-sm">{btn.icon}</span>
+                  {btn.label}
                 </button>
               ))}
             </div>
@@ -742,6 +1163,9 @@ const ClinicalRecord: React.FC = () => {
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Revisa, Edita y Descarga el Documento</p>
               </div>
               <div className="flex gap-4">
+                <button onClick={handleSaveReportAsFile} className="bg-teal-500 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-teal-600 transition-all shadow-xl">
+                  <span className="material-icons-round text-base">save_alt</span> GUARDAR EN FICHA
+                </button>
                 <button onClick={() => window.print()} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl">
                   <span className="material-icons-round text-base">print</span> IMPRIMIR / PDF
                 </button>

@@ -21,8 +21,9 @@ import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
 import { ConsentAcceptPage } from './pages/ConsentAcceptPage';
 import { PasswordRecovery, ResetPassword } from './pages/PasswordRecovery';
-import Sidebar        from './components/Sidebar';
-import GlobalAIPanel  from './components/GlobalAIPanel';
+import Sidebar          from './components/Sidebar';
+import GlobalAIPanel    from './components/GlobalAIPanel';
+import ToastContainer   from './components/ToastContainer';
 import { ClinicProvider, useClinic } from './ClinicContext';
 import { AppView, Notification } from './types';
 import logoClinica from './assets/logo-clinica.png';
@@ -35,8 +36,36 @@ const ProGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isAdmin = localStorage.getItem('maslife_admin_auth') === 'true';
-  return isAdmin ? <>{children}</> : <Navigate to="/admin/login" replace />;
+  const { setIsAdmin } = useClinic();
+  const [verified, setVerified] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const token = sessionStorage.getItem('maslife_admin_token');
+    if (!token) { setVerified(false); return; }
+
+    fetch('/api/admin-verify', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.valid === true) {
+          setIsAdmin(true);
+          setVerified(true);
+        } else {
+          sessionStorage.removeItem('maslife_admin_token');
+          setIsAdmin(false);
+          setVerified(false);
+        }
+      })
+      .catch(() => setVerified(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (verified === null) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-950">
+        <span className="material-icons-round animate-spin text-primary text-5xl">sync</span>
+      </div>
+    );
+  }
+  return verified ? <>{children}</> : <Navigate to="/admin/login" replace />;
 };
 
 // ── Layout profesional ────────────────────────────────────────
@@ -342,6 +371,7 @@ const App: React.FC = () => (
   <HashRouter>
     <ClinicProvider>
       <AppContent />
+      <ToastContainer />
     </ClinicProvider>
   </HashRouter>
 );
