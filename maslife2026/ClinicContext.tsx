@@ -86,6 +86,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       isPublic: true,
       paymentEnabled: true,
       bookingPaymentLink: 'https://www.flow.cl/app/pay.php?token=reserva5000',
+      phone: '+56965329974',
       createdAt: new Date().toISOString(),
       avatar: 'https://picsum.photos/seed/rodrigo/400/400',
       services: [

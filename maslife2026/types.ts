@@ -63,6 +63,7 @@ export interface ProfessionalProfile {
   nextBillingDate?: string; // Nuevo: Fecha de cobro
   subscriptionLink?: string; // Link de pago personalizado
   bookingPaymentLink?: string; // Link de pago para reservas ($5.000)
+  phone?: string;
   specialty: string;
   city: string; 
   bio: string;

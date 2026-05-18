@@ -37,7 +37,7 @@ const PatientResults: React.FC = () => {
       const hasModality = selectedModality.some(m => {
         if (m === 'Online') return p.modalities?.online;
         if (m === 'Presencial') return p.modalities?.inPerson;
-        if (m === 'Domicilio') return p.modalities?.homeVisit;
+        if (m === 'Domicilio') return p.modalities?.home;
         return false;
       });
       if (!hasModality) return false;
