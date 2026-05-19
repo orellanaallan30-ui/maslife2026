@@ -104,7 +104,10 @@ const ProfessionalRegistration: React.FC = () => {
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: form.email.trim().toLowerCase(),
         password: form.password,
-        options: { data: { name: form.name.trim(), specialty: form.specialty.trim() } },
+        options: {
+          data: { name: form.name.trim(), specialty: form.specialty.trim() },
+          emailRedirectTo: 'https://www.clinicamaslife.cl/#/pro/login',
+        },
       });
 
       if (authErr) {
@@ -120,7 +123,7 @@ const ProfessionalRegistration: React.FC = () => {
       const uid = authData.user.id;
 
       // Confirmar email automáticamente sin requerir clic en correo
-      await supabase.rpc('auto_confirm_new_user', { user_id: uid }).catch(() => null);
+      try { await supabase.rpc('auto_confirm_new_user', { user_id: uid }); } catch { /* ignorar */ }
 
       const slug = form.name.trim().toLowerCase().normalize('NFD')
         .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'')
