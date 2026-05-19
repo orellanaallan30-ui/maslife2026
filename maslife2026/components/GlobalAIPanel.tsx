@@ -270,7 +270,10 @@ REGLAS:
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(errData?.error?.message || `Error ${response.status}`);
+      const errMsg = typeof errData?.error === 'string'
+        ? errData.error
+        : (errData?.error?.message || `Error ${response.status}`);
+      throw new Error(errMsg);
     }
 
     return response.json();
