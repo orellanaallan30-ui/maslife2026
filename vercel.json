@@ -3,7 +3,11 @@
   "outputDirectory": "maslife2026/dist",
   "installCommand": "cd maslife2026 && npm install",
   "framework": null,
+  "functions": {
+    "maslife2026/api/**/*.ts": {}
+  },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
