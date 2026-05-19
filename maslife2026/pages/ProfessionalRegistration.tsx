@@ -118,6 +118,10 @@ const ProfessionalRegistration: React.FC = () => {
       if (!authData.user) { setError('No se pudo crear la cuenta.'); setLoading(false); return; }
 
       const uid = authData.user.id;
+
+      // Confirmar email automáticamente sin requerir clic en correo
+      await supabase.rpc('auto_confirm_new_user', { user_id: uid }).catch(() => null);
+
       const slug = form.name.trim().toLowerCase().normalize('NFD')
         .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'')
         .replace(/\s+/g,'-') + '-' + uid.slice(0,6);
@@ -156,15 +160,29 @@ const ProfessionalRegistration: React.FC = () => {
         setLoading(false); return;
       }
 
-      // Intentar login automático
-      const { data: sess } = await supabase.auth.getSession();
-      if (sess.session) {
-        const { data: proData } = await supabase.from('professionals').select('*').eq('id', uid).maybeSingle();
-        if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
+      // Intentar login automático (con reintento tras auto-confirmación de email)
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (attempt > 0) await new Promise(r => setTimeout(r, 600));
+        const { data: sess } = await supabase.auth.getSession();
+        if (sess.session) {
+          const { data: proData } = await supabase.from('professionals').select('*').eq('id', uid).maybeSingle();
+          if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
+        }
+        // Si no hay sesión, hacer signIn directo tras la confirmación
+        if (attempt === 1) {
+          const { data: signInData } = await supabase.auth.signInWithPassword({
+            email: form.email.trim().toLowerCase(),
+            password: form.password,
+          });
+          if (signInData.session) {
+            const { data: proData } = await supabase.from('professionals').select('*').eq('id', uid).maybeSingle();
+            if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
+          }
+        }
       }
 
-      // Fallback: ir al login
-      navigate('/pro/login');
+      // Fallback: ir al login con mensaje de éxito
+      navigate('/pro/login', { state: { registered: true } });
 
     } catch (e: any) {
       setError('Error inesperado: ' + e.message);

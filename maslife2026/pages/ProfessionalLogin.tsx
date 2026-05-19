@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
 import { loginProfessional, checkRateLimit } from '../supabaseService';
 
@@ -31,6 +31,7 @@ const RateCountdown: React.FC<{ ms: number; onExpire: () => void }> = ({ ms, onE
 
 const ProfessionalLogin: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setLoggedPro } = useClinic();
 
   const [email, setEmail]       = useState('');
@@ -40,6 +41,7 @@ const ProfessionalLogin: React.FC = () => {
   const [loading, setLoading]   = useState(false);
   const [rl, setRl]             = useState(() => checkRateLimit());
   const [rememberMe, setRememberMe] = useState(false);
+  const justRegistered = (location.state as any)?.registered === true;
 
   useEffect(() => {
     const saved = localStorage.getItem('maslife_pro_saved');
@@ -122,6 +124,14 @@ const ProfessionalLogin: React.FC = () => {
           <h1 className="text-xl font-black text-slate-800 mt-4">Acceso Profesional</h1>
           <p className="text-sm text-slate-500 mt-1">Ingresa a tu panel de gestión clínica</p>
         </div>
+
+        {/* Banner registro exitoso */}
+        {justRegistered && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 mb-4 flex items-center gap-3">
+            <span className="material-icons-round text-emerald-500 text-xl shrink-0">check_circle</span>
+            <p className="text-sm text-emerald-800 font-semibold">¡Cuenta creada! Ingresa con tu email y contraseña.</p>
+          </div>
+        )}
 
         {/* Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-xl shadow-slate-900/5 p-8">
