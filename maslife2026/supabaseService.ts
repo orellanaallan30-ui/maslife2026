@@ -54,6 +54,10 @@ export async function loginProfessional(
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
   if (authError || !authData.user) {
     recordFailedAttempt();
+    const msg = authError?.message?.toLowerCase() ?? '';
+    if (msg.includes('email not confirmed') || msg.includes('email_not_confirmed')) {
+      return { error: 'Tu email aún no está confirmado. Revisa tu bandeja de entrada y haz clic en el enlace de verificación.' };
+    }
     return { error: 'Email o contraseña incorrectos.' };
   }
 

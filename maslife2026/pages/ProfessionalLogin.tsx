@@ -99,13 +99,24 @@ const ProfessionalLogin: React.FC = () => {
       <div className="w-full max-w-md relative">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 cursor-pointer mb-2" onClick={() => navigate('/')}>
-            <div className="bg-teal-500 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl shadow-teal-500/30">
-              <span className="material-icons-round text-white text-3xl">medical_services</span>
-            </div>
-            <div className="text-left">
-              <p className="text-xs font-black text-teal-600 uppercase tracking-widest leading-none">PLATAFORMA</p>
-              <p className="text-2xl font-black text-slate-900 leading-tight">Mas Life 🧡</p>
+          <div className="inline-flex items-center justify-center cursor-pointer mb-2" onClick={() => navigate('/')}>
+            <img
+              src="/logo-agenda-online.svg"
+              alt="Agenda Online - Clínica Mas Life"
+              className="h-24 w-auto object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden items-center gap-3">
+              <div className="bg-teal-500 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl shadow-teal-500/30">
+                <span className="material-icons-round text-white text-3xl">medical_services</span>
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-black text-teal-600 uppercase tracking-widest leading-none">PLATAFORMA</p>
+                <p className="text-2xl font-black text-slate-900 leading-tight">Mas Life 🧡</p>
+              </div>
             </div>
           </div>
           <h1 className="text-xl font-black text-slate-800 mt-4">Acceso Profesional</h1>

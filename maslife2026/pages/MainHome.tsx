@@ -3,6 +3,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logoClinica from '../assets/logo-clinica.png';
 
+const HERO_IMAGES = [
+  { src: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=900', alt: 'Kinesiólogo atendiendo paciente en rehabilitación física' },
+  { src: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=900', alt: 'Profesional de salud guiando ejercicio terapéutico' },
+  { src: 'https://images.unsplash.com/photo-1573497019236-17f8177b81e8?q=80&w=900', alt: 'Psicóloga en consulta con paciente' },
+  { src: 'https://images.unsplash.com/photo-1576671285-d9df3bc08e01?q=80&w=900', alt: 'Terapeuta ocupacional con paciente adulto mayor' },
+];
+
 const MainHome: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -153,6 +160,13 @@ const MainHome: React.FC = () => {
     { text: 'Como persona mayor, valoro mucho que vengan a mi casa. El masajista fue muy respetuoso y profesional con mi tratamiento.', name: 'Jorge V.', role: 'PACIENTE MASOTERAPIA', stars: 5 },
   ];
 
+  // Carrusel hero
+  const [heroImageIdx, setHeroImageIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setHeroImageIdx(i => (i + 1) % HERO_IMAGES.length), 4000);
+    return () => clearInterval(t);
+  }, []);
+
   // Carrusel automático de testimonios
   const [testimonialIndex, setTestimonialIndex] = useState(0);
   const testimonialsPerView = typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 3;
@@ -219,7 +233,7 @@ const MainHome: React.FC = () => {
             <img
               src={logoClinica}
               alt="Clínica Mas Life"
-              className="h-10 sm:h-12 w-auto object-contain"
+              className="h-16 sm:h-20 w-auto object-contain"
               onError={(e) => {
                 // Fallback si no carga la imagen
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -383,24 +397,48 @@ const MainHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Right: Hero Image + Badge */}
-            <div className="relative hidden lg:block">
-              <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-300/30 aspect-[4/5] max-h-[580px]">
-                <img
-                  src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=800"
-                  className="w-full h-full object-cover"
-                  alt="Kinesiólogo atendiendo paciente en rehabilitación física en Ovalle"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
+            {/* Right: Hero Image Carousel */}
+            <div className="relative mt-6 lg:mt-0">
+              {/* Stack de fotos apiladas (efecto visual detrás) */}
+              <div className="absolute top-3 left-3 right-0 bottom-0 rounded-[2.5rem] bg-blue-100 opacity-40 rotate-2" />
+              <div className="absolute top-1.5 left-1.5 right-0 bottom-0 rounded-[2.5rem] bg-teal-100 opacity-50 rotate-1" />
+
+              {/* Carrusel principal */}
+              <div
+                className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-400/30 aspect-[16/10] lg:aspect-[4/5] lg:max-h-[580px] cursor-pointer select-none"
+                onClick={() => setHeroImageIdx(i => (i + 1) % HERO_IMAGES.length)}
+              >
+                {HERO_IMAGES.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={img.src}
+                    alt={img.alt}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${idx === heroImageIdx ? 'opacity-100' : 'opacity-0'}`}
+                  />
+                ))}
+                {/* Gradiente inferior */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent pointer-events-none" />
+                {/* Indicadores de posición */}
+                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
+                  {HERO_IMAGES.map((_, idx) => (
+                    <div key={idx} className={`rounded-full transition-all duration-400 ${idx === heroImageIdx ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50'}`} />
+                  ))}
+                </div>
+                {/* Hint de interacción */}
+                <div className="absolute top-4 right-4 bg-black/25 backdrop-blur-sm rounded-xl px-3 py-1.5 pointer-events-none flex items-center gap-1.5">
+                  <span className="material-icons-round text-white text-sm">touch_app</span>
+                  <p className="text-white text-[10px] font-bold uppercase tracking-wider">Toca para ver más</p>
+                </div>
               </div>
+
               {/* Floating badge */}
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl px-5 py-4 shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center gap-3 max-w-[280px]">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <span className="material-icons-round text-blue-600 text-xl">verified_user</span>
+              <div className="absolute -bottom-5 -left-4 lg:-bottom-6 lg:-left-6 bg-white rounded-2xl px-4 py-3 lg:px-5 lg:py-4 shadow-xl shadow-slate-200/60 border border-slate-100 flex items-center gap-3 max-w-[260px] lg:max-w-[280px]">
+                <div className="w-9 h-9 lg:w-10 lg:h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="material-icons-round text-blue-600 text-lg lg:text-xl">verified_user</span>
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-900 leading-tight">Profesionales con sello +Life</p>
-                  <p className="text-xs text-slate-500 font-medium">verificados & certificados</p>
+                  <p className="text-xs lg:text-sm font-bold text-slate-900 leading-tight">Profesionales con sello +Life</p>
+                  <p className="text-[10px] lg:text-xs text-slate-500 font-medium">verificados & certificados</p>
                 </div>
               </div>
             </div>
