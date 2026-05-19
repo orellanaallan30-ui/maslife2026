@@ -4,7 +4,10 @@
   "installCommand": "cd maslife2026 && npm install",
   "framework": null,
   "functions": {
-    "maslife2026/api/**/*.ts": {}
+    "maslife2026/api/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
