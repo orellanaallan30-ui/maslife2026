@@ -42,8 +42,10 @@ const ProfessionalLogin: React.FC = () => {
   const [rl, setRl]             = useState(() => checkRateLimit());
   const [rememberMe, setRememberMe] = useState(false);
   const justRegistered = (location.state as any)?.registered === true;
+  const stateEmail = (location.state as any)?.email as string | undefined;
 
   useEffect(() => {
+    if (stateEmail) { setEmail(stateEmail); return; }
     const saved = localStorage.getItem('maslife_pro_saved');
     if (saved) {
       try {
