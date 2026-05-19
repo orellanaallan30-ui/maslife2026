@@ -219,7 +219,7 @@ const MainHome: React.FC = () => {
             <img
               src={logoClinica}
               alt="Clínica Mas Life"
-              className="h-10 sm:h-12 w-auto object-contain"
+              className="h-14 sm:h-16 w-auto object-contain"
               onError={(e) => {
                 // Fallback si no carga la imagen
                 (e.target as HTMLImageElement).style.display = 'none';
