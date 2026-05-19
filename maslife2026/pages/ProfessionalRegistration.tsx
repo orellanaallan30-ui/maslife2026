@@ -100,7 +100,7 @@ const ProfessionalRegistration: React.FC = () => {
     const finalCity = form.city === 'Otra ciudad' ? form.customCity.trim() : form.city;
 
     try {
-      // Crear usuario en Supabase Auth
+      // Paso 1: crear cuenta en Supabase Auth
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: form.email.trim().toLowerCase(),
         password: form.password,
@@ -118,74 +118,71 @@ const ProfessionalRegistration: React.FC = () => {
         }
         setLoading(false); return;
       }
-      if (!authData.user) { setError('No se pudo crear la cuenta.'); setLoading(false); return; }
 
-      const uid = authData.user.id;
-
-      // Confirmar email automáticamente sin requerir clic en correo
-      try { await supabase.rpc('auto_confirm_new_user', { user_id: uid }); } catch { /* ignorar */ }
-
-      const slug = form.name.trim().toLowerCase().normalize('NFD')
-        .replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]/g,'')
-        .replace(/\s+/g,'-') + '-' + uid.slice(0,6);
-
-      // Guardar perfil — reintentar si la sesión aún no está lista
-      let saveErr: any = null;
-      for (let i = 0; i < 4; i++) {
-        if (i > 0) await new Promise(r => setTimeout(r, 800 * i));
-        const { error: e } = await supabase.from('professionals').insert({
-          id: uid, slug, name: form.name.trim(),
-          email: form.email.trim().toLowerCase(),
-          specialty: form.specialty.trim(), city: finalCity,
-          bio: '', avatar: form.avatar || '',
-          working_hours: { start: '09:00', end: '18:00' },
-          modalities: form.modalities,
-          services: [{ id: 's1', name: form.serviceName,
-            price: parseInt(form.servicePrice)||45000, duration: 45, description: '' }],
-          is_public: false, is_verified: true, is_approved: true,
-          is_subscribed: false, subscription_status: 'trial',
-          needs_password_reset: false, payment_enabled: false,
-          created_at: new Date().toISOString(),
-        });
-        if (!e) { saveErr = null; break; }
-        saveErr = e;
+      // Paso 2: auto-confirmar (puede fallar silenciosamente para emails ya confirmados)
+      if (authData.user) {
+        try { await supabase.rpc('auto_confirm_new_user', { user_id: authData.user.id }); } catch { /* ignorar */ }
       }
 
+      // Paso 3: login inmediato para obtener el ID REAL del usuario.
+      // Supabase devuelve UUID falso en signUp cuando el email ya está confirmado
+      // (protección anti-enumeración), así que no podemos confiar en authData.user.id.
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+      });
+
+      if (signInErr || !signInData?.session) {
+        navigate('/pro/login', { state: { registered: true, email: form.email.trim().toLowerCase() } });
+        return;
+      }
+
+      const realUid = signInData.session.user.id;
+      const slug = form.name.trim().toLowerCase().normalize('NFD')
+        .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, '')
+        .replace(/\s+/g, '-') + '-' + realUid.slice(0, 6);
+
+      // Paso 4: verificar si ya existe perfil con el ID real (email ya registrado)
+      const { data: existingPro } = await supabase
+        .from('professionals').select('*').eq('id', realUid).maybeSingle();
+
+      if (existingPro) {
+        setLoggedPro(mapDBtoPro(existingPro) as any);
+        navigate('/pro/dashboard');
+        return;
+      }
+
+      // Paso 5: insertar perfil con ID real y sesión autenticada activa
+      const { error: saveErr } = await supabase.from('professionals').insert({
+        id: realUid, slug, name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        specialty: form.specialty.trim(), city: finalCity,
+        bio: '', avatar: form.avatar || '',
+        working_hours: { start: '09:00', end: '18:00' },
+        modalities: form.modalities,
+        services: [{ id: 's1', name: form.serviceName,
+          price: parseInt(form.servicePrice) || 45000, duration: 45, description: '' }],
+        is_public: false, is_verified: true, is_approved: true,
+        is_subscribed: false, subscription_status: 'trial',
+        needs_password_reset: false, payment_enabled: false,
+        created_at: new Date().toISOString(),
+      });
+
       if (saveErr) {
-        console.error('Save error:', saveErr);
         if (saveErr.code === '23505') {
+          // Race condition: perfil ya existe, cargarlo y navegar
+          const { data: proData } = await supabase.from('professionals').select('*').eq('id', realUid).maybeSingle();
+          if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
           setError('Este email ya tiene un perfil. Intenta iniciar sesión.');
-        } else if (saveErr.message?.includes('row-level security')) {
-          setError('Error de permisos. Verifica que "Enable email confirmations" esté DESACTIVADO en Supabase Auth → Settings.');
         } else {
           setError('Error al guardar el perfil: ' + saveErr.message);
         }
         setLoading(false); return;
       }
 
-      // Intentar login automático (con reintento tras auto-confirmación de email)
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) await new Promise(r => setTimeout(r, 600));
-        const { data: sess } = await supabase.auth.getSession();
-        if (sess.session) {
-          const { data: proData } = await supabase.from('professionals').select('*').eq('id', uid).maybeSingle();
-          if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
-        }
-        // Si no hay sesión, hacer signIn directo tras la confirmación
-        if (attempt === 1) {
-          const { data: signInData } = await supabase.auth.signInWithPassword({
-            email: form.email.trim().toLowerCase(),
-            password: form.password,
-          });
-          if (signInData.session) {
-            const { data: proData } = await supabase.from('professionals').select('*').eq('id', uid).maybeSingle();
-            if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
-          }
-        }
-      }
-
-      // Fallback: ir al login con mensaje de éxito
-      navigate('/pro/login', { state: { registered: true } });
+      // Paso 6: cargar perfil recién creado y navegar al dashboard
+      const { data: proData } = await supabase.from('professionals').select('*').eq('id', realUid).maybeSingle();
+      if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); }
 
     } catch (e: any) {
       setError('Error inesperado: ' + e.message);
