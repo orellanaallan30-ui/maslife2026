@@ -64,6 +64,7 @@ const ProfessionalDashboard: React.FC = () => {
 
   const profileComplete = !!(loggedPro.slug && loggedPro.specialty && loggedPro.services?.length > 0);
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
+  const mpLinkWithBack = `${MP_SUBSCRIPTION_LINK}&back_url=${encodeURIComponent('https://www.clinicamaslife.cl/#/pro/settings?subscribed=1')}`;
 
   const today = new Date().toISOString().split('T')[0];
   const myTodayApps = React.useMemo(() =>
@@ -122,7 +123,7 @@ const ProfessionalDashboard: React.FC = () => {
             </div>
             <h2 className="text-4xl font-black text-black tracking-tight mb-4">Agenda Suspendida</h2>
             <p className="text-slate-800 font-bold mb-8 text-lg leading-relaxed">Por favor regulariza tu suscripción para recibir pacientes.</p>
-            <a href={MP_SUBSCRIPTION_LINK} target="_blank" rel="noreferrer" className="w-full py-6 bg-primary text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02]">
+            <a href={mpLinkWithBack} className="w-full py-6 bg-primary text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02]">
               PAGAR SUSCRIPCIÓN <span className="material-icons-round">payment</span>
             </a>
           </div>

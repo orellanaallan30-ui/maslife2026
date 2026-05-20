@@ -19,7 +19,9 @@ const Settings: React.FC = () => {
   const [linkCopied, setLinkCopied] = useState(false);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
+  const mpLinkWithBack = `${MP_SUBSCRIPTION_LINK}&back_url=${encodeURIComponent('https://www.clinicamaslife.cl/#/pro/settings?subscribed=1')}`;
   const SUPPORT_PHONE = import.meta.env.VITE_SUPPORT_PHONE || '+56965329974';
+  const [subscribedMsg, setSubscribedMsg] = useState(false);
 
   const daysLeft = (() => {
     if (!localProfile?.trialEndDate) return null;
@@ -31,6 +33,16 @@ const Settings: React.FC = () => {
     if (!profile) navigate('/pro/login');
     setLocalProfile(profile);
   }, [profile, navigate]);
+
+  useEffect(() => {
+    const hashParts = window.location.hash.split('?');
+    const params = new URLSearchParams(hashParts[1] || '');
+    if (params.get('subscribed') === '1') {
+      setSubscribedMsg(true);
+      setActiveTab('suscripcion');
+      window.history.replaceState({}, '', window.location.pathname + hashParts[0]);
+    }
+  }, []);
 
   if (!localProfile) return null;
 
@@ -445,6 +457,13 @@ const Settings: React.FC = () => {
           {activeTab === 'suscripcion' && (
             <div className="space-y-8 animate-in fade-in duration-500">
 
+              {subscribedMsg && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">
+                  <span className="material-icons-round text-emerald-500 text-xl shrink-0">check_circle</span>
+                  <p className="text-sm text-emerald-800 font-semibold">¡Pago recibido! Tu suscripción se activará en los próximos minutos.</p>
+                </div>
+              )}
+
               {/* Hero card */}
               <div className={`rounded-[3rem] p-8 md:p-14 relative overflow-hidden text-white
                 ${localProfile.subscriptionStatus === 'paused'
@@ -523,9 +542,7 @@ const Settings: React.FC = () => {
                     <p className="text-xs font-bold text-white/60 leading-relaxed uppercase">Pago Seguro vía<br/>Mercado Pago Chile</p>
                   </div>
                   <a
-                    href={MP_SUBSCRIPTION_LINK}
-                    target="_blank"
-                    rel="noreferrer"
+                    href={mpLinkWithBack}
                     className="w-full sm:w-auto px-12 py-5 bg-white text-primary border-b-4 border-slate-200 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
                   >
                     <span className="material-icons-round">payment</span>
