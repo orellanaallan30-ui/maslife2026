@@ -281,168 +281,134 @@ const MainHome: React.FC = () => {
       </nav>
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
-      <section ref={heroRef} id="hero" className="relative pt-28 sm:pt-36 pb-16 sm:pb-24 px-5 sm:px-8 bg-gradient-to-b from-slate-50/80 via-white to-white overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-blue-50 rounded-full blur-3xl opacity-50 -translate-y-1/4 translate-x-1/4"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-50 rounded-full blur-3xl opacity-40 translate-y-1/4 -translate-x-1/4"></div>
+      <section ref={heroRef} id="hero" className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Carrusel de imágenes de fondo */}
+        {HERO_IMAGES.map((img, idx) => (
+          <img
+            key={idx}
+            src={img.src}
+            alt={img.alt}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${idx === heroImageIdx ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ))}
+        {/* Overlays para legibilidad del texto */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/85 via-slate-900/55 to-slate-900/15 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-slate-900/25 pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-
-            {/* Left: Text + Need Selector */}
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
-                <span className="material-icons-round text-sm">verified</span>
-                Tu salud nos importa
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight">
-                Kinesiología &amp; Salud<br />
-                Con Profesionales<br />
-                Más cercanos &amp;<br />
-                <span className="text-blue-600">empáticos.</span>
-              </h1>
-              <p className="text-slate-500 text-sm leading-relaxed max-w-sm">
-                Kinesiólogos, psicólogos, nutricionistas y quiroprácticos en{' '}
-                <strong className="text-slate-700">Ovalle, Coquimbo y La Serena</strong>.
-                Atención presencial, online y a domicilio.
-              </p>
-
-              {/* 2-Path Choice */}
-              <div className="space-y-4 max-w-lg">
-                <p className="text-sm font-bold text-slate-500">¿Cómo prefieres comenzar?</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Path A: Browse */}
-                  <button
-                    onClick={() => navigate('/patient/results')}
-                    className="group p-6 bg-white rounded-3xl border-2 border-slate-100 hover:border-blue-400 hover:shadow-xl shadow-sm transition-all duration-300 text-left"
-                  >
-                    <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <span className="material-icons-round text-blue-600 text-2xl">search</span>
-                    </div>
-                    <h3 className="font-extrabold text-slate-900 text-sm mb-1 leading-tight">Explorar Especialistas</h3>
-                    <p className="text-xs text-slate-500 font-medium leading-relaxed mb-4">Filtra por área, ciudad y modalidad. Tú eliges a tu profesional.</p>
-                    <div className="flex items-center gap-1.5 text-blue-600 text-xs font-bold group-hover:gap-3 transition-all">
-                      Ver especialistas <span className="material-icons-round text-sm">arrow_forward</span>
-                    </div>
-                  </button>
-
-                  {/* Path B: Agent assignment */}
-                  <button
-                    onClick={() => setHeroPath(heroPath === 'assign' ? null : 'assign')}
-                    className={`group p-6 rounded-3xl border-2 shadow-sm transition-all duration-300 text-left ${
-                      heroPath === 'assign'
-                        ? 'bg-blue-600 border-blue-600 shadow-xl shadow-blue-600/30'
-                        : 'bg-white border-slate-100 hover:border-indigo-400 hover:shadow-xl'
-                    }`}
-                  >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform ${
-                      heroPath === 'assign' ? 'bg-white/20' : 'bg-indigo-50'
-                    }`}>
-                      <span className={`material-icons-round text-2xl ${heroPath === 'assign' ? 'text-white' : 'text-indigo-600'}`}>auto_awesome</span>
-                    </div>
-                    <h3 className={`font-extrabold text-sm mb-1 leading-tight ${heroPath === 'assign' ? 'text-white' : 'text-slate-900'}`}>
-                      Ser Asignado
-                    </h3>
-                    <p className={`text-xs font-medium leading-relaxed mb-4 ${heroPath === 'assign' ? 'text-blue-100' : 'text-slate-500'}`}>
-                      Cuéntanos tu situación y te asignamos al profesional ideal.
-                    </p>
-                    <div className={`flex items-center gap-1.5 text-xs font-bold group-hover:gap-3 transition-all ${heroPath === 'assign' ? 'text-blue-100' : 'text-indigo-600'}`}>
-                      {heroPath === 'assign' ? 'Cerrar formulario' : 'Comenzar'}
-                      <span className="material-icons-round text-sm">{heroPath === 'assign' ? 'keyboard_arrow_up' : 'arrow_forward'}</span>
-                    </div>
-                  </button>
-                </div>
-
-                {/* Inline assignment form */}
-                {heroPath === 'assign' && (
-                  <div className="animate-in slide-in-from-top-4 duration-300">
-                    <form onSubmit={handleAssignSubmit} className="bg-white rounded-3xl border border-slate-200 shadow-xl p-6 space-y-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center">
-                          <span className="material-icons-round text-indigo-600 text-xs">auto_awesome</span>
-                        </div>
-                        <p className="text-sm font-bold text-slate-700">Te asignamos al profesional ideal</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {needOptions.map(opt => (
-                          <button type="button" key={opt.value} onClick={() => setSelectedNeed(opt.value)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                              selectedNeed === opt.value
-                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200'
-                            }`}
-                          >
-                            <span className={`material-icons-round text-sm ${selectedNeed === opt.value ? 'text-blue-500' : 'text-slate-400'}`}>{opt.icon}</span>
-                            <span className="leading-tight">{opt.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                      <input required value={assignFormData.name} onChange={e => setAssignFormData({ ...assignFormData, name: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400"
-                        placeholder="Tu nombre..." />
-                      <input required value={assignFormData.contact} onChange={e => setAssignFormData({ ...assignFormData, contact: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-slate-400"
-                        placeholder="WhatsApp o email de contacto..." />
-                      <textarea required value={assignFormData.symptoms} onChange={e => setAssignFormData({ ...assignFormData, symptoms: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-20 placeholder:text-slate-400"
-                        placeholder="¿Qué necesitas? Describe brevemente tu situación..." />
-                      <button type="submit" className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
-                        <span className="material-icons-round text-base">send</span>
-                        Enviar y ser contactado por WhatsApp
-                      </button>
-                    </form>
-                  </div>
-                )}
-              </div>
+        {/* Contenido */}
+        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 pt-28 sm:pt-36 pb-20 sm:pb-28 w-full">
+          <div className="max-w-2xl space-y-8">
+            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white border border-white/25 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
+              <span className="material-icons-round text-sm">verified</span>
+              Tu salud nos importa
             </div>
 
-            {/* Right: Hero Image Carousel */}
-            <div className="relative mt-6 lg:mt-0">
-              {/* Stack de fotos apiladas (efecto visual detrás) */}
-              <div className="absolute top-3 left-3 right-0 bottom-0 rounded-[2.5rem] bg-blue-100 opacity-40 rotate-2" />
-              <div className="absolute top-1.5 left-1.5 right-0 bottom-0 rounded-[2.5rem] bg-teal-100 opacity-50 rotate-1" />
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight">
+              Kinesiología &amp; Salud<br />
+              Con Profesionales<br />
+              Más cercanos &amp;<br />
+              <span className="text-blue-400">empáticos.</span>
+            </h1>
 
-              {/* Carrusel principal */}
-              <div
-                className="relative rounded-[2.5rem] overflow-hidden shadow-2xl shadow-slate-400/30 aspect-[16/10] lg:aspect-[4/5] lg:max-h-[580px] cursor-pointer select-none"
-                onClick={() => setHeroImageIdx(i => (i + 1) % HERO_IMAGES.length)}
-              >
-                {HERO_IMAGES.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={img.src}
-                    alt={img.alt}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${idx === heroImageIdx ? 'opacity-100' : 'opacity-0'}`}
-                  />
-                ))}
-                {/* Gradiente inferior */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 via-transparent to-transparent pointer-events-none" />
-                {/* Indicadores de posición */}
-                <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none">
-                  {HERO_IMAGES.map((_, idx) => (
-                    <div key={idx} className={`rounded-full transition-all duration-400 ${idx === heroImageIdx ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50'}`} />
-                  ))}
-                </div>
-                {/* Hint de interacción */}
-                <div className="absolute top-4 right-4 bg-black/25 backdrop-blur-sm rounded-xl px-3 py-1.5 pointer-events-none flex items-center gap-1.5">
-                  <span className="material-icons-round text-white text-sm">touch_app</span>
-                  <p className="text-white text-[10px] font-bold uppercase tracking-wider">Toca para ver más</p>
-                </div>
+            <p className="text-white/75 text-sm leading-relaxed max-w-sm">
+              Kinesiólogos, psicólogos, nutricionistas y quiroprácticos en{' '}
+              <strong className="text-white">Ovalle, Coquimbo y La Serena</strong>.
+              Atención presencial, online y a domicilio.
+            </p>
+
+            {/* 2-Path Choice */}
+            <div className="space-y-4 max-w-lg">
+              <p className="text-sm font-bold text-white/70">¿Cómo prefieres comenzar?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Path A: Browse */}
+                <button
+                  onClick={() => navigate('/patient/results')}
+                  className="group p-6 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20 hover:bg-white/20 hover:border-white/40 shadow-lg transition-all duration-300 text-left"
+                >
+                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <span className="material-icons-round text-white text-2xl">search</span>
+                  </div>
+                  <h3 className="font-extrabold text-white text-sm mb-1 leading-tight">Explorar Especialistas</h3>
+                  <p className="text-white/60 text-xs font-medium leading-relaxed mb-4">Filtra por área, ciudad y modalidad. Tú eliges a tu profesional.</p>
+                  <div className="flex items-center gap-1.5 text-blue-300 text-xs font-bold group-hover:gap-3 transition-all">
+                    Ver especialistas <span className="material-icons-round text-sm">arrow_forward</span>
+                  </div>
+                </button>
+
+                {/* Path B: Agent assignment */}
+                <button
+                  onClick={() => setHeroPath(heroPath === 'assign' ? null : 'assign')}
+                  className={`group p-6 rounded-3xl border shadow-lg transition-all duration-300 text-left ${
+                    heroPath === 'assign'
+                      ? 'bg-blue-600 border-blue-500 shadow-blue-600/40'
+                      : 'bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 hover:border-white/40'
+                  }`}
+                >
+                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <span className="material-icons-round text-white text-2xl">auto_awesome</span>
+                  </div>
+                  <h3 className="font-extrabold text-white text-sm mb-1 leading-tight">Ser Asignado</h3>
+                  <p className="text-white/60 text-xs font-medium leading-relaxed mb-4">
+                    Cuéntanos tu situación y te asignamos al profesional ideal.
+                  </p>
+                  <div className="flex items-center gap-1.5 text-blue-300 text-xs font-bold group-hover:gap-3 transition-all">
+                    {heroPath === 'assign' ? 'Cerrar formulario' : 'Comenzar'}
+                    <span className="material-icons-round text-sm">{heroPath === 'assign' ? 'keyboard_arrow_up' : 'arrow_forward'}</span>
+                  </div>
+                </button>
               </div>
 
-              {/* Floating badge */}
-              <div className="absolute -bottom-5 -left-4 lg:-bottom-6 lg:-left-6 bg-white rounded-2xl px-4 py-3 lg:px-5 lg:py-4 shadow-xl shadow-slate-200/60 border border-slate-100 flex items-center gap-3 max-w-[260px] lg:max-w-[280px]">
-                <div className="w-9 h-9 lg:w-10 lg:h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <span className="material-icons-round text-blue-600 text-lg lg:text-xl">verified_user</span>
+              {/* Inline assignment form */}
+              {heroPath === 'assign' && (
+                <div className="animate-in slide-in-from-top-4 duration-300">
+                  <form onSubmit={handleAssignSubmit} className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 shadow-xl p-6 space-y-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
+                        <span className="material-icons-round text-white text-xs">auto_awesome</span>
+                      </div>
+                      <p className="text-sm font-bold text-white">Te asignamos al profesional ideal</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {needOptions.map(opt => (
+                        <button type="button" key={opt.value} onClick={() => setSelectedNeed(opt.value)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                            selectedNeed === opt.value
+                              ? 'border-blue-400 bg-blue-600/60 text-white'
+                              : 'border-white/20 bg-white/10 text-white/70 hover:border-white/40'
+                          }`}
+                        >
+                          <span className={`material-icons-round text-sm ${selectedNeed === opt.value ? 'text-blue-300' : 'text-white/50'}`}>{opt.icon}</span>
+                          <span className="leading-tight">{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <input required value={assignFormData.name} onChange={e => setAssignFormData({ ...assignFormData, name: e.target.value })}
+                      className="w-full bg-white/10 border border-white/20 rounded-2xl py-3 px-4 text-sm font-medium text-white placeholder:text-white/40 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      placeholder="Tu nombre..." />
+                    <input required value={assignFormData.contact} onChange={e => setAssignFormData({ ...assignFormData, contact: e.target.value })}
+                      className="w-full bg-white/10 border border-white/20 rounded-2xl py-3 px-4 text-sm font-medium text-white placeholder:text-white/40 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      placeholder="WhatsApp o email de contacto..." />
+                    <textarea required value={assignFormData.symptoms} onChange={e => setAssignFormData({ ...assignFormData, symptoms: e.target.value })}
+                      className="w-full bg-white/10 border border-white/20 rounded-2xl py-3 px-4 text-sm font-medium text-white placeholder:text-white/40 focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none h-20"
+                      placeholder="¿Qué necesitas? Describe brevemente tu situación..." />
+                    <button type="submit" className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
+                      <span className="material-icons-round text-base">send</span>
+                      Enviar y ser contactado por WhatsApp
+                    </button>
+                  </form>
                 </div>
-                <div>
-                  <p className="text-xs lg:text-sm font-bold text-slate-900 leading-tight">Profesionales con sello +Life</p>
-                  <p className="text-[10px] lg:text-xs text-slate-500 font-medium">verificados & certificados</p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
+        </div>
+
+        {/* Dots del carrusel */}
+        <div className="absolute bottom-8 right-8 z-10 flex gap-2">
+          {HERO_IMAGES.map((_, idx) => (
+            <button key={idx} onClick={() => setHeroImageIdx(idx)}
+              className={`rounded-full transition-all duration-300 ${idx === heroImageIdx ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50 hover:bg-white/80'}`}
+            />
+          ))}
         </div>
       </section>
 
