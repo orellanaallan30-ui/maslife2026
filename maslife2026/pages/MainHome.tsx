@@ -303,11 +303,17 @@ const MainHome: React.FC = () => {
               Tu salud nos importa
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-tight">
+            <h1
+              className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight"
+              style={{ textShadow: '0 1px 0 #08136b, 0 2px 0 #060f5c, 0 3px 0 #040b4d, 0 4px 0 #02073e, 0 5px 0 #01042e, 0 6px 14px rgba(0,0,0,0.55), 0 12px 28px rgba(0,0,0,0.35)' }}
+            >
               Kinesiología &amp; Salud<br />
               Con Profesionales<br />
               Más cercanos &amp;<br />
-              <span className="text-blue-400">empáticos.</span>
+              <span
+                className="text-blue-300"
+                style={{ textShadow: '0 1px 0 #1a3b9e, 0 2px 0 #153088, 0 3px 0 #0e2270, 0 4px 10px rgba(59,130,246,0.5), 0 8px 22px rgba(0,0,0,0.4)' }}
+              >empáticos.</span>
             </h1>
 
             <p className="text-white/75 text-sm leading-relaxed max-w-sm">
