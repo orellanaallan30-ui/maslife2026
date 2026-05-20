@@ -168,11 +168,11 @@ export async function getProfessional(id: string): Promise<ProfessionalProfile |
 }
 
 export async function getProfessionalBySlugOrId(slugOrId: string): Promise<ProfessionalProfile | null> {
-  const { data, error } = await supabase
-    .from('professionals')
-    .select('*')
-    .or(`slug.eq.${slugOrId},id.eq.${slugOrId}`)
-    .maybeSingle();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+  const base = supabase.from('professionals').select('*');
+  const { data, error } = isUuid
+    ? await base.or(`slug.eq.${slugOrId},id.eq.${slugOrId}`).maybeSingle()
+    : await base.eq('slug', slugOrId).maybeSingle();
   if (error || !data) return null;
   return mapDBtoPro(data);
 }
