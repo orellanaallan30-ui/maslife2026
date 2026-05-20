@@ -356,7 +356,7 @@ const ProfessionalRegistration: React.FC = () => {
                   <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Nombre</label>
                     <input value={form.serviceName} onChange={e=>setForm(f=>({...f,serviceName:e.target.value}))} className={inp} placeholder="Consulta Inicial"/></div>
                   <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Precio (CLP)</label>
-                    <input type="number" value={form.servicePrice} onChange={e=>setForm(f=>({...f,servicePrice:e.target.value}))} className={inp} placeholder="45000"/></div>
+                    <input type="text" inputMode="numeric" value={form.servicePrice} onChange={e=>setForm(f=>({...f,servicePrice:e.target.value.replace(/\D/g,'')}))} className={inp} placeholder="45000"/></div>
                 </div>
                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
                   <span className="material-icons-round text-emerald-500 text-xl shrink-0 mt-0.5">verified</span>

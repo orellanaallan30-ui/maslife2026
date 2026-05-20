@@ -604,7 +604,7 @@ const Settings: React.FC = () => {
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Precio ($)</label>
-                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="number" value={newService.price} onChange={e => setNewService({ ...newService, price: Number(e.target.value) })} placeholder="0" />
+                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" inputMode="numeric" value={newService.price || ''} onChange={e => setNewService({ ...newService, price: Number(e.target.value.replace(/\D/g, '')) || 0 })} placeholder="0" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Duración (Min)</label>
@@ -666,7 +666,7 @@ const Settings: React.FC = () => {
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Precio ($)</label>
-                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="number" value={editingService.price} onChange={e => setEditingService({ ...editingService, price: Number(e.target.value) })} />
+                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" inputMode="numeric" value={editingService.price || ''} onChange={e => setEditingService({ ...editingService, price: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Duración (Min)</label>
