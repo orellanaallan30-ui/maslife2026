@@ -116,9 +116,16 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
     restoreSession();
 
-    // Escuchar cambios de sesión (refresh automático de JWT, cierre de sesión externo)
+    // Escuchar cambios de sesión
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event === 'SIGNED_OUT') setLoggedPro(null);
+      if (event === 'SIGNED_OUT') {
+        setLoggedPro(null);
+      } else if (event === 'PASSWORD_RECOVERY') {
+        // Supabase redirige con #access_token=...&type=recovery en el hash,
+        // lo que rompe el hash-router. Redirigimos a la ruta correcta
+        // manteniendo la sesión de recuperación ya establecida por Supabase.
+        window.location.replace(window.location.origin + window.location.pathname + '#/pro/reset-password');
+      }
     });
     return () => subscription.unsubscribe();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

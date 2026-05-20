@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { requestPasswordReset, updatePassword } from '../supabaseService';
 
@@ -112,6 +112,31 @@ export const ResetPassword: React.FC = () => {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [done, setDone]         = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  // Verificar que hay sesión activa de recuperación antes de mostrar el formulario
+  useEffect(() => {
+    import('../supabaseClient').then(({ supabase }) => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setSessionReady(true);
+        } else {
+          // Sin sesión: esperar evento PASSWORD_RECOVERY (puede llegar ligeramente después)
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+            if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && s) {
+              setSessionReady(true);
+              subscription.unsubscribe();
+            }
+          });
+          // Si en 3s no llega sesión, mostrar error
+          setTimeout(() => setSessionReady(prev => {
+            if (!prev) setError('El link expiró o ya fue usado. Solicita uno nuevo.');
+            return true;
+          }), 3000);
+        }
+      });
+    });
+  }, []);
 
   const checks = {
     length: password.length >= 8,
@@ -146,7 +171,12 @@ export const ResetPassword: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-3xl border border-slate-200 shadow-xl p-8">
-          {done ? (
+          {!sessionReady ? (
+            <div className="flex flex-col items-center gap-4 py-8">
+              <span className="material-icons-round text-teal-500 text-4xl animate-spin">sync</span>
+              <p className="text-sm text-slate-500 font-medium">Verificando enlace de recuperación...</p>
+            </div>
+          ) : done ? (
             <div className="text-center">
               <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <span className="material-icons-round text-emerald-600 text-3xl">task_alt</span>

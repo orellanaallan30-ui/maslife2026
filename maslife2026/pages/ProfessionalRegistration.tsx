@@ -129,25 +129,40 @@ const ProfessionalRegistration: React.FC = () => {
         return;
       }
 
-      // Paso 2: auto-confirmar (puede fallar silenciosamente)
-      if (authData?.user) {
-        try { await supabase.rpc('auto_confirm_new_user', { user_id: authData.user.id }); } catch { /* ignorar */ }
+      // Paso 2: obtener sesión/UUID real
+      // Si email_confirmation está desactivado en Supabase, signUp ya devuelve sesión directamente.
+      // Si está activado, intentamos confirmar vía RPC y luego signIn.
+      let realUid: string;
+
+      if (authData?.session) {
+        // Email confirmation desactivado → sesión inmediata, UUID confiable
+        realUid = authData.session.user.id;
+      } else {
+        // Email confirmation activado → confirmar y hacer signIn
+        if (authData?.user) {
+          await supabase.rpc('auto_confirm_new_user', { user_id: authData.user.id });
+          await new Promise(r => setTimeout(r, 700)); // esperar propagación BD
+        }
+        if (timedOut) return;
+
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: form.email.trim().toLowerCase(),
+          password: form.password,
+        });
+        if (timedOut) return;
+
+        if (signInErr || !signInData?.session) {
+          const msg = signInErr?.message?.toLowerCase() ?? '';
+          if (msg.includes('email not confirmed')) {
+            setError('Cuenta creada. Revisa tu email y confirma tu cuenta para ingresar. Luego vuelve al login.');
+          } else {
+            setError('Cuenta creada. Ingresa desde la pantalla de login con tu email y contraseña.');
+          }
+          return;
+        }
+        realUid = signInData.session.user.id;
       }
       if (timedOut) return;
-
-      // Paso 3: login inmediato para obtener el ID REAL del usuario
-      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-      });
-      if (timedOut) return;
-
-      if (signInErr || !signInData?.session) {
-        navigate('/pro/login', { state: { registered: true, email: form.email.trim().toLowerCase() } });
-        return;
-      }
-
-      const realUid = signInData.session.user.id;
       const slug = form.name.trim().toLowerCase()
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, '-')
