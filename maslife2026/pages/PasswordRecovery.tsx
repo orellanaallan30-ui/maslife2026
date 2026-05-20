@@ -121,14 +121,12 @@ export const ResetPassword: React.FC = () => {
         if (session) {
           setSessionReady(true);
         } else {
-          // Sin sesión: esperar evento PASSWORD_RECOVERY (puede llegar ligeramente después)
           const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
             if ((event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') && s) {
               setSessionReady(true);
               subscription.unsubscribe();
             }
           });
-          // Si en 3s no llega sesión, mostrar error
           setTimeout(() => setSessionReady(prev => {
             if (!prev) setError('El link expiró o ya fue usado. Solicita uno nuevo.');
             return true;

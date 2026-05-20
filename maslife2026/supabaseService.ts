@@ -263,9 +263,10 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     isApproved: (d.is_approved as boolean) ?? false,
     isSubscribed: (d.is_subscribed as boolean) ?? false,
     subscriptionStatus: (d.subscription_status as ProfessionalProfile['subscriptionStatus']) || 'trial',
-    trialEndDate: (d.trial_end_date as string) || null,
+    trialEndDate: (d.trial_end_date as string) || undefined,
     needsPasswordReset: (d.needs_password_reset as boolean) ?? false,
     paymentEnabled: (d.payment_enabled as boolean) ?? false,
+    bookingPaymentLink: (d.booking_payment_link as string) || undefined,
     subscriptionLink: (d.subscription_link as string) || '',
     createdAt: (d.created_at as string) || new Date().toISOString(),
     rut: d.rut as string | undefined,
@@ -282,7 +283,9 @@ function mapProToDB(pro: ProfessionalProfile): Record<string, unknown> {
     subscription_status: pro.subscriptionStatus,
     trial_end_date: (pro as any).trialEndDate || null,
     needs_password_reset: pro.needsPasswordReset,
-    payment_enabled: pro.paymentEnabled, subscription_link: pro.subscriptionLink,
+    payment_enabled: pro.paymentEnabled,
+    booking_payment_link: (pro as any).bookingPaymentLink || null,
+    subscription_link: pro.subscriptionLink,
     rut: (pro as any).rut || null, schedule: pro.schedule || null,
   };
 }
@@ -332,6 +335,7 @@ function mapDBtoAppointment(a: Record<string, unknown>): Appointment {
     professionalId: a.professional_id as string,
     bookingSource: a.booking_source as Appointment['bookingSource'],
     paidAt: a.paid_at as string, paymentAmount: a.payment_amount as number,
+    patientEmail: a.patient_email as string,
   };
 }
 
@@ -343,6 +347,7 @@ function mapAppointmentToDB(a: Appointment): Record<string, unknown> {
     price: a.price, payment_status: a.paymentStatus, notes: a.notes, color: a.color,
     category: a.category, professional_id: a.professionalId,
     booking_source: a.bookingSource, paid_at: a.paidAt, payment_amount: a.paymentAmount,
+    patient_email: a.patientEmail,
   };
 }
 

@@ -30,9 +30,11 @@ function mapDBtoPro(d: Record<string, any>) {
     services: d.services || [], isPublic: d.is_public ?? false,
     isVerified: d.is_verified ?? false, isApproved: d.is_approved ?? false,
     isSubscribed: d.is_subscribed ?? false, subscriptionStatus: d.subscription_status || 'trial',
-    trialEndDate: d.trial_end_date || null,
+    trialEndDate: d.trial_end_date || undefined,
     needsPasswordReset: d.needs_password_reset ?? false, paymentEnabled: d.payment_enabled ?? false,
+    bookingPaymentLink: d.booking_payment_link || undefined,
     subscriptionLink: d.subscription_link || '', createdAt: d.created_at || new Date().toISOString(),
+    rut: d.rut || undefined, schedule: d.schedule || undefined,
   };
 }
 
@@ -130,18 +132,14 @@ const ProfessionalRegistration: React.FC = () => {
       }
 
       // Paso 2: obtener sesión/UUID real
-      // Si email_confirmation está desactivado en Supabase, signUp ya devuelve sesión directamente.
-      // Si está activado, intentamos confirmar vía RPC y luego signIn.
       let realUid: string;
 
       if (authData?.session) {
-        // Email confirmation desactivado → sesión inmediata, UUID confiable
         realUid = authData.session.user.id;
       } else {
-        // Email confirmation activado → confirmar y hacer signIn
         if (authData?.user) {
           await supabase.rpc('auto_confirm_new_user', { user_id: authData.user.id });
-          await new Promise(r => setTimeout(r, 700)); // esperar propagación BD
+          await new Promise(r => setTimeout(r, 700));
         }
         if (timedOut) return;
 
@@ -162,37 +160,35 @@ const ProfessionalRegistration: React.FC = () => {
         }
         realUid = signInData.session.user.id;
       }
+
       if (timedOut) return;
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 30);
+      const services = [{ id: 's1', name: form.serviceName,
+        price: parseInt(form.servicePrice) || 45000, duration: 45, description: '' }];
       const slug = form.name.trim().toLowerCase()
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, '-')
         + '-' + realUid.slice(0, 6);
 
-      // Paso 4: verificar si ya existe perfil con el ID real
+      // Paso 4: verificar si ya existe perfil
       const { data: existingPro } = await supabase
         .from('professionals').select('*').eq('id', realUid).maybeSingle();
       if (timedOut) return;
-
       if (existingPro) {
         setLoggedPro(mapDBtoPro(existingPro) as any);
         navigate('/pro/dashboard');
         return;
       }
 
-      const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + 30);
-      const services = [{ id: 's1', name: form.serviceName,
-        price: parseInt(form.servicePrice) || 45000, duration: 45, description: '' }];
-
-      // Paso 5: insertar perfil con ID real
+      // Paso 5: insertar perfil
       const { error: saveErr } = await supabase.from('professionals').insert({
         id: realUid, slug, name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         specialty: form.specialty.trim(), city: finalCity,
         bio: '', avatar: form.avatar || '',
         working_hours: { start: '09:00', end: '18:00' },
-        modalities: form.modalities,
-        services,
+        modalities: form.modalities, services,
         is_public: false, is_verified: true, is_approved: true,
         is_subscribed: false, subscription_status: 'trial',
         trial_end_date: trialEnd.toISOString(),
@@ -203,7 +199,8 @@ const ProfessionalRegistration: React.FC = () => {
 
       if (saveErr) {
         if (saveErr.code === '23505') {
-          // Race condition: el perfil ya existe
+          const { data: proData } = await supabase.from('professionals').select('*').eq('id', realUid).maybeSingle();
+          if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
           setError('Este email ya tiene un perfil. Intenta iniciar sesión.');
         } else {
           setError('Error al guardar el perfil: ' + saveErr.message);
@@ -211,7 +208,7 @@ const ProfessionalRegistration: React.FC = () => {
         return;
       }
 
-      // Paso 6: navegar inmediatamente con los datos en memoria (sin esperar query extra)
+      // Paso 6: navegar con datos en memoria (sin query extra que puede colgar)
       clearTimeout(timeoutId);
       setLoggedPro({
         id: realUid, slug, name: form.name.trim(),

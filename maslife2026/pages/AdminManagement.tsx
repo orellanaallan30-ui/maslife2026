@@ -400,10 +400,14 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     isApproved:         (d.is_approved as boolean) ?? false,
     isSubscribed:       (d.is_subscribed as boolean) ?? false,
     subscriptionStatus: (d.subscription_status as SubscriptionStatus) || 'trial',
+    trialEndDate:       (d.trial_end_date as string) || undefined,
     needsPasswordReset: (d.needs_password_reset as boolean) ?? false,
     paymentEnabled:     (d.payment_enabled as boolean) ?? false,
+    bookingPaymentLink: (d.booking_payment_link as string) || undefined,
     subscriptionLink:   (d.subscription_link as string) || '',
     createdAt:          (d.created_at as string) || new Date().toISOString(),
+    rut:                d.rut as string | undefined,
+    schedule:           d.schedule as ProfessionalProfile['schedule'],
   };
 }
 

@@ -106,10 +106,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const restoreSession = async () => {
       const pro = await getActiveSession();
       if (pro) {
-        // Hay sesión válida → actualizar con datos frescos de la BD
         setLoggedPro(pro);
       } else {
-        // No hay sesión activa → limpiar cualquier dato stale de localStorage
         const { data: { session } } = await supabase.auth.getSession();
         if (!session && loggedPro !== null) setLoggedPro(null);
       }
@@ -121,9 +119,6 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (event === 'SIGNED_OUT') {
         setLoggedPro(null);
       } else if (event === 'PASSWORD_RECOVERY') {
-        // Supabase redirige con #access_token=...&type=recovery en el hash,
-        // lo que rompe el hash-router. Redirigimos a la ruta correcta
-        // manteniendo la sesión de recuperación ya establecida por Supabase.
         window.location.replace(window.location.origin + window.location.pathname + '#/pro/reset-password');
       }
     });
