@@ -108,13 +108,13 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
   const isPublicView = isFullPublic;
 
   return (
-    <nav className="bg-white border-b border-slate-200 flex items-center px-3 sm:px-6 md:px-10 shrink-0 z-50 sticky top-0 shadow-sm" style={{height: 56}}>
+    <nav className="bg-white border-b border-slate-200 flex items-center px-3 sm:px-6 md:px-10 shrink-0 z-50 sticky top-0 shadow-sm" style={{height: 68}}>
       {/* Logo */}
       <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate('/')}>
         <img
           src={isPublicView ? logoClinica : logoAgenda}
           alt="Mas Life Logo"
-          className="h-12 w-auto object-contain"
+          className="h-14 w-auto object-contain"
         />
       </div>
 

@@ -227,13 +227,13 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-100' : 'bg-transparent'}`}>
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between h-16 sm:h-20">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between h-20 sm:h-28">
           {/* Logo Clínica Mas Life */}
           <div className="flex items-center cursor-pointer shrink-0" onClick={() => scrollToSection('hero')}>
             <img
               src={logoClinica}
               alt="Clínica Mas Life"
-              className="h-16 sm:h-20 w-auto object-contain"
+              className="h-20 sm:h-28 w-auto object-contain"
               onError={(e) => {
                 // Fallback si no carga la imagen
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -281,7 +281,7 @@ const MainHome: React.FC = () => {
       </nav>
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
-      <section ref={heroRef} id="hero" className="relative pt-28 sm:pt-32 pb-16 sm:pb-24 px-5 sm:px-8 bg-gradient-to-b from-slate-50/80 via-white to-white overflow-hidden">
+      <section ref={heroRef} id="hero" className="relative pt-28 sm:pt-36 pb-16 sm:pb-24 px-5 sm:px-8 bg-gradient-to-b from-slate-50/80 via-white to-white overflow-hidden">
         {/* Decorative background elements */}
         <div className="absolute top-20 right-0 w-[500px] h-[500px] bg-blue-50 rounded-full blur-3xl opacity-50 -translate-y-1/4 translate-x-1/4"></div>
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-50 rounded-full blur-3xl opacity-40 translate-y-1/4 -translate-x-1/4"></div>
@@ -763,7 +763,7 @@ const MainHome: React.FC = () => {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1 space-y-5">
               <div className="flex items-center">
-                <img src={logoClinica} alt="Clínica Mas Life" className="h-10 w-auto object-contain brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
+                <img src={logoClinica} alt="Clínica Mas Life" className="h-14 w-auto object-contain brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
                 <span className="hidden text-xl font-extrabold tracking-tight">Mas<span className="text-blue-400">life</span></span>
               </div>
               <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs">
