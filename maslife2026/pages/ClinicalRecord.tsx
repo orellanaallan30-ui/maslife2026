@@ -6,6 +6,7 @@ import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField
 import { useClinic } from '../ClinicContext';
 import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
 import { toast } from '../lib/toast';
+import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF } from '../pdfExport';
 
 interface Message {
   role: 'user' | 'model';
@@ -44,6 +45,8 @@ const ClinicalRecord: React.FC = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [reportContent, setReportContent] = useState('');
   const [reportFeedback, setReportFeedback] = useState('');
+  const [showOrdenModal, setShowOrdenModal] = useState(false);
+  const [ordenIndicaciones, setOrdenIndicaciones] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const posturalInputRef = useRef<HTMLInputElement>(null);
 
@@ -348,6 +351,30 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     }
   };
 
+  const handleExportFicha = async () => {
+    if (!loggedPro) { toast.error('No hay profesional conectado'); return; }
+    const patientObj = { ...safePatient, ...personalData } as Patient;
+    await exportPatientFichaToPDF(
+      patientObj,
+      loggedPro,
+      vitals,
+      goals,
+      sessionLogs,
+      anamnesis,
+      soap,
+      specialtyKey,
+      { nutPeso, nutTalla, nutCintura, nutCadera, nutGoals: nutGoals, psychMood, psychIntervention, psychNextObjective }
+    );
+  };
+
+  const handleExportOrden = async () => {
+    if (!loggedPro) { toast.error('No hay profesional conectado'); return; }
+    const patientObj = { ...safePatient, ...personalData } as Patient;
+    await exportOrdenPDF(patientObj, loggedPro, ordenIndicaciones, specialtyKey);
+    setShowOrdenModal(false);
+    setOrdenIndicaciones('');
+  };
+
   // Guarda el informe generado como documento adjunto en la ficha
   const handleSaveReportAsFile = () => {
     if (!reportContent.trim()) return;
@@ -558,12 +585,21 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             )}
             {/* Descargar PDF */}
             <button
-              onClick={() => window.print()}
+              onClick={handleExportFicha}
               className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-white border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 transition-all border-b-4 border-slate-200 active:border-b-0 active:translate-y-1"
-              title="Imprimir / Guardar como PDF"
+              title="Descargar Ficha como PDF"
             >
               <span className="material-icons-round text-lg">picture_as_pdf</span>
               PDF
+            </button>
+            {/* Orden */}
+            <button
+              onClick={() => setShowOrdenModal(true)}
+              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-white border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 transition-all border-b-4 border-slate-200 active:border-b-0 active:translate-y-1"
+              title="Emitir Orden Profesional"
+            >
+              <span className="material-icons-round text-lg">assignment</span>
+              ORDEN
             </button>
             {/* Guardar manualmente */}
             <button
@@ -694,7 +730,10 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 <div className="flex items-center justify-between mb-8">
                   <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Informe IA Estructurado</h4>
                   {analysisResult && (
-                    <button onClick={() => window.print()} className="text-xs font-black text-primary hover:underline no-print">DESCARGAR INFORME</button>
+                    <button
+                      onClick={() => loggedPro && exportReportToPDF(analysisResult, { ...safePatient, ...personalData } as Patient, loggedPro)}
+                      className="text-xs font-black text-primary hover:underline no-print"
+                    >DESCARGAR INFORME</button>
                   )}
                 </div>
                 <div className="flex-1 text-sm font-medium text-slate-600 leading-relaxed whitespace-pre-wrap">
@@ -1166,8 +1205,11 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 <button onClick={handleSaveReportAsFile} className="bg-teal-500 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-teal-600 transition-all shadow-xl">
                   <span className="material-icons-round text-base">save_alt</span> GUARDAR EN FICHA
                 </button>
-                <button onClick={() => window.print()} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl">
-                  <span className="material-icons-round text-base">print</span> IMPRIMIR / PDF
+                <button
+                  onClick={() => loggedPro && exportReportToPDF(reportContent, { ...safePatient, ...personalData } as Patient, loggedPro)}
+                  className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl"
+                >
+                  <span className="material-icons-round text-base">picture_as_pdf</span> DESCARGAR PDF
                 </button>
                 <button onClick={() => setIsReportModalOpen(false)} className="w-12 h-12 bg-slate-50 text-slate-500 rounded-2xl flex items-center justify-center hover:text-rose-500 transition-all">
                   <span className="material-icons-round">close</span>
@@ -1206,6 +1248,49 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 className="bg-primary/5 text-primary px-8 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary/10 transition-all"
               >
                 APLICAR CAMBIO IA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Orden Profesional */}
+      {showOrdenModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-10 space-y-6 animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                  {specialtyKey === 'kinesiologia' ? 'Orden Kinesiológica' :
+                   specialtyKey === 'nutricion' ? 'Orden Nutricional' :
+                   specialtyKey === 'psicologia' ? 'Orden Psicológica' : 'Orden Médica'}
+                </h3>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Indicaciones para {personalData.name}</p>
+              </div>
+              <button onClick={() => setShowOrdenModal(false)} className="w-10 h-10 bg-slate-50 text-slate-500 rounded-2xl flex items-center justify-center hover:text-rose-500 transition-all">
+                <span className="material-icons-round text-base">close</span>
+              </button>
+            </div>
+            <textarea
+              value={ordenIndicaciones}
+              onChange={e => setOrdenIndicaciones(e.target.value)}
+              placeholder="Escribe las indicaciones para el paciente&#10;Ej: Realizar ejercicios de flexión de rodilla 3 series × 15 repeticiones, 2 veces al día..."
+              className="w-full h-52 rounded-2xl border border-slate-200 p-6 text-sm font-medium text-slate-700 resize-none focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none leading-relaxed"
+            />
+            <div className="flex gap-4 justify-end">
+              <button
+                onClick={() => setShowOrdenModal(false)}
+                className="px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleExportOrden}
+                disabled={!ordenIndicaciones.trim()}
+                className="px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest bg-slate-900 text-white hover:bg-slate-800 transition-all shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="material-icons-round text-base">download</span>
+                Descargar Orden
               </button>
             </div>
           </div>
