@@ -123,6 +123,23 @@ const AdminManagement: React.FC = () => {
     }
   };
 
+  // ── Enviar reset de contraseña ─────────────────────────────────
+  const [resetSent, setResetSent] = useState<Record<string, 'loading' | 'sent' | 'error'>>({});
+
+  const sendPasswordReset = async (pro: ProfessionalProfile) => {
+    setResetSent(s => ({ ...s, [pro.id]: 'loading' }));
+    const { error } = await supabase.auth.resetPasswordForEmail(pro.email, {
+      redirectTo: 'https://www.clinicamaslife.cl/#/pro/reset-password',
+    });
+    if (error) {
+      setResetSent(s => ({ ...s, [pro.id]: 'error' }));
+      showToast(`❌ Error al enviar email a ${pro.email}`);
+    } else {
+      setResetSent(s => ({ ...s, [pro.id]: 'sent' }));
+      showToast(`📧 Email de recuperación enviado a ${pro.name}`);
+    }
+  };
+
   if (!isAdmin) return null;
 
   return (
@@ -285,6 +302,23 @@ const AdminManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => sendPasswordReset(pro)}
+                            disabled={resetSent[pro.id] === 'loading' || resetSent[pro.id] === 'sent'}
+                            title={resetSent[pro.id] === 'sent' ? 'Email enviado' : 'Enviar reset de contraseña'}
+                            className={`p-2.5 rounded-xl border transition-all
+                              ${resetSent[pro.id] === 'sent'
+                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 cursor-default'
+                                : resetSent[pro.id] === 'error'
+                                ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                                : 'bg-slate-800 text-slate-400 hover:bg-blue-500 hover:text-white border-white/5'}`}>
+                            <span className={`material-icons-round text-sm ${resetSent[pro.id] === 'loading' ? 'animate-spin' : ''}`}>
+                              {resetSent[pro.id] === 'loading' ? 'sync'
+                                : resetSent[pro.id] === 'sent' ? 'mark_email_read'
+                                : resetSent[pro.id] === 'error' ? 'error'
+                                : 'lock_reset'}
+                            </span>
+                          </button>
                           <button onClick={() => toggleSub(pro)}
                             title={pro.subscriptionStatus === 'paused' ? 'Reactivar' : 'Pausar'}
                             className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-teal-500 hover:text-white transition-all border border-white/5">

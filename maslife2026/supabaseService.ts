@@ -15,7 +15,7 @@ export async function verifyPassword(plain: string, hashed: string): Promise<boo
 // ── Rate limiting local (brute force) ────────────────────────
 const RL_KEY = 'maslife_login_attempts';
 const RL_MAX = 5;
-const RL_WINDOW = 15 * 60 * 1000; // 15 min
+const RL_WINDOW = 5 * 60 * 1000; // 5 min
 
 interface RLEntry { count: number; ts: number; }
 
