@@ -30,8 +30,11 @@ function mapDBtoPro(d: Record<string, any>) {
     services: d.services || [], isPublic: d.is_public ?? false,
     isVerified: d.is_verified ?? false, isApproved: d.is_approved ?? false,
     isSubscribed: d.is_subscribed ?? false, subscriptionStatus: d.subscription_status || 'trial',
+    trialEndDate: d.trial_end_date || undefined,
     needsPasswordReset: d.needs_password_reset ?? false, paymentEnabled: d.payment_enabled ?? false,
+    bookingPaymentLink: d.booking_payment_link || undefined,
     subscriptionLink: d.subscription_link || '', createdAt: d.created_at || new Date().toISOString(),
+    rut: d.rut || undefined, schedule: d.schedule || undefined,
   };
 }
 
@@ -164,6 +167,7 @@ const ProfessionalRegistration: React.FC = () => {
           price: parseInt(form.servicePrice) || 45000, duration: 45, description: '' }],
         is_public: false, is_verified: true, is_approved: true,
         is_subscribed: false, subscription_status: 'trial',
+        trial_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         needs_password_reset: false, payment_enabled: false,
         created_at: new Date().toISOString(),
       });
@@ -180,9 +184,24 @@ const ProfessionalRegistration: React.FC = () => {
         setLoading(false); return;
       }
 
-      // Paso 6: cargar perfil recién creado y navegar al dashboard
-      const { data: proData } = await supabase.from('professionals').select('*').eq('id', realUid).maybeSingle();
-      if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); }
+      // Paso 6: navegar al dashboard con datos en memoria (sin query extra que puede colgar)
+      const inMemoryPro = mapDBtoPro({
+        id: realUid, slug, name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        specialty: form.specialty.trim(), city: finalCity,
+        bio: '', avatar: form.avatar || '',
+        working_hours: { start: '09:00', end: '18:00' },
+        modalities: form.modalities,
+        services: [{ id: 's1', name: form.serviceName,
+          price: parseInt(form.servicePrice) || 45000, duration: 45, description: '' }],
+        is_public: false, is_verified: true, is_approved: true,
+        is_subscribed: false, subscription_status: 'trial',
+        trial_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        needs_password_reset: false, payment_enabled: false,
+        created_at: new Date().toISOString(),
+      });
+      setLoggedPro(inMemoryPro as any);
+      navigate('/pro/dashboard');
 
     } catch (e: any) {
       setError('Error inesperado: ' + e.message);

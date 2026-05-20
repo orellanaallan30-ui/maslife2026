@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate } from './types';
-import { supabase, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, saveTransaction } from './supabaseService';
+import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, saveTransaction } from './supabaseService';
 
 interface ClinicContextType {
   // Estado de carga
@@ -100,6 +100,30 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const saved = localStorage.getItem('maslife_logged_pro');
     return saved ? JSON.parse(saved) : null;
   });
+
+  // Al montar: verificar si hay sesión Supabase activa y restaurar perfil fresco desde la BD
+  useEffect(() => {
+    const restoreSession = async () => {
+      const pro = await getActiveSession();
+      if (pro) {
+        setLoggedPro(pro);
+      } else {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session && loggedPro !== null) setLoggedPro(null);
+      }
+    };
+    restoreSession();
+
+    // Escuchar cambios de sesión
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_OUT') {
+        setLoggedPro(null);
+      } else if (event === 'PASSWORD_RECOVERY') {
+        window.location.replace(window.location.origin + window.location.pathname + '#/pro/reset-password');
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const saved = localStorage.getItem('maslife_appointments');
