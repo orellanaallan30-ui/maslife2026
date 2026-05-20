@@ -30,6 +30,7 @@ function mapDBtoPro(d: Record<string, any>) {
     services: d.services || [], isPublic: d.is_public ?? false,
     isVerified: d.is_verified ?? false, isApproved: d.is_approved ?? false,
     isSubscribed: d.is_subscribed ?? false, subscriptionStatus: d.subscription_status || 'trial',
+    trialEndDate: d.trial_end_date || null,
     needsPasswordReset: d.needs_password_reset ?? false, paymentEnabled: d.payment_enabled ?? false,
     subscriptionLink: d.subscription_link || '', createdAt: d.created_at || new Date().toISOString(),
   };
@@ -99,6 +100,14 @@ const ProfessionalRegistration: React.FC = () => {
     setLoading(true); setError('');
     const finalCity = form.city === 'Otra ciudad' ? form.customCity.trim() : form.city;
 
+    // Timeout de seguridad: 25 segundos
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      setLoading(false);
+      setError('La operación tardó demasiado. Verifica tu conexión e intenta de nuevo.');
+    }, 25000);
+
     try {
       // Paso 1: crear cuenta en Supabase Auth
       const { data: authData, error: authErr } = await supabase.auth.signUp({
@@ -109,6 +118,7 @@ const ProfessionalRegistration: React.FC = () => {
           emailRedirectTo: 'https://www.clinicamaslife.cl/#/pro/login',
         },
       });
+      if (timedOut) return;
 
       if (authErr) {
         if (authErr.message.includes('already registered') || authErr.message.includes('already been registered')) {
@@ -116,21 +126,21 @@ const ProfessionalRegistration: React.FC = () => {
         } else {
           setError(authErr.message);
         }
-        setLoading(false); return;
+        return;
       }
 
-      // Paso 2: auto-confirmar (puede fallar silenciosamente para emails ya confirmados)
-      if (authData.user) {
+      // Paso 2: auto-confirmar (puede fallar silenciosamente)
+      if (authData?.user) {
         try { await supabase.rpc('auto_confirm_new_user', { user_id: authData.user.id }); } catch { /* ignorar */ }
       }
+      if (timedOut) return;
 
-      // Paso 3: login inmediato para obtener el ID REAL del usuario.
-      // Supabase devuelve UUID falso en signUp cuando el email ya está confirmado
-      // (protección anti-enumeración), así que no podemos confiar en authData.user.id.
+      // Paso 3: login inmediato para obtener el ID REAL del usuario
       const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
         email: form.email.trim().toLowerCase(),
         password: form.password,
       });
+      if (timedOut) return;
 
       if (signInErr || !signInData?.session) {
         navigate('/pro/login', { state: { registered: true, email: form.email.trim().toLowerCase() } });
@@ -138,13 +148,15 @@ const ProfessionalRegistration: React.FC = () => {
       }
 
       const realUid = signInData.session.user.id;
-      const slug = form.name.trim().toLowerCase().normalize('NFD')
-        .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, '')
-        .replace(/\s+/g, '-') + '-' + realUid.slice(0, 6);
+      const slug = form.name.trim().toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, '-')
+        + '-' + realUid.slice(0, 6);
 
-      // Paso 4: verificar si ya existe perfil con el ID real (email ya registrado)
+      // Paso 4: verificar si ya existe perfil con el ID real
       const { data: existingPro } = await supabase
         .from('professionals').select('*').eq('id', realUid).maybeSingle();
+      if (timedOut) return;
 
       if (existingPro) {
         setLoggedPro(mapDBtoPro(existingPro) as any);
@@ -152,7 +164,12 @@ const ProfessionalRegistration: React.FC = () => {
         return;
       }
 
-      // Paso 5: insertar perfil con ID real y sesión autenticada activa
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 30);
+      const services = [{ id: 's1', name: form.serviceName,
+        price: parseInt(form.servicePrice) || 45000, duration: 45, description: '' }];
+
+      // Paso 5: insertar perfil con ID real
       const { error: saveErr } = await supabase.from('professionals').insert({
         id: realUid, slug, name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
@@ -160,34 +177,47 @@ const ProfessionalRegistration: React.FC = () => {
         bio: '', avatar: form.avatar || '',
         working_hours: { start: '09:00', end: '18:00' },
         modalities: form.modalities,
-        services: [{ id: 's1', name: form.serviceName,
-          price: parseInt(form.servicePrice) || 45000, duration: 45, description: '' }],
+        services,
         is_public: false, is_verified: true, is_approved: true,
         is_subscribed: false, subscription_status: 'trial',
+        trial_end_date: trialEnd.toISOString(),
         needs_password_reset: false, payment_enabled: false,
         created_at: new Date().toISOString(),
       });
+      if (timedOut) return;
 
       if (saveErr) {
         if (saveErr.code === '23505') {
-          // Race condition: perfil ya existe, cargarlo y navegar
-          const { data: proData } = await supabase.from('professionals').select('*').eq('id', realUid).maybeSingle();
-          if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
+          // Race condition: el perfil ya existe
           setError('Este email ya tiene un perfil. Intenta iniciar sesión.');
         } else {
           setError('Error al guardar el perfil: ' + saveErr.message);
         }
-        setLoading(false); return;
+        return;
       }
 
-      // Paso 6: cargar perfil recién creado y navegar al dashboard
-      const { data: proData } = await supabase.from('professionals').select('*').eq('id', realUid).maybeSingle();
-      if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); }
+      // Paso 6: navegar inmediatamente con los datos en memoria (sin esperar query extra)
+      clearTimeout(timeoutId);
+      setLoggedPro({
+        id: realUid, slug, name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        specialty: form.specialty.trim(), city: finalCity,
+        bio: '', avatar: form.avatar || '',
+        workingHours: { start: '09:00', end: '18:00' },
+        modalities: form.modalities, services,
+        isPublic: false, isVerified: true, isApproved: true,
+        isSubscribed: false, subscriptionStatus: 'trial',
+        trialEndDate: trialEnd.toISOString(),
+        needsPasswordReset: false, paymentEnabled: false,
+        subscriptionLink: '', createdAt: new Date().toISOString(),
+      } as any);
+      navigate('/pro/dashboard');
 
-    } catch (e: any) {
-      setError('Error inesperado: ' + e.message);
+    } catch (err: any) {
+      if (!timedOut) setError('Error inesperado: ' + err.message);
     } finally {
-      setLoading(false);
+      clearTimeout(timeoutId);
+      if (!timedOut) setLoading(false);
     }
   };
 
