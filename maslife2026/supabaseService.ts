@@ -167,6 +167,16 @@ export async function getProfessional(id: string): Promise<ProfessionalProfile |
   return mapDBtoPro(data);
 }
 
+export async function getProfessionalBySlugOrId(slugOrId: string): Promise<ProfessionalProfile | null> {
+  const { data, error } = await supabase
+    .from('professionals')
+    .select('*')
+    .or(`slug.eq.${slugOrId},id.eq.${slugOrId}`)
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapDBtoPro(data);
+}
+
 export async function saveProfessional(pro: ProfessionalProfile): Promise<void> {
   const { error } = await supabase.from('professionals').upsert(mapProToDB(pro));
   if (error) throw error;

@@ -35,7 +35,7 @@ const ProfessionalDashboard: React.FC = () => {
 
   const bookingLink = (() => {
     const base = window.location.origin + window.location.pathname;
-    return `${base}#/patient/profile/${loggedPro.slug || loggedPro.id}`;
+    return `${base}#/p/${loggedPro.slug || loggedPro.id}`;
   })();
 
   const handleCopyBookingLink = useCallback(() => {

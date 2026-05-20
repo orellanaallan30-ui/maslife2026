@@ -313,6 +313,7 @@ const AppContent: React.FC = () => {
           <Route path="/"                    element={<MainHome />} />
           <Route path="/patient/results"     element={<PatientResults />} />
           <Route path="/patient/profile/:id" element={<PatientProfile />} />
+          <Route path="/p/:id"               element={<PatientProfile />} />
           <Route path="/verify/:code"        element={<DocumentVerifier />} />
           <Route path="/consent/:id"         element={<ConsentAcceptPage />} />
           {/* Auth */}

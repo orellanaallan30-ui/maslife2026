@@ -1,13 +1,28 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Appointment, Service } from '../types';
 import { useClinic } from '../ClinicContext';
+import { getProfessionalBySlugOrId } from '../supabaseService';
 
 const PatientProfile: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { professionals, appointments, addAppointment } = useClinic();
-  
+
+  const localDoctor = professionals.find(p => p.id === id || p.slug === id);
+  const [fetchedDoctor, setFetchedDoctor] = useState(localDoctor ?? null);
+  const [loadingDoctor, setLoadingDoctor] = useState(!localDoctor);
+
+  useEffect(() => {
+    if (localDoctor) { setFetchedDoctor(localDoctor); setLoadingDoctor(false); return; }
+    if (!id) { setLoadingDoctor(false); return; }
+    getProfessionalBySlugOrId(id)
+      .then(pro => setFetchedDoctor(pro))
+      .finally(() => setLoadingDoctor(false));
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const doctor = fetchedDoctor;
+
   // Nuevo Estado de Pasos
   const [step, setStep] = useState(1);
   const [selectedDay, setSelectedDay] = useState(0);
@@ -22,9 +37,6 @@ const PatientProfile: React.FC = () => {
   const [paymentLinkOpened, setPaymentLinkOpened] = useState(false);
   const [transactionRef, setTransactionRef] = useState('');
 
-  // Buscar el profesional real
-  const doctor = professionals.find(p => p.id === id || p.slug === id);
-
   const isFormValid = patientData.name.trim() !== '' && 
                       patientData.rut.trim() !== '' && 
                       patientData.phone.trim() !== '' && 
@@ -32,6 +44,15 @@ const PatientProfile: React.FC = () => {
                       patientData.city.trim() !== '' && 
                       patientData.reason.trim() !== '' &&
                       (selectedModality !== 'home' || (patientData.address.trim() !== '' && patientData.houseNumber.trim() !== ''));
+
+  if (loadingDoctor) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center p-20 gap-4">
+        <span className="material-icons-round text-primary text-5xl animate-spin">sync</span>
+        <p className="text-slate-500 font-bold">Cargando perfil...</p>
+      </div>
+    );
+  }
 
   if (!doctor) {
     return (
