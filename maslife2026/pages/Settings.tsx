@@ -391,23 +391,24 @@ const Settings: React.FC = () => {
                   {['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map((dayName, idx) => {
                     const daySchedule = localProfile.schedule?.[idx] || { active: idx !== 0 && idx !== 6, start: '09:00', end: '18:00' };
                     return (
-                      <div key={idx} className={`flex items-center justify-between p-6 rounded-2xl border-2 transition-all ${daySchedule.active ? 'border-primary/20 bg-primary/5' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
-                        <div className="flex items-center gap-4 w-32">
+                      <div key={idx} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-4 sm:p-6 rounded-2xl border-2 transition-all ${daySchedule.active ? 'border-primary/20 bg-primary/5' : 'border-slate-100 bg-slate-50 opacity-60'}`}>
+                        <div className="flex items-center gap-3">
                           <button
                             onClick={() => {
                               const newSchedule = { ...(localProfile.schedule || {}) };
                               newSchedule[idx] = { ...daySchedule, active: !daySchedule.active };
                               handleUpdate({ schedule: newSchedule });
                             }}
-                            className={`w-12 h-6 rounded-full relative transition-colors ${daySchedule.active ? 'bg-primary' : 'bg-slate-300'}`}
+                            className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${daySchedule.active ? 'bg-primary' : 'bg-slate-300'}`}
                           >
                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${daySchedule.active ? 'left-7' : 'left-1'}`}></div>
                           </button>
-                          <span className="text-sm font-black text-slate-900 uppercase tracking-widest">{dayName}</span>
+                          <span className="text-sm font-black text-slate-900 uppercase tracking-widest w-24">{dayName}</span>
+                          {!daySchedule.active && <span className="text-xs font-black text-slate-400 uppercase tracking-widest sm:hidden">No laboral</span>}
                         </div>
 
                         {daySchedule.active && (
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3 pl-[60px] sm:pl-0">
                             <input
                               type="time"
                               value={daySchedule.start}
@@ -416,9 +417,9 @@ const Settings: React.FC = () => {
                                 newSchedule[idx] = { ...daySchedule, start: e.target.value };
                                 handleUpdate({ schedule: newSchedule });
                               }}
-                              className="bg-white border text-sm font-bold rounded-lg p-2 focus:ring-primary"
+                              className="bg-white border text-sm font-bold rounded-lg p-2 focus:ring-primary w-full sm:w-auto"
                             />
-                            <span className="text-slate-500 font-bold">a</span>
+                            <span className="text-slate-500 font-bold shrink-0">a</span>
                             <input
                               type="time"
                               value={daySchedule.end}
@@ -427,11 +428,11 @@ const Settings: React.FC = () => {
                                 newSchedule[idx] = { ...daySchedule, end: e.target.value };
                                 handleUpdate({ schedule: newSchedule });
                               }}
-                              className="bg-white border text-sm font-bold rounded-lg p-2 focus:ring-primary"
+                              className="bg-white border text-sm font-bold rounded-lg p-2 focus:ring-primary w-full sm:w-auto"
                             />
                           </div>
                         )}
-                        {!daySchedule.active && <span className="text-xs font-black text-slate-500 uppercase tracking-widest">No Laboral</span>}
+                        {!daySchedule.active && <span className="text-xs font-black text-slate-500 uppercase tracking-widest hidden sm:block">No Laboral</span>}
                       </div>
                     );
                   })}

@@ -10,14 +10,14 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
   const navigate = useNavigate();
   const { loggedPro } = useClinic();
-  const isRodrigo = loggedPro?.id === 'pro-rodrigo';
+  const isAdmin = loggedPro?.email === import.meta.env.VITE_ADMIN_EMAIL;
 
   const menuItems = [
-    { icon: 'dashboard', label: 'Inicio', path: '/pro/dashboard' },
-    { icon: 'calendar_today', label: 'Agenda', path: '/pro/agenda' },
-    { icon: 'people', label: 'Pacientes', path: '/pro/patients' },
-    { icon: 'bar_chart', label: 'Finanzas', path: '/pro/finances' },
-    { icon: 'settings', label: 'Ajustes', path: '/pro/settings' },
+    { icon: 'dashboard',      label: 'Inicio',     path: '/pro/dashboard' },
+    { icon: 'calendar_today', label: 'Agenda',     path: '/pro/agenda' },
+    { icon: 'people',         label: 'Pacientes',  path: '/pro/patients' },
+    { icon: 'bar_chart',      label: 'Finanzas',   path: '/pro/finances' },
+    { icon: 'settings',       label: 'Ajustes',    path: '/pro/settings' },
   ];
 
   return (
@@ -61,8 +61,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
             <span className="font-bold text-sm hidden lg:inline">Asistente IA</span>
           </button>
 
-          {/* Admin — solo Rodrigo */}
-          {isRodrigo && (
+          {/* Admin — solo si el email coincide con VITE_ADMIN_EMAIL */}
+          {isAdmin && (
             <button
               onClick={() => navigate('/admin/management')}
               className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all w-full text-rose-500 hover:bg-rose-50 hover:text-rose-600 group"
@@ -99,8 +99,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
       </aside>
 
       {/* ── Mobile Bottom Nav ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex items-center justify-around px-2 z-[100] shadow-[0_-4px_24px_rgba(0,0,0,0.08)]" style={{ height: 72, paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}>
-        {menuItems.slice(0, 4).map((item) => (
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex items-center justify-around px-1 z-[100] shadow-[0_-4px_24px_rgba(0,0,0,0.08)]"
+        style={{ height: 68, paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}
+      >
+        {menuItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -110,22 +113,34 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           >
             {({ isActive }) => (
               <>
-                <span className="material-icons-round text-xl">{item.icon}</span>
-                <span className="text-[10px] font-bold mt-1">{item.label}</span>
-                {isActive && <div className="mt-1 w-1 h-1 rounded-full bg-primary"></div>}
+                <span className="material-icons-round text-[20px]">{item.icon}</span>
+                <span className="text-[9px] font-bold mt-0.5 leading-none">{item.label}</span>
+                {isActive && <div className="mt-0.5 w-1 h-1 rounded-full bg-primary" />}
               </>
             )}
           </NavLink>
         ))}
-        {/* AI en mobile */}
+
+        {/* IA */}
         <button
           onClick={onToggleAI}
           className="flex flex-col items-center justify-center flex-1 h-full text-amber-500"
         >
-          <span className="material-icons-round text-xl">smart_toy</span>
-          <span className="text-[10px] font-bold mt-1">IA</span>
-          <div className="mt-1 w-1 h-1 rounded-full bg-amber-500 animate-pulse"></div>
+          <span className="material-icons-round text-[20px]">smart_toy</span>
+          <span className="text-[9px] font-bold mt-0.5 leading-none">IA</span>
+          <div className="mt-0.5 w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
         </button>
+
+        {/* Admin — solo si isAdmin */}
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/admin/management')}
+            className="flex flex-col items-center justify-center flex-1 h-full text-rose-500"
+          >
+            <span className="material-icons-round text-[20px]">admin_panel_settings</span>
+            <span className="text-[9px] font-bold mt-0.5 leading-none">Admin</span>
+          </button>
+        )}
       </nav>
     </>
   );
