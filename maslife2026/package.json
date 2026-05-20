@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@types/qrcode": "^1.5.5",
+    "@vercel/node": "^5.8.3",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^2.0.0",
     "jsdom": "^25.0.0",
