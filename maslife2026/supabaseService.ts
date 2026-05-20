@@ -263,6 +263,7 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     isApproved: (d.is_approved as boolean) ?? false,
     isSubscribed: (d.is_subscribed as boolean) ?? false,
     subscriptionStatus: (d.subscription_status as ProfessionalProfile['subscriptionStatus']) || 'trial',
+    trialEndDate: (d.trial_end_date as string) || null,
     needsPasswordReset: (d.needs_password_reset as boolean) ?? false,
     paymentEnabled: (d.payment_enabled as boolean) ?? false,
     subscriptionLink: (d.subscription_link as string) || '',
@@ -278,7 +279,9 @@ function mapProToDB(pro: ProfessionalProfile): Record<string, unknown> {
     specialty: pro.specialty, city: pro.city, bio: pro.bio, avatar: pro.avatar,
     working_hours: pro.workingHours, modalities: pro.modalities, services: pro.services,
     is_public: pro.isPublic, is_verified: pro.isVerified, is_approved: (pro as any).isApproved ?? false, is_subscribed: pro.isSubscribed,
-    subscription_status: pro.subscriptionStatus, needs_password_reset: pro.needsPasswordReset,
+    subscription_status: pro.subscriptionStatus,
+    trial_end_date: (pro as any).trialEndDate || null,
+    needs_password_reset: pro.needsPasswordReset,
     payment_enabled: pro.paymentEnabled, subscription_link: pro.subscriptionLink,
     rut: (pro as any).rut || null, schedule: pro.schedule || null,
   };
