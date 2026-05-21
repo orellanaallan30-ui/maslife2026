@@ -107,7 +107,7 @@ const ProfessionalLogin: React.FC = () => {
             <img
               src="/logo-agenda-online.svg"
               alt="Agenda Online - Clínica Mas Life"
-              className="h-24 w-auto object-contain"
+              className="h-auto max-h-36 w-auto max-w-[220px] object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
                 (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
