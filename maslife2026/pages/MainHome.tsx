@@ -314,7 +314,7 @@ const MainHome: React.FC = () => {
               className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight"
               style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3)' }}
             >
-              Kinesiología &amp; Salud con Profesionales más cercanos &amp;{' '}
+              <span className="text-blue-200">Kinesiología &amp; Salud con Profesionales más cercanos &amp;</span>{' '}
               <span className="text-blue-300">empáticos.</span>
             </h1>
 
