@@ -314,6 +314,8 @@ function mapDBtoPatient(p: Record<string, unknown>): Patient {
     goals: (p.goals as Patient['goals']) || [], sessionLogs: (p.session_logs as Patient['sessionLogs']) || [],
     lastVisit: (p.last_visit as string) || '', emergencyContact: (p.emergency_contact as string) || '',
     professionalId: (p.professional_id as string) || undefined,
+    diagnoses: (p.diagnoses as string) || '',
+    specialtyData: (p.specialty_data as Record<string, unknown>) || undefined,
   };
 }
 
@@ -329,6 +331,8 @@ function mapPatientToDB(p: Patient): Record<string, unknown> {
     goals: p.goals || [], session_logs: p.sessionLogs || [],
     last_visit: p.lastVisit || '', emergency_contact: p.emergencyContact || '',
     professional_id: p.professionalId || null,
+    diagnoses: p.diagnoses || '',
+    specialty_data: p.specialtyData || null,
   };
 }
 

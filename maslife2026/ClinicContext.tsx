@@ -31,6 +31,7 @@ interface ClinicContextType {
   patients: Patient[];
   setPatients: (patients: Patient[] | ((prev: Patient[]) => Patient[])) => void;
   addPatient: (patient: Patient) => void;
+  updatePatient: (patient: Patient) => void;
 
   // Transacciones
   manualTransactions: Transaction[];
@@ -363,6 +364,11 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (loggedPro) savePatient(withPro, loggedPro.id).catch(() => {});
   };
 
+  const updatePatient = (patient: Patient) => {
+    setPatients(prev => prev.map(old => old.id === patient.id ? patient : old));
+    if (loggedPro) savePatient(patient, loggedPro.id).catch(() => {});
+  };
+
   const addManualTransaction = (transaction: Transaction) => {
     const withPro = loggedPro ? { ...transaction, professionalId: loggedPro.id } : transaction;
     setManualTransactions(prev => [...prev, withPro]);
@@ -397,6 +403,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     patients,
     setPatients,
     addPatient,
+    updatePatient,
     manualTransactions,
     addManualTransaction,
     templates,

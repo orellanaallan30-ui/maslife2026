@@ -32,9 +32,9 @@ interface TherapeuticGoal {
 const ClinicalRecord: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { patients, appointments, templates, setTemplates, setPatients, logout, loggedPro } = useClinic();
+  const { patients, appointments, templates, setTemplates, setPatients, updatePatient, logout, loggedPro } = useClinic();
 
-  const onUpdatePatient = (p: Patient) => setPatients(prev => prev.map(old => old.id === p.id ? p : old));
+  const onUpdatePatient = (p: Patient) => updatePatient(p);
   const onSaveTemplate = (t: ClinicalTemplate) => setTemplates(prev => [...prev, t]);
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
 
