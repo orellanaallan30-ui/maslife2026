@@ -89,7 +89,7 @@ const MainHome: React.FC = () => {
       desc: 'Especialistas capacitados para rehabilitación integral y física.',
       img: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=600',
       alt: 'Kinesiólogo guiando ejercicio de rehabilitación en Ovalle y Coquimbo',
-      cta: 'Buscar Profesional'
+      cta: 'Buscar profesional'
     },
     {
       name: 'Psicología',
@@ -103,14 +103,14 @@ const MainHome: React.FC = () => {
       desc: 'Planificación nutricional personalizada para hábitos saludables.',
       img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600',
       alt: 'Nutricionista consulta presencial y online en Región de Coquimbo',
-      cta: 'Buscar Profesional'
+      cta: 'Buscar profesional'
     },
     {
       name: 'Fonoaudiología',
       desc: 'Especialistas en comunicación, habla y deglución.',
       img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600',
       alt: 'Fonoaudiólogo atendiendo paciente niño y adulto',
-      cta: 'Ver Especialistas'
+      cta: 'Buscar profesional'
     }
   ];
 
@@ -145,16 +145,16 @@ const MainHome: React.FC = () => {
   const testimonials = [
     { text: 'Buscaba algo que no solo me diera una dieta, sino que entendiera mi relación con la comida. El equipo de nutrición ha sido mi mejor aliado este año.', name: 'Ricardo P.', role: 'PACIENTE DE NUTRICIÓN', stars: 5 },
     { text: 'Después de meses de ansiedad, encontré en mi psicóloga de +Life un espacio seguro y profesional. La asignación guiada fue increíblemente acertada.', name: 'Elena S.', role: 'PACIENTE PSICOLOGÍA', stars: 5 },
-    { text: 'Siempre nos costó encontrar la especialista adecuada para su terapia de fonoaudiología y ha sido un alivio para toda la familia.', name: 'Javier M.', role: 'FAMILIAR DE PACIENTE', stars: 5 },
+    { text: 'Nos costó encontrar la especialista adecuada para su terapia de fonoaudiología. Ha sido un gran alivio para toda la familia, aunque tardamos un poco en coordinarnos al inicio.', name: 'Javier M.', role: 'FAMILIAR DE PACIENTE', stars: 4 },
     { text: 'La atención domiciliaria de kinesiología fue increíble. Puntualidad, profesionalismo y sobre todo mucha empatía durante todo mi proceso de rehabilitación.', name: 'Carolina V.', role: 'PACIENTE KINESIOLOGÍA', stars: 5 },
     { text: 'Recomiendo a cualquiera que necesite atención de salud en casa. El sistema de asignación es muy eficiente y los profesionales son de primer nivel.', name: 'Miguel A.', role: 'PACIENTE GENERAL', stars: 5 },
     { text: 'Mi terapeuta ocupacional me ayudó a recuperar la independencia después de mi accidente. Eternamente agradecida con Mas Life.', name: 'Patricia L.', role: 'PACIENTE TERAPIA OCUPACIONAL', stars: 5 },
-    { text: 'La consulta online fue tan profesional como una presencial. Muy cómodo para quienes trabajamos todo el día y no tenemos tiempo de ir a una clínica.', name: 'Andrés F.', role: 'PACIENTE ONLINE', stars: 5 },
+    { text: 'La consulta online fue muy profesional. Cómodo para quienes trabajamos todo el día. Me habría gustado más opciones de horario, pero en general excelente.', name: 'Andrés F.', role: 'PACIENTE ONLINE', stars: 4 },
     { text: 'Mi hijo de 4 años avanzó mucho más rápido con la fonoaudióloga de Mas Life. La paciencia y dedicación fueron extraordinarias.', name: 'Camila R.', role: 'MADRE DE PACIENTE', stars: 5 },
     { text: 'El seguimiento por WhatsApp después de cada sesión es un detalle que marca la diferencia. Te sientes acompañado todo el proceso.', name: 'Fernando G.', role: 'PACIENTE KINESIOLOGÍA', stars: 5 },
     { text: 'Probé con varios nutricionistas antes y ninguno entendió mis necesidades como la profesional que me asignaron aquí.', name: 'Valentina M.', role: 'PACIENTE DE NUTRICIÓN', stars: 5 },
     { text: 'La podóloga que me atendió fue muy profesional. Resolvió un problema que arrastraba hace meses en solo 3 sesiones.', name: 'Roberto C.', role: 'PACIENTE PODOLOGÍA', stars: 5 },
-    { text: 'Excelente plataforma. Reservé en minutos y el profesional llegó puntual a mi domicilio. Así debería ser la salud siempre.', name: 'Isidora P.', role: 'PACIENTE DOMICILIO', stars: 5 },
+    { text: 'Buena plataforma. Reservé en minutos y el profesional llegó puntual a mi domicilio. Quizás falta un poco más de variedad de especialistas en Ovalle.', name: 'Isidora P.', role: 'PACIENTE DOMICILIO', stars: 4 },
     { text: 'Mi psicólogo de Mas Life me ayudó a manejar el estrés laboral de una forma que nunca imaginé posible. Gracias por existir.', name: 'Diego T.', role: 'PACIENTE PSICOLOGÍA', stars: 5 },
     { text: 'Después de la cirugía de rodilla, la rehabilitación domiciliaria fue clave. Los kinesiólogos de +Life son de otro nivel.', name: 'Marcela H.', role: 'PACIENTE POST-QUIRÚRGICO', stars: 5 },
     { text: 'Como persona mayor, valoro mucho que vengan a mi casa. El masajista fue muy respetuoso y profesional con mi tratamiento.', name: 'Jorge V.', role: 'PACIENTE MASOTERAPIA', stars: 5 },
@@ -169,7 +169,14 @@ const MainHome: React.FC = () => {
 
   // Carrusel automático de testimonios
   const [testimonialIndex, setTestimonialIndex] = useState(0);
-  const testimonialsPerView = typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 3;
+  const [testimonialsPerView, setTestimonialsPerView] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 3
+  );
+  useEffect(() => {
+    const handleResize = () => setTestimonialsPerView(window.innerWidth < 768 ? 1 : 3);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const maxIndex = Math.ceil(testimonials.length / testimonialsPerView) - 1;
 
   useEffect(() => {
@@ -233,7 +240,7 @@ const MainHome: React.FC = () => {
             <img
               src={logoClinica}
               alt="Clínica Mas Life"
-              className="h-20 sm:h-28 w-auto object-contain"
+              className="h-12 sm:h-16 w-auto object-contain"
               onError={(e) => {
                 // Fallback si no carga la imagen
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -305,15 +312,10 @@ const MainHome: React.FC = () => {
 
             <h1
               className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight"
-              style={{ textShadow: '0 1px 0 #08136b, 0 2px 0 #060f5c, 0 3px 0 #040b4d, 0 4px 0 #02073e, 0 5px 0 #01042e, 0 6px 14px rgba(0,0,0,0.55), 0 12px 28px rgba(0,0,0,0.35)' }}
+              style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3)' }}
             >
-              Kinesiología &amp; Salud<br />
-              Con Profesionales<br />
-              Más cercanos &amp;<br />
-              <span
-                className="text-blue-300"
-                style={{ textShadow: '0 1px 0 #1a3b9e, 0 2px 0 #153088, 0 3px 0 #0e2270, 0 4px 10px rgba(59,130,246,0.5), 0 8px 22px rgba(0,0,0,0.4)' }}
-              >empáticos.</span>
+              Kinesiología &amp; Salud con Profesionales más cercanos &amp;{' '}
+              <span className="text-blue-300">empáticos.</span>
             </h1>
 
             <p className="text-white/75 text-sm leading-relaxed max-w-sm">
@@ -424,8 +426,8 @@ const MainHome: React.FC = () => {
           {[
             { num: '500+', label: 'Sesiones Realizadas', icon: 'event_available' },
             { num: '8', label: 'Especialidades Médicas', icon: 'medical_services' },
-            { num: '4.9★', label: 'Satisfacción Promedio', icon: 'star' },
-            { num: 'Chile', label: 'Online · Presencial · Domicilio', icon: 'location_on' },
+            { num: '4.9', label: 'Satisfacción Promedio', icon: 'star' },
+            { num: '3', label: 'Ciudades · Online · Domicilio', icon: 'location_on' },
           ].map((stat, i) => (
             <div key={i} data-reveal={`stat-${i}`} className={`text-center text-white ${rv(`stat-${i}`, `delay-${i*100}`)}`} style={{ transitionDelay: `${i * 100}ms` }}>
               <span className="material-icons-round text-blue-200 text-2xl mb-2 block">{stat.icon}</span>
@@ -441,7 +443,7 @@ const MainHome: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-4">
             <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-3">PROCESO SIMPLE</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">¿CÓMO FUNCIONA?</h2>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">¿Cómo funciona?</h2>
             <p className="text-slate-500 font-medium text-base sm:text-lg max-w-2xl mx-auto mt-4 leading-relaxed">
               Contamos con distintas modalidades para que puedas recibir atención desde la comodidad de tu hogar o en tu ciudad.
             </p>
@@ -450,11 +452,12 @@ const MainHome: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-14">
             {[
-              { icon: 'assignment', title: 'RELLENAS FORMULARIO', desc: 'Rellenas el formulario con tu información y requerimiento.', color: 'bg-violet-100 text-violet-600' },
-              { icon: 'groups', title: 'ASIGNACIÓN PROFESIONAL', desc: 'Un agente revisa tu información y te asigna un profesional apto a tus requerimientos.', color: 'bg-blue-100 text-blue-600' },
-              { icon: 'event_available', title: 'CITA PROFESIONAL', desc: 'El profesional asignado te contacta y coordina con una primera cita.', color: 'bg-rose-100 text-rose-600' }
+              { icon: 'assignment', step: '01', title: 'Rellenas el formulario', desc: 'Rellenas el formulario con tu información y requerimiento.', color: 'bg-violet-100 text-violet-600' },
+              { icon: 'groups', step: '02', title: 'Asignación profesional', desc: 'Un agente revisa tu información y te asigna un profesional apto a tus requerimientos.', color: 'bg-blue-100 text-blue-600' },
+              { icon: 'event_available', step: '03', title: 'Primera cita', desc: 'El profesional asignado te contacta y coordina contigo la primera cita.', color: 'bg-rose-100 text-rose-600' }
             ].map((step, i) => (
-              <div key={i} data-reveal={`step-${i}`} className={`bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg text-center group ${rv(`step-${i}`)}`} style={{ transitionDelay: `${i * 150}ms` }}>
+              <div key={i} data-reveal={`step-${i}`} className={`bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg text-center group relative ${rv(`step-${i}`)}`} style={{ transitionDelay: `${i * 150}ms` }}>
+                <span className="absolute top-5 right-6 text-4xl font-black text-slate-100 select-none">{step.step}</span>
                 <div className={`w-14 h-14 sm:w-16 sm:h-16 ${step.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
                   <span className="material-icons-round text-2xl sm:text-3xl">{step.icon}</span>
                 </div>
@@ -531,60 +534,6 @@ const MainHome: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══════════════════ ASIGNACIÓN PROFESIONAL ═══════════════════ */}
-      <section className="px-5 sm:px-8 py-20 sm:py-28 bg-white">
-        <div className="max-w-3xl mx-auto">
-          <div className="bg-white rounded-3xl sm:rounded-[2rem] border border-slate-200 p-8 sm:p-12 shadow-xl shadow-slate-200/30 relative overflow-hidden">
-            {/* Decorative */}
-            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full blur-2xl opacity-60 translate-x-1/3 -translate-y-1/3"></div>
-
-            <div className="text-center mb-8 relative z-10">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2">¿Te asignamos un profesional?</h2>
-              <p className="text-sm text-slate-500 font-medium max-w-md mx-auto">Deja tus datos y un curador clínico analizará tu consulta guiada para asignarte al profesional ideal en menos de 24 horas.</p>
-            </div>
-
-            <form onSubmit={handleAssignSubmit} className="space-y-4 relative z-10">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Tu nombre</label>
-                  <input
-                    required
-                    value={assignFormData.name}
-                    onChange={e => setAssignFormData({ ...assignFormData, name: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Ej. Sofía Martínez"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Tu contacto</label>
-                  <input
-                    required
-                    value={assignFormData.contact}
-                    onChange={e => setAssignFormData({ ...assignFormData, contact: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="hola@ejemplo.com"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Comparte tus inquietudes o síntomas actuales</label>
-                <textarea
-                  required
-                  value={assignFormData.symptoms}
-                  onChange={e => setAssignFormData({ ...assignFormData, symptoms: e.target.value })}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent h-24 resize-none transition-all"
-                  placeholder="¿Qué te gustaría cambiar o controlar en tu salud?"
-                />
-              </div>
-              <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
-                Confirmar Asignación Profesional
-              </button>
-              <p className="text-center text-[11px] text-slate-400 font-medium">Atención: nuestros agentes y tu expediente médico base para la mejor recomendación posible.</p>
-            </form>
-          </div>
-        </div>
-      </section>
-
       {/* ═══════════════════ PLANES KINESIOLÓGICOS (CONDICIONAL) ═══════════════════ */}
       {showKinePlans && (
         <section id="kine-plans" className="px-5 sm:px-8 py-20 sm:py-28 bg-slate-50 animate-in slide-in-from-bottom-8 duration-700">
@@ -594,8 +543,8 @@ const MainHome: React.FC = () => {
                 <span className="material-icons-round text-sm">star</span>
                 Máxima Efectividad
               </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">Planes Domiciliarios</h2>
-              <p className="text-slate-500 font-medium text-base sm:text-lg max-w-2xl mx-auto mt-4">Rehabilitación profesional en casa, reembolsable por seguros e Isapre.</p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">Planes Kinesiológicos a Domicilio</h2>
+              <p className="text-slate-500 font-medium text-base sm:text-lg max-w-2xl mx-auto mt-4">Rehabilitación kinesiológica profesional en casa, reembolsable por seguros e Isapre.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
@@ -774,7 +723,7 @@ const MainHome: React.FC = () => {
           </div>
 
           <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-slate-500 font-medium">© 2026 Clínica Mas Life · Santiago, Chile</p>
+            <p className="text-xs text-slate-500 font-medium">© 2026 Clínica Mas Life · Ovalle, Coquimbo y La Serena, Chile</p>
             <div className="flex gap-3">
               <a href="https://wa.me/56965329974" target="_blank" rel="noreferrer" className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors">
                 <svg className="w-4 h-4 fill-current text-slate-400" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/></svg>
