@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
+import { getAllPublicProfessionals } from '../supabaseService';
+import { ProfessionalProfile } from '../types';
 import logoAgenda from '../assets/logo-agenda.png';
 
 const PatientResults: React.FC = () => {
   const navigate = useNavigate();
   const { professionals } = useClinic();
+  const [publicPros, setPublicPros] = useState<ProfessionalProfile[]>([]);
   const [citySearch, setCitySearch] = useState('');
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedModality, setSelectedModality] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    getAllPublicProfessionals()
+      .then(setPublicPros)
+      .catch(() => setPublicPros(professionals.filter(p => p.isPublic)));
+  }, []);
 
   const areas = [
     { value: '', label: 'Todas las áreas' },
@@ -29,7 +38,7 @@ const PatientResults: React.FC = () => {
     );
   };
 
-  const visibleDoctors = professionals.filter(p => {
+  const visibleDoctors = publicPros.filter(p => {
     if (!p.isPublic) return false;
     if (citySearch && !(p.city && p.city.toLowerCase().includes(citySearch.toLowerCase().trim()))) return false;
     if (selectedArea && !p.specialty?.toLowerCase().includes(selectedArea.toLowerCase())) return false;

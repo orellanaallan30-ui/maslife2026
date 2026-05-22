@@ -186,8 +186,7 @@ export async function getAllPublicProfessionals(): Promise<ProfessionalProfile[]
   const { data, error } = await supabase
     .from('professionals')
     .select('*')
-    .eq('is_public', true)
-    .eq('is_approved', true); // Solo profesionales aprobados son visibles públicamente
+    .eq('is_public', true);
   if (error || !data) return [];
   return data.map(mapDBtoPro);
 }

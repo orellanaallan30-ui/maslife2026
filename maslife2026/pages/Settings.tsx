@@ -62,10 +62,6 @@ const Settings: React.FC = () => {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-|-$/g, '');
       }
-      // Marcar como público si tiene datos mínimos completos
-      if (profileToSave.name && profileToSave.specialty && profileToSave.services.length > 0) {
-        profileToSave.isPublic = true;
-      }
       setLocalProfile(profileToSave);
       onSave(profileToSave);
       setHasChanges(false);
@@ -269,6 +265,27 @@ const Settings: React.FC = () => {
                         WhatsApp
                       </button>
                     </div>
+                  </div>
+
+                  {/* Visibilidad en búsqueda */}
+                  <div className={`rounded-2xl p-5 border-2 flex items-center justify-between gap-4 ${localProfile.isPublic ? 'bg-teal-50 border-teal-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className={`material-icons-round text-2xl shrink-0 ${localProfile.isPublic ? 'text-teal-500' : 'text-slate-400'}`}>
+                        {localProfile.isPublic ? 'visibility' : 'visibility_off'}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-black text-slate-800 text-sm">Aparecer en búsqueda de pacientes</p>
+                        <p className={`text-xs font-bold mt-0.5 ${localProfile.isPublic ? 'text-teal-600' : 'text-slate-500'}`}>
+                          {localProfile.isPublic ? 'Tu perfil es visible para pacientes' : 'Tu perfil está oculto — los pacientes no pueden encontrarte'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleUpdate({ isPublic: !localProfile.isPublic })}
+                      className={`w-14 h-8 rounded-full relative transition-all shrink-0 ${localProfile.isPublic ? 'bg-teal-500' : 'bg-slate-300'}`}
+                    >
+                      <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all ${localProfile.isPublic ? 'left-7' : 'left-1'}`}></div>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
