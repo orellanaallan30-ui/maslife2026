@@ -378,7 +378,39 @@ const PatientProfile: React.FC = () => {
           <div className="flex-1">
             {/* ------------ PASO 1: SERVICIOS ------------ */}
             {step === 1 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-300">
+              <div className="animate-in fade-in duration-300 space-y-5">
+
+              {/* Tarjeta del profesional */}
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-4">
+                <div className="relative shrink-0">
+                  <img
+                    className="w-16 h-16 rounded-xl object-cover border-2 border-white shadow"
+                    src={doctor.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=0d9488&color=fff&size=200`}
+                    alt={doctor.name}
+                  />
+                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 border-2 border-white rounded-lg p-0.5 flex items-center justify-center">
+                    <span className="material-icons-round text-white" style={{ fontSize: '10px' }}>verified</span>
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-black text-slate-900 text-base leading-tight">{doctor.name}</h3>
+                    <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                      <span className="material-icons-round" style={{ fontSize: '10px' }}>verified</span>
+                      Verificado
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-primary mt-0.5">{doctor.specialty}</p>
+                  {doctor.city && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="material-icons-round text-slate-400" style={{ fontSize: '12px' }}>location_on</span>
+                      <span className="text-[11px] font-semibold text-slate-500">{doctor.city}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {doctor.services.length > 0 ? doctor.services.map((s) => (
                     <button
                       key={s.id}
@@ -398,6 +430,7 @@ const PatientProfile: React.FC = () => {
                        <p className="text-slate-500 font-bold">El profesional aún no ha configurado sus servicios.</p>
                     </div>
                   )}
+              </div>
               </div>
             )}
 
