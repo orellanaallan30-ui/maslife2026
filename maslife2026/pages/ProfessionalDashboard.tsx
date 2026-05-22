@@ -130,7 +130,7 @@ const ProfessionalDashboard: React.FC = () => {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-slate-50/50 custom-scrollbar">
+      <main className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50/50 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8 text-center md:text-left">
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 leading-tight">Hola, {loggedPro.name}</h1>
@@ -203,9 +203,9 @@ const ProfessionalDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] transition-all transform hover:-translate-y-2 hover:shadow-2xl group flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-8 text-slate-400 group-hover:text-primary transition-colors">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white p-5 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] transition-all transform hover:-translate-y-2 hover:shadow-2xl group flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-5 md:mb-8 text-slate-400 group-hover:text-primary transition-colors">
                 <span className="font-black text-[10px] uppercase tracking-[0.2em]">Pacientes Hoy</span>
                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                   <span className="material-icons-round text-2xl">groups</span>
@@ -217,8 +217,8 @@ const ProfessionalDashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] transition-all transform hover:-translate-y-2 hover:shadow-2xl group flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-8 text-slate-400 group-hover:text-primary transition-colors">
+            <div className="bg-white p-5 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] transition-all transform hover:-translate-y-2 hover:shadow-2xl group flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-5 md:mb-8 text-slate-400 group-hover:text-primary transition-colors">
                 <span className="font-black text-[10px] uppercase tracking-[0.2em]">Ingresos</span>
                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                   <span className="material-icons-round text-2xl">payments</span>
@@ -231,7 +231,7 @@ const ProfessionalDashboard: React.FC = () => {
             </div>
 
             <div
-              className="bg-gradient-to-br from-teal-500 to-teal-600 p-8 rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(20,184,166,0.5)] border-b-8 border-teal-700 text-white cursor-pointer group relative overflow-hidden transform transition-all hover:-translate-y-2 hover:shadow-teal-500/60 active:border-b-0 active:translate-y-2"
+              className="bg-gradient-to-br from-teal-500 to-teal-600 p-5 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(20,184,166,0.5)] border-b-4 md:border-b-8 border-teal-700 text-white cursor-pointer group relative overflow-hidden transform transition-all hover:-translate-y-2 hover:shadow-teal-500/60 active:border-b-0 active:translate-y-2"
               onClick={() => navigate('/pro/settings')}
             >
               <div className="relative z-10 flex flex-col h-full justify-between">
@@ -255,8 +255,8 @@ const ProfessionalDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-[3rem] border border-slate-100 shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] overflow-hidden">
-            <div className="p-8 md:p-10 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6 bg-slate-50/30">
+          <div className="bg-white rounded-3xl md:rounded-[3rem] border border-slate-100 shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] overflow-hidden">
+            <div className="p-5 md:p-10 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/30">
               <h2 className="font-black text-2xl text-slate-900 tracking-tight flex items-center gap-4">
                  <span className="w-4 h-4 rounded-full bg-emerald-400 animate-pulse"></span>
                  Citas de Hoy
@@ -270,7 +270,7 @@ const ProfessionalDashboard: React.FC = () => {
               {myTodayApps.length > 0 ? myTodayApps.map((p, i) => {
                 const styles = getStatusStyles(p.status, p.color);
                 return (
-                  <div key={i} className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/session/${p.patientId}`) : alert('Cita sin paciente asociado')}>
+                  <div key={i} className="p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/session/${p.patientId}`) : alert('Cita sin paciente asociado')}>
                     <div className="flex items-center gap-6 w-full md:w-auto">
                       <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xl shadow-lg group-hover:scale-110 transition-transform">{p.patientName.charAt(0)}</div>
                       <div>

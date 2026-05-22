@@ -197,8 +197,8 @@ const Settings: React.FC = () => {
           </header>
 
           {activeTab === 'perfil' && (
-            <div className="space-y-12 animate-in fade-in duration-500">
-              <section className="bg-white rounded-[3rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] overflow-hidden p-8 md:p-14 flex flex-col lg:flex-row gap-12">
+            <div className="space-y-6 md:space-y-12 animate-in fade-in duration-500">
+              <section className="bg-white rounded-3xl md:rounded-[3rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] overflow-hidden p-5 md:p-14 flex flex-col lg:flex-row gap-6 md:gap-12">
                 <div className="relative group shrink-0 mx-auto lg:mx-0">
                   <img className="w-48 h-48 rounded-3xl object-cover border-8 border-slate-50 shadow-2xl" src={localProfile.avatar || "https://picsum.photos/seed/doc/400/400"} alt="Avatar" />
                   <label className="absolute -bottom-2 -right-2 w-14 h-14 bg-primary text-white rounded-2xl shadow-xl cursor-pointer hover:scale-110 transition-transform flex items-center justify-center border-4 border-white">
@@ -207,7 +207,7 @@ const Settings: React.FC = () => {
                   </label>
                 </div>
 
-                <div className="flex-1 space-y-10">
+                <div className="flex-1 space-y-6 md:space-y-10">
                   <div className="p-6 bg-slate-100 rounded-2xl border-2 border-slate-200 shadow-inner">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest block mb-3 ml-1">Slug Personalizado (URL)</label>
                     <div className="flex items-center bg-white border-2 border-slate-300 rounded-2xl px-6 py-4 shadow-sm group focus-within:ring-4 focus-within:ring-primary/10 transition-all">
@@ -221,7 +221,7 @@ const Settings: React.FC = () => {
                   </div>
 
                   {/* Mi Link — copiable/compartible */}
-                  <div className="p-5 bg-teal-50 border-2 border-teal-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <div className="p-5 bg-teal-50 border-2 border-teal-200 rounded-2xl overflow-hidden flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                     <span className="material-icons-round text-teal-500 text-2xl shrink-0">link</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-black text-teal-700 uppercase tracking-widest mb-1">Mi Link Profesional</p>
@@ -232,7 +232,7 @@ const Settings: React.FC = () => {
                         <p className="text-[10px] text-amber-600 font-bold mt-1">Completa tu perfil (nombre, especialidad y servicios) para activar tu link</p>
                       )}
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         onClick={handleShareLink}
                         className="px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 bg-white text-teal-600 border border-teal-200 hover:bg-teal-100"

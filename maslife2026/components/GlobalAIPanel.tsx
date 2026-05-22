@@ -378,9 +378,9 @@ REGLAS:
   return (
     <div className="fixed inset-0 sm:inset-auto sm:top-[72px] sm:right-4 sm:w-[420px] sm:h-[calc(100vh-88px)] sm:max-h-[800px] bg-white shadow-2xl z-[100] flex flex-col sm:rounded-3xl border border-slate-200/60 animate-in slide-in-from-right-10 duration-500 overflow-hidden no-print">
       {/* Header */}
-      <div className="bg-slate-900 px-6 py-5 text-white flex justify-between items-center shrink-0">
+      <div className="bg-gradient-to-r from-violet-700 to-blue-600 px-6 py-5 text-white flex justify-between items-center shrink-0 shadow-lg">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="w-11 h-11 bg-white/20 backdrop-blur-sm border border-white/30 rounded-2xl flex items-center justify-center shadow-lg">
             <span className="material-icons-round text-white text-xl">smart_toy</span>
           </div>
           <div>
@@ -402,7 +402,7 @@ REGLAS:
       </div>
 
       {/* Quick Actions */}
-      <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 shrink-0">
+      <div className="px-4 py-3 bg-gradient-to-r from-violet-50 to-blue-50 border-b border-violet-100/60 shrink-0">
         <div className="grid grid-cols-2 gap-2">
           {[
             { label: '¿Qué citas tengo hoy?', icon: 'today' },
@@ -414,7 +414,7 @@ REGLAS:
               key={q.label}
               onClick={() => handleSend(q.label)}
               disabled={isProcessing}
-              className="p-2.5 bg-white border border-slate-100 rounded-xl text-[11px] font-bold text-slate-600 hover:border-blue-300 hover:text-blue-600 transition-all flex items-center gap-2 truncate shadow-sm disabled:opacity-50"
+              className="p-2.5 bg-white/90 border border-violet-100 rounded-xl text-[11px] font-bold text-slate-600 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 transition-all flex items-center gap-2 truncate shadow-sm disabled:opacity-50"
             >
               <span className="material-icons-round text-sm">{q.icon}</span>
               <span className="truncate">{q.label}</span>
@@ -424,7 +424,7 @@ REGLAS:
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-white custom-scrollbar flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 bg-slate-50/60 custom-scrollbar flex flex-col">
         {messages.map((m, i) => {
           const isConfirmation = typeof m.text === 'string' && m.text.includes('REQUIRES_CONFIRMATION');
           let displayText = m.text;
@@ -436,8 +436,8 @@ REGLAS:
           return (
             <div key={i} className={`p-4 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
               m.role === 'user'
-                ? 'bg-slate-900 text-white font-medium self-end max-w-[85%] shadow-lg'
-                : 'bg-slate-50 border border-slate-100 text-slate-700 self-start w-full shadow-sm'
+                ? 'bg-gradient-to-br from-blue-600 to-violet-600 text-white font-medium self-end max-w-[85%] shadow-lg shadow-blue-500/25'
+                : 'bg-white border border-blue-100/60 text-slate-800 self-start w-full shadow-sm'
             }`}>
               {displayText}
 
@@ -465,29 +465,29 @@ REGLAS:
           );
         })}
         {isProcessing && (
-          <div className="flex items-center gap-3 p-4">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+          <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-blue-100/60 self-start shadow-sm">
+            <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce"></div>
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Procesando...</span>
+            <div className="w-2 h-2 bg-sky-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            <span className="text-[10px] font-bold text-violet-600 uppercase tracking-widest">Procesando...</span>
           </div>
         )}
         <div ref={chatEndRef} />
       </div>
 
       {/* Input */}
-      <div className="p-4 bg-white border-t border-slate-100 flex gap-2 shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+      <div className="p-4 bg-white border-t border-violet-100/50 flex gap-2 shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
         <input
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSend()}
-          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all outline-none"
+          className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 transition-all outline-none"
           placeholder="Ej: Agenda cita para mañana a las 10..."
         />
         <button
           onClick={() => handleSend()}
           disabled={isProcessing}
-          className="bg-blue-600 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50"
+          className="bg-gradient-to-br from-violet-500 to-blue-600 text-white w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-500/30 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
         >
           <span className="material-icons-round text-lg">send</span>
         </button>
