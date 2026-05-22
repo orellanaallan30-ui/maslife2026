@@ -170,7 +170,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full overflow-hidden bg-slate-50">
+    <div className="flex-1 w-full overflow-y-auto bg-slate-50">
       <main className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
         <div className="max-w-5xl mx-auto space-y-10 pb-20">
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
