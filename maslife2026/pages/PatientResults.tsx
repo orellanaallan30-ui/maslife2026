@@ -39,7 +39,7 @@ const PatientResults: React.FC = () => {
   };
 
   const visibleDoctors = publicPros.filter(p => {
-    if (!p.isPublic) return false;
+    if (p.isPublic === false) return false;
     if (citySearch && !(p.city && p.city.toLowerCase().includes(citySearch.toLowerCase().trim()))) return false;
     if (selectedArea && !p.specialty?.toLowerCase().includes(selectedArea.toLowerCase())) return false;
     if (selectedModality.length > 0) {
