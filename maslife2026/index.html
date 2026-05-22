@@ -92,7 +92,7 @@
     </script>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -101,27 +101,27 @@
                 extend: {
                     colors: {
                         primary: '#00a89e',
-                        teal: {
-                            50: '#f0fdfa',
-                            500: '#00a89e',
-                            600: '#008c84'
-                        },
-                        slate: {
-                            900: '#0f172a',
-                            950: '#020617'
-                        }
+                        teal: { 50: '#f0fdfa', 500: '#00a89e', 600: '#008c84' },
+                        slate: { 900: '#0f172a', 950: '#020617' },
+                        sage:      '#5c8374',
+                        'sage-deep': '#3a5a4d',
+                        sand:      '#c9a96a',
+                        ink:       '#1c2b27',
+                        'ink-soft':'#44574f',
+                        bone:      '#f4f1ea',
+                        'bone-deep':'#ebe6db',
                     },
                     fontFamily: {
-                        sans: ['Manrope', 'sans-serif'],
+                        sans:    ['Manrope', 'sans-serif'],
+                        outfit:  ['Outfit', 'sans-serif'],
+                        display: ['Fraunces', 'Georgia', 'serif'],
                     }
                 }
             }
         }
     </script>
     <style>
-        :root {
-            scroll-behavior: smooth;
-        }
+        :root { scroll-behavior: smooth; }
 
         body {
             font-family: 'Manrope', sans-serif;
@@ -131,60 +131,47 @@
             color: #0f172a;
             background-color: #ffffff;
             line-height: 1.5;
-            overflow-x: hidden; /* Evita el scroll horizontal en móviles */
+            overflow-x: hidden;
         }
 
-        /* --- Ajustes de Tipografía para Móvil --- */
-        h1, h2, h3 {
-            color: #0f172a !important;
-            font-weight: 800 !important;
-            line-height: 1.2 !important;
+        /* Landing page: override heading weight for Fraunces light */
+        .landing-page h1,
+        .landing-page h2,
+        .landing-page h3 {
+            font-family: 'Fraunces', Georgia, serif;
+            font-weight: 300;
+            line-height: 1.08;
+            color: #1c2b27;
         }
-
-        h1 { font-size: 2.25rem; } /* Desktop */
-        h2 { font-size: 1.85rem; }
+        /* App headings (non-landing) keep Manrope bold */
+        h1, h2, h3 { font-weight: 800; line-height: 1.2; }
 
         @media (max-width: 640px) {
-            h1 { font-size: 1.75rem !important; } /* Tamaño moderado en móvil */
-            h2 { font-size: 1.5rem !important; }
-            h3 { font-size: 1.25rem !important; }
-
-            /* Ajuste de padding general para que nada toque los bordes */
-            .container-mobile {
-                padding-left: 1.25rem;
-                padding-right: 1.25rem;
-            }
+            h1 { font-size: 1.75rem; }
+            h2 { font-size: 1.5rem; }
+            h3 { font-size: 1.25rem; }
+            .container-mobile { padding-left: 1.25rem; padding-right: 1.25rem; }
         }
 
-        p, span, label {
-            color: #334155;
-        }
-
-        /* --- Fix para Menús y Capas --- */
-        #root {
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Si tienes un menú de hamburguesa duplicado, asegúrate de que el fixed
-           tenga un z-index superior, pero controlado */
-        header {
-            z-index: 50;
-        }
-
-        .text-primary {
-            color: #00a89e !important;
-        }
-
+        .text-primary { color: #00a89e !important; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* --- Estilos de Impresión (Mantenidos y optimizados) --- */
+        /* Grain texture analógica sobre landing */
+        .landing-page::before {
+            content: "";
+            position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+            opacity: .032;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        }
+
+        p, span, label { color: #334155; }
+        #root { position: relative; z-index: 1; }
+        header { z-index: 50; }
+
         @media print {
             @page { margin: 1.5cm; size: portrait; }
-            aside, nav, .no-print, .fixed, button, .material-icons-round {
-                display: none !important;
-            }
+            aside, nav, .no-print, .fixed, button, .material-icons-round { display: none !important; }
             main { margin: 0 !important; padding: 0 !important; width: 100% !important; }
             section { break-inside: avoid; border: 1px solid #e2e8f0 !important; padding: 1rem !important; border-radius: 0.5rem !important; }
         }
@@ -204,7 +191,7 @@
     <link rel="stylesheet" href="/index.css">
 </head>
 
-<body class="bg-white text-black min-h-screen selection:bg-teal-100">
+<body class="bg-white text-black min-h-screen selection:bg-sage/30">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     <!-- Animation stack: GSAP + ScrollTrigger + Lenis -->

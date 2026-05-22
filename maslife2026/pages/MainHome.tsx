@@ -346,241 +346,243 @@ const MainHome: React.FC = () => {
   ];
 
   return (
-    <div id="main-home-scroll" className="w-full h-full overflow-y-auto bg-white font-sans scroll-smooth relative">
+    <div id="main-home-scroll" className="landing-page w-full h-full overflow-y-auto font-outfit scroll-smooth relative" style={{ background: '#f4f1ea', color: '#1c2b27' }}>
 
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrollY > 50 ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-slate-100' : 'bg-transparent'}`}>
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between h-20 sm:h-28">
-          {/* Logo Clínica Mas Life */}
-          <div className="flex items-center cursor-pointer shrink-0" onClick={() => scrollToSection('hero')}>
-            <img
-              src={logoClinica}
-              alt="Clínica Mas Life"
-              className="h-12 sm:h-16 w-auto object-contain"
-              onError={(e) => {
-                // Fallback si no carga la imagen
-                (e.target as HTMLImageElement).style.display = 'none';
-                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-              }}
-            />
-            <span className={`hidden text-xl sm:text-2xl font-extrabold tracking-tight transition-colors text-slate-900`}>
-              Mas<span className="text-blue-600">life</span>
-            </span>
-          </div>
+      <nav
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-[6vw]"
+        style={{
+          height: '76px',
+          mixBlendMode: scrollY > 80 ? 'normal' : 'difference',
+          color: '#fff',
+          background: scrollY > 80 ? 'rgba(244,241,234,0.92)' : 'transparent',
+          backdropFilter: scrollY > 80 ? 'blur(16px)' : 'none',
+          borderBottom: scrollY > 80 ? '1px solid rgba(28,43,39,0.08)' : 'none',
+          transition: 'background .35s, backdrop-filter .35s',
+        }}
+      >
+        {/* Logo */}
+        <div
+          className="flex items-center cursor-pointer shrink-0"
+          onClick={() => scrollToSection('hero')}
+          style={{ color: scrollY > 80 ? '#1c2b27' : 'inherit' }}
+        >
+          <img src={logoClinica} alt="Clínica Mas Life"
+            className="h-10 w-auto object-contain"
+            style={{ filter: scrollY > 80 ? 'none' : 'brightness(0) invert(1)' }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+          <span className="hidden font-display text-lg font-light tracking-wide ml-2">AgendaMás<span style={{ opacity:.6 }}>Life</span></span>
+        </div>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-10">
-            <button onClick={() => scrollToSection('como-funciona')} className={`text-sm font-semibold transition-colors ${scrollY > 50 ? 'text-slate-600 hover:text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}>
-              Cómo funciona
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-9">
+          {[
+            { label: 'Cómo funciona', id: 'como-funciona' },
+            { label: 'Especialidades', id: 'especialidades' },
+          ].map(({ label, id }) => (
+            <button key={id} onClick={() => scrollToSection(id)}
+              className="text-[.8rem] font-medium uppercase tracking-[1.8px] opacity-80 hover:opacity-100 transition-opacity"
+              style={{ color: 'inherit' }}>
+              {label}
             </button>
-            <button onClick={() => scrollToSection('especialidades')} className={`text-sm font-semibold transition-colors ${scrollY > 50 ? 'text-slate-600 hover:text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}>
-              Profesionales
-            </button>
-            <button onClick={handleShowPlans} className={`text-sm font-semibold transition-colors ${scrollY > 50 ? 'text-slate-600 hover:text-blue-600' : 'text-slate-700 hover:text-blue-600'}`}>
-              Planes
-            </button>
-            <button onClick={() => navigate('/pro/login')} className="bg-blue-600 text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30">
-              Portal Profesional
-            </button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center hover:bg-slate-100 transition-colors">
-            <span className="material-icons-round text-slate-700">{mobileMenuOpen ? 'close' : 'menu'}</span>
+          ))}
+          <button onClick={handleShowPlans}
+            className="text-[.8rem] font-medium uppercase tracking-[1.8px] opacity-80 hover:opacity-100 transition-opacity"
+            style={{ color: 'inherit' }}>
+            Planes
+          </button>
+          <button onClick={() => navigate('/pro/login')}
+            className="text-[.8rem] font-semibold uppercase tracking-[1.8px] px-5 py-2 rounded-full border border-current opacity-80 hover:opacity-100 transition-opacity"
+            style={{ color: 'inherit' }}>
+            Portal Pro
           </button>
         </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-slate-100 shadow-xl animate-in slide-in-from-top-2 duration-200">
-            <div className="px-6 py-4 space-y-1">
-              <button onClick={() => scrollToSection('como-funciona')} className="w-full text-left py-3 text-sm font-semibold text-slate-700 hover:text-blue-600">Cómo funciona</button>
-              <button onClick={() => scrollToSection('especialidades')} className="w-full text-left py-3 text-sm font-semibold text-slate-700 hover:text-blue-600">Profesionales</button>
-              <button onClick={() => { handleShowPlans(); setMobileMenuOpen(false); }} className="w-full text-left py-3 text-sm font-semibold text-slate-700 hover:text-blue-600">Planes</button>
-              <button onClick={() => { navigate('/pro/login'); setMobileMenuOpen(false); }} className="w-full mt-2 bg-blue-600 text-white py-3 rounded-xl text-sm font-bold text-center">Portal Profesional</button>
-            </div>
-          </div>
-        )}
+        {/* Mobile Button */}
+        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="md:hidden w-10 h-10 flex items-center justify-center" style={{ color: 'inherit' }}>
+          <span className="material-icons-round text-xl">{mobileMenuOpen ? 'close' : 'menu'}</span>
+        </button>
       </nav>
 
-      {/* ═══════════════════ HERO SECTION ═══════════════════ */}
-      <section ref={heroRef} id="hero" className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Blobs de color — detrás de todo, pointer-events:none */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-          <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-teal-300/20"
-               style={{ filter: 'blur(120px)', animation: 'blobFloat 8s ease-in-out infinite' }} />
-          <div className="absolute top-1/3 -right-24 w-[420px] h-[420px] rounded-full bg-orange-200/20"
-               style={{ filter: 'blur(90px)', animation: 'blobFloat 11s ease-in-out infinite reverse' }} />
-          <div className="absolute bottom-0 left-1/3 w-[340px] h-[340px] rounded-full bg-cyan-300/15"
-               style={{ filter: 'blur(100px)', animation: 'blobFloat 9s ease-in-out infinite 2s' }} />
-        </div>
-
-        {/* Carrusel de imágenes de fondo */}
-        {HERO_IMAGES.map((img, idx) => (
-          <img
-            key={idx}
-            src={img.src}
-            alt={img.alt}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${idx === heroImageIdx ? 'opacity-100' : 'opacity-0'}`}
-          />
-        ))}
-        {/* Overlays para legibilidad del texto */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/85 via-slate-900/55 to-slate-900/15 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-slate-900/25 pointer-events-none" />
-
-        {/* Contenido */}
-        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 pt-28 sm:pt-36 pb-20 sm:pb-28 w-full">
-          <div className="max-w-2xl space-y-8">
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm text-white border border-white/25 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
-              <span className="material-icons-round text-sm">verified</span>
-              Tu salud nos importa
-            </div>
-
-            <div
-              ref={heroTitleRef}
-              className="overflow-hidden text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.15] tracking-tight"
-              style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3)' }}
-            >
-              {['Kinesiología', '&', 'Salud', 'con', 'Profesionales', 'más', 'cercanos', '&', 'empáticos.'].map((word, i) => (
-                <span key={i} className="hero-word inline-block mr-[0.2em] text-blue-200"
-                      style={{ transform: 'translateY(110%)', opacity: 0 }}>{word}</span>
-              ))}
-            </div>
-
-            <p className="text-white/75 text-sm leading-relaxed max-w-sm">
-              Kinesiólogos, psicólogos, nutricionistas y quiroprácticos en{' '}
-              <strong className="text-white">Ovalle, Coquimbo y La Serena</strong>.
-              Atención presencial, online y a domicilio.
-            </p>
-
-            {/* 2-Path Choice */}
-            <div className="space-y-4 max-w-lg">
-              <p className="text-sm font-bold text-white/70">¿Cómo prefieres comenzar?</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Path A: Browse */}
-                <button
-                  onClick={() => navigate('/patient/results')}
-                  className="group p-6 bg-white/10 backdrop-blur-sm rounded-3xl border border-white/20 hover:bg-white/20 hover:border-white/40 shadow-lg transition-all duration-300 text-left"
-                >
-                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <span className="material-icons-round text-white text-2xl">search</span>
-                  </div>
-                  <h3 className="font-extrabold text-white text-sm mb-1 leading-tight">Explorar Especialistas</h3>
-                  <p className="text-white/60 text-xs font-medium leading-relaxed mb-4">Filtra por área, ciudad y modalidad. Tú eliges a tu profesional.</p>
-                  <div className="flex items-center gap-1.5 text-blue-300 text-xs font-bold group-hover:gap-3 transition-all">
-                    Ver especialistas <span className="material-icons-round text-sm">arrow_forward</span>
-                  </div>
-                </button>
-
-                {/* Path B: Agent assignment */}
-                <button
-                  onClick={() => setHeroPath(heroPath === 'assign' ? null : 'assign')}
-                  className={`group p-6 rounded-3xl border shadow-lg transition-all duration-300 text-left ${
-                    heroPath === 'assign'
-                      ? 'bg-blue-600 border-blue-500 shadow-blue-600/40'
-                      : 'bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 hover:border-white/40'
-                  }`}
-                >
-                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <span className="material-icons-round text-white text-2xl">auto_awesome</span>
-                  </div>
-                  <h3 className="font-extrabold text-white text-sm mb-1 leading-tight">Ser Asignado</h3>
-                  <p className="text-white/60 text-xs font-medium leading-relaxed mb-4">
-                    Cuéntanos tu situación y te asignamos al profesional ideal.
-                  </p>
-                  <div className="flex items-center gap-1.5 text-blue-300 text-xs font-bold group-hover:gap-3 transition-all">
-                    {heroPath === 'assign' ? 'Cerrar formulario' : 'Comenzar'}
-                    <span className="material-icons-round text-sm">{heroPath === 'assign' ? 'keyboard_arrow_up' : 'arrow_forward'}</span>
-                  </div>
-                </button>
-              </div>
-
-              {/* Inline assignment form */}
-              {heroPath === 'assign' && (
-                <div className="animate-in slide-in-from-top-4 duration-300">
-                  <form onSubmit={handleAssignSubmit} className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 shadow-xl p-6 space-y-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-                        <span className="material-icons-round text-white text-xs">auto_awesome</span>
-                      </div>
-                      <p className="text-sm font-bold text-white">Te asignamos al profesional ideal</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {needOptions.map(opt => (
-                        <button type="button" key={opt.value} onClick={() => setSelectedNeed(opt.value)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                            selectedNeed === opt.value
-                              ? 'border-blue-400 bg-blue-600/60 text-white'
-                              : 'border-white/20 bg-white/10 text-white/70 hover:border-white/40'
-                          }`}
-                        >
-                          <span className={`material-icons-round text-sm ${selectedNeed === opt.value ? 'text-blue-300' : 'text-white/50'}`}>{opt.icon}</span>
-                          <span className="leading-tight">{opt.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <input required value={assignFormData.name} onChange={e => setAssignFormData({ ...assignFormData, name: e.target.value })}
-                      className="w-full bg-white/10 border border-white/20 rounded-2xl py-3 px-4 text-sm font-medium text-white placeholder:text-white/40 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                      placeholder="Tu nombre..." />
-                    <input required value={assignFormData.contact} onChange={e => setAssignFormData({ ...assignFormData, contact: e.target.value })}
-                      className="w-full bg-white/10 border border-white/20 rounded-2xl py-3 px-4 text-sm font-medium text-white placeholder:text-white/40 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                      placeholder="WhatsApp o email de contacto..." />
-                    <textarea required value={assignFormData.symptoms} onChange={e => setAssignFormData({ ...assignFormData, symptoms: e.target.value })}
-                      className="w-full bg-white/10 border border-white/20 rounded-2xl py-3 px-4 text-sm font-medium text-white placeholder:text-white/40 focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none h-20"
-                      placeholder="¿Qué necesitas? Describe brevemente tu situación..." />
-                    <button type="submit" className="w-full py-3.5 bg-blue-600 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
-                      <span className="material-icons-round text-base">send</span>
-                      Enviar y ser contactado por WhatsApp
-                    </button>
-                  </form>
-                </div>
-              )}
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 pt-[76px] flex flex-col" style={{ background: '#f4f1ea' }}>
+          <div className="px-8 py-8 space-y-6">
+            {[
+              { label: 'Cómo funciona', id: 'como-funciona' },
+              { label: 'Especialidades', id: 'especialidades' },
+              { label: 'Planes', id: 'planes' },
+            ].map(({ label, id }) => (
+              <button key={id} onClick={() => { scrollToSection(id); setMobileMenuOpen(false); }}
+                className="w-full text-left font-display text-3xl font-light tracking-tight" style={{ color: '#1c2b27' }}>
+                {label}
+              </button>
+            ))}
+            <div className="pt-4 border-t" style={{ borderColor: 'rgba(28,43,39,0.12)' }}>
+              <button onClick={() => { navigate('/pro/login'); setMobileMenuOpen(false); }}
+                className="w-full py-4 rounded-2xl text-sm font-semibold text-white text-center"
+                style={{ background: '#3a5a4d' }}>
+                Portal Profesional
+              </button>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Dots del carrusel */}
-        <div className="absolute bottom-8 right-8 z-10 flex gap-2">
-          {HERO_IMAGES.map((_, idx) => (
-            <button key={idx} onClick={() => setHeroImageIdx(idx)}
-              className={`rounded-full transition-all duration-300 ${idx === heroImageIdx ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/50 hover:bg-white/80'}`}
-            />
-          ))}
+      {/* ═══════════════════ HERO SECTION ═══════════════════ */}
+      <section ref={heroRef} id="hero" className="relative min-h-screen flex items-center overflow-hidden"
+               style={{ background: '#ebe6db' }}>
+        {/* Capa de gradiente base */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: `radial-gradient(ellipse 80% 60% at 50% 120%, rgba(92,131,116,.30), transparent 70%),
+                       radial-gradient(ellipse 60% 50% at 80% 0%, rgba(201,169,106,.22), transparent 60%),
+                       #ebe6db`
+        }} />
+        {/* Blobs de parallax */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+          <div className="absolute -top-16 -left-16 w-[420px] h-[420px] rounded-full"
+               style={{ background: '#5c8374', filter: 'blur(40px)', opacity: .45, animation: 'blobFloat 8s ease-in-out infinite' }} />
+          <div className="absolute bottom-[4%] -right-[4%] w-[340px] h-[340px] rounded-full"
+               style={{ background: '#c9a96a', filter: 'blur(40px)', opacity: .35, animation: 'blobFloat 11s ease-in-out infinite reverse' }} />
+        </div>
+
+        {/* Contenido */}
+        <div className="relative z-10 max-w-7xl mx-auto px-[6vw] pt-32 sm:pt-40 pb-28 w-full">
+          <div className="max-w-3xl">
+            <p className="text-[.78rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#3a5a4d' }}>
+              Agenda clínica inteligente
+            </p>
+
+            {/* Título Fraunces con words animadas */}
+            <div ref={heroTitleRef} className="mb-8" style={{ overflow: 'hidden' }}>
+              <div className="font-display text-[clamp(3rem,8.5vw,6.8rem)] leading-[.96] tracking-tight" style={{ color: '#1c2b27' }}>
+                {[
+                  { text: 'El cuidado', italic: false },
+                  { text: 'que ', italic: false },
+                  { text: 'fluye.', italic: true },
+                ].map((line, li) => (
+                  <div key={li} className="overflow-hidden">
+                    <span className="hero-word inline-block" style={{ transform: 'translateY(110%)', opacity: 0 }}>
+                      {line.italic
+                        ? <>{line.text.replace(' ', '')}<em style={{ color: '#5c8374', fontStyle: 'italic' }}>fluye.</em></>
+                        : line.text
+                      }
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <p className="font-outfit font-light text-base sm:text-lg max-w-md leading-relaxed mb-10" style={{ color: '#44574f' }}>
+              La plataforma que conecta profesionales de la salud y pacientes en{' '}
+              <strong className="font-semibold" style={{ color: '#1c2b27' }}>Ovalle, Coquimbo y La Serena</strong>{' '}
+              con una agenda que respira calma, no caos.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+              <button
+                onClick={() => navigate('/patient/results')}
+                className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold transition-all duration-300 hover:-translate-y-1"
+                style={{ background: '#3a5a4d', color: '#fff', boxShadow: '0 20px 50px -16px rgba(58,90,77,.55)' }}>
+                Explorar especialistas
+                <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
+              <button
+                onClick={() => setHeroPath(heroPath === 'assign' ? null : 'assign')}
+                className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold border transition-all duration-300 hover:-translate-y-1"
+                style={{
+                  background: heroPath === 'assign' ? '#5c8374' : 'rgba(92,131,116,.08)',
+                  color: heroPath === 'assign' ? '#fff' : '#3a5a4d',
+                  borderColor: heroPath === 'assign' ? '#5c8374' : 'rgba(92,131,116,.35)',
+                }}>
+                <span className="material-icons-round text-base">auto_awesome</span>
+                {heroPath === 'assign' ? 'Cerrar' : 'Ser asignado'}
+              </button>
+            </div>
+
+            {/* Inline assignment form */}
+            {heroPath === 'assign' && (
+              <div className="max-w-lg" style={{ animation: 'fadeIn .35s ease-out' }}>
+                <form onSubmit={handleAssignSubmit} className="rounded-3xl border p-6 space-y-3"
+                      style={{ background: 'rgba(255,255,255,.65)', backdropFilter: 'blur(16px)', borderColor: 'rgba(28,43,39,.12)', boxShadow: '0 24px 60px -20px rgba(28,43,39,.2)' }}>
+                  <p className="font-display font-light text-lg" style={{ color: '#1c2b27' }}>Te asignamos al profesional ideal</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {needOptions.map(opt => (
+                      <button type="button" key={opt.value} onClick={() => setSelectedNeed(opt.value)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all"
+                        style={{
+                          background: selectedNeed === opt.value ? '#3a5a4d' : 'rgba(92,131,116,.06)',
+                          color: selectedNeed === opt.value ? '#fff' : '#44574f',
+                          borderColor: selectedNeed === opt.value ? '#3a5a4d' : 'rgba(92,131,116,.2)',
+                        }}>
+                        <span className="material-icons-round text-sm">{opt.icon}</span>
+                        <span className="leading-tight">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {[
+                    { val: 'name', ph: 'Tu nombre...' },
+                    { val: 'contact', ph: 'WhatsApp o email...' },
+                  ].map(({ val, ph }) => (
+                    <input key={val} required
+                      value={(assignFormData as any)[val]}
+                      onChange={e => setAssignFormData({ ...assignFormData, [val]: e.target.value })}
+                      className="w-full rounded-2xl py-3 px-4 text-sm border outline-none transition-all"
+                      style={{ background: 'rgba(244,241,234,.8)', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }}
+                      placeholder={ph} />
+                  ))}
+                  <textarea required value={assignFormData.symptoms}
+                    onChange={e => setAssignFormData({ ...assignFormData, symptoms: e.target.value })}
+                    className="w-full rounded-2xl py-3 px-4 text-sm border outline-none resize-none h-20"
+                    style={{ background: 'rgba(244,241,234,.8)', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }}
+                    placeholder="¿Qué necesitas? Describe tu situación..." />
+                  <button type="submit"
+                    className="w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-90"
+                    style={{ background: '#3a5a4d', color: '#fff' }}>
+                    <span className="material-icons-round text-base">send</span>
+                    Enviar y ser contactado
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 pointer-events-none"
-             style={{ animation: 'scrollBounce 2.2s ease-in-out infinite', opacity: 0.55 }}>
-          <span className="text-[9px] font-black text-white uppercase tracking-widest">Scroll</span>
-          <span className="material-icons-round text-white text-lg">expand_more</span>
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 pointer-events-none">
+          <span className="font-outfit text-[.7rem] uppercase tracking-[3px]" style={{ color: '#44574f', opacity: .6 }}>Desliza</span>
+          <div style={{ width: 1, height: 44, background: '#44574f', opacity: .35, animation: 'scrollBounce 2.4s ease-in-out infinite', transformOrigin: 'top' }} />
         </div>
       </section>
 
       {/* ═══════════════════ STATS BAR ═══════════════════ */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 py-10 px-5 sm:px-8">
+      <div className="py-10 px-5 sm:px-8" style={{ background: '#3a5a4d' }}>
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { num: '500+', label: 'Sesiones Realizadas', icon: 'event_available' },
-            { num: '8', label: 'Especialidades Médicas', icon: 'medical_services' },
-            { num: '4.9', label: 'Satisfacción Promedio', icon: 'star' },
-            { num: '3', label: 'Ciudades · Online · Domicilio', icon: 'location_on' },
+            { num: '500+', label: 'Sesiones Realizadas' },
+            { num: '8', label: 'Especialidades' },
+            { num: '4.9', label: 'Satisfacción' },
+            { num: '3', label: 'Ciudades + Online' },
           ].map((stat, i) => (
-            <div key={i} data-reveal={`stat-${i}`} className={`text-center text-white ${rv(`stat-${i}`, `delay-${i*100}`)}`} style={{ transitionDelay: `${i * 100}ms` }}>
-              <span className="material-icons-round text-blue-200 text-2xl mb-2 block">{stat.icon}</span>
-              <p className="text-3xl sm:text-4xl font-black tracking-tight">{stat.num}</p>
-              <p className="text-xs font-bold text-blue-100 uppercase tracking-wider mt-1">{stat.label}</p>
+            <div key={i} data-reveal={`stat-${i}`} className={`text-center ${rv(`stat-${i}`)}`} style={{ transitionDelay: `${i * 100}ms` }}>
+              <p className="font-display font-light text-3xl sm:text-4xl tracking-tight text-white">{stat.num}</p>
+              <p className="font-outfit text-[.72rem] uppercase tracking-[2px] mt-1" style={{ color: 'rgba(201,169,106,.85)' }}>{stat.label}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* ═══════════════════ MANIFESTO ═══════════════════ */}
-      <section className="py-24 sm:py-32 bg-white overflow-hidden">
-        <div className="max-w-4xl mx-auto px-5 sm:px-8">
-          <p className="text-[11px] font-black text-primary uppercase tracking-widest mb-6">Nuestra misión</p>
+      <section className="overflow-hidden" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center', padding: '18vh 6vw', background: '#f4f1ea' }}>
+        <div className="max-w-5xl">
+          <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-7" style={{ color: '#5c8374' }}>Filosofía</p>
           <div
             ref={manifestoRef}
-            className="text-2xl sm:text-3xl md:text-[2.4rem] font-black text-slate-800 leading-[1.65]"
+            className="font-display font-light leading-[1.3]"
+            style={{ fontSize: 'clamp(1.65rem,4.2vw,3.2rem)', letterSpacing: '-.4px', color: '#1c2b27' }}
           >
             {"AgendaMasLife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
               <span key={i} className="word-reveal"> {word}</span>
@@ -591,85 +593,104 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ IMAGE EXPANSION ═══════════════════ */}
       <div ref={expansionWrap} className="relative hidden md:block" style={{ height: '200vh' }}>
-        <div className="sticky top-0 h-screen flex items-center justify-center bg-slate-900 overflow-hidden">
-          <p className="absolute top-10 left-1/2 -translate-x-1/2 text-white/35 text-xs font-black uppercase tracking-[0.2em] z-20 whitespace-nowrap">
-            La plataforma integral para salud profesional
+        <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden" style={{ background: '#1c2b27' }}>
+          <p className="absolute top-10 left-1/2 -translate-x-1/2 font-outfit text-[.72rem] uppercase tracking-[3px] z-20 whitespace-nowrap"
+             style={{ color: 'rgba(201,169,106,.45)' }}>
+            Una sola pantalla
           </p>
-          {/* Mockup expandible */}
           <div
             ref={expansionRef}
-            className="relative overflow-hidden bg-white"
-            style={{ width: '42vw', height: '54vh', borderRadius: '2rem' }}
+            className="relative overflow-hidden"
+            style={{ width: '42vw', height: '54vh', borderRadius: '18px', boxShadow: '0 40px 90px -30px rgba(28,43,39,.6)' }}
           >
             {/* Header mockup */}
-            <div className="bg-primary px-5 py-3.5 flex items-center justify-between shrink-0">
+            <div className="px-5 py-3.5 flex items-center justify-between shrink-0" style={{ background: '#3a5a4d' }}>
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-white/25 rounded-lg flex items-center justify-center">
+                <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,.2)' }}>
                   <span className="material-icons-round text-white text-xs">event_available</span>
                 </div>
-                <span className="text-white font-black text-sm">AgendaMasLife</span>
+                <span className="font-display font-light text-white text-sm">AgendaMasLife</span>
               </div>
               <div className="flex gap-1.5">
-                {[0,1,2].map(i => <div key={i} className="w-2 h-2 bg-white/35 rounded-full" />)}
+                {[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: 'rgba(255,255,255,.3)' }} />)}
               </div>
             </div>
             {/* Body mockup */}
-            <div className="p-5 bg-slate-50 flex-1 overflow-hidden" style={{ height: 'calc(100% - 48px)' }}>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Especialidades disponibles</p>
-              <div className="grid grid-cols-2 gap-2.5 mb-4">
+            <div className="p-5 overflow-hidden" style={{ height: 'calc(100% - 48px)', background: '#f4f1ea' }}>
+              <p className="font-outfit text-[.65rem] uppercase tracking-[2px] mb-3" style={{ color: '#44574f' }}>Especialidades</p>
+              <div className="grid grid-cols-2 gap-2 mb-4">
                 {[
-                  ['Kinesiología', 'bg-teal-500', 'accessibility_new'],
-                  ['Psicología', 'bg-indigo-500', 'psychology'],
-                  ['Nutrición', 'bg-orange-400', 'restaurant'],
-                  ['Fonoaudiología', 'bg-cyan-500', 'record_voice_over'],
+                  ['Kinesiología', '#5c8374', 'accessibility_new'],
+                  ['Psicología', '#3a5a4d', 'psychology'],
+                  ['Nutrición', '#c9a96a', 'restaurant'],
+                  ['Fonoaudiología', '#44574f', 'record_voice_over'],
                 ].map(([s, c, icon], i) => (
-                  <div key={i} className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${c}`}>
-                      <span className="material-icons-round text-white text-sm">{icon}</span>
+                  <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-2" style={{ border: '1px solid rgba(28,43,39,.1)' }}>
+                    <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center" style={{ background: c as string }}>
+                      <span className="material-icons-round text-white text-sm">{icon as string}</span>
                     </div>
-                    <p className="text-[11px] font-black text-slate-700 leading-tight">{s}</p>
+                    <p className="font-outfit text-[.68rem] font-medium" style={{ color: '#1c2b27' }}>{s as string}</p>
                   </div>
                 ))}
               </div>
-              <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 flex items-center gap-3">
-                <div className="w-9 h-9 bg-primary rounded-xl shrink-0 flex items-center justify-center">
+              <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(92,131,116,.1)', border: '1px solid rgba(92,131,116,.25)' }}>
+                <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center" style={{ background: '#5c8374' }}>
                   <span className="material-icons-round text-white text-base">bolt</span>
                 </div>
                 <div>
-                  <p className="text-xs font-black text-slate-800">Reserva en 3 pasos</p>
-                  <p className="text-[10px] text-slate-500 font-medium">Especialidad → Horario → Confirmación</p>
+                  <p className="font-outfit text-xs font-medium" style={{ color: '#1c2b27' }}>Reserva en 3 pasos</p>
+                  <p className="font-outfit text-[.65rem]" style={{ color: '#44574f' }}>Especialidad → Horario → Confirmación</p>
                 </div>
               </div>
             </div>
+          </div>
+          {/* Caption */}
+          <div className="absolute left-[6vw] bottom-[8vh] z-10 max-w-xs">
+            <p className="font-outfit text-[.72rem] uppercase tracking-[3px] mb-2" style={{ color: 'rgba(201,169,106,.65)' }}>Tu consulta</p>
+            <h3 className="font-display font-light text-white leading-[1.05]" style={{ fontSize: 'clamp(1.6rem,2.5vw,2.4rem)' }}>Toda en calma.</h3>
           </div>
         </div>
       </div>
 
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
-      <section id="como-funciona" className="px-5 sm:px-8 py-20 sm:py-28 bg-white">
+      <section id="como-funciona" style={{ padding: '16vh 6vw', background: '#f4f1ea' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-4">
-            <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-3">PROCESO SIMPLE</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">¿Cómo funciona?</h2>
-            <p className="text-slate-500 font-medium text-base sm:text-lg max-w-2xl mx-auto mt-4 leading-relaxed">
-              Contamos con distintas modalidades para que puedas recibir atención desde la comodidad de tu hogar o en tu ciudad.
+          <div className="max-w-xl mb-[9vh]">
+            <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#5c8374' }}>Proceso simple</p>
+            <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#1c2b27' }}>
+              Menos administración.<br /><em style={{ color: '#5c8374', fontStyle: 'italic' }}>Más presencia.</em>
+            </h2>
+            <p className="font-outfit font-light text-base mt-5 leading-relaxed" style={{ color: '#44574f' }}>
+              Domicilio · Online · Presencial — en Ovalle, Coquimbo y La Serena.
             </p>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mt-2">MODALIDAD DOMICILIARIA · ONLINE · PRESENCIAL</p>
           </div>
 
-          <div ref={featuresRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-14">
+          <div ref={featuresRef} className="grid grid-cols-1 md:grid-cols-3 gap-7 sm:gap-8">
             {[
-              { icon: 'assignment', step: '01', title: 'Rellenas el formulario', desc: 'Rellenas el formulario con tu información y requerimiento.', color: 'bg-violet-100 text-violet-600' },
-              { icon: 'groups', step: '02', title: 'Asignación profesional', desc: 'Un agente revisa tu información y te asigna un profesional apto a tus requerimientos.', color: 'bg-blue-100 text-blue-600' },
-              { icon: 'event_available', step: '03', title: 'Primera cita', desc: 'El profesional asignado te contacta y coordina contigo la primera cita.', color: 'bg-rose-100 text-rose-600' }
+              { icon: 'assignment', step: '01', title: 'Rellenas el formulario', desc: 'Tu información y requerimiento, en segundos.' },
+              { icon: 'groups', step: '02', title: 'Asignación profesional', desc: 'Un agente revisa y te asigna el especialista ideal.' },
+              { icon: 'event_available', step: '03', title: 'Primera cita', desc: 'El profesional te contacta y coordinan juntos el primer encuentro.' },
             ].map((step, i) => (
-              <div key={i} data-reveal={`step-${i}`} className={`feature-card bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg hover:-translate-y-2 text-center group relative ${rv(`step-${i}`)}`} style={{ transitionDelay: `${i * 150}ms` }}>
-                <span className="absolute top-5 right-6 text-4xl font-black text-slate-100 select-none">{step.step}</span>
-                <div className={`w-14 h-14 sm:w-16 sm:h-16 ${step.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
-                  <span className="material-icons-round text-2xl sm:text-3xl">{step.icon}</span>
+              <div key={i} data-reveal={`step-${i}`}
+                className={`feature-card relative bg-white rounded-[18px] p-10 border transition-all duration-500 ${rv(`step-${i}`)}`}
+                style={{
+                  borderColor: 'rgba(28,43,39,.1)',
+                  boxShadow: 'none',
+                  transitionDelay: `${i * 150}ms`,
+                  cursor: 'default',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-8px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 30px 60px -30px rgba(28,43,39,.25)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+              >
+                {/* Número decorativo */}
+                <span className="absolute top-5 right-6 font-display font-light select-none" style={{ fontSize: '3.5rem', color: 'rgba(28,43,39,.06)', lineHeight: 1 }}>{step.step}</span>
+                {/* Icono */}
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-2" style={{ background: '#ebe6db' }}>
+                  <span className="material-icons-round text-xl" style={{ color: '#3a5a4d' }}>{step.icon}</span>
                 </div>
-                <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mb-3 tracking-tight">{step.title}</h4>
-                <p className="text-sm text-slate-500 font-medium leading-relaxed">{step.desc}</p>
+                <p className="font-outfit text-[.78rem] tracking-[2px] uppercase mb-4" style={{ color: '#c9a96a' }}>{step.step}</p>
+                <h4 className="font-display font-light text-xl mb-3 leading-tight" style={{ color: '#1c2b27' }}>{step.title}</h4>
+                <p className="font-outfit font-light text-[.93rem] leading-[1.65]" style={{ color: '#44574f' }}>{step.desc}</p>
               </div>
             ))}
           </div>
@@ -677,25 +698,30 @@ const MainHome: React.FC = () => {
       </section>
 
       {/* ═══════════════════ ÁREAS PROFESIONALES ═══════════════════ */}
-      <section id="especialidades" className="px-5 sm:px-8 py-20 sm:py-28 bg-slate-50/50">
+      <section id="especialidades" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#ebe6db' }}>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
             <div>
-              <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">NUESTRO EQUIPO</p>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Selecciona un área y agenda</h2>
-              <p className="text-sm text-slate-500 font-medium mt-1">con un profesional directamente</p>
-              <p className="text-xs text-slate-400 mt-1">Rehabilitación · Dolor lumbar · Tendinitis · Salud mental · Nutrición · Región de Coquimbo</p>
+              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-3" style={{ color: '#5c8374' }}>Nuestro equipo</p>
+              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#1c2b27' }}>Selecciona un área y agenda</h2>
+              <p className="font-outfit text-sm font-light mt-1" style={{ color: '#44574f' }}>con un profesional directamente</p>
             </div>
-            <div className="flex bg-white rounded-full p-1 border border-slate-200 shadow-sm">
+            <div className="flex rounded-full p-1 border" style={{ background: 'rgba(255,255,255,.5)', borderColor: 'rgba(28,43,39,.12)' }}>
               <button
                 onClick={() => setActiveSpecFilter('destacados')}
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${activeSpecFilter === 'destacados' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                Destacados
-              </button>
+                className="px-5 py-2 rounded-full text-xs font-medium transition-all"
+                style={{
+                  background: activeSpecFilter === 'destacados' ? '#3a5a4d' : 'transparent',
+                  color: activeSpecFilter === 'destacados' ? '#fff' : '#44574f',
+                }}
+              >Destacados</button>
               <button
                 onClick={() => setActiveSpecFilter('todos')}
-                className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${activeSpecFilter === 'todos' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                className="px-5 py-2 rounded-full text-xs font-medium transition-all"
+                style={{
+                  background: activeSpecFilter === 'todos' ? '#3a5a4d' : 'transparent',
+                  color: activeSpecFilter === 'todos' ? '#fff' : '#44574f',
+                }}
               >
                 Todos
               </button>
@@ -709,14 +735,18 @@ const MainHome: React.FC = () => {
               { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', alt: 'Podólogo cuidado especializado de pies en Ovalle', cta: 'Buscar Profesional' },
               { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600', alt: 'Enfermera tomando signos vitales atención a domicilio', cta: 'Buscar Profesional' },
             ])).map((card, i) => (
-              <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 hover:shadow-xl hover:border-slate-200 transition-all duration-300 cursor-pointer" onClick={() => navigate('/patient/results')}>
+              <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer"
+                   style={{ border: '1px solid rgba(28,43,39,.1)', boxShadow: 'none' }}
+                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 24px 48px -18px rgba(28,43,39,.22)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; }}
+                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = ''; }}
+                   onClick={() => navigate('/patient/results')}>
                 <div className="aspect-[4/3] overflow-hidden">
                   <img src={card.img} alt={card.alt || card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4 sm:p-5">
-                  <h4 className="text-sm sm:text-base font-extrabold text-slate-900 mb-1 tracking-tight">{card.name}</h4>
-                  <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed mb-3 line-clamp-2">{card.desc}</p>
-                  <button className="flex items-center gap-1.5 text-blue-600 text-xs font-bold hover:gap-2.5 transition-all">
+                  <h4 className="font-display font-light text-sm sm:text-base mb-1 leading-snug" style={{ color: '#1c2b27' }}>{card.name}</h4>
+                  <p className="font-outfit text-xs sm:text-sm font-light leading-relaxed mb-3 line-clamp-2" style={{ color: '#44574f' }}>{card.desc}</p>
+                  <button className="flex items-center gap-1.5 text-xs font-medium transition-all group-hover:gap-2.5" style={{ color: '#5c8374' }}>
                     {card.cta}
                     <span className="material-icons-round text-sm">arrow_forward</span>
                   </button>
@@ -729,11 +759,15 @@ const MainHome: React.FC = () => {
           {activeSpecFilter === 'todos' && (
             <div className="mt-10 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
               {services.map((s, i) => (
-                <div key={i} className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 hover:shadow-md hover:-translate-y-1 transition-all flex flex-col items-center text-center cursor-pointer group" onClick={() => navigate('/patient/results')}>
-                  <div className={`${s.bg} w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform`}>
-                    <span className={`material-icons-round text-2xl bg-gradient-to-br ${s.color} bg-clip-text text-transparent`}>{s.icon}</span>
+                <div key={i} className="bg-white p-4 sm:p-5 rounded-2xl flex flex-col items-center text-center cursor-pointer group transition-all duration-300"
+                     style={{ border: '1px solid rgba(28,43,39,.1)' }}
+                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px -12px rgba(28,43,39,.18)'; }}
+                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                     onClick={() => navigate('/patient/results')}>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform" style={{ background: '#ebe6db' }}>
+                    <span className="material-icons-round text-2xl" style={{ color: '#3a5a4d' }}>{s.icon}</span>
                   </div>
-                  <h4 className="text-[10px] sm:text-xs font-bold text-slate-700 leading-tight">{s.name}</h4>
+                  <h4 className="font-outfit text-[10px] sm:text-xs font-medium leading-tight" style={{ color: '#1c2b27' }}>{s.name}</h4>
                 </div>
               ))}
             </div>
@@ -743,60 +777,77 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ PLANES KINESIOLÓGICOS (CONDICIONAL) ═══════════════════ */}
       {showKinePlans && (
-        <section id="kine-plans" className="px-5 sm:px-8 py-20 sm:py-28 bg-slate-50 animate-in slide-in-from-bottom-8 duration-700">
+        <section id="kine-plans" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#f4f1ea', animation: 'fadeIn .5s ease-out' }}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
-              <div className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider mb-4 shadow-lg shadow-blue-600/20">
-                <span className="material-icons-round text-sm">star</span>
-                Máxima Efectividad
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">Planes Kinesiológicos a Domicilio</h2>
-              <p className="text-slate-500 font-medium text-base sm:text-lg max-w-2xl mx-auto mt-4">Rehabilitación kinesiológica profesional en casa, reembolsable por seguros e Isapre.</p>
+              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#5c8374' }}>Atención a domicilio</p>
+              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.4rem)', letterSpacing: '-1px', color: '#1c2b27' }}>
+                Planes Kinesiológicos a Domicilio
+              </h2>
+              <p className="font-outfit font-light text-base sm:text-lg max-w-2xl mx-auto mt-4" style={{ color: '#44574f' }}>Rehabilitación kinesiológica profesional en casa, reembolsable por seguros e Isapre.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-              {kinePlans.map((plan, i) => (
-                <div key={i} className={`bg-white rounded-3xl p-8 sm:p-10 border-2 ${plan.color} flex flex-col h-full relative group hover:shadow-xl transition-all duration-300`}>
-                  {plan.badge && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg whitespace-nowrap">
-                      {plan.badge}
-                    </div>
-                  )}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-extrabold text-slate-900 mb-4 tracking-tight">{plan.name}</h3>
-                    <p className="text-sm text-slate-500 font-medium">{plan.desc}</p>
-                  </div>
-
-                  <ul className="space-y-3 mb-8 flex-1">
-                    {plan.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-center gap-3 text-sm font-medium text-slate-600">
-                        <div className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                          <span className="material-icons-round text-xs">check</span>
-                        </div>
-                        {feat}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button
-                    onClick={() => setShowPlanForm({ isOpen: true, planName: plan.name })}
-                    className={`w-full py-4 rounded-2xl font-bold text-sm border-2 transition-all active:scale-95 ${plan.btnColor}`}
+              {kinePlans.map((plan, i) => {
+                const isFeatured = !!plan.badge;
+                return (
+                  <div key={i} className="bg-white rounded-3xl p-8 sm:p-10 flex flex-col h-full relative group transition-all duration-300"
+                       style={{
+                         border: isFeatured ? '2px solid #3a5a4d' : '1px solid rgba(28,43,39,.12)',
+                         boxShadow: isFeatured ? '0 32px 64px -24px rgba(58,90,77,.35)' : 'none',
+                         transform: isFeatured ? 'scale(1.02)' : 'scale(1)',
+                       }}
+                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 32px 64px -24px rgba(28,43,39,.28)'; }}
+                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = isFeatured ? '0 32px 64px -24px rgba(58,90,77,.35)' : 'none'; }}
                   >
-                    {plan.badge ? 'Comenzar Rehabilitación' : `Solicitar Plan`}
-                  </button>
-                </div>
-              ))}
+                    {plan.badge && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white px-6 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg whitespace-nowrap"
+                           style={{ background: '#3a5a4d' }}>
+                        {plan.badge}
+                      </div>
+                    )}
+                    <div className="mb-8">
+                      <h3 className="font-display font-light text-xl mb-3" style={{ color: '#1c2b27' }}>{plan.name}</h3>
+                      <p className="font-outfit text-sm font-light" style={{ color: '#44574f' }}>{plan.desc}</p>
+                    </div>
+
+                    <ul className="space-y-3 mb-8 flex-1">
+                      {plan.features.map((feat, idx) => (
+                        <li key={idx} className="flex items-center gap-3 font-outfit text-sm" style={{ color: '#44574f' }}>
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(92,131,116,.15)', color: '#3a5a4d' }}>
+                            <span className="material-icons-round text-xs">check</span>
+                          </div>
+                          {feat}
+                        </li>
+                      ))}
+                    </ul>
+
+                    <button
+                      onClick={() => setShowPlanForm({ isOpen: true, planName: plan.name })}
+                      className="w-full py-4 rounded-2xl font-semibold text-sm transition-all active:scale-95"
+                      style={isFeatured
+                        ? { background: '#3a5a4d', color: '#fff', border: 'none' }
+                        : { background: 'transparent', color: '#1c2b27', border: '2px solid rgba(28,43,39,.25)' }
+                      }
+                      onMouseEnter={e => { if (!isFeatured) { (e.currentTarget as HTMLButtonElement).style.background = '#1c2b27'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; } }}
+                      onMouseLeave={e => { if (!isFeatured) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#1c2b27'; } }}
+                    >
+                      {plan.badge ? 'Comenzar Rehabilitación' : 'Solicitar Plan'}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
       )}
 
       {/* ═══════════════════ TESTIMONIOS CARRUSEL ═══════════════════ */}
-      <section className="px-5 sm:px-8 py-20 sm:py-28 bg-white overflow-hidden">
+      <section className="px-5 sm:px-8 py-20 sm:py-28 overflow-hidden" style={{ background: '#f4f1ea' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">TESTIMONIOS REALES</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Lo que dicen nuestros pacientes</h2>
+          <div className="mb-12">
+            <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#5c8374' }}>Testimonios reales</p>
+            <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#1c2b27' }}>Lo que dicen nuestros pacientes</h2>
           </div>
 
           {/* Carrusel */}
@@ -809,20 +860,20 @@ const MainHome: React.FC = () => {
                 {Array.from({ length: maxIndex + 1 }).map((_, pageIdx) => (
                   <div key={pageIdx} className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-5 px-1">
                     {testimonials.slice(pageIdx * testimonialsPerView, pageIdx * testimonialsPerView + testimonialsPerView).map((t, i) => (
-                      <div key={i} className="bg-slate-50 rounded-2xl p-6 sm:p-7 border border-slate-100">
-                        <div className="flex gap-0.5 text-amber-400 mb-4">
+                      <div key={i} className="bg-white rounded-2xl p-6 sm:p-7" style={{ border: '1px solid rgba(28,43,39,.09)' }}>
+                        <div className="flex gap-0.5 mb-4" style={{ color: '#c9a96a' }}>
                           {Array.from({ length: t.stars }).map((_, s) => (
                             <span key={s} className="material-icons-round text-sm">star</span>
                           ))}
                         </div>
-                        <p className="text-sm text-slate-700 font-medium leading-relaxed mb-5 italic line-clamp-4">"{t.text}"</p>
+                        <p className="font-outfit font-light text-sm leading-relaxed mb-5 italic line-clamp-4" style={{ color: '#44574f' }}>"{t.text}"</p>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-blue-600 font-bold text-xs">{t.name.charAt(0)}</span>
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(92,131,116,.15)' }}>
+                            <span className="font-bold text-xs" style={{ color: '#3a5a4d' }}>{t.name.charAt(0)}</span>
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-slate-900">{t.name}</p>
-                            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{t.role}</p>
+                            <p className="font-outfit text-sm font-semibold" style={{ color: '#1c2b27' }}>{t.name}</p>
+                            <p className="font-outfit text-[10px] font-medium uppercase tracking-wider" style={{ color: '#5c8374' }}>{t.role}</p>
                           </div>
                         </div>
                       </div>
@@ -838,7 +889,8 @@ const MainHome: React.FC = () => {
                 <button
                   key={i}
                   onClick={() => setTestimonialIndex(i)}
-                  className={`h-2 rounded-full transition-all duration-300 ${i === testimonialIndex ? 'w-8 bg-blue-600' : 'w-2 bg-slate-300 hover:bg-slate-400'}`}
+                  className="h-2 rounded-full transition-all duration-300"
+                  style={{ width: i === testimonialIndex ? '2rem' : '.5rem', background: i === testimonialIndex ? '#3a5a4d' : 'rgba(28,43,39,.2)' }}
                 />
               ))}
             </div>
@@ -846,102 +898,135 @@ const MainHome: React.FC = () => {
             {/* Flechas */}
             <button
               onClick={() => setTestimonialIndex(prev => prev > 0 ? prev - 1 : maxIndex)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 bg-white rounded-full shadow-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-all hidden sm:flex"
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 rounded-full flex items-center justify-center transition-all hidden sm:flex"
+              style={{ background: '#fff', border: '1px solid rgba(28,43,39,.12)', boxShadow: '0 4px 16px -4px rgba(28,43,39,.15)' }}
             >
-              <span className="material-icons-round text-slate-600 text-lg">chevron_left</span>
+              <span className="material-icons-round text-lg" style={{ color: '#1c2b27' }}>chevron_left</span>
             </button>
             <button
               onClick={() => setTestimonialIndex(prev => prev < maxIndex ? prev + 1 : 0)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 bg-white rounded-full shadow-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50 transition-all hidden sm:flex"
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 rounded-full flex items-center justify-center transition-all hidden sm:flex"
+              style={{ background: '#fff', border: '1px solid rgba(28,43,39,.12)', boxShadow: '0 4px 16px -4px rgba(28,43,39,.15)' }}
             >
-              <span className="material-icons-round text-slate-600 text-lg">chevron_right</span>
+              <span className="material-icons-round text-lg" style={{ color: '#1c2b27' }}>chevron_right</span>
             </button>
           </div>
         </div>
       </section>
 
       {/* ═══════════════════ CTA FINAL ═══════════════════ */}
-      <section className="px-5 sm:px-8 py-20 bg-blue-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-        {/* Blob pulsante de marca */}
+      <section className="px-5 sm:px-8 py-24 relative overflow-hidden" style={{ background: '#3a5a4d' }}>
+        {/* Golden glow blob */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-teal-400/20"
-               style={{ filter: 'blur(80px)', animation: 'blobPulse 4s ease-in-out infinite' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] rounded-full"
+               style={{ background: 'rgba(201,169,106,.32)', filter: 'blur(90px)', animation: 'blobPulse 4s ease-in-out infinite' }} />
+          <div className="absolute -top-24 -right-24 w-[320px] h-[320px] rounded-full"
+               style={{ background: 'rgba(92,131,116,.35)', filter: 'blur(60px)', animation: 'blobFloat 9s ease-in-out infinite' }} />
         </div>
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-5">¿Listo para sentirte mejor?</h2>
-          <p className="text-blue-100 text-base sm:text-lg font-medium max-w-2xl mx-auto mb-10">Nuestros profesionales certificados están listos para atenderte. Agenda tu primera consulta hoy.</p>
+        <div className="max-w-3xl mx-auto text-center relative z-10">
+          <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-6" style={{ color: 'rgba(201,169,106,.75)' }}>Comienza hoy</p>
+          <h2 className="font-display font-light leading-[1.0] mb-6" style={{ fontSize: 'clamp(2.2rem,6vw,4.5rem)', color: '#f4f1ea', letterSpacing: '-1.5px' }}>
+            ¿Listo para<br /><em style={{ color: '#c9a96a', fontStyle: 'italic' }}>sentirte mejor?</em>
+          </h2>
+          <p className="font-outfit font-light text-base sm:text-lg max-w-xl mx-auto mb-10" style={{ color: 'rgba(244,241,234,.7)' }}>Nuestros profesionales certificados están listos para atenderte. Agenda tu primera consulta hoy.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
               onClick={() => setIsGeneralFormOpen(true)}
-              className="bg-white text-blue-700 px-8 py-4 rounded-2xl font-bold text-sm hover:bg-blue-50 transition-all shadow-xl shadow-blue-900/20"
+              className="px-8 py-4 rounded-full font-outfit font-semibold text-sm transition-all hover:-translate-y-1"
+              style={{ background: '#f4f1ea', color: '#1c2b27', boxShadow: '0 20px 50px -16px rgba(28,43,39,.5)' }}
             >
               Agendar Atención
             </button>
             <button
               onClick={() => navigate('/patient/results')}
-              className="bg-white/10 backdrop-blur text-white border-2 border-white/30 px-8 py-4 rounded-2xl font-bold text-sm hover:bg-white/20 transition-all"
+              className="px-8 py-4 rounded-full font-outfit font-semibold text-sm border transition-all hover:-translate-y-1"
+              style={{ background: 'transparent', color: '#f4f1ea', borderColor: 'rgba(244,241,234,.35)' }}
             >
-              Buscar Profesional
+              Explorar Especialistas
             </button>
           </div>
         </div>
       </section>
 
       {/* ═══════════════════ FOOTER ═══════════════════ */}
-      <footer className="bg-slate-900 text-white pt-16 sm:pt-20 pb-8 px-5 sm:px-8">
+      <footer className="pt-16 sm:pt-20 pb-8 px-5 sm:px-8" style={{ background: '#1c2b27', color: '#f4f1ea' }}>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10 sm:gap-12 mb-14">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1 space-y-5">
               <div className="flex items-center">
-                <img src={logoClinica} alt="Clínica Mas Life" className="h-14 w-auto object-contain brightness-0 invert opacity-90" onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }} />
-                <span className="hidden text-xl font-extrabold tracking-tight">Mas<span className="text-blue-400">life</span></span>
+                <img src={logoClinica} alt="Clínica Mas Life" className="h-14 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)', opacity: .85 }} onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
               </div>
-              <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xs">
+              <p className="font-outfit font-light text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(244,241,234,.55)' }}>
                 Rediseñando la experiencia de salud a través de la calidez clínica y el compromiso humano.
               </p>
             </div>
 
             {/* Servicios */}
             <div>
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-5">Servicios</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#5c8374' }}>Servicios</h4>
               <ul className="space-y-3">
-                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={() => setIsGeneralFormOpen(true)}>Consulta Guiada</li>
-                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={() => navigate('/patient/results')}>Especialistas</li>
-                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={handleShowPlans}>Planes</li>
+                {[
+                  { label: 'Consulta Guiada', action: () => setIsGeneralFormOpen(true) },
+                  { label: 'Especialistas', action: () => navigate('/patient/results') },
+                  { label: 'Planes', action: handleShowPlans },
+                ].map(({ label, action }) => (
+                  <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
+                      style={{ color: 'rgba(244,241,234,.55)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f4f1ea'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(244,241,234,.55)'}
+                      onClick={action}>{label}</li>
+                ))}
               </ul>
             </div>
 
             {/* Compañía */}
             <div>
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-5">Compañía</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#5c8374' }}>Compañía</h4>
               <ul className="space-y-3">
-                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium">Método Life</li>
-                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={() => setIsContactFormOpen(true)}>Nosotros</li>
-                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium" onClick={() => navigate('/pro/login')}>Portal Profesional</li>
+                {[
+                  { label: 'Método Life', action: () => {} },
+                  { label: 'Nosotros', action: () => setIsContactFormOpen(true) },
+                  { label: 'Portal Profesional', action: () => navigate('/pro/login') },
+                ].map(({ label, action }) => (
+                  <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
+                      style={{ color: 'rgba(244,241,234,.55)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f4f1ea'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(244,241,234,.55)'}
+                      onClick={action}>{label}</li>
+                ))}
               </ul>
             </div>
 
             {/* Legal */}
             <div>
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-5">Legal</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#5c8374' }}>Legal</h4>
               <ul className="space-y-3">
-                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium">Privacidad</li>
-                <li className="text-sm text-slate-400 hover:text-white cursor-pointer transition-colors font-medium">Términos</li>
+                {['Privacidad', 'Términos'].map(label => (
+                  <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
+                      style={{ color: 'rgba(244,241,234,.55)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f4f1ea'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(244,241,234,.55)'}>{label}</li>
+                ))}
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-slate-500 font-medium">© 2026 Clínica Mas Life · Ovalle, Coquimbo y La Serena, Chile</p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8" style={{ borderTop: '1px solid rgba(244,241,234,.1)' }}>
+            <p className="font-outfit text-xs" style={{ color: 'rgba(244,241,234,.35)' }}>© 2026 Clínica Mas Life · Ovalle, Coquimbo y La Serena, Chile</p>
             <div className="flex gap-3">
-              <a href="https://wa.me/56965329974" target="_blank" rel="noreferrer" className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors">
-                <svg className="w-4 h-4 fill-current text-slate-400" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/></svg>
+              <a href="https://wa.me/56965329974" target="_blank" rel="noreferrer"
+                 className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
+                 style={{ background: 'rgba(244,241,234,.08)' }}
+                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,241,234,.15)'}
+                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,241,234,.08)'}>
+                <svg className="w-4 h-4 fill-current" style={{ color: 'rgba(244,241,234,.55)' }} viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/></svg>
               </a>
-              <div className="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center cursor-pointer transition-colors">
-                <span className="material-icons-round text-slate-400 text-base">public</span>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer transition-colors"
+                   style={{ background: 'rgba(244,241,234,.08)' }}
+                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,241,234,.15)'}
+                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,241,234,.08)'}>
+                <span className="material-icons-round text-base" style={{ color: 'rgba(244,241,234,.55)' }}>public</span>
               </div>
             </div>
           </div>
@@ -977,44 +1062,48 @@ const MainHome: React.FC = () => {
           <div className="bg-white w-full max-w-lg rounded-3xl p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
-                  <span className="material-icons-round text-blue-600 text-xl">calendar_month</span>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(92,131,116,.12)' }}>
+                  <span className="material-icons-round text-xl" style={{ color: '#3a5a4d' }}>calendar_month</span>
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                  <h3 className="font-display font-light text-xl sm:text-2xl" style={{ color: '#1c2b27' }}>
                     {showPlanForm.isOpen ? `Solicitud ${showPlanForm.planName}` : 'Agendar Atención'}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">Completa tus datos para continuar</p>
+                  <p className="font-outfit text-xs" style={{ color: '#44574f' }}>Completa tus datos para continuar</p>
                 </div>
               </div>
               <button
                 onClick={() => { setShowPlanForm({ isOpen: false, planName: '' }); setIsGeneralFormOpen(false); }}
-                className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-all flex-shrink-0"
+                className="w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
+                style={{ background: 'transparent' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(28,43,39,.06)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
               >
-                <span className="material-icons-round text-slate-400">close</span>
+                <span className="material-icons-round" style={{ color: '#44574f' }}>close</span>
               </button>
             </div>
 
             <form onSubmit={(e) => handleFormSubmit(e, showPlanForm.isOpen ? showPlanForm.planName : 'Consulta General')} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Nombre</label>
-                  <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Juan Pérez" />
+                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Nombre</label>
+                  <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="Juan Pérez" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">WhatsApp</label>
-                  <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+56 9..." />
+                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>WhatsApp</label>
+                  <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="+56 9..." />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Email</label>
-                <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="correo@ejemplo.com" />
+                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Email</label>
+                <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="correo@ejemplo.com" />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Condición o Motivo</label>
-                <textarea required value={formData.condition} onChange={e => setFormData({ ...formData, condition: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Describe brevemente tu situación..." />
+                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Condición o Motivo</label>
+                <textarea required value={formData.condition} onChange={e => setFormData({ ...formData, condition: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border h-28 resize-none" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="Describe brevemente tu situación..." />
               </div>
-              <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all flex items-center justify-center gap-2">
+              <button type="submit" className="w-full py-4 rounded-2xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"
+                      style={{ background: '#3a5a4d', boxShadow: '0 12px 30px -10px rgba(58,90,77,.45)' }}>
                 <span className="material-icons-round text-base">send</span>
                 Verificar Cobertura y Agenda
               </button>
@@ -1029,42 +1118,46 @@ const MainHome: React.FC = () => {
           <div className="bg-white w-full max-w-lg rounded-3xl p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center">
-                  <span className="material-icons-round text-violet-600 text-xl">mark_email_unread</span>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(92,131,116,.12)' }}>
+                  <span className="material-icons-round text-xl" style={{ color: '#3a5a4d' }}>mark_email_unread</span>
                 </div>
                 <div>
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Contáctenos</h3>
-                  <p className="text-xs text-slate-500 font-medium">Te llamamos a la brevedad</p>
+                  <h3 className="font-display font-light text-xl sm:text-2xl" style={{ color: '#1c2b27' }}>Contáctenos</h3>
+                  <p className="font-outfit text-xs" style={{ color: '#44574f' }}>Te llamamos a la brevedad</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsContactFormOpen(false)}
-                className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center transition-all flex-shrink-0"
+                className="w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
+                style={{ background: 'transparent' }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(28,43,39,.06)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
               >
-                <span className="material-icons-round text-slate-400">close</span>
+                <span className="material-icons-round" style={{ color: '#44574f' }}>close</span>
               </button>
             </div>
 
             <form onSubmit={handleContactSubmit} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Nombre</label>
-                  <input required value={contactData.name} onChange={e => setContactData({ ...contactData, name: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="María González" />
+                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Nombre</label>
+                  <input required value={contactData.name} onChange={e => setContactData({ ...contactData, name: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="María González" />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">WhatsApp / Teléfono</label>
-                  <input required value={contactData.phone} onChange={e => setContactData({ ...contactData, phone: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+56 9..." />
+                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>WhatsApp / Teléfono</label>
+                  <input required value={contactData.phone} onChange={e => setContactData({ ...contactData, phone: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="+56 9..." />
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">Email</label>
-                <input required type="email" value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="correo@ejemplo.com" />
+                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Email</label>
+                <input required type="email" value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="correo@ejemplo.com" />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5 ml-1">¿En qué te podemos ayudar?</label>
-                <textarea required value={contactData.message} onChange={e => setContactData({ ...contactData, message: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-medium text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Cuéntanos tu caso o consulta..." />
+                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>¿En qué te podemos ayudar?</label>
+                <textarea required value={contactData.message} onChange={e => setContactData({ ...contactData, message: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border h-28 resize-none" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="Cuéntanos tu caso o consulta..." />
               </div>
-              <button type="submit" className="w-full py-4 bg-violet-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-violet-600/20 hover:bg-violet-700 transition-all flex items-center justify-center gap-2">
+              <button type="submit" className="w-full py-4 rounded-2xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"
+                      style={{ background: '#3a5a4d', boxShadow: '0 12px 30px -10px rgba(58,90,77,.45)' }}>
                 <span className="material-icons-round text-base">send</span>
                 Enviar Solicitud de Contacto
               </button>
