@@ -3,6 +3,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logoClinica from '../assets/logo-clinica.png';
 
+declare global {
+  interface Window { gsap: any; ScrollTrigger: any; Lenis: any; }
+}
+
 const HERO_IMAGES = [
   { src: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=900', alt: 'Kinesiólogo atendiendo paciente en rehabilitación física' },
   { src: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=900', alt: 'Profesional de salud guiando ejercicio terapéutico' },
@@ -26,7 +30,15 @@ const MainHome: React.FC = () => {
   const [scrollY, setScrollY] = useState(0);
   const [heroPath, setHeroPath] = useState<'browse' | 'assign' | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
-  const heroRef = useRef<HTMLElement>(null);
+  const heroRef        = useRef<HTMLElement>(null);
+  const heroTitleRef   = useRef<HTMLDivElement>(null);
+  const manifestoRef   = useRef<HTMLDivElement>(null);
+  const featuresRef    = useRef<HTMLDivElement>(null);
+  const expansionRef   = useRef<HTMLDivElement>(null);
+  const expansionWrap  = useRef<HTMLDivElement>(null);
+  const cursorDotRef   = useRef<HTMLDivElement>(null);
+  const cursorRingRef  = useRef<HTMLDivElement>(null);
+  const lenisRef       = useRef<any>(null);
 
   // Scroll tracking for navbar
   useEffect(() => {
@@ -60,6 +72,110 @@ const MainHome: React.FC = () => {
     }, 150);
     return () => observer.disconnect();
   }, []);
+
+  // GSAP + Lenis cinematic animations
+  useEffect(() => {
+    if (typeof window.gsap === 'undefined') return;
+    const { gsap, ScrollTrigger, Lenis } = window;
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Smooth scroll via Lenis, scoped to #main-home-scroll div
+    const scrollEl = document.getElementById('main-home-scroll');
+    if (scrollEl && Lenis) {
+      const lenis = new Lenis({
+        wrapper: scrollEl,
+        content: scrollEl,
+        duration: 1.2,
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        touchMultiplier: 2,
+      });
+      lenisRef.current = lenis;
+      lenis.on('scroll', ScrollTrigger.update);
+      gsap.ticker.add((time: number) => lenis.raf(time * 1000));
+      gsap.ticker.lagSmoothing(0);
+      ScrollTrigger.defaults({ scroller: scrollEl });
+    }
+
+    // Hero title word entrance
+    if (heroTitleRef.current) {
+      gsap.fromTo(
+        heroTitleRef.current.querySelectorAll('.hero-word'),
+        { yPercent: 110, opacity: 0 },
+        { yPercent: 0, opacity: 1, stagger: 0.1, duration: 1.0, ease: 'power4.out', delay: 0.35 }
+      );
+    }
+
+    // Manifesto word-by-word scroll reveal
+    if (manifestoRef.current) {
+      gsap.to(manifestoRef.current.querySelectorAll('.word-reveal'), {
+        opacity: 1,
+        stagger: 0.035,
+        scrollTrigger: {
+          trigger: manifestoRef.current,
+          start: 'top 75%',
+          end: 'bottom 50%',
+          scrub: true,
+        },
+      });
+    }
+
+    // Image expansion scrub — desktop only
+    if (expansionRef.current && expansionWrap.current && window.innerWidth >= 768) {
+      gsap.to(expansionRef.current, {
+        width: '100vw',
+        height: '100vh',
+        borderRadius: 0,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: expansionWrap.current,
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: true,
+        },
+      });
+    }
+
+    // "Cómo Funciona" cards stagger on enter
+    if (featuresRef.current) {
+      gsap.fromTo(
+        featuresRef.current.querySelectorAll('.feature-card'),
+        { opacity: 0, y: 60 },
+        {
+          opacity: 1, y: 0, stagger: 0.15, duration: 0.9, ease: 'power3.out',
+          scrollTrigger: { trigger: featuresRef.current, start: 'top 82%' },
+        }
+      );
+    }
+
+    // Custom cursor (desktop)
+    const dot = cursorDotRef.current;
+    const ring = cursorRingRef.current;
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    const onMove = (e: MouseEvent) => {
+      mx = e.clientX; my = e.clientY;
+      if (dot) { dot.style.left = mx + 'px'; dot.style.top = my + 'px'; }
+    };
+    let rafId: number;
+    const tick = () => {
+      rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+      if (ring) { ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; }
+      rafId = requestAnimationFrame(tick);
+    };
+    window.addEventListener('mousemove', onMove);
+    rafId = requestAnimationFrame(tick);
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+    });
+
+    return () => {
+      lenisRef.current?.destroy();
+      ScrollTrigger.getAll().forEach((t: any) => t.kill());
+      window.removeEventListener('mousemove', onMove);
+      cancelAnimationFrame(rafId);
+      document.body.classList.remove('cursor-hover');
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rv = (id: string, extra = '') =>
     `transition-all duration-700 ease-out ${extra} ${revealed.has(id) ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`;
@@ -289,6 +405,16 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
       <section ref={heroRef} id="hero" className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Blobs de color — detrás de todo, pointer-events:none */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+          <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-teal-300/20"
+               style={{ filter: 'blur(120px)', animation: 'blobFloat 8s ease-in-out infinite' }} />
+          <div className="absolute top-1/3 -right-24 w-[420px] h-[420px] rounded-full bg-orange-200/20"
+               style={{ filter: 'blur(90px)', animation: 'blobFloat 11s ease-in-out infinite reverse' }} />
+          <div className="absolute bottom-0 left-1/3 w-[340px] h-[340px] rounded-full bg-cyan-300/15"
+               style={{ filter: 'blur(100px)', animation: 'blobFloat 9s ease-in-out infinite 2s' }} />
+        </div>
+
         {/* Carrusel de imágenes de fondo */}
         {HERO_IMAGES.map((img, idx) => (
           <img
@@ -310,13 +436,16 @@ const MainHome: React.FC = () => {
               Tu salud nos importa
             </div>
 
-            <h1
-              className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight"
+            <div
+              ref={heroTitleRef}
+              className="overflow-hidden text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-[1.15] tracking-tight"
               style={{ textShadow: '0 2px 12px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3)' }}
             >
-              <span className="text-blue-200">Kinesiología &amp; Salud con Profesionales más cercanos &amp;</span>{' '}
-              <span className="text-blue-300">empáticos.</span>
-            </h1>
+              {['Kinesiología', '&', 'Salud', 'con', 'Profesionales', 'más', 'cercanos', '&', 'empáticos.'].map((word, i) => (
+                <span key={i} className="hero-word inline-block mr-[0.2em] text-blue-200"
+                      style={{ transform: 'translateY(110%)', opacity: 0 }}>{word}</span>
+              ))}
+            </div>
 
             <p className="text-white/75 text-sm leading-relaxed max-w-sm">
               Kinesiólogos, psicólogos, nutricionistas y quiroprácticos en{' '}
@@ -418,6 +547,13 @@ const MainHome: React.FC = () => {
             />
           ))}
         </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 pointer-events-none"
+             style={{ animation: 'scrollBounce 2.2s ease-in-out infinite', opacity: 0.55 }}>
+          <span className="text-[9px] font-black text-white uppercase tracking-widest">Scroll</span>
+          <span className="material-icons-round text-white text-lg">expand_more</span>
+        </div>
       </section>
 
       {/* ═══════════════════ STATS BAR ═══════════════════ */}
@@ -438,6 +574,77 @@ const MainHome: React.FC = () => {
         </div>
       </div>
 
+      {/* ═══════════════════ MANIFESTO ═══════════════════ */}
+      <section className="py-24 sm:py-32 bg-white overflow-hidden">
+        <div className="max-w-4xl mx-auto px-5 sm:px-8">
+          <p className="text-[11px] font-black text-primary uppercase tracking-widest mb-6">Nuestra misión</p>
+          <div
+            ref={manifestoRef}
+            className="text-2xl sm:text-3xl md:text-[2.4rem] font-black text-slate-800 leading-[1.65]"
+          >
+            {"AgendaMasLife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
+              <span key={i} className="word-reveal"> {word}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ IMAGE EXPANSION ═══════════════════ */}
+      <div ref={expansionWrap} className="relative hidden md:block" style={{ height: '200vh' }}>
+        <div className="sticky top-0 h-screen flex items-center justify-center bg-slate-900 overflow-hidden">
+          <p className="absolute top-10 left-1/2 -translate-x-1/2 text-white/35 text-xs font-black uppercase tracking-[0.2em] z-20 whitespace-nowrap">
+            La plataforma integral para salud profesional
+          </p>
+          {/* Mockup expandible */}
+          <div
+            ref={expansionRef}
+            className="relative overflow-hidden bg-white"
+            style={{ width: '42vw', height: '54vh', borderRadius: '2rem' }}
+          >
+            {/* Header mockup */}
+            <div className="bg-primary px-5 py-3.5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-white/25 rounded-lg flex items-center justify-center">
+                  <span className="material-icons-round text-white text-xs">event_available</span>
+                </div>
+                <span className="text-white font-black text-sm">AgendaMasLife</span>
+              </div>
+              <div className="flex gap-1.5">
+                {[0,1,2].map(i => <div key={i} className="w-2 h-2 bg-white/35 rounded-full" />)}
+              </div>
+            </div>
+            {/* Body mockup */}
+            <div className="p-5 bg-slate-50 flex-1 overflow-hidden" style={{ height: 'calc(100% - 48px)' }}>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Especialidades disponibles</p>
+              <div className="grid grid-cols-2 gap-2.5 mb-4">
+                {[
+                  ['Kinesiología', 'bg-teal-500', 'accessibility_new'],
+                  ['Psicología', 'bg-indigo-500', 'psychology'],
+                  ['Nutrición', 'bg-orange-400', 'restaurant'],
+                  ['Fonoaudiología', 'bg-cyan-500', 'record_voice_over'],
+                ].map(([s, c, icon], i) => (
+                  <div key={i} className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${c}`}>
+                      <span className="material-icons-round text-white text-sm">{icon}</span>
+                    </div>
+                    <p className="text-[11px] font-black text-slate-700 leading-tight">{s}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-primary/8 border border-primary/20 rounded-xl p-3.5 flex items-center gap-3">
+                <div className="w-9 h-9 bg-primary rounded-xl shrink-0 flex items-center justify-center">
+                  <span className="material-icons-round text-white text-base">bolt</span>
+                </div>
+                <div>
+                  <p className="text-xs font-black text-slate-800">Reserva en 3 pasos</p>
+                  <p className="text-[10px] text-slate-500 font-medium">Especialidad → Horario → Confirmación</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
       <section id="como-funciona" className="px-5 sm:px-8 py-20 sm:py-28 bg-white">
         <div className="max-w-7xl mx-auto">
@@ -450,13 +657,13 @@ const MainHome: React.FC = () => {
             <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.15em] mt-2">MODALIDAD DOMICILIARIA · ONLINE · PRESENCIAL</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-14">
+          <div ref={featuresRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mt-14">
             {[
               { icon: 'assignment', step: '01', title: 'Rellenas el formulario', desc: 'Rellenas el formulario con tu información y requerimiento.', color: 'bg-violet-100 text-violet-600' },
               { icon: 'groups', step: '02', title: 'Asignación profesional', desc: 'Un agente revisa tu información y te asigna un profesional apto a tus requerimientos.', color: 'bg-blue-100 text-blue-600' },
               { icon: 'event_available', step: '03', title: 'Primera cita', desc: 'El profesional asignado te contacta y coordina contigo la primera cita.', color: 'bg-rose-100 text-rose-600' }
             ].map((step, i) => (
-              <div key={i} data-reveal={`step-${i}`} className={`bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg text-center group relative ${rv(`step-${i}`)}`} style={{ transitionDelay: `${i * 150}ms` }}>
+              <div key={i} data-reveal={`step-${i}`} className={`feature-card bg-white rounded-2xl sm:rounded-3xl p-8 sm:p-10 border border-slate-100 hover:border-slate-200 hover:shadow-lg hover:-translate-y-2 text-center group relative ${rv(`step-${i}`)}`} style={{ transitionDelay: `${i * 150}ms` }}>
                 <span className="absolute top-5 right-6 text-4xl font-black text-slate-100 select-none">{step.step}</span>
                 <div className={`w-14 h-14 sm:w-16 sm:h-16 ${step.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
                   <span className="material-icons-round text-2xl sm:text-3xl">{step.icon}</span>
@@ -657,6 +864,11 @@ const MainHome: React.FC = () => {
       <section className="px-5 sm:px-8 py-20 bg-blue-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500"></div>
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+        {/* Blob pulsante de marca */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-teal-400/20"
+               style={{ filter: 'blur(80px)', animation: 'blobPulse 4s ease-in-out infinite' }} />
+        </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-5">¿Listo para sentirte mejor?</h2>
           <p className="text-blue-100 text-base sm:text-lg font-medium max-w-2xl mx-auto mb-10">Nuestros profesionales certificados están listos para atenderte. Agenda tu primera consulta hoy.</p>
@@ -860,6 +1072,10 @@ const MainHome: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Custom cursor — visible solo en desktop */}
+      <div ref={cursorDotRef} className="cursor-dot" />
+      <div ref={cursorRingRef} className="cursor-ring" />
     </div>
   );
 };

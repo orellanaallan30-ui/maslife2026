@@ -32,3 +32,45 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #cbd5e1;
 }
+
+/* ── Landing cinematográfica ── */
+
+@keyframes blobFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(20px,-20px) scale(1.05); }
+  66%      { transform: translate(-15px,15px) scale(0.95); }
+}
+
+@keyframes scrollBounce {
+  0%,100% { transform: translateY(0); opacity: 1; }
+  50%     { transform: translateY(8px); opacity: 0.5; }
+}
+
+@keyframes blobPulse {
+  0%,100% { transform: scale(1); opacity: 0.5; }
+  50%     { transform: scale(1.15); opacity: 0.75; }
+}
+
+/* Custom cursor — desktop only */
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+}
+.cursor-dot  { width: 8px; height: 8px; background: #00a89e; z-index: 9999; }
+.cursor-ring {
+  width: 36px; height: 36px;
+  border: 2px solid rgba(0,168,158,0.55);
+  z-index: 9998;
+  background: transparent;
+  transition: width .25s, height .25s;
+}
+body.cursor-hover .cursor-ring { width: 60px; height: 60px; }
+@media (max-width: 768px) { .cursor-dot, .cursor-ring { display: none; } }
+
+/* Manifesto word initial state */
+.word-reveal { opacity: 0.08; display: inline; }
