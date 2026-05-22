@@ -24,11 +24,8 @@ const MainHome: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', condition: '' });
   const [contactData, setContactData] = useState({ name: '', phone: '', email: '', message: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedNeed, setSelectedNeed] = useState('');
   const [activeSpecFilter, setActiveSpecFilter] = useState<'destacados' | 'todos'>('destacados');
-  const [assignFormData, setAssignFormData] = useState({ name: '', contact: '', symptoms: '' });
   const [scrollY, setScrollY] = useState(0);
-  const [heroPath, setHeroPath] = useState<'browse' | 'assign' | null>(null);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const heroRef        = useRef<HTMLElement>(null);
   const heroTitleRef   = useRef<HTMLDivElement>(null);
@@ -325,51 +322,35 @@ const MainHome: React.FC = () => {
     setContactData({ name: '', phone: '', email: '', message: '' });
   };
 
-  const handleAssignSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const need = selectedNeed || 'Consulta General';
-    const message = `Hola Clínica Mas Life! Quiero que me asignen un profesional.\n\nÁrea: ${need}\nNombre: ${assignFormData.name}\nContacto: ${assignFormData.contact}\nSíntomas: ${assignFormData.symptoms}`;
-    window.open(`https://wa.me/56965329974?text=${encodeURIComponent(message)}`, '_blank');
-    setAssignFormData({ name: '', contact: '', symptoms: '' });
-  };
-
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const needOptions = [
-    { label: 'Salud Mental y Emocional', icon: 'psychology', value: 'Salud Mental y Emocional' },
-    { label: 'Recuperación Física', icon: 'fitness_center', value: 'Recuperación Física' },
-    { label: 'Hábitos y Nutrición', icon: 'restaurant', value: 'Hábitos y Nutrición' },
-    { label: 'Consulta General', icon: 'local_hospital', value: 'Consulta General' },
-  ];
-
   return (
-    <div id="main-home-scroll" className="landing-page w-full h-full overflow-y-auto font-outfit scroll-smooth relative" style={{ background: '#f4f1ea', color: '#1c2b27' }}>
+    <div id="main-home-scroll" className="landing-page w-full h-full overflow-y-auto font-outfit scroll-smooth relative" style={{ background: '#ffffff', color: '#0f172a' }}>
 
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-[6vw]"
         style={{
           height: '76px',
-          mixBlendMode: scrollY > 80 ? 'normal' : 'difference',
-          color: '#fff',
-          background: scrollY > 80 ? 'rgba(244,241,234,0.92)' : 'transparent',
-          backdropFilter: scrollY > 80 ? 'blur(16px)' : 'none',
-          borderBottom: scrollY > 80 ? '1px solid rgba(28,43,39,0.08)' : 'none',
-          transition: 'background .35s, backdrop-filter .35s',
+          color: scrollY > 80 ? '#0f172a' : '#0f172a',
+          background: scrollY > 80 ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.6)',
+          backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid rgba(14,165,233,0.1)',
+          transition: 'background .35s',
         }}
       >
         {/* Logo */}
         <div
           className="flex items-center cursor-pointer shrink-0"
           onClick={() => scrollToSection('hero')}
-          style={{ color: scrollY > 80 ? '#1c2b27' : 'inherit' }}
+          style={{ color: scrollY > 80 ? '#0f172a' : 'inherit' }}
         >
           <img src={logoClinica} alt="Clínica Mas Life"
-            className="h-10 w-auto object-contain"
-            style={{ filter: scrollY > 80 ? 'none' : 'brightness(0) invert(1)' }}
+            className="h-14 w-auto object-contain"
+            style={{ filter: scrollY > 80 ? 'none' : 'none' }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
           <span className="hidden font-display text-lg font-light tracking-wide ml-2">AgendaMás<span style={{ opacity:.6 }}>Life</span></span>
@@ -408,7 +389,7 @@ const MainHome: React.FC = () => {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 pt-[76px] flex flex-col" style={{ background: '#f4f1ea' }}>
+        <div className="fixed inset-0 z-40 pt-[76px] flex flex-col" style={{ background: '#ffffff' }}>
           <div className="px-8 py-8 space-y-6">
             {[
               { label: 'Cómo funciona', id: 'como-funciona' },
@@ -416,14 +397,14 @@ const MainHome: React.FC = () => {
               { label: 'Planes', id: 'planes' },
             ].map(({ label, id }) => (
               <button key={id} onClick={() => { scrollToSection(id); setMobileMenuOpen(false); }}
-                className="w-full text-left font-display text-3xl font-light tracking-tight" style={{ color: '#1c2b27' }}>
+                className="w-full text-left font-display text-3xl font-light tracking-tight" style={{ color: '#0f172a' }}>
                 {label}
               </button>
             ))}
-            <div className="pt-4 border-t" style={{ borderColor: 'rgba(28,43,39,0.12)' }}>
+            <div className="pt-4 border-t" style={{ borderColor: 'rgba(15,23,42,0.12)' }}>
               <button onClick={() => { navigate('/pro/login'); setMobileMenuOpen(false); }}
                 className="w-full py-4 rounded-2xl text-sm font-semibold text-white text-center"
-                style={{ background: '#3a5a4d' }}>
+                style={{ background: '#0284c7' }}>
                 Portal Profesional
               </button>
             </div>
@@ -433,40 +414,41 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
       <section ref={heroRef} id="hero" className="relative min-h-screen flex items-center overflow-hidden"
-               style={{ background: '#ebe6db' }}>
-        {/* Capa de gradiente base */}
+               style={{ background: '#ffffff' }}>
+        {/* Gradiente de fondo — blanco → celeste suave */}
         <div className="absolute inset-0 pointer-events-none" style={{
-          background: `radial-gradient(ellipse 80% 60% at 50% 120%, rgba(92,131,116,.30), transparent 70%),
-                       radial-gradient(ellipse 60% 50% at 80% 0%, rgba(201,169,106,.22), transparent 60%),
-                       #ebe6db`
+          background: `radial-gradient(ellipse 90% 70% at 60% 100%, rgba(14,165,233,.18), transparent 65%),
+                       radial-gradient(ellipse 50% 60% at 90% 10%, rgba(6,182,212,.14), transparent 55%),
+                       radial-gradient(ellipse 70% 50% at 10% 80%, rgba(56,189,248,.10), transparent 60%),
+                       #ffffff`
         }} />
-        {/* Blobs de parallax */}
+        {/* Blobs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
-          <div className="absolute -top-16 -left-16 w-[420px] h-[420px] rounded-full"
-               style={{ background: '#5c8374', filter: 'blur(40px)', opacity: .45, animation: 'blobFloat 8s ease-in-out infinite' }} />
-          <div className="absolute bottom-[4%] -right-[4%] w-[340px] h-[340px] rounded-full"
-               style={{ background: '#c9a96a', filter: 'blur(40px)', opacity: .35, animation: 'blobFloat 11s ease-in-out infinite reverse' }} />
+          <div className="absolute -top-16 -left-16 w-[380px] h-[380px] rounded-full"
+               style={{ background: '#bae6fd', filter: 'blur(72px)', opacity: .5, animation: 'blobFloat 8s ease-in-out infinite' }} />
+          <div className="absolute bottom-[4%] -right-[4%] w-[300px] h-[300px] rounded-full"
+               style={{ background: '#a5f3fc', filter: 'blur(60px)', opacity: .4, animation: 'blobFloat 11s ease-in-out infinite reverse' }} />
         </div>
 
         {/* Contenido */}
         <div className="relative z-10 max-w-7xl mx-auto px-[6vw] pt-32 sm:pt-40 pb-28 w-full">
           <div className="max-w-3xl">
-            <p className="text-[.78rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#3a5a4d' }}>
-              Agenda clínica inteligente
+            <p className="text-[.78rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#0284c7' }}>
+              Agenda clínica inteligente · Región de Coquimbo
             </p>
 
-            {/* Título Fraunces con words animadas */}
+            {/* Título Fraunces */}
             <div ref={heroTitleRef} className="mb-8" style={{ overflow: 'hidden' }}>
-              <div className="font-display text-[clamp(3rem,8.5vw,6.8rem)] leading-[.96] tracking-tight" style={{ color: '#1c2b27' }}>
+              <div className="font-display text-[clamp(3rem,8.5vw,6.8rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
                 {[
-                  { text: 'El cuidado', italic: false },
-                  { text: 'que ', italic: false },
-                  { text: 'fluye.', italic: true },
+                  { text: 'Tu salud,', italic: false },
+                  { text: 'en buenas', italic: false },
+                  { text: 'manos.', italic: true },
                 ].map((line, li) => (
                   <div key={li} className="overflow-hidden">
                     <span className="hero-word inline-block" style={{ transform: 'translateY(110%)', opacity: 0 }}>
                       {line.italic
-                        ? <>{line.text.replace(' ', '')}<em style={{ color: '#5c8374', fontStyle: 'italic' }}>fluye.</em></>
+                        ? <em style={{ color: '#0284c7', fontStyle: 'italic' }}>manos.</em>
                         : line.text
                       }
                     </span>
@@ -475,91 +457,59 @@ const MainHome: React.FC = () => {
               </div>
             </div>
 
-            <p className="font-outfit font-light text-base sm:text-lg max-w-md leading-relaxed mb-10" style={{ color: '#44574f' }}>
-              La plataforma que conecta profesionales de la salud y pacientes en{' '}
-              <strong className="font-semibold" style={{ color: '#1c2b27' }}>Ovalle, Coquimbo y La Serena</strong>{' '}
-              con una agenda que respira calma, no caos.
+            <p className="font-outfit font-light text-base sm:text-lg max-w-md leading-relaxed mb-10" style={{ color: '#475569' }}>
+              Kinesiología, psicología, nutrición y más — con profesionales verificados en{' '}
+              <strong className="font-semibold" style={{ color: '#0f172a' }}>Ovalle, Coquimbo y La Serena</strong>.
+              Presencial, online o a domicilio.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+            <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => navigate('/patient/results')}
                 className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold transition-all duration-300 hover:-translate-y-1"
-                style={{ background: '#3a5a4d', color: '#fff', boxShadow: '0 20px 50px -16px rgba(58,90,77,.55)' }}>
-                Explorar especialistas
-                <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', color: '#fff', boxShadow: '0 20px 50px -16px rgba(2,132,199,.55)' }}>
+                Buscar especialista
+                <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">search</span>
               </button>
               <button
-                onClick={() => setHeroPath(heroPath === 'assign' ? null : 'assign')}
+                onClick={() => setIsGeneralFormOpen(true)}
                 className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold border transition-all duration-300 hover:-translate-y-1"
                 style={{
-                  background: heroPath === 'assign' ? '#5c8374' : 'rgba(92,131,116,.08)',
-                  color: heroPath === 'assign' ? '#fff' : '#3a5a4d',
-                  borderColor: heroPath === 'assign' ? '#5c8374' : 'rgba(92,131,116,.35)',
+                  background: 'rgba(14,165,233,.07)',
+                  color: '#0284c7',
+                  borderColor: 'rgba(14,165,233,.3)',
                 }}>
-                <span className="material-icons-round text-base">auto_awesome</span>
-                {heroPath === 'assign' ? 'Cerrar' : 'Ser asignado'}
+                <span className="material-icons-round text-base">calendar_month</span>
+                Agendar atención
               </button>
             </div>
 
-            {/* Inline assignment form */}
-            {heroPath === 'assign' && (
-              <div className="max-w-lg" style={{ animation: 'fadeIn .35s ease-out' }}>
-                <form onSubmit={handleAssignSubmit} className="rounded-3xl border p-6 space-y-3"
-                      style={{ background: 'rgba(255,255,255,.65)', backdropFilter: 'blur(16px)', borderColor: 'rgba(28,43,39,.12)', boxShadow: '0 24px 60px -20px rgba(28,43,39,.2)' }}>
-                  <p className="font-display font-light text-lg" style={{ color: '#1c2b27' }}>Te asignamos al profesional ideal</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {needOptions.map(opt => (
-                      <button type="button" key={opt.value} onClick={() => setSelectedNeed(opt.value)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all"
-                        style={{
-                          background: selectedNeed === opt.value ? '#3a5a4d' : 'rgba(92,131,116,.06)',
-                          color: selectedNeed === opt.value ? '#fff' : '#44574f',
-                          borderColor: selectedNeed === opt.value ? '#3a5a4d' : 'rgba(92,131,116,.2)',
-                        }}>
-                        <span className="material-icons-round text-sm">{opt.icon}</span>
-                        <span className="leading-tight">{opt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                  {[
-                    { val: 'name', ph: 'Tu nombre...' },
-                    { val: 'contact', ph: 'WhatsApp o email...' },
-                  ].map(({ val, ph }) => (
-                    <input key={val} required
-                      value={(assignFormData as any)[val]}
-                      onChange={e => setAssignFormData({ ...assignFormData, [val]: e.target.value })}
-                      className="w-full rounded-2xl py-3 px-4 text-sm border outline-none transition-all"
-                      style={{ background: 'rgba(244,241,234,.8)', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }}
-                      placeholder={ph} />
-                  ))}
-                  <textarea required value={assignFormData.symptoms}
-                    onChange={e => setAssignFormData({ ...assignFormData, symptoms: e.target.value })}
-                    className="w-full rounded-2xl py-3 px-4 text-sm border outline-none resize-none h-20"
-                    style={{ background: 'rgba(244,241,234,.8)', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }}
-                    placeholder="¿Qué necesitas? Describe tu situación..." />
-                  <button type="submit"
-                    className="w-full py-3.5 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:opacity-90"
-                    style={{ background: '#3a5a4d', color: '#fff' }}>
-                    <span className="material-icons-round text-base">send</span>
-                    Enviar y ser contactado
-                  </button>
-                </form>
-              </div>
-            )}
+            {/* Trust badges */}
+            <div className="mt-10 flex flex-wrap gap-4">
+              {[
+                { icon: 'verified', label: 'Profesionales verificados' },
+                { icon: 'home', label: 'Atención a domicilio' },
+                { icon: 'videocam', label: 'Consulta online' },
+              ].map(({ icon, label }) => (
+                <div key={label} className="flex items-center gap-2 text-xs font-medium" style={{ color: '#475569' }}>
+                  <span className="material-icons-round text-sm" style={{ color: '#0ea5e9' }}>{icon}</span>
+                  {label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Scroll indicator */}
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 pointer-events-none">
-          <span className="font-outfit text-[.7rem] uppercase tracking-[3px]" style={{ color: '#44574f', opacity: .6 }}>Desliza</span>
-          <div style={{ width: 1, height: 44, background: '#44574f', opacity: .35, animation: 'scrollBounce 2.4s ease-in-out infinite', transformOrigin: 'top' }} />
+          <span className="font-outfit text-[.7rem] uppercase tracking-[3px]" style={{ color: '#475569', opacity: .6 }}>Desliza</span>
+          <div style={{ width: 1, height: 44, background: '#0ea5e9', opacity: .45, animation: 'scrollBounce 2.4s ease-in-out infinite', transformOrigin: 'top' }} />
         </div>
       </section>
 
       {/* ═══════════════════ STATS BAR ═══════════════════ */}
-      <div className="py-10 px-5 sm:px-8" style={{ background: '#3a5a4d' }}>
+      <div className="py-12 px-5 sm:px-8" style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #0ea5e9 100%)' }}>
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
             { num: '500+', label: 'Sesiones Realizadas' },
@@ -569,20 +519,20 @@ const MainHome: React.FC = () => {
           ].map((stat, i) => (
             <div key={i} data-reveal={`stat-${i}`} className={`text-center ${rv(`stat-${i}`)}`} style={{ transitionDelay: `${i * 100}ms` }}>
               <p className="font-display font-light text-3xl sm:text-4xl tracking-tight text-white">{stat.num}</p>
-              <p className="font-outfit text-[.72rem] uppercase tracking-[2px] mt-1" style={{ color: 'rgba(201,169,106,.85)' }}>{stat.label}</p>
+              <p className="font-outfit text-[.72rem] uppercase tracking-[2px] mt-1" style={{ color: 'rgba(186,230,253,.85)' }}>{stat.label}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* ═══════════════════ MANIFESTO ═══════════════════ */}
-      <section className="overflow-hidden" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center', padding: '18vh 6vw', background: '#f4f1ea' }}>
+      <section className="overflow-hidden" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center', padding: '18vh 6vw', background: '#ffffff' }}>
         <div className="max-w-5xl">
-          <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-7" style={{ color: '#5c8374' }}>Filosofía</p>
+          <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-7" style={{ color: '#0ea5e9' }}>Filosofía</p>
           <div
             ref={manifestoRef}
             className="font-display font-light leading-[1.3]"
-            style={{ fontSize: 'clamp(1.65rem,4.2vw,3.2rem)', letterSpacing: '-.4px', color: '#1c2b27' }}
+            style={{ fontSize: 'clamp(1.65rem,4.2vw,3.2rem)', letterSpacing: '-.4px', color: '#0f172a' }}
           >
             {"AgendaMasLife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
               <span key={i} className="word-reveal"> {word}</span>
@@ -593,18 +543,18 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ IMAGE EXPANSION ═══════════════════ */}
       <div ref={expansionWrap} className="relative hidden md:block" style={{ height: '200vh' }}>
-        <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden" style={{ background: '#1c2b27' }}>
+        <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden" style={{ background: '#0f172a' }}>
           <p className="absolute top-10 left-1/2 -translate-x-1/2 font-outfit text-[.72rem] uppercase tracking-[3px] z-20 whitespace-nowrap"
-             style={{ color: 'rgba(201,169,106,.45)' }}>
+             style={{ color: 'rgba(6,182,212,.45)' }}>
             Una sola pantalla
           </p>
           <div
             ref={expansionRef}
             className="relative overflow-hidden"
-            style={{ width: '42vw', height: '54vh', borderRadius: '18px', boxShadow: '0 40px 90px -30px rgba(28,43,39,.6)' }}
+            style={{ width: '42vw', height: '54vh', borderRadius: '18px', boxShadow: '0 40px 90px -30px rgba(15,23,42,.6)' }}
           >
             {/* Header mockup */}
-            <div className="px-5 py-3.5 flex items-center justify-between shrink-0" style={{ background: '#3a5a4d' }}>
+            <div className="px-5 py-3.5 flex items-center justify-between shrink-0" style={{ background: '#0284c7' }}>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,.2)' }}>
                   <span className="material-icons-round text-white text-xs">event_available</span>
@@ -616,51 +566,51 @@ const MainHome: React.FC = () => {
               </div>
             </div>
             {/* Body mockup */}
-            <div className="p-5 overflow-hidden" style={{ height: 'calc(100% - 48px)', background: '#f4f1ea' }}>
-              <p className="font-outfit text-[.65rem] uppercase tracking-[2px] mb-3" style={{ color: '#44574f' }}>Especialidades</p>
+            <div className="p-5 overflow-hidden" style={{ height: 'calc(100% - 48px)', background: '#f0f9ff' }}>
+              <p className="font-outfit text-[.65rem] uppercase tracking-[2px] mb-3" style={{ color: '#475569' }}>Especialidades</p>
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {[
-                  ['Kinesiología', '#5c8374', 'accessibility_new'],
-                  ['Psicología', '#3a5a4d', 'psychology'],
-                  ['Nutrición', '#c9a96a', 'restaurant'],
-                  ['Fonoaudiología', '#44574f', 'record_voice_over'],
+                  ['Kinesiología', '#0ea5e9', 'accessibility_new'],
+                  ['Psicología', '#0284c7', 'psychology'],
+                  ['Nutrición', '#06b6d4', 'restaurant'],
+                  ['Fonoaudiología', '#475569', 'record_voice_over'],
                 ].map(([s, c, icon], i) => (
-                  <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-2" style={{ border: '1px solid rgba(28,43,39,.1)' }}>
+                  <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-2" style={{ border: '1px solid rgba(15,23,42,.1)' }}>
                     <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center" style={{ background: c as string }}>
                       <span className="material-icons-round text-white text-sm">{icon as string}</span>
                     </div>
-                    <p className="font-outfit text-[.68rem] font-medium" style={{ color: '#1c2b27' }}>{s as string}</p>
+                    <p className="font-outfit text-[.68rem] font-medium" style={{ color: '#0f172a' }}>{s as string}</p>
                   </div>
                 ))}
               </div>
-              <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(92,131,116,.1)', border: '1px solid rgba(92,131,116,.25)' }}>
-                <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center" style={{ background: '#5c8374' }}>
+              <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(14,165,233,.1)', border: '1px solid rgba(14,165,233,.25)' }}>
+                <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center" style={{ background: '#0ea5e9' }}>
                   <span className="material-icons-round text-white text-base">bolt</span>
                 </div>
                 <div>
-                  <p className="font-outfit text-xs font-medium" style={{ color: '#1c2b27' }}>Reserva en 3 pasos</p>
-                  <p className="font-outfit text-[.65rem]" style={{ color: '#44574f' }}>Especialidad → Horario → Confirmación</p>
+                  <p className="font-outfit text-xs font-medium" style={{ color: '#0f172a' }}>Reserva en 3 pasos</p>
+                  <p className="font-outfit text-[.65rem]" style={{ color: '#475569' }}>Especialidad → Horario → Confirmación</p>
                 </div>
               </div>
             </div>
           </div>
           {/* Caption */}
           <div className="absolute left-[6vw] bottom-[8vh] z-10 max-w-xs">
-            <p className="font-outfit text-[.72rem] uppercase tracking-[3px] mb-2" style={{ color: 'rgba(201,169,106,.65)' }}>Tu consulta</p>
+            <p className="font-outfit text-[.72rem] uppercase tracking-[3px] mb-2" style={{ color: 'rgba(6,182,212,.65)' }}>Tu consulta</p>
             <h3 className="font-display font-light text-white leading-[1.05]" style={{ fontSize: 'clamp(1.6rem,2.5vw,2.4rem)' }}>Toda en calma.</h3>
           </div>
         </div>
       </div>
 
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
-      <section id="como-funciona" style={{ padding: '16vh 6vw', background: '#f4f1ea' }}>
+      <section id="como-funciona" style={{ padding: '16vh 6vw', background: '#f8faff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="max-w-xl mb-[9vh]">
-            <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#5c8374' }}>Proceso simple</p>
-            <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#1c2b27' }}>
-              Menos administración.<br /><em style={{ color: '#5c8374', fontStyle: 'italic' }}>Más presencia.</em>
+            <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Proceso simple</p>
+            <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#0f172a' }}>
+              Menos administración.<br /><em style={{ color: '#0ea5e9', fontStyle: 'italic' }}>Más presencia.</em>
             </h2>
-            <p className="font-outfit font-light text-base mt-5 leading-relaxed" style={{ color: '#44574f' }}>
+            <p className="font-outfit font-light text-base mt-5 leading-relaxed" style={{ color: '#475569' }}>
               Domicilio · Online · Presencial — en Ovalle, Coquimbo y La Serena.
             </p>
           </div>
@@ -674,23 +624,23 @@ const MainHome: React.FC = () => {
               <div key={i} data-reveal={`step-${i}`}
                 className={`feature-card relative bg-white rounded-[18px] p-10 border transition-all duration-500 ${rv(`step-${i}`)}`}
                 style={{
-                  borderColor: 'rgba(28,43,39,.1)',
+                  borderColor: 'rgba(15,23,42,.1)',
                   boxShadow: 'none',
                   transitionDelay: `${i * 150}ms`,
                   cursor: 'default',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-8px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 30px 60px -30px rgba(28,43,39,.25)'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-8px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 30px 60px -30px rgba(15,23,42,.25)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
               >
                 {/* Número decorativo */}
-                <span className="absolute top-5 right-6 font-display font-light select-none" style={{ fontSize: '3.5rem', color: 'rgba(28,43,39,.06)', lineHeight: 1 }}>{step.step}</span>
+                <span className="absolute top-5 right-6 font-display font-light select-none" style={{ fontSize: '3.5rem', color: 'rgba(15,23,42,.06)', lineHeight: 1 }}>{step.step}</span>
                 {/* Icono */}
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-2" style={{ background: '#ebe6db' }}>
-                  <span className="material-icons-round text-xl" style={{ color: '#3a5a4d' }}>{step.icon}</span>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-2" style={{ background: '#e0f2fe' }}>
+                  <span className="material-icons-round text-xl" style={{ color: '#0284c7' }}>{step.icon}</span>
                 </div>
-                <p className="font-outfit text-[.78rem] tracking-[2px] uppercase mb-4" style={{ color: '#c9a96a' }}>{step.step}</p>
-                <h4 className="font-display font-light text-xl mb-3 leading-tight" style={{ color: '#1c2b27' }}>{step.title}</h4>
-                <p className="font-outfit font-light text-[.93rem] leading-[1.65]" style={{ color: '#44574f' }}>{step.desc}</p>
+                <p className="font-outfit text-[.78rem] tracking-[2px] uppercase mb-4" style={{ color: '#06b6d4' }}>{step.step}</p>
+                <h4 className="font-display font-light text-xl mb-3 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h4>
+                <p className="font-outfit font-light text-[.93rem] leading-[1.65]" style={{ color: '#475569' }}>{step.desc}</p>
               </div>
             ))}
           </div>
@@ -698,29 +648,29 @@ const MainHome: React.FC = () => {
       </section>
 
       {/* ═══════════════════ ÁREAS PROFESIONALES ═══════════════════ */}
-      <section id="especialidades" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#ebe6db' }}>
+      <section id="especialidades" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#ffffff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
             <div>
-              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-3" style={{ color: '#5c8374' }}>Nuestro equipo</p>
-              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#1c2b27' }}>Selecciona un área y agenda</h2>
-              <p className="font-outfit text-sm font-light mt-1" style={{ color: '#44574f' }}>con un profesional directamente</p>
+              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-3" style={{ color: '#0ea5e9' }}>Nuestro equipo</p>
+              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Selecciona un área y agenda</h2>
+              <p className="font-outfit text-sm font-light mt-1" style={{ color: '#475569' }}>con un profesional directamente</p>
             </div>
-            <div className="flex rounded-full p-1 border" style={{ background: 'rgba(255,255,255,.5)', borderColor: 'rgba(28,43,39,.12)' }}>
+            <div className="flex rounded-full p-1 border" style={{ background: 'rgba(255,255,255,.5)', borderColor: 'rgba(15,23,42,.12)' }}>
               <button
                 onClick={() => setActiveSpecFilter('destacados')}
                 className="px-5 py-2 rounded-full text-xs font-medium transition-all"
                 style={{
-                  background: activeSpecFilter === 'destacados' ? '#3a5a4d' : 'transparent',
-                  color: activeSpecFilter === 'destacados' ? '#fff' : '#44574f',
+                  background: activeSpecFilter === 'destacados' ? '#0284c7' : 'transparent',
+                  color: activeSpecFilter === 'destacados' ? '#fff' : '#475569',
                 }}
               >Destacados</button>
               <button
                 onClick={() => setActiveSpecFilter('todos')}
                 className="px-5 py-2 rounded-full text-xs font-medium transition-all"
                 style={{
-                  background: activeSpecFilter === 'todos' ? '#3a5a4d' : 'transparent',
-                  color: activeSpecFilter === 'todos' ? '#fff' : '#44574f',
+                  background: activeSpecFilter === 'todos' ? '#0284c7' : 'transparent',
+                  color: activeSpecFilter === 'todos' ? '#fff' : '#475569',
                 }}
               >
                 Todos
@@ -736,17 +686,17 @@ const MainHome: React.FC = () => {
               { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600', alt: 'Enfermera tomando signos vitales atención a domicilio', cta: 'Buscar Profesional' },
             ])).map((card, i) => (
               <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer"
-                   style={{ border: '1px solid rgba(28,43,39,.1)', boxShadow: 'none' }}
-                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 24px 48px -18px rgba(28,43,39,.22)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; }}
+                   style={{ border: '1px solid rgba(15,23,42,.1)', boxShadow: 'none' }}
+                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 24px 48px -18px rgba(15,23,42,.22)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; }}
                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                    onClick={() => navigate('/patient/results')}>
                 <div className="aspect-[4/3] overflow-hidden">
                   <img src={card.img} alt={card.alt || card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4 sm:p-5">
-                  <h4 className="font-display font-light text-sm sm:text-base mb-1 leading-snug" style={{ color: '#1c2b27' }}>{card.name}</h4>
-                  <p className="font-outfit text-xs sm:text-sm font-light leading-relaxed mb-3 line-clamp-2" style={{ color: '#44574f' }}>{card.desc}</p>
-                  <button className="flex items-center gap-1.5 text-xs font-medium transition-all group-hover:gap-2.5" style={{ color: '#5c8374' }}>
+                  <h4 className="font-display font-light text-sm sm:text-base mb-1 leading-snug" style={{ color: '#0f172a' }}>{card.name}</h4>
+                  <p className="font-outfit text-xs sm:text-sm font-light leading-relaxed mb-3 line-clamp-2" style={{ color: '#475569' }}>{card.desc}</p>
+                  <button className="flex items-center gap-1.5 text-xs font-medium transition-all group-hover:gap-2.5" style={{ color: '#0ea5e9' }}>
                     {card.cta}
                     <span className="material-icons-round text-sm">arrow_forward</span>
                   </button>
@@ -760,14 +710,14 @@ const MainHome: React.FC = () => {
             <div className="mt-10 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
               {services.map((s, i) => (
                 <div key={i} className="bg-white p-4 sm:p-5 rounded-2xl flex flex-col items-center text-center cursor-pointer group transition-all duration-300"
-                     style={{ border: '1px solid rgba(28,43,39,.1)' }}
-                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px -12px rgba(28,43,39,.18)'; }}
+                     style={{ border: '1px solid rgba(15,23,42,.1)' }}
+                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px -12px rgba(15,23,42,.18)'; }}
                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
                      onClick={() => navigate('/patient/results')}>
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform" style={{ background: '#ebe6db' }}>
-                    <span className="material-icons-round text-2xl" style={{ color: '#3a5a4d' }}>{s.icon}</span>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform" style={{ background: '#e0f2fe' }}>
+                    <span className="material-icons-round text-2xl" style={{ color: '#0284c7' }}>{s.icon}</span>
                   </div>
-                  <h4 className="font-outfit text-[10px] sm:text-xs font-medium leading-tight" style={{ color: '#1c2b27' }}>{s.name}</h4>
+                  <h4 className="font-outfit text-[10px] sm:text-xs font-medium leading-tight" style={{ color: '#0f172a' }}>{s.name}</h4>
                 </div>
               ))}
             </div>
@@ -777,14 +727,14 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ PLANES KINESIOLÓGICOS (CONDICIONAL) ═══════════════════ */}
       {showKinePlans && (
-        <section id="kine-plans" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#f4f1ea', animation: 'fadeIn .5s ease-out' }}>
+        <section id="kine-plans" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#f8faff', animation: 'fadeIn .5s ease-out' }}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
-              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#5c8374' }}>Atención a domicilio</p>
-              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.4rem)', letterSpacing: '-1px', color: '#1c2b27' }}>
+              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Atención a domicilio</p>
+              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.4rem)', letterSpacing: '-1px', color: '#0f172a' }}>
                 Planes Kinesiológicos a Domicilio
               </h2>
-              <p className="font-outfit font-light text-base sm:text-lg max-w-2xl mx-auto mt-4" style={{ color: '#44574f' }}>Rehabilitación kinesiológica profesional en casa, reembolsable por seguros e Isapre.</p>
+              <p className="font-outfit font-light text-base sm:text-lg max-w-2xl mx-auto mt-4" style={{ color: '#475569' }}>Rehabilitación kinesiológica profesional en casa, reembolsable por seguros e Isapre.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
@@ -793,28 +743,28 @@ const MainHome: React.FC = () => {
                 return (
                   <div key={i} className="bg-white rounded-3xl p-8 sm:p-10 flex flex-col h-full relative group transition-all duration-300"
                        style={{
-                         border: isFeatured ? '2px solid #3a5a4d' : '1px solid rgba(28,43,39,.12)',
-                         boxShadow: isFeatured ? '0 32px 64px -24px rgba(58,90,77,.35)' : 'none',
+                         border: isFeatured ? '2px solid #0284c7' : '1px solid rgba(15,23,42,.12)',
+                         boxShadow: isFeatured ? '0 32px 64px -24px rgba(2,132,199,.35)' : 'none',
                          transform: isFeatured ? 'scale(1.02)' : 'scale(1)',
                        }}
-                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 32px 64px -24px rgba(28,43,39,.28)'; }}
-                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = isFeatured ? '0 32px 64px -24px rgba(58,90,77,.35)' : 'none'; }}
+                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 32px 64px -24px rgba(15,23,42,.28)'; }}
+                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = isFeatured ? '0 32px 64px -24px rgba(2,132,199,.35)' : 'none'; }}
                   >
                     {plan.badge && (
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white px-6 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg whitespace-nowrap"
-                           style={{ background: '#3a5a4d' }}>
+                           style={{ background: '#0284c7' }}>
                         {plan.badge}
                       </div>
                     )}
                     <div className="mb-8">
-                      <h3 className="font-display font-light text-xl mb-3" style={{ color: '#1c2b27' }}>{plan.name}</h3>
-                      <p className="font-outfit text-sm font-light" style={{ color: '#44574f' }}>{plan.desc}</p>
+                      <h3 className="font-display font-light text-xl mb-3" style={{ color: '#0f172a' }}>{plan.name}</h3>
+                      <p className="font-outfit text-sm font-light" style={{ color: '#475569' }}>{plan.desc}</p>
                     </div>
 
                     <ul className="space-y-3 mb-8 flex-1">
                       {plan.features.map((feat, idx) => (
-                        <li key={idx} className="flex items-center gap-3 font-outfit text-sm" style={{ color: '#44574f' }}>
-                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(92,131,116,.15)', color: '#3a5a4d' }}>
+                        <li key={idx} className="flex items-center gap-3 font-outfit text-sm" style={{ color: '#475569' }}>
+                          <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(14,165,233,.15)', color: '#0284c7' }}>
                             <span className="material-icons-round text-xs">check</span>
                           </div>
                           {feat}
@@ -826,11 +776,11 @@ const MainHome: React.FC = () => {
                       onClick={() => setShowPlanForm({ isOpen: true, planName: plan.name })}
                       className="w-full py-4 rounded-2xl font-semibold text-sm transition-all active:scale-95"
                       style={isFeatured
-                        ? { background: '#3a5a4d', color: '#fff', border: 'none' }
-                        : { background: 'transparent', color: '#1c2b27', border: '2px solid rgba(28,43,39,.25)' }
+                        ? { background: '#0284c7', color: '#fff', border: 'none' }
+                        : { background: 'transparent', color: '#0f172a', border: '2px solid rgba(15,23,42,.25)' }
                       }
-                      onMouseEnter={e => { if (!isFeatured) { (e.currentTarget as HTMLButtonElement).style.background = '#1c2b27'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; } }}
-                      onMouseLeave={e => { if (!isFeatured) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#1c2b27'; } }}
+                      onMouseEnter={e => { if (!isFeatured) { (e.currentTarget as HTMLButtonElement).style.background = '#0f172a'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; } }}
+                      onMouseLeave={e => { if (!isFeatured) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#0f172a'; } }}
                     >
                       {plan.badge ? 'Comenzar Rehabilitación' : 'Solicitar Plan'}
                     </button>
@@ -843,11 +793,11 @@ const MainHome: React.FC = () => {
       )}
 
       {/* ═══════════════════ TESTIMONIOS CARRUSEL ═══════════════════ */}
-      <section className="px-5 sm:px-8 py-20 sm:py-28 overflow-hidden" style={{ background: '#f4f1ea' }}>
+      <section className="px-5 sm:px-8 py-20 sm:py-28 overflow-hidden" style={{ background: '#f0f9ff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-12">
-            <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#5c8374' }}>Testimonios reales</p>
-            <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#1c2b27' }}>Lo que dicen nuestros pacientes</h2>
+            <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Testimonios reales</p>
+            <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Lo que dicen nuestros pacientes</h2>
           </div>
 
           {/* Carrusel */}
@@ -860,20 +810,20 @@ const MainHome: React.FC = () => {
                 {Array.from({ length: maxIndex + 1 }).map((_, pageIdx) => (
                   <div key={pageIdx} className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-5 px-1">
                     {testimonials.slice(pageIdx * testimonialsPerView, pageIdx * testimonialsPerView + testimonialsPerView).map((t, i) => (
-                      <div key={i} className="bg-white rounded-2xl p-6 sm:p-7" style={{ border: '1px solid rgba(28,43,39,.09)' }}>
-                        <div className="flex gap-0.5 mb-4" style={{ color: '#c9a96a' }}>
+                      <div key={i} className="bg-white rounded-2xl p-6 sm:p-7" style={{ border: '1px solid rgba(15,23,42,.09)' }}>
+                        <div className="flex gap-0.5 mb-4" style={{ color: '#06b6d4' }}>
                           {Array.from({ length: t.stars }).map((_, s) => (
                             <span key={s} className="material-icons-round text-sm">star</span>
                           ))}
                         </div>
-                        <p className="font-outfit font-light text-sm leading-relaxed mb-5 italic line-clamp-4" style={{ color: '#44574f' }}>"{t.text}"</p>
+                        <p className="font-outfit font-light text-sm leading-relaxed mb-5 italic line-clamp-4" style={{ color: '#475569' }}>"{t.text}"</p>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(92,131,116,.15)' }}>
-                            <span className="font-bold text-xs" style={{ color: '#3a5a4d' }}>{t.name.charAt(0)}</span>
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(14,165,233,.15)' }}>
+                            <span className="font-bold text-xs" style={{ color: '#0284c7' }}>{t.name.charAt(0)}</span>
                           </div>
                           <div>
-                            <p className="font-outfit text-sm font-semibold" style={{ color: '#1c2b27' }}>{t.name}</p>
-                            <p className="font-outfit text-[10px] font-medium uppercase tracking-wider" style={{ color: '#5c8374' }}>{t.role}</p>
+                            <p className="font-outfit text-sm font-semibold" style={{ color: '#0f172a' }}>{t.name}</p>
+                            <p className="font-outfit text-[10px] font-medium uppercase tracking-wider" style={{ color: '#0ea5e9' }}>{t.role}</p>
                           </div>
                         </div>
                       </div>
@@ -890,7 +840,7 @@ const MainHome: React.FC = () => {
                   key={i}
                   onClick={() => setTestimonialIndex(i)}
                   className="h-2 rounded-full transition-all duration-300"
-                  style={{ width: i === testimonialIndex ? '2rem' : '.5rem', background: i === testimonialIndex ? '#3a5a4d' : 'rgba(28,43,39,.2)' }}
+                  style={{ width: i === testimonialIndex ? '2rem' : '.5rem', background: i === testimonialIndex ? '#0284c7' : 'rgba(15,23,42,.2)' }}
                 />
               ))}
             </div>
@@ -899,48 +849,51 @@ const MainHome: React.FC = () => {
             <button
               onClick={() => setTestimonialIndex(prev => prev > 0 ? prev - 1 : maxIndex)}
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 rounded-full flex items-center justify-center transition-all hidden sm:flex"
-              style={{ background: '#fff', border: '1px solid rgba(28,43,39,.12)', boxShadow: '0 4px 16px -4px rgba(28,43,39,.15)' }}
+              style={{ background: '#fff', border: '1px solid rgba(15,23,42,.12)', boxShadow: '0 4px 16px -4px rgba(15,23,42,.15)' }}
             >
-              <span className="material-icons-round text-lg" style={{ color: '#1c2b27' }}>chevron_left</span>
+              <span className="material-icons-round text-lg" style={{ color: '#0f172a' }}>chevron_left</span>
             </button>
             <button
               onClick={() => setTestimonialIndex(prev => prev < maxIndex ? prev + 1 : 0)}
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 rounded-full flex items-center justify-center transition-all hidden sm:flex"
-              style={{ background: '#fff', border: '1px solid rgba(28,43,39,.12)', boxShadow: '0 4px 16px -4px rgba(28,43,39,.15)' }}
+              style={{ background: '#fff', border: '1px solid rgba(15,23,42,.12)', boxShadow: '0 4px 16px -4px rgba(15,23,42,.15)' }}
             >
-              <span className="material-icons-round text-lg" style={{ color: '#1c2b27' }}>chevron_right</span>
+              <span className="material-icons-round text-lg" style={{ color: '#0f172a' }}>chevron_right</span>
             </button>
           </div>
         </div>
       </section>
 
       {/* ═══════════════════ CTA FINAL ═══════════════════ */}
-      <section className="px-5 sm:px-8 py-24 relative overflow-hidden" style={{ background: '#3a5a4d' }}>
-        {/* Golden glow blob */}
+      <section className="px-5 sm:px-8 py-24 relative overflow-hidden"
+               style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 45%, #0ea5e9 100%)' }}>
+        {/* Glow blobs celestes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] rounded-full"
-               style={{ background: 'rgba(201,169,106,.32)', filter: 'blur(90px)', animation: 'blobPulse 4s ease-in-out infinite' }} />
-          <div className="absolute -top-24 -right-24 w-[320px] h-[320px] rounded-full"
-               style={{ background: 'rgba(92,131,116,.35)', filter: 'blur(60px)', animation: 'blobFloat 9s ease-in-out infinite' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
+               style={{ background: 'rgba(186,230,253,.25)', filter: 'blur(100px)', animation: 'blobPulse 4s ease-in-out infinite' }} />
+          <div className="absolute -bottom-20 -right-20 w-[350px] h-[350px] rounded-full"
+               style={{ background: 'rgba(224,242,254,.2)', filter: 'blur(70px)', animation: 'blobFloat 9s ease-in-out infinite' }} />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-6" style={{ color: 'rgba(201,169,106,.75)' }}>Comienza hoy</p>
-          <h2 className="font-display font-light leading-[1.0] mb-6" style={{ fontSize: 'clamp(2.2rem,6vw,4.5rem)', color: '#f4f1ea', letterSpacing: '-1.5px' }}>
-            ¿Listo para<br /><em style={{ color: '#c9a96a', fontStyle: 'italic' }}>sentirte mejor?</em>
+          <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-6" style={{ color: 'rgba(186,230,253,.85)' }}>Comienza hoy</p>
+          <h2 className="font-display font-light leading-[1.0] mb-6" style={{ fontSize: 'clamp(2.2rem,6vw,4.5rem)', color: '#ffffff', letterSpacing: '-1.5px' }}>
+            ¿Listo para<br /><em style={{ color: '#bae6fd', fontStyle: 'italic' }}>sentirte mejor?</em>
           </h2>
-          <p className="font-outfit font-light text-base sm:text-lg max-w-xl mx-auto mb-10" style={{ color: 'rgba(244,241,234,.7)' }}>Nuestros profesionales certificados están listos para atenderte. Agenda tu primera consulta hoy.</p>
+          <p className="font-outfit font-light text-base sm:text-lg max-w-xl mx-auto mb-10" style={{ color: 'rgba(255,255,255,.75)' }}>
+            Profesionales verificados listos para atenderte. Agenda tu primera consulta hoy.
+          </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
               onClick={() => setIsGeneralFormOpen(true)}
               className="px-8 py-4 rounded-full font-outfit font-semibold text-sm transition-all hover:-translate-y-1"
-              style={{ background: '#f4f1ea', color: '#1c2b27', boxShadow: '0 20px 50px -16px rgba(28,43,39,.5)' }}
+              style={{ background: '#ffffff', color: '#0284c7', boxShadow: '0 20px 50px -16px rgba(3,105,161,.6)' }}
             >
               Agendar Atención
             </button>
             <button
               onClick={() => navigate('/patient/results')}
               className="px-8 py-4 rounded-full font-outfit font-semibold text-sm border transition-all hover:-translate-y-1"
-              style={{ background: 'transparent', color: '#f4f1ea', borderColor: 'rgba(244,241,234,.35)' }}
+              style={{ background: 'rgba(255,255,255,.12)', color: '#ffffff', borderColor: 'rgba(255,255,255,.4)' }}
             >
               Explorar Especialistas
             </button>
@@ -949,7 +902,7 @@ const MainHome: React.FC = () => {
       </section>
 
       {/* ═══════════════════ FOOTER ═══════════════════ */}
-      <footer className="pt-16 sm:pt-20 pb-8 px-5 sm:px-8" style={{ background: '#1c2b27', color: '#f4f1ea' }}>
+      <footer className="pt-16 sm:pt-20 pb-8 px-5 sm:px-8" style={{ background: '#0f172a', color: '#f0f9ff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-10 sm:gap-12 mb-14">
             {/* Brand */}
@@ -957,14 +910,14 @@ const MainHome: React.FC = () => {
               <div className="flex items-center">
                 <img src={logoClinica} alt="Clínica Mas Life" className="h-14 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)', opacity: .85 }} onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
               </div>
-              <p className="font-outfit font-light text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(244,241,234,.55)' }}>
+              <p className="font-outfit font-light text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,.55)' }}>
                 Rediseñando la experiencia de salud a través de la calidez clínica y el compromiso humano.
               </p>
             </div>
 
             {/* Servicios */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#5c8374' }}>Servicios</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Servicios</h4>
               <ul className="space-y-3">
                 {[
                   { label: 'Consulta Guiada', action: () => setIsGeneralFormOpen(true) },
@@ -972,9 +925,9 @@ const MainHome: React.FC = () => {
                   { label: 'Planes', action: handleShowPlans },
                 ].map(({ label, action }) => (
                   <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
-                      style={{ color: 'rgba(244,241,234,.55)' }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f4f1ea'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(244,241,234,.55)'}
+                      style={{ color: 'rgba(255,255,255,.55)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ffffff'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,.55)'}
                       onClick={action}>{label}</li>
                 ))}
               </ul>
@@ -982,7 +935,7 @@ const MainHome: React.FC = () => {
 
             {/* Compañía */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#5c8374' }}>Compañía</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Compañía</h4>
               <ul className="space-y-3">
                 {[
                   { label: 'Método Life', action: () => {} },
@@ -990,9 +943,9 @@ const MainHome: React.FC = () => {
                   { label: 'Portal Profesional', action: () => navigate('/pro/login') },
                 ].map(({ label, action }) => (
                   <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
-                      style={{ color: 'rgba(244,241,234,.55)' }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f4f1ea'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(244,241,234,.55)'}
+                      style={{ color: 'rgba(255,255,255,.55)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ffffff'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,.55)'}
                       onClick={action}>{label}</li>
                 ))}
               </ul>
@@ -1000,33 +953,33 @@ const MainHome: React.FC = () => {
 
             {/* Legal */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#5c8374' }}>Legal</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Legal</h4>
               <ul className="space-y-3">
                 {['Privacidad', 'Términos'].map(label => (
                   <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
-                      style={{ color: 'rgba(244,241,234,.55)' }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f4f1ea'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(244,241,234,.55)'}>{label}</li>
+                      style={{ color: 'rgba(255,255,255,.55)' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ffffff'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,.55)'}>{label}</li>
                 ))}
               </ul>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8" style={{ borderTop: '1px solid rgba(244,241,234,.1)' }}>
-            <p className="font-outfit text-xs" style={{ color: 'rgba(244,241,234,.35)' }}>© 2026 Clínica Mas Life · Ovalle, Coquimbo y La Serena, Chile</p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,.1)' }}>
+            <p className="font-outfit text-xs" style={{ color: 'rgba(255,255,255,.35)' }}>© 2026 Clínica Mas Life · Ovalle, Coquimbo y La Serena, Chile</p>
             <div className="flex gap-3">
               <a href="https://wa.me/56965329974" target="_blank" rel="noreferrer"
                  className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
-                 style={{ background: 'rgba(244,241,234,.08)' }}
-                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,241,234,.15)'}
-                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,241,234,.08)'}>
-                <svg className="w-4 h-4 fill-current" style={{ color: 'rgba(244,241,234,.55)' }} viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/></svg>
+                 style={{ background: 'rgba(255,255,255,.08)' }}
+                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.15)'}
+                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.08)'}>
+                <svg className="w-4 h-4 fill-current" style={{ color: 'rgba(255,255,255,.55)' }} viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/></svg>
               </a>
               <div className="w-9 h-9 rounded-lg flex items-center justify-center cursor-pointer transition-colors"
-                   style={{ background: 'rgba(244,241,234,.08)' }}
-                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,241,234,.15)'}
-                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(244,241,234,.08)'}>
-                <span className="material-icons-round text-base" style={{ color: 'rgba(244,241,234,.55)' }}>public</span>
+                   style={{ background: 'rgba(255,255,255,.08)' }}
+                   onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.15)'}
+                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.08)'}>
+                <span className="material-icons-round text-base" style={{ color: 'rgba(255,255,255,.55)' }}>public</span>
               </div>
             </div>
           </div>
@@ -1062,48 +1015,48 @@ const MainHome: React.FC = () => {
           <div className="bg-white w-full max-w-lg rounded-3xl p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(92,131,116,.12)' }}>
-                  <span className="material-icons-round text-xl" style={{ color: '#3a5a4d' }}>calendar_month</span>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(14,165,233,.12)' }}>
+                  <span className="material-icons-round text-xl" style={{ color: '#0284c7' }}>calendar_month</span>
                 </div>
                 <div>
-                  <h3 className="font-display font-light text-xl sm:text-2xl" style={{ color: '#1c2b27' }}>
+                  <h3 className="font-display font-light text-xl sm:text-2xl" style={{ color: '#0f172a' }}>
                     {showPlanForm.isOpen ? `Solicitud ${showPlanForm.planName}` : 'Agendar Atención'}
                   </h3>
-                  <p className="font-outfit text-xs" style={{ color: '#44574f' }}>Completa tus datos para continuar</p>
+                  <p className="font-outfit text-xs" style={{ color: '#475569' }}>Completa tus datos para continuar</p>
                 </div>
               </div>
               <button
                 onClick={() => { setShowPlanForm({ isOpen: false, planName: '' }); setIsGeneralFormOpen(false); }}
                 className="w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
                 style={{ background: 'transparent' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(28,43,39,.06)'}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(15,23,42,.06)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
               >
-                <span className="material-icons-round" style={{ color: '#44574f' }}>close</span>
+                <span className="material-icons-round" style={{ color: '#475569' }}>close</span>
               </button>
             </div>
 
             <form onSubmit={(e) => handleFormSubmit(e, showPlanForm.isOpen ? showPlanForm.planName : 'Consulta General')} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Nombre</label>
-                  <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="Juan Pérez" />
+                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#0ea5e9' }}>Nombre</label>
+                  <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f0f9ff', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="Juan Pérez" />
                 </div>
                 <div>
-                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>WhatsApp</label>
-                  <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="+56 9..." />
+                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#0ea5e9' }}>WhatsApp</label>
+                  <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f0f9ff', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="+56 9..." />
                 </div>
               </div>
               <div>
-                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Email</label>
-                <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="correo@ejemplo.com" />
+                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#0ea5e9' }}>Email</label>
+                <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f0f9ff', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="correo@ejemplo.com" />
               </div>
               <div>
-                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Condición o Motivo</label>
-                <textarea required value={formData.condition} onChange={e => setFormData({ ...formData, condition: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border h-28 resize-none" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="Describe brevemente tu situación..." />
+                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#0ea5e9' }}>Condición o Motivo</label>
+                <textarea required value={formData.condition} onChange={e => setFormData({ ...formData, condition: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border h-28 resize-none" style={{ background: '#f0f9ff', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="Describe brevemente tu situación..." />
               </div>
               <button type="submit" className="w-full py-4 rounded-2xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"
-                      style={{ background: '#3a5a4d', boxShadow: '0 12px 30px -10px rgba(58,90,77,.45)' }}>
+                      style={{ background: '#0284c7', boxShadow: '0 12px 30px -10px rgba(2,132,199,.45)' }}>
                 <span className="material-icons-round text-base">send</span>
                 Verificar Cobertura y Agenda
               </button>
@@ -1118,46 +1071,46 @@ const MainHome: React.FC = () => {
           <div className="bg-white w-full max-w-lg rounded-3xl p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(92,131,116,.12)' }}>
-                  <span className="material-icons-round text-xl" style={{ color: '#3a5a4d' }}>mark_email_unread</span>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(14,165,233,.12)' }}>
+                  <span className="material-icons-round text-xl" style={{ color: '#0284c7' }}>mark_email_unread</span>
                 </div>
                 <div>
-                  <h3 className="font-display font-light text-xl sm:text-2xl" style={{ color: '#1c2b27' }}>Contáctenos</h3>
-                  <p className="font-outfit text-xs" style={{ color: '#44574f' }}>Te llamamos a la brevedad</p>
+                  <h3 className="font-display font-light text-xl sm:text-2xl" style={{ color: '#0f172a' }}>Contáctenos</h3>
+                  <p className="font-outfit text-xs" style={{ color: '#475569' }}>Te llamamos a la brevedad</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsContactFormOpen(false)}
                 className="w-10 h-10 rounded-xl flex items-center justify-center transition-all flex-shrink-0"
                 style={{ background: 'transparent' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(28,43,39,.06)'}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(15,23,42,.06)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
               >
-                <span className="material-icons-round" style={{ color: '#44574f' }}>close</span>
+                <span className="material-icons-round" style={{ color: '#475569' }}>close</span>
               </button>
             </div>
 
             <form onSubmit={handleContactSubmit} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Nombre</label>
-                  <input required value={contactData.name} onChange={e => setContactData({ ...contactData, name: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="María González" />
+                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#0ea5e9' }}>Nombre</label>
+                  <input required value={contactData.name} onChange={e => setContactData({ ...contactData, name: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f0f9ff', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="María González" />
                 </div>
                 <div>
-                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>WhatsApp / Teléfono</label>
-                  <input required value={contactData.phone} onChange={e => setContactData({ ...contactData, phone: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="+56 9..." />
+                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#0ea5e9' }}>WhatsApp / Teléfono</label>
+                  <input required value={contactData.phone} onChange={e => setContactData({ ...contactData, phone: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f0f9ff', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="+56 9..." />
                 </div>
               </div>
               <div>
-                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>Email</label>
-                <input required type="email" value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="correo@ejemplo.com" />
+                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#0ea5e9' }}>Email</label>
+                <input required type="email" value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f0f9ff', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="correo@ejemplo.com" />
               </div>
               <div>
-                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#5c8374' }}>¿En qué te podemos ayudar?</label>
-                <textarea required value={contactData.message} onChange={e => setContactData({ ...contactData, message: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border h-28 resize-none" style={{ background: '#f4f1ea', borderColor: 'rgba(28,43,39,.12)', color: '#1c2b27' }} placeholder="Cuéntanos tu caso o consulta..." />
+                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#0ea5e9' }}>¿En qué te podemos ayudar?</label>
+                <textarea required value={contactData.message} onChange={e => setContactData({ ...contactData, message: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border h-28 resize-none" style={{ background: '#f0f9ff', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="Cuéntanos tu caso o consulta..." />
               </div>
               <button type="submit" className="w-full py-4 rounded-2xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"
-                      style={{ background: '#3a5a4d', boxShadow: '0 12px 30px -10px rgba(58,90,77,.45)' }}>
+                      style={{ background: '#0284c7', boxShadow: '0 12px 30px -10px rgba(2,132,199,.45)' }}>
                 <span className="material-icons-round text-base">send</span>
                 Enviar Solicitud de Contacto
               </button>
