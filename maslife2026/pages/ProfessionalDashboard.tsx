@@ -138,7 +138,7 @@ const ProfessionalDashboard: React.FC = () => {
           </div>
 
           {/* ── Tu Link de Reservas ── */}
-          <div className={`mb-8 rounded-[2.5rem] border p-6 md:p-7 flex flex-col md:flex-row items-start md:items-center gap-5 transition-all ${
+          <div className={`mb-8 rounded-[2.5rem] border p-6 md:p-7 flex flex-col md:flex-row items-stretch md:items-center gap-5 overflow-hidden transition-all ${
             profileComplete
               ? 'bg-white border-slate-100 shadow-sm'
               : 'bg-amber-50 border-amber-200'
