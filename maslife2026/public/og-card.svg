@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <!-- Fondo gradiente azul salud -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"   stop-color="#0369a1"/>
+      <stop offset="55%"  stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <!-- Blobs decorativos -->
+    <radialGradient id="blob1" cx="88%" cy="15%" r="38%">
+      <stop offset="0%"   stop-color="#bae6fd" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob2" cx="12%" cy="88%" r="32%">
+      <stop offset="0%"   stop-color="#e0f2fe" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob3" cx="50%" cy="50%" r="45%">
+      <stop offset="0%"   stop-color="#7dd3fc" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ── Fondo ── -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#blob1)"/>
+  <rect width="1200" height="630" fill="url(#blob2)"/>
+  <rect width="1200" height="630" fill="url(#blob3)"/>
+
+  <!-- ── Panel izquierdo semi-transparente ── -->
+  <rect x="72" y="72" width="540" height="486" rx="40" fill="white" fill-opacity="0.10"/>
+
+  <!-- ── Logo: figura humana (escala ×4 del original 60×80 box) ── -->
+  <g transform="translate(118, 128) scale(4.2)">
+    <!-- Cabeza -->
+    <circle cx="30" cy="14" r="10" fill="white"/>
+    <!-- Cuerpo -->
+    <path d="M30 24 L30 50" stroke="white" stroke-width="4" stroke-linecap="round"/>
+    <!-- Brazos abiertos -->
+    <path d="M30 32 L12 26" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M30 32 L48 26" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Piernas -->
+    <path d="M30 50 L18 68" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M30 50 L42 68" stroke="white" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Corazón -->
+    <path d="M30 38 C28 36,25 37,27 40 L30 43 L33 40 C35 37,32 36,30 38Z" fill="#fca5a5"/>
+  </g>
+
+  <!-- ── Textos de marca ── -->
+  <!-- "CLÍNICA" pequeño -->
+  <text x="390" y="205"
+        font-family="Arial,Helvetica,sans-serif"
+        font-size="38" font-weight="400" letter-spacing="7"
+        fill="white" fill-opacity="0.68">CLÍNICA</text>
+
+  <!-- "Mas Life" grande -->
+  <text x="388" y="300"
+        font-family="Arial Black,Arial,Helvetica,sans-serif"
+        font-size="96" font-weight="900" letter-spacing="-3"
+        fill="white">Mas Life</text>
+
+  <!-- Línea separadora -->
+  <rect x="390" y="326" width="350" height="3" rx="2" fill="white" fill-opacity="0.30"/>
+
+  <!-- Tagline -->
+  <text x="390" y="378"
+        font-family="Arial,Helvetica,sans-serif"
+        font-size="30" font-weight="300" letter-spacing="0.5"
+        fill="white" fill-opacity="0.85">Agenda tu salud en línea</text>
+
+  <!-- ── Chips de especialidades ── -->
+  <!-- Kinesiología -->
+  <rect x="390" y="415" width="210" height="46" rx="23" fill="white" fill-opacity="0.15"/>
+  <text x="495" y="445"
+        font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="400"
+        fill="white" text-anchor="middle">Kinesiología</text>
+
+  <!-- Psicología -->
+  <rect x="612" y="415" width="178" height="46" rx="23" fill="white" fill-opacity="0.15"/>
+  <text x="701" y="445"
+        font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="400"
+        fill="white" text-anchor="middle">Psicología</text>
+
+  <!-- Nutrición -->
+  <rect x="801" y="415" width="160" height="46" rx="23" fill="white" fill-opacity="0.15"/>
+  <text x="881" y="445"
+        font-family="Arial,Helvetica,sans-serif" font-size="19" font-weight="400"
+        fill="white" text-anchor="middle">Nutrición</text>
+
+  <!-- ── Cruces decorativas de salud (derecha) ── -->
+  <!-- Cruz grande -->
+  <g fill="white" fill-opacity="0.10">
+    <rect x="970" y="130" width="30" height="110" rx="15"/>
+    <rect x="930" y="170" width="110" height="30" rx="15"/>
+  </g>
+  <!-- Cruz mediana -->
+  <g fill="white" fill-opacity="0.08" transform="translate(1060, 330) rotate(18)">
+    <rect x="-11" y="-65" width="22" height="130" rx="11"/>
+    <rect x="-65" y="-11" width="130" height="22" rx="11"/>
+  </g>
+  <!-- Cruz pequeña -->
+  <g fill="white" fill-opacity="0.12" transform="translate(850, 520) rotate(-10)">
+    <rect x="-7" y="-40" width="14" height="80" rx="7"/>
+    <rect x="-40" y="-7" width="80" height="14" rx="7"/>
+  </g>
+
+  <!-- ── Badges superiores ── -->
+  <!-- Ciudades -->
+  <rect x="390" y="490" width="295" height="38" rx="19" fill="white" fill-opacity="0.12"/>
+  <text x="538" y="515"
+        font-family="Arial,Helvetica,sans-serif" font-size="16" font-weight="400"
+        fill="white" fill-opacity="0.85" text-anchor="middle">Ovalle · Coquimbo · La Serena</text>
+
+  <!-- ── URL abajo a la derecha ── -->
+  <text x="1128" y="596"
+        font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="400"
+        fill="white" fill-opacity="0.50" text-anchor="end">clinicamaslife.cl</text>
+
+  <!-- ── Línea inferior decorativa ── -->
+  <rect x="0" y="610" width="1200" height="20" fill="white" fill-opacity="0.07"/>
+</svg>
