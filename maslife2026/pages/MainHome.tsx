@@ -731,80 +731,41 @@ const MainHome: React.FC = () => {
       </section>
 
       {/* ═══════════════════ ÁREAS PROFESIONALES ═══════════════════ */}
-      <section id="especialidades" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#ffffff' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
-            <div>
-              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-3" style={{ color: '#0ea5e9' }}>Nuestro equipo</p>
-              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Selecciona un área y agenda</h2>
-              <p className="font-outfit text-sm font-light mt-1" style={{ color: '#475569' }}>con un profesional directamente</p>
-            </div>
-            <div className="flex rounded-full p-1 border" style={{ background: 'rgba(255,255,255,.5)', borderColor: 'rgba(15,23,42,.12)' }}>
-              <button
-                onClick={() => setActiveSpecFilter('destacados')}
-                className="px-5 py-2 rounded-full text-xs font-medium transition-all"
-                style={{
-                  background: activeSpecFilter === 'destacados' ? '#0284c7' : 'transparent',
-                  color: activeSpecFilter === 'destacados' ? '#fff' : '#475569',
-                }}
-              >Destacados</button>
-              <button
-                onClick={() => setActiveSpecFilter('todos')}
-                className="px-5 py-2 rounded-full text-xs font-medium transition-all"
-                style={{
-                  background: activeSpecFilter === 'todos' ? '#0284c7' : 'transparent',
-                  color: activeSpecFilter === 'todos' ? '#fff' : '#475569',
-                }}
-              >
-                Todos
-              </button>
-            </div>
-          </div>
+      {/* ═══════════════════ IMAGEN MÉDICO ═══════════════════ */}
+      <section id="especialidades" className="relative overflow-hidden" style={{ height: '80vh', minHeight: '500px' }}>
+        {/* Imagen de fondo */}
+        <img
+          src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?q=80&w=1600&fit=crop"
+          alt="Profesional de salud atendiendo a paciente con una sonrisa en Clínica Mas Life"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        {/* Overlay degradado */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(2,42,72,.72) 0%, rgba(2,42,72,.35) 55%, rgba(2,42,72,.1) 100%)' }} />
 
-          {/* Specialty Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {(activeSpecFilter === 'destacados' ? specialtyCards : specialtyCards.concat([
-              { name: 'Terapia Ocupacional', desc: 'Rehabilitación funcional para actividades diarias.', img: 'https://images.unsplash.com/photo-1576671285-d9df3bc08e01?q=80&w=600', alt: 'Terapeuta ocupacional con paciente adulto mayor en rehabilitación', cta: 'Buscar Profesional' },
-              { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', alt: 'Podólogo cuidado especializado de pies en Ovalle', cta: 'Buscar Profesional' },
-              { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600', alt: 'Enfermera tomando signos vitales atención a domicilio', cta: 'Buscar Profesional' },
-            ])).map((card, i) => (
-              <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer"
-                   style={{ border: '1px solid rgba(15,23,42,.1)', boxShadow: 'none' }}
-                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 24px 48px -18px rgba(15,23,42,.22)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; }}
-                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = ''; }}
-                   onClick={() => navigate('/patient/results')}>
-                <div className="aspect-[4/3] overflow-hidden">
-                  <img src={card.img} alt={card.alt || card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                </div>
-                <div className="p-4 sm:p-5">
-                  <h4 className="font-display font-light text-sm sm:text-base mb-1 leading-snug" style={{ color: '#0f172a' }}>{card.name}</h4>
-                  <p className="font-outfit text-xs sm:text-sm font-light leading-relaxed mb-3 line-clamp-2" style={{ color: '#475569' }}>{card.desc}</p>
-                  <button className="flex items-center gap-1.5 text-xs font-medium transition-all group-hover:gap-2.5" style={{ color: '#0ea5e9' }}>
-                    {card.cta}
-                    <span className="material-icons-round text-sm">arrow_forward</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+        {/* Contenido */}
+        <div className="relative z-10 h-full flex items-center px-[6vw]">
+          <div className="max-w-lg">
+            <span className="inline-flex items-center px-4 py-1.5 rounded-full text-white font-bold uppercase mb-6"
+              style={{ fontSize: '.75rem', letterSpacing: '3px', background: 'rgba(14,165,233,.35)', border: '1px solid rgba(14,165,233,.5)', backdropFilter: 'blur(8px)' }}>
+              Nuestro equipo
+            </span>
+            <h2 className="font-display font-light text-white leading-[1.05] mb-5"
+              style={{ fontSize: 'clamp(2rem,5vw,3.4rem)', letterSpacing: '-1px' }}>
+              Profesionales verificados,<br />
+              <em style={{ color: '#7dd3fc', fontStyle: 'italic' }}>cerca de ti.</em>
+            </h2>
+            <p className="font-outfit font-light text-white/80 mb-8 leading-relaxed"
+              style={{ fontSize: 'clamp(1rem,2vw,1.15rem)' }}>
+              Kinesiología, psicología, nutrición y más — en Ovalle, Coquimbo y La Serena. Presencial, online o a domicilio.
+            </p>
+            <button
+              onClick={() => navigate('/patient/results')}
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-white font-semibold font-outfit transition-all duration-300 hover:gap-5 hover:scale-[1.03]"
+              style={{ background: 'linear-gradient(90deg, #0284c7, #06b6d4)', boxShadow: '0 8px 32px rgba(2,132,199,.45)' }}>
+              Buscar mi especialista
+              <span className="material-icons-round">arrow_forward</span>
+            </button>
           </div>
-
-          {/* All Services Grid (compact) */}
-          {activeSpecFilter === 'todos' && (
-            <div className="mt-10 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-4">
-              {services.map((s, i) => (
-                <div key={i} className="bg-white p-4 sm:p-5 rounded-2xl flex flex-col items-center text-center cursor-pointer group transition-all duration-300"
-                     style={{ border: '1px solid rgba(15,23,42,.1)' }}
-                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 16px 32px -12px rgba(15,23,42,.18)'; }}
-                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
-                     onClick={() => navigate('/patient/results')}>
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:rotate-12 transition-transform" style={{ background: '#e0f2fe' }}>
-                    <span className="material-icons-round text-2xl" style={{ color: '#0284c7' }}>{s.icon}</span>
-                  </div>
-                  <h4 className="font-outfit text-[10px] sm:text-xs font-medium leading-tight" style={{ color: '#0f172a' }}>{s.name}</h4>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </section>
 
