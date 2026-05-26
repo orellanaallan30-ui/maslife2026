@@ -582,17 +582,32 @@ const MainHome: React.FC = () => {
       </div>
 
       {/* ═══════════════════ MANIFESTO ═══════════════════ */}
-      <section className="overflow-hidden" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center', padding: '18vh 6vw', background: '#ffffff' }}>
-        <div className="max-w-5xl">
-          <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-7" style={{ color: '#0ea5e9' }}>Filosofía</p>
-          <div
-            ref={manifestoRef}
-            className="font-display font-light leading-[1.3]"
-            style={{ fontSize: 'clamp(1.65rem,4.2vw,3.2rem)', letterSpacing: '-.4px', color: '#0f172a' }}
-          >
-            {"AgendaMasLife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
-              <span key={i} className="word-reveal"> {word}</span>
-            ))}
+      <section className="relative overflow-hidden" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center', padding: '18vh 6vw', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 60%, #ecfeff 100%)' }}>
+        {/* Comillas decorativas de fondo */}
+        <span className="absolute top-0 left-4 font-display select-none pointer-events-none"
+          style={{ fontSize: '18rem', lineHeight: 1, color: 'rgba(14,165,233,.1)', fontStyle: 'italic' }}>"</span>
+
+        <div className="max-w-5xl mx-auto flex gap-8 items-stretch">
+          {/* Borde izquierdo acento */}
+          <div style={{ width: '4px', borderRadius: '4px', background: 'linear-gradient(180deg, #06b6d4, #0284c7)', flexShrink: 0 }} />
+
+          <div>
+            {/* Badge Filosofía */}
+            <span className="inline-flex items-center px-4 py-1.5 rounded-full text-white font-bold uppercase mb-8"
+              style={{ fontSize: '.78rem', letterSpacing: '3px', background: 'linear-gradient(90deg, #06b6d4, #0284c7)' }}>
+              Filosofía
+            </span>
+
+            {/* Texto manifesto */}
+            <div
+              ref={manifestoRef}
+              className="font-display font-light leading-[1.3]"
+              style={{ fontSize: 'clamp(1.65rem,4.2vw,3.2rem)', letterSpacing: '-.4px', color: '#0f172a' }}
+            >
+              {"AgendaMasLife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
+                <span key={i} className="word-reveal"> {word}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
