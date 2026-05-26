@@ -441,20 +441,20 @@ const MainHome: React.FC = () => {
 
             {/* Columna izquierda — texto */}
             <div className="max-w-xl">
-              <p className="text-[.78rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#0284c7' }}>
+              <p className="text-[.88rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#0284c7' }}>
                 Agenda clínica inteligente · Región de Coquimbo
               </p>
 
               {/* Título Fraunces */}
               <div ref={heroTitleRef} className="mb-8" style={{ overflow: 'hidden' }}>
-                <div className="font-display text-[clamp(3rem,8.5vw,6.8rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
+                <div className="font-display text-[clamp(3.8rem,9.5vw,7.5rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
                   {[
                     { text: 'Tu salud,', italic: false },
                     { text: 'en buenas', italic: false },
                     { text: 'manos.', italic: true },
                   ].map((line, li) => (
                     <div key={li} className="overflow-hidden">
-                      <span className="hero-word inline-block" style={{ transform: 'translateY(110%)', opacity: 0 }}>
+                      <span className="hero-word inline-block">
                         {line.italic
                           ? <em style={{ color: '#0284c7', fontStyle: 'italic' }}>manos.</em>
                           : line.text
@@ -465,7 +465,7 @@ const MainHome: React.FC = () => {
                 </div>
               </div>
 
-              <p className="font-outfit font-light text-base sm:text-lg max-w-md leading-relaxed mb-10" style={{ color: '#475569' }}>
+              <p className="font-outfit font-light text-xl sm:text-2xl max-w-lg leading-relaxed mb-10" style={{ color: '#475569' }}>
                 Kinesiología, psicología, nutrición y más — con profesionales verificados en{' '}
                 <strong className="font-semibold" style={{ color: '#0f172a' }}>Ovalle, Coquimbo y La Serena</strong>.
                 Presencial, online o a domicilio.
@@ -475,14 +475,14 @@ const MainHome: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={() => navigate('/patient/results')}
-                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold transition-all duration-300 hover:-translate-y-1"
+                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-outfit font-semibold transition-all duration-300 hover:-translate-y-1"
                   style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', color: '#fff', boxShadow: '0 20px 50px -16px rgba(2,132,199,.55)' }}>
                   Buscar especialista
                   <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">search</span>
                 </button>
                 <button
                   onClick={() => setIsGeneralFormOpen(true)}
-                  className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold border transition-all duration-300 hover:-translate-y-1"
+                  className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-outfit font-semibold border transition-all duration-300 hover:-translate-y-1"
                   style={{
                     background: 'rgba(14,165,233,.07)',
                     color: '#0284c7',
@@ -500,8 +500,8 @@ const MainHome: React.FC = () => {
                   { icon: 'home', label: 'Atención a domicilio' },
                   { icon: 'videocam', label: 'Consulta online' },
                 ].map(({ icon, label }) => (
-                  <div key={label} className="flex items-center gap-2 text-xs font-medium" style={{ color: '#475569' }}>
-                    <span className="material-icons-round text-sm" style={{ color: '#0ea5e9' }}>{icon}</span>
+                  <div key={label} className="flex items-center gap-2 text-sm font-medium" style={{ color: '#475569' }}>
+                    <span className="material-icons-round text-base" style={{ color: '#0ea5e9' }}>{icon}</span>
                     {label}
                   </div>
                 ))}
