@@ -1,17 +1,29 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import logoClinica from '../assets/logo-clinica.png';
 
 declare global {
   interface Window { gsap: any; ScrollTrigger: any; Lenis: any; }
 }
 
-const HERO_IMAGES = [
-  { src: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=900', alt: 'Kinesiólogo atendiendo paciente en rehabilitación física' },
-  { src: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=900', alt: 'Profesional de salud guiando ejercicio terapéutico' },
-  { src: 'https://images.unsplash.com/photo-1573497019236-17f8177b81e8?q=80&w=900', alt: 'Psicóloga en consulta con paciente' },
-  { src: 'https://images.unsplash.com/photo-1576671285-d9df3bc08e01?q=80&w=900', alt: 'Terapeuta ocupacional con paciente adulto mayor' },
+const PROFESIONALES = [
+  { id: 1, nombre: 'Dra. Ana Gómez', especialidad: 'Kinesióloga', rol: 'ESPECIALISTA',
+    foto: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=300&fit=crop',
+    color: 'from-cyan-400 to-blue-500' },
+  { id: 2, nombre: 'Dr. Luis Pérez', especialidad: 'Psicólogo', rol: 'ESPECIALISTA',
+    foto: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=300&fit=crop',
+    color: 'from-blue-400 to-indigo-500' },
+  { id: 3, nombre: 'Dra. Carla Díaz', especialidad: 'Nutricionista', rol: 'COORDINADORA',
+    foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=300&fit=crop',
+    color: 'from-teal-400 to-emerald-500' },
+];
+
+const CARD_POSITIONS = [
+  'top-8 left-0 z-20',
+  'top-40 left-[155px] z-10',
+  'top-4 left-[295px] z-0',
 ];
 
 const MainHome: React.FC = () => {
@@ -273,13 +285,6 @@ const MainHome: React.FC = () => {
     { text: 'Como persona mayor, valoro mucho que vengan a mi casa. El masajista fue muy respetuoso y profesional con mi tratamiento.', name: 'Jorge V.', role: 'PACIENTE MASOTERAPIA', stars: 5 },
   ];
 
-  // Carrusel hero
-  const [heroImageIdx, setHeroImageIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setHeroImageIdx(i => (i + 1) % HERO_IMAGES.length), 4000);
-    return () => clearInterval(t);
-  }, []);
-
   // Carrusel automático de testimonios
   const [testimonialIndex, setTestimonialIndex] = useState(0);
   const [testimonialsPerView, setTestimonialsPerView] = useState(() =>
@@ -432,72 +437,123 @@ const MainHome: React.FC = () => {
 
         {/* Contenido */}
         <div className="relative z-10 max-w-7xl mx-auto px-[6vw] pt-32 sm:pt-40 pb-28 w-full">
-          <div className="max-w-3xl">
-            <p className="text-[.78rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#0284c7' }}>
-              Agenda clínica inteligente · Región de Coquimbo
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-            {/* Título Fraunces */}
-            <div ref={heroTitleRef} className="mb-8" style={{ overflow: 'hidden' }}>
-              <div className="font-display text-[clamp(3rem,8.5vw,6.8rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
+            {/* Columna izquierda — texto */}
+            <div className="max-w-xl">
+              <p className="text-[.78rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#0284c7' }}>
+                Agenda clínica inteligente · Región de Coquimbo
+              </p>
+
+              {/* Título Fraunces */}
+              <div ref={heroTitleRef} className="mb-8" style={{ overflow: 'hidden' }}>
+                <div className="font-display text-[clamp(3rem,8.5vw,6.8rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
+                  {[
+                    { text: 'Tu salud,', italic: false },
+                    { text: 'en buenas', italic: false },
+                    { text: 'manos.', italic: true },
+                  ].map((line, li) => (
+                    <div key={li} className="overflow-hidden">
+                      <span className="hero-word inline-block" style={{ transform: 'translateY(110%)', opacity: 0 }}>
+                        {line.italic
+                          ? <em style={{ color: '#0284c7', fontStyle: 'italic' }}>manos.</em>
+                          : line.text
+                        }
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <p className="font-outfit font-light text-base sm:text-lg max-w-md leading-relaxed mb-10" style={{ color: '#475569' }}>
+                Kinesiología, psicología, nutrición y más — con profesionales verificados en{' '}
+                <strong className="font-semibold" style={{ color: '#0f172a' }}>Ovalle, Coquimbo y La Serena</strong>.
+                Presencial, online o a domicilio.
+              </p>
+
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                  onClick={() => navigate('/patient/results')}
+                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold transition-all duration-300 hover:-translate-y-1"
+                  style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', color: '#fff', boxShadow: '0 20px 50px -16px rgba(2,132,199,.55)' }}>
+                  Buscar especialista
+                  <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">search</span>
+                </button>
+                <button
+                  onClick={() => setIsGeneralFormOpen(true)}
+                  className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold border transition-all duration-300 hover:-translate-y-1"
+                  style={{
+                    background: 'rgba(14,165,233,.07)',
+                    color: '#0284c7',
+                    borderColor: 'rgba(14,165,233,.3)',
+                  }}>
+                  <span className="material-icons-round text-base">calendar_month</span>
+                  Agendar atención
+                </button>
+              </div>
+
+              {/* Trust badges */}
+              <div className="mt-10 flex flex-wrap gap-4">
                 {[
-                  { text: 'Tu salud,', italic: false },
-                  { text: 'en buenas', italic: false },
-                  { text: 'manos.', italic: true },
-                ].map((line, li) => (
-                  <div key={li} className="overflow-hidden">
-                    <span className="hero-word inline-block" style={{ transform: 'translateY(110%)', opacity: 0 }}>
-                      {line.italic
-                        ? <em style={{ color: '#0284c7', fontStyle: 'italic' }}>manos.</em>
-                        : line.text
-                      }
-                    </span>
+                  { icon: 'verified', label: 'Profesionales verificados' },
+                  { icon: 'home', label: 'Atención a domicilio' },
+                  { icon: 'videocam', label: 'Consulta online' },
+                ].map(({ icon, label }) => (
+                  <div key={label} className="flex items-center gap-2 text-xs font-medium" style={{ color: '#475569' }}>
+                    <span className="material-icons-round text-sm" style={{ color: '#0ea5e9' }}>{icon}</span>
+                    {label}
                   </div>
                 ))}
               </div>
             </div>
 
-            <p className="font-outfit font-light text-base sm:text-lg max-w-md leading-relaxed mb-10" style={{ color: '#475569' }}>
-              Kinesiología, psicología, nutrición y más — con profesionales verificados en{' '}
-              <strong className="font-semibold" style={{ color: '#0f172a' }}>Ovalle, Coquimbo y La Serena</strong>.
-              Presencial, online o a domicilio.
-            </p>
-
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button
-                onClick={() => navigate('/patient/results')}
-                className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold transition-all duration-300 hover:-translate-y-1"
-                style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', color: '#fff', boxShadow: '0 20px 50px -16px rgba(2,132,199,.55)' }}>
-                Buscar especialista
-                <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">search</span>
-              </button>
-              <button
-                onClick={() => setIsGeneralFormOpen(true)}
-                className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-sm font-outfit font-semibold border transition-all duration-300 hover:-translate-y-1"
-                style={{
-                  background: 'rgba(14,165,233,.07)',
-                  color: '#0284c7',
-                  borderColor: 'rgba(14,165,233,.3)',
-                }}>
-                <span className="material-icons-round text-base">calendar_month</span>
-                Agendar atención
-              </button>
+            {/* Columna derecha — tarjetas arrastrables */}
+            <div className="relative hidden lg:flex items-center justify-end mt-10 lg:mt-0">
+              <p className="absolute top-0 right-0 text-sm font-bold text-right leading-tight z-30"
+                 style={{ color: '#475569' }}>
+                Nuestro Equipo<br />Multi-Área en Ovalle
+              </p>
+              <p className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap z-30"
+                 style={{ color: '#94a3b8' }}>
+                ✦ Arrastra las tarjetas
+              </p>
+              <div className="relative w-full max-w-[500px] h-[420px] mt-10">
+                {PROFESIONALES.map((prof, index) => (
+                  <motion.div
+                    key={prof.id}
+                    drag
+                    dragConstraints={{ left: -80, right: 80, top: -40, bottom: 120 }}
+                    whileDrag={{ scale: 1.06, zIndex: 50 }}
+                    whileHover={{ y: -8, scale: 1.02 }}
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 60, delay: index * 0.2 }}
+                    className={`absolute cursor-grab active:cursor-grabbing w-[190px] ${CARD_POSITIONS[index]}`}
+                    style={{
+                      background: 'rgba(255,255,255,0.88)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1px solid rgba(14,165,233,0.15)',
+                      borderRadius: '2.5rem',
+                      padding: '1.25rem',
+                      boxShadow: '0 10px 32px rgba(2,132,199,0.12)',
+                    }}
+                  >
+                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
+                      {prof.rol}
+                    </span>
+                    <div style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', marginBottom: 14, position: 'relative', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                      <img src={prof.foto} alt={prof.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} />
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <h4 style={{ fontWeight: 700, color: '#0f172a', fontSize: 13, marginBottom: 2 }}>{prof.nombre}</h4>
+                      <p style={{ fontSize: 11, fontWeight: 600, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{prof.especialidad}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
 
-            {/* Trust badges */}
-            <div className="mt-10 flex flex-wrap gap-4">
-              {[
-                { icon: 'verified', label: 'Profesionales verificados' },
-                { icon: 'home', label: 'Atención a domicilio' },
-                { icon: 'videocam', label: 'Consulta online' },
-              ].map(({ icon, label }) => (
-                <div key={label} className="flex items-center gap-2 text-xs font-medium" style={{ color: '#475569' }}>
-                  <span className="material-icons-round text-sm" style={{ color: '#0ea5e9' }}>{icon}</span>
-                  {label}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
 
