@@ -39,7 +39,6 @@ const PatientResults: React.FC = () => {
   };
 
   const visibleDoctors = publicPros.filter(p => {
-    if (p.isPublic === false) return false;
     if (citySearch && !(p.city && p.city.toLowerCase().includes(citySearch.toLowerCase().trim()))) return false;
     if (selectedArea && !p.specialty?.toLowerCase().includes(selectedArea.toLowerCase())) return false;
     if (selectedModality.length > 0) {
@@ -221,7 +220,9 @@ const PatientResults: React.FC = () => {
 
                   {/* CTA */}
                   <div className="w-full sm:w-auto shrink-0">
-                    <button className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95">
+                    <button
+                      onClick={e => { e.stopPropagation(); navigate(`/patient/profile/${doc.id}`); }}
+                      className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95">
                       Agendar Ahora
                     </button>
                   </div>
