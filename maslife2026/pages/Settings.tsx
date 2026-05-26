@@ -267,7 +267,7 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Visibilidad en búsqueda */}
+                  {/* Visibilidad en búsqueda — auto-guarda al instante */}
                   <div className={`rounded-2xl p-5 border-2 flex items-center justify-between gap-4 ${localProfile.isPublic !== false ? 'bg-teal-50 border-teal-200' : 'bg-slate-50 border-slate-200'}`}>
                     <div className="flex items-center gap-3 min-w-0">
                       <span className={`material-icons-round text-2xl shrink-0 ${localProfile.isPublic !== false ? 'text-teal-500' : 'text-slate-400'}`}>
@@ -276,12 +276,19 @@ const Settings: React.FC = () => {
                       <div className="min-w-0">
                         <p className="font-black text-slate-800 text-sm">Aparecer en búsqueda de pacientes</p>
                         <p className={`text-xs font-bold mt-0.5 ${localProfile.isPublic !== false ? 'text-teal-600' : 'text-slate-500'}`}>
-                          {localProfile.isPublic !== false ? 'Tu perfil es visible para pacientes' : 'Tu perfil está oculto — los pacientes no pueden encontrarte'}
+                          {localProfile.isPublic !== false ? '✓ Tu perfil es visible — los pacientes pueden encontrarte' : 'Tu perfil está oculto — los pacientes no pueden encontrarte'}
                         </p>
                       </div>
                     </div>
                     <button
-                      onClick={() => handleUpdate({ isPublic: localProfile.isPublic === false ? true : false })}
+                      onClick={() => {
+                        const newIsPublic = localProfile.isPublic === false ? true : false;
+                        const updated = { ...localProfile, isPublic: newIsPublic };
+                        setLocalProfile(updated);
+                        onSave(updated);
+                        setShowSavedMsg(true);
+                        setTimeout(() => setShowSavedMsg(false), 2000);
+                      }}
                       className={`w-14 h-8 rounded-full relative transition-all shrink-0 ${localProfile.isPublic !== false ? 'bg-teal-500' : 'bg-slate-300'}`}
                     >
                       <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow transition-all ${localProfile.isPublic !== false ? 'left-7' : 'left-1'}`}></div>
