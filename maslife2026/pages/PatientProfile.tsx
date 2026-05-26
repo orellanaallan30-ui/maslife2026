@@ -45,27 +45,9 @@ const PatientProfile: React.FC = () => {
                       patientData.reason.trim() !== '' &&
                       (selectedModality !== 'home' || (patientData.address.trim() !== '' && patientData.houseNumber.trim() !== ''));
 
-  if (loadingDoctor) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-20 gap-4">
-        <span className="material-icons-round text-primary text-5xl animate-spin">sync</span>
-        <p className="text-slate-500 font-bold">Cargando perfil...</p>
-      </div>
-    );
-  }
-
-  if (!doctor) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-20">
-        <span className="material-icons-round text-slate-200 text-6xl mb-4">error_outline</span>
-        <p className="text-slate-500 font-bold text-xl">Profesional no encontrado o no disponible.</p>
-        <button onClick={() => navigate('/patient/results')} className="mt-6 text-primary font-black uppercase tracking-widest text-xs">Volver a la búsqueda</button>
-      </div>
-    );
-  }
-
-  // Generar días disponibles
+  // useMemo ANTES de los returns condicionales — React exige orden estable de hooks
   const availableDays = useMemo(() => {
+    if (!doctor) return [];
     const daysArr = [];
     const today = new Date();
 
@@ -99,6 +81,25 @@ const PatientProfile: React.FC = () => {
     }
     return daysArr;
   }, [doctor, appointments]);
+
+  if (loadingDoctor) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center p-20 gap-4">
+        <span className="material-icons-round text-primary text-5xl animate-spin">sync</span>
+        <p className="text-slate-500 font-bold">Cargando perfil...</p>
+      </div>
+    );
+  }
+
+  if (!doctor) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center p-20">
+        <span className="material-icons-round text-slate-200 text-6xl mb-4">error_outline</span>
+        <p className="text-slate-500 font-bold text-xl">Profesional no encontrado o no disponible.</p>
+        <button onClick={() => navigate('/patient/results')} className="mt-6 text-primary font-black uppercase tracking-widest text-xs">Volver a la búsqueda</button>
+      </div>
+    );
+  }
 
   const finalizeBooking = async () => {
     setIsProcessing(true);
