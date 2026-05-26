@@ -354,7 +354,7 @@ const MainHome: React.FC = () => {
           style={{ color: scrollY > 80 ? '#0f172a' : 'inherit' }}
         >
           <img src={logoClinica} alt="Clínica Mas Life"
-            className="h-14 w-auto object-contain"
+            className="h-20 w-auto object-contain"
             style={{ filter: scrollY > 80 ? 'none' : 'none' }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
