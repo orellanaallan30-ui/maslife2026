@@ -659,7 +659,7 @@ const MainHome: React.FC = () => {
       </div>
 
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
-      <section id="como-funciona" style={{ padding: '16vh 6vw', background: '#f8faff' }}>
+      <section id="como-funciona" style={{ padding: '16vh 6vw', background: '#ffffff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="max-w-xl mb-[9vh]">
             <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Proceso simple</p>
@@ -678,23 +678,35 @@ const MainHome: React.FC = () => {
               { icon: 'event_available', step: '03', title: 'Primera cita', desc: 'El profesional te contacta y coordinan juntos el primer encuentro.' },
             ].map((step, i) => (
               <div key={i} data-reveal={`step-${i}`}
-                className={`feature-card relative bg-white rounded-[18px] p-10 border transition-all duration-500 ${rv(`step-${i}`)}`}
+                className={`feature-card relative overflow-hidden rounded-[18px] p-10 transition-all duration-500 ${rv(`step-${i}`)}`}
                 style={{
-                  borderColor: 'rgba(15,23,42,.1)',
-                  boxShadow: 'none',
+                  background: 'linear-gradient(145deg, #ffffff 0%, #f0f9ff 100%)',
+                  border: '1.5px solid rgba(14,165,233,.18)',
+                  boxShadow: '0 1px 2px rgba(0,168,158,.06), 0 4px 12px rgba(2,132,199,.1), 0 20px 40px -12px rgba(15,23,42,.12)',
                   transitionDelay: `${i * 150}ms`,
                   cursor: 'default',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-8px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 30px 60px -30px rgba(15,23,42,.25)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+                onMouseEnter={e => {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.transform = 'perspective(800px) rotateX(-4deg) translateY(-10px) scale(1.02)';
+                  el.style.boxShadow = '0 2px 4px rgba(0,168,158,.08), 0 16px 40px rgba(2,132,199,.2), 0 40px 64px -20px rgba(15,23,42,.2)';
+                }}
+                onMouseLeave={e => {
+                  const el = e.currentTarget as HTMLElement;
+                  el.style.transform = '';
+                  el.style.boxShadow = '0 1px 2px rgba(0,168,158,.06), 0 4px 12px rgba(2,132,199,.1), 0 20px 40px -12px rgba(15,23,42,.12)';
+                }}
               >
+                {/* Franja acento superior */}
+                <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, #06b6d4, #0284c7)' }} />
                 {/* Número decorativo */}
-                <span className="absolute top-5 right-6 font-display font-light select-none" style={{ fontSize: '3.5rem', color: 'rgba(15,23,42,.06)', lineHeight: 1 }}>{step.step}</span>
+                <span className="absolute top-5 right-6 font-display font-light select-none" style={{ fontSize: '3.5rem', color: 'rgba(14,165,233,.14)', lineHeight: 1 }}>{step.step}</span>
                 {/* Icono */}
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-2" style={{ background: '#e0f2fe' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-2"
+                  style={{ background: 'linear-gradient(135deg, #e0f2fe, #bae6fd)', boxShadow: '0 4px 12px rgba(2,132,199,.2)' }}>
                   <span className="material-icons-round text-xl" style={{ color: '#0284c7' }}>{step.icon}</span>
                 </div>
-                <p className="font-outfit text-[.78rem] tracking-[2px] uppercase mb-4" style={{ color: '#06b6d4' }}>{step.step}</p>
+                <p className="font-outfit text-[.78rem] tracking-[2px] uppercase mb-4 font-bold" style={{ color: '#06b6d4' }}>{step.step}</p>
                 <h4 className="font-display font-light text-xl mb-3 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h4>
                 <p className="font-outfit font-light text-[.93rem] leading-[1.65]" style={{ color: '#475569' }}>{step.desc}</p>
               </div>
