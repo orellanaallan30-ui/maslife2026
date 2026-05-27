@@ -305,7 +305,7 @@ const AppContent: React.FC = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white font-sans">
+    <div className="h-screen flex flex-col bg-white font-sans overflow-hidden">
       <Navbar view={view} setView={setView} />
       <div className="flex-1 flex overflow-hidden">
         <Routes>

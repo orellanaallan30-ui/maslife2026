@@ -103,33 +103,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#00a89e',
-                        teal: { 50: '#f0fdfa', 500: '#00a89e', 600: '#008c84' },
-                        slate: { 900: '#0f172a', 950: '#020617' },
-                        sage:      '#5c8374',
-                        'sage-deep': '#3a5a4d',
-                        sand:      '#c9a96a',
-                        ink:       '#1c2b27',
-                        'ink-soft':'#44574f',
-                        bone:      '#f4f1ea',
-                        'bone-deep':'#ebe6db',
-                    },
-                    fontFamily: {
-                        sans:    ['Manrope', 'sans-serif'],
-                        outfit:  ['Outfit', 'sans-serif'],
-                        display: ['Fraunces', 'Georgia', 'serif'],
+        try {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#00a89e',
+                            teal: { 50: '#f0fdfa', 500: '#00a89e', 600: '#008c84' },
+                            slate: { 900: '#0f172a', 950: '#020617' },
+                            sage:      '#5c8374',
+                            'sage-deep': '#3a5a4d',
+                            sand:      '#c9a96a',
+                            ink:       '#1c2b27',
+                            'ink-soft':'#44574f',
+                            bone:      '#f4f1ea',
+                            'bone-deep':'#ebe6db',
+                        },
+                        fontFamily: {
+                            sans:    ['Manrope', 'sans-serif'],
+                            outfit:  ['Outfit', 'sans-serif'],
+                            display: ['Fraunces', 'Georgia', 'serif'],
+                        }
                     }
                 }
-            }
-        }
+            };
+        } catch(e) { /* Tailwind CDN no disponible */ }
     </script>
     <style>
         :root { scroll-behavior: smooth; }
+
+        /* Explicit heights so h-full resolves correctly in all desktop browsers */
+        html, body { height: 100%; }
+        #root { height: 100%; position: relative; z-index: 1; }
 
         body {
             font-family: 'Manrope', sans-serif;
@@ -174,7 +180,6 @@
         }
 
         p, span, label { color: #334155; }
-        #root { position: relative; z-index: 1; }
         header { z-index: 50; }
 
         @media print {
@@ -184,18 +189,6 @@
             section { break-inside: avoid; border: 1px solid #e2e8f0 !important; padding: 1rem !important; border-radius: 0.5rem !important; }
         }
     </style>
-    <script type="importmap">
-    {
-      "imports": {
-        "react/": "https://esm.sh/react@^19.2.4/",
-        "react": "https://esm.sh/react@^19.2.4",
-        "recharts": "https://esm.sh/recharts@^3.7.0",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-        "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
-        "@google/genai": "https://esm.sh/@google/genai@^1.40.0"
-      }
-    }
-    </script>
     <link rel="stylesheet" href="/index.css">
 </head>
 
