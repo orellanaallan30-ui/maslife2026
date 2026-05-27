@@ -9,13 +9,13 @@ declare global {
 }
 
 const PROFESIONALES = [
-  { id: 1, nombre: 'Dra. Ana Gómez', especialidad: 'Kinesióloga', rol: 'ESPECIALISTA',
+  { id: 1, nombre: 'Kinesiología', especialidad: 'Rehabilitación · Movimiento', rol: 'SELLO MÁSLIFE',
     foto: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=300&fit=crop',
     color: 'from-cyan-400 to-blue-500' },
-  { id: 2, nombre: 'Dr. Luis Pérez', especialidad: 'Psicólogo', rol: 'ESPECIALISTA',
+  { id: 2, nombre: 'Psicología', especialidad: 'Salud Mental · Bienestar', rol: 'SELLO MÁSLIFE',
     foto: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=300&fit=crop',
     color: 'from-blue-400 to-indigo-500' },
-  { id: 3, nombre: 'Dra. Carla Díaz', especialidad: 'Nutricionista', rol: 'COORDINADORA',
+  { id: 3, nombre: 'Nutrición', especialidad: 'Alimentación · Hábitos', rol: 'SELLO MÁSLIFE',
     foto: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=300&fit=crop',
     color: 'from-teal-400 to-emerald-500' },
 ];
@@ -512,7 +512,7 @@ const MainHome: React.FC = () => {
             <div className="relative hidden lg:flex items-center justify-end mt-10 lg:mt-0">
               <p className="absolute top-0 right-0 text-sm font-bold text-right leading-tight z-30"
                  style={{ color: '#475569' }}>
-                Nuestro Equipo<br />Multi-Área en Ovalle
+                Especialistas bajo<br />Sello MásLife
               </p>
               <p className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap z-30"
                  style={{ color: '#94a3b8' }}>
