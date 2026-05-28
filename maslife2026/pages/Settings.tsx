@@ -301,7 +301,20 @@ const Settings: React.FC = () => {
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Especialidad</label>
-                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" value={localProfile.specialty} onChange={e => handleUpdate({ specialty: e.target.value })} />
+                      <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" value={localProfile.specialty} onChange={e => handleUpdate({ specialty: e.target.value })}>
+                        <option value="">— Selecciona tu especialidad —</option>
+                        <option value="Kinesiología y Rehabilitación">Kinesiología y Rehabilitación</option>
+                        <option value="Nutrición y Dietética">Nutrición y Dietética</option>
+                        <option value="Psicología Clínica">Psicología Clínica</option>
+                        <option value="Fonoaudiología">Fonoaudiología</option>
+                        <option value="Terapia Ocupacional">Terapia Ocupacional</option>
+                        <option value="Quiropráctica">Quiropráctica</option>
+                        <option value="Podología">Podología</option>
+                        <option value="Enfermería a Domicilio">Enfermería a Domicilio</option>
+                        <option value="Medicina General">Medicina General</option>
+                        <option value="Fisioterapia">Fisioterapia</option>
+                        <option value="Otra Especialidad">Otra Especialidad</option>
+                      </select>
                     </div>
                   </div>
 
