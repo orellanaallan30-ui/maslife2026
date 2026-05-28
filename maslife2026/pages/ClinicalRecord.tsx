@@ -144,12 +144,26 @@ const ClinicalRecord: React.FC = () => {
   const [mealPlan, setMealPlan] = useState<MealPlanRow[]>(
     (savedSpec.mealPlan as MealPlanRow[]) || DEFAULT_MEAL_PLAN
   );
+  // Composición corporal tetracompartimental
+  const [nutMasaGrasaPct,    setNutMasaGrasaPct]    = useState<number>(savedSpec.nutMasaGrasaPct    || 0);
+  const [nutMasaAdiposaPct,  setNutMasaAdiposaPct]  = useState<number>(savedSpec.nutMasaAdiposaPct  || 0);
+  const [nutMasaMuscularPct, setNutMasaMuscularPct] = useState<number>(savedSpec.nutMasaMuscularPct || 0);
+  const [nutSum6Pliegues,    setNutSum6Pliegues]    = useState<number>(savedSpec.nutSum6Pliegues    || 0);
+  const [nutSum8Pliegues,    setNutSum8Pliegues]    = useState<number>(savedSpec.nutSum8Pliegues    || 0);
 
   // Cálculos automáticos de nutrición (se recalculan en cada render)
   const nutMetrics = useMemo(
     () => calcAllMetrics(nutPeso, nutTalla, nutCintura, nutCadera, safePatient.age || 0, nutGender, nutActivity),
     [nutPeso, nutTalla, nutCintura, nutCadera, nutGender, nutActivity, safePatient.age]
   );
+  // Valores de composición calculados automáticamente
+  const nutMasaGrasaKg    = nutPeso > 0 && nutMasaGrasaPct > 0    ? +(nutPeso * nutMasaGrasaPct    / 100).toFixed(3) : 0;
+  const nutMasaAdiposaKg  = nutPeso > 0 && nutMasaAdiposaPct > 0  ? +(nutPeso * nutMasaAdiposaPct  / 100).toFixed(3) : 0;
+  const nutMasaMuscularKg = nutPeso > 0 && nutMasaMuscularPct > 0 ? +(nutPeso * nutMasaMuscularPct / 100).toFixed(3) : 0;
+  const nutIndiceMuscularOseo = nutMasaMuscularKg > 0 && nutTalla > 0
+    ? +(nutMasaMuscularKg / Math.pow(nutTalla / 100, 2)).toFixed(4) : 0;
+  // Historial de evaluaciones para tabla EV1/EV2
+  const compositionHistory = (savedSpec.compositionHistory as Array<Record<string, number | string>>) || [];
 
   // Estado psicología
   const [psychMood,          setPsychMood]          = useState<number>(savedSpec.psychMood ?? 5);
@@ -523,13 +537,35 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     medicalHistory: anamnesis,
     status: 'En Tratamiento',
     lastVisit: new Date().toISOString().split('T')[0],
-    specialtyData: {
-      // Nutrición
-      nutPeso, nutTalla, nutCintura, nutCadera, nutGender, nutActivity,
-      nutGoals, nutSupplements, mealPlan,
-      // Psicología
-      psychMood, psychPsychHistory, psychIntervention, psychNextObjective,
-    },
+    specialtyData: (() => {
+      // Snapshot de composición para historial de evolución
+      const today = new Date().toISOString().split('T')[0];
+      const prevHistory = (savedSpec.compositionHistory as Array<Record<string, number | string>>) || [];
+      const hasCompData = nutMasaGrasaPct > 0 || nutMasaMuscularPct > 0 || nutSum6Pliegues > 0;
+      const snapshot = hasCompData ? {
+        date: today,
+        peso: nutPeso, talla: nutTalla,
+        imc: nutMetrics?.bmi || 0,
+        masaGrasaPct: nutMasaGrasaPct, masaGrasaKg: nutMasaGrasaKg,
+        masaAdiposaPct: nutMasaAdiposaPct, masaAdiposaKg: nutMasaAdiposaKg,
+        masaMuscularPct: nutMasaMuscularPct, masaMuscularKg: nutMasaMuscularKg,
+        sum6Pliegues: nutSum6Pliegues, sum8Pliegues: nutSum8Pliegues,
+        indiceMuscularOseo: nutIndiceMuscularOseo,
+      } : null;
+      const newHistory = snapshot
+        ? [...prevHistory.filter(s => s.date !== today), snapshot]
+        : prevHistory;
+      return {
+        // Nutrición
+        nutPeso, nutTalla, nutCintura, nutCadera, nutGender, nutActivity,
+        nutGoals, nutSupplements, mealPlan,
+        nutMasaGrasaPct, nutMasaAdiposaPct, nutMasaMuscularPct,
+        nutSum6Pliegues, nutSum8Pliegues,
+        compositionHistory: newHistory,
+        // Psicología
+        psychMood, psychPsychHistory, psychIntervention, psychNextObjective,
+      };
+    })(),
   } as Patient);
 
   // Mantiene el ref actualizado para que el auto-save siempre use los últimos valores
@@ -834,6 +870,119 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 Ingresa peso y talla para calcular automáticamente IMC, TMB y GET
               </div>
             )}
+
+            {/* ── Composición Corporal ──────────────────────────────── */}
+            <div className="space-y-6 border-t border-slate-100 pt-8">
+              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-emerald-400 pl-4">
+                Composición Corporal Tetracompartimental
+              </h3>
+
+              {/* Inputs de porcentajes */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { l: 'Masa Grasa (%)',    v: nutMasaGrasaPct,    set: (n: number) => { setNutMasaGrasaPct(n);    setIsDirtyTrue(); } },
+                  { l: 'Masa Adiposa (%)',  v: nutMasaAdiposaPct,  set: (n: number) => { setNutMasaAdiposaPct(n);  setIsDirtyTrue(); } },
+                  { l: 'Masa Muscular (%)', v: nutMasaMuscularPct, set: (n: number) => { setNutMasaMuscularPct(n); setIsDirtyTrue(); } },
+                  { l: 'Sum. 6 Pliegues (mm)', v: nutSum6Pliegues, set: (n: number) => { setNutSum6Pliegues(n); setIsDirtyTrue(); } },
+                  { l: 'Sum. 8 Pliegues (mm)', v: nutSum8Pliegues, set: (n: number) => { setNutSum8Pliegues(n); setIsDirtyTrue(); } },
+                ].map(f => (
+                  <div key={f.l} className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</label>
+                    <input type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
+                      className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Cards calculadas (kg e Índice Muscular Óseo) */}
+              {(nutMasaGrasaPct > 0 || nutMasaMuscularPct > 0) && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { l: 'Masa Grasa',      val: nutMasaGrasaKg,       unit: 'kg', col: 'text-rose-500' },
+                    { l: 'Masa Adiposa',    val: nutMasaAdiposaKg,     unit: 'kg', col: 'text-orange-500' },
+                    { l: 'Masa Muscular',   val: nutMasaMuscularKg,    unit: 'kg', col: 'text-emerald-600' },
+                    { l: 'Índ. Musc. Óseo',val: nutIndiceMuscularOseo, unit: '',  col: 'text-blue-600' },
+                  ].map(card => (
+                    <div key={card.l} className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 text-center shadow-inner">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{card.l}</p>
+                      <p className={`text-2xl font-black ${card.col}`}>{card.val || '—'}</p>
+                      {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Tabla de Evolución EV1 vs EV2 */}
+              {compositionHistory.length >= 2 && (() => {
+                const ev1 = compositionHistory[0];
+                const ev2 = compositionHistory[compositionHistory.length - 1];
+                const rows: { label: string; key: string; betterDown: boolean }[] = [
+                  { label: 'Masa Corporal (kg)',   key: 'peso',              betterDown: true  },
+                  { label: 'Talla (cms)',           key: 'talla',             betterDown: false },
+                  { label: 'Masa Grasa (%)',        key: 'masaGrasaPct',      betterDown: true  },
+                  { label: 'Masa Grasa (kg)',       key: 'masaGrasaKg',       betterDown: true  },
+                  { label: 'Masa Adiposa (%)',      key: 'masaAdiposaPct',    betterDown: true  },
+                  { label: 'Masa Adiposa (kg)',     key: 'masaAdiposaKg',     betterDown: true  },
+                  { label: 'Masa Muscular (%)',     key: 'masaMuscularPct',   betterDown: false },
+                  { label: 'Masa Muscular (kg)',    key: 'masaMuscularKg',    betterDown: false },
+                  { label: 'Sum. 6 Pliegues (mm)', key: 'sum6Pliegues',      betterDown: true  },
+                  { label: 'Sum. 8 Pliegues (mm)', key: 'sum8Pliegues',      betterDown: true  },
+                  { label: 'Índice Muscular Óseo', key: 'indiceMuscularOseo',betterDown: false },
+                  { label: 'Índice Masa Corporal', key: 'imc',               betterDown: true  },
+                ];
+                return (
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                      <span className="material-icons-round text-base text-emerald-500">trending_up</span>
+                      Tabla de Evolución
+                    </h4>
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-slate-200">
+                            <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">Campo</th>
+                            <th className="px-4 py-3 text-center">
+                              <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-wider">
+                                EV 1 · {String(ev1.date)}
+                              </span>
+                            </th>
+                            <th className="px-4 py-3 text-center">
+                              <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider">
+                                EV 2 · {String(ev2.date)}
+                              </span>
+                            </th>
+                            <th className="px-4 py-3 text-center">
+                              <span className="inline-block px-3 py-1 rounded-full bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider">DIF</span>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((row, idx) => {
+                            const v1 = Number(ev1[row.key]) || 0;
+                            const v2 = Number(ev2[row.key]) || 0;
+                            const dif = +(v2 - v1).toFixed(3);
+                            const improved = row.betterDown ? dif < 0 : dif > 0;
+                            const neutral = dif === 0;
+                            const difColor = neutral ? 'text-slate-400' : improved ? 'text-emerald-600' : 'text-rose-500';
+                            const arrow = neutral ? '→' : dif < 0 ? '↓' : '↑';
+                            return (
+                              <tr key={row.key} className={`border-b border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
+                                <td className="px-4 py-3 text-xs font-black text-slate-600">{row.label}</td>
+                                <td className="px-4 py-3 text-center text-sm font-bold text-slate-500">{v1 || '—'}</td>
+                                <td className="px-4 py-3 text-center text-sm font-bold text-slate-700">{v2 || '—'}</td>
+                                <td className={`px-4 py-3 text-center text-sm font-black ${difColor}`}>
+                                  {neutral ? '—' : `${arrow} ${dif > 0 ? '+' : ''}${dif}`}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
 
             {/* Objetivos nutricionales */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
