@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://maslife2026.vercel.app/sitemap.xml
+Sitemap: https://clinicamaslife.cl/sitemap.xml
