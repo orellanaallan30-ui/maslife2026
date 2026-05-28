@@ -129,7 +129,7 @@ const AdminManagement: React.FC = () => {
   const sendPasswordReset = async (pro: ProfessionalProfile) => {
     setResetSent(s => ({ ...s, [pro.id]: 'loading' }));
     const { error } = await supabase.auth.resetPasswordForEmail(pro.email, {
-      redirectTo: 'https://www.clinicamaslife.cl/#/pro/reset-password',
+      redirectTo: 'https://clinicamaslife.cl/pro/reset-password',
     });
     if (error) {
       setResetSent(s => ({ ...s, [pro.id]: 'error' }));

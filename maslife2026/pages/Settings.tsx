@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProfessionalProfile, Service } from '../types';
 import { useClinic } from '../ClinicContext';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { loggedPro: profile, updatePro: onSave, logout } = useClinic();
 
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
@@ -19,7 +20,7 @@ const Settings: React.FC = () => {
   const [linkCopied, setLinkCopied] = useState(false);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
-  const mpLinkWithBack = `${MP_SUBSCRIPTION_LINK}&back_url=${encodeURIComponent('https://www.clinicamaslife.cl/#/pro/settings?subscribed=1')}`;
+  const mpLinkWithBack = `${MP_SUBSCRIPTION_LINK}&back_url=${encodeURIComponent('https://clinicamaslife.cl/pro/settings?subscribed=1')}`;
   const SUPPORT_PHONE = import.meta.env.VITE_SUPPORT_PHONE || '+56965329974';
   const [subscribedMsg, setSubscribedMsg] = useState(false);
 
@@ -35,12 +36,10 @@ const Settings: React.FC = () => {
   }, [profile, navigate]);
 
   useEffect(() => {
-    const hashParts = window.location.hash.split('?');
-    const params = new URLSearchParams(hashParts[1] || '');
-    if (params.get('subscribed') === '1') {
+    if (searchParams.get('subscribed') === '1') {
       setSubscribedMsg(true);
       setActiveTab('suscripcion');
-      window.history.replaceState({}, '', window.location.pathname + hashParts[0]);
+      setSearchParams({}, { replace: true });
     }
   }, []);
 
@@ -134,7 +133,7 @@ const Settings: React.FC = () => {
 
   const getShareableLink = () => {
     const base = window.location.origin + window.location.pathname;
-    return `${base}#/patient/profile/${localProfile.slug || localProfile.id}`;
+    return `${base}/patient/profile/${localProfile.slug || localProfile.id}`;
   };
 
   const handleCopyLink = () => {

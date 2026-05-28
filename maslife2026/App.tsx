@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  HashRouter, Routes, Route, Navigate,
+  BrowserRouter, Routes, Route, Navigate,
   useNavigate, useLocation, Outlet
 } from 'react-router-dom';
 import MainHome              from './pages/MainHome';
@@ -345,12 +345,12 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <HashRouter>
+  <BrowserRouter>
     <ClinicProvider>
       <AppContent />
       <ToastContainer />
     </ClinicProvider>
-  </HashRouter>
+  </BrowserRouter>
 );
 
 export default App;

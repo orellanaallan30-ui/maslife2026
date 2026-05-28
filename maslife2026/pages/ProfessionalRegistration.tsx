@@ -117,7 +117,7 @@ const ProfessionalRegistration: React.FC = () => {
         password: form.password,
         options: {
           data: { name: form.name.trim(), specialty: form.specialty.trim() },
-          emailRedirectTo: 'https://www.clinicamaslife.cl/#/pro/login',
+          emailRedirectTo: 'https://clinicamaslife.cl/pro/login',
         },
       });
       if (timedOut) return;

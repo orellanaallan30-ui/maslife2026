@@ -120,7 +120,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (event === 'SIGNED_OUT') {
         setLoggedPro(null);
       } else if (event === 'PASSWORD_RECOVERY') {
-        window.location.replace(window.location.origin + window.location.pathname + '#/pro/reset-password');
+        window.location.replace(window.location.origin + '/pro/reset-password');
       }
     });
     return () => subscription.unsubscribe();
