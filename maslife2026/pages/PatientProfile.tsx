@@ -131,9 +131,9 @@ const PatientProfile: React.FC = () => {
       await addAppointment(newApp);
 
       // Enviar comprobante de pago al paciente si pagó con código de transacción
-      if (doctor.paymentEnabled && transactionRef.trim() && patientData.email && import.meta.env.VITE_RESEND_ENDPOINT) {
+      if (doctor.paymentEnabled && transactionRef.trim() && patientData.email) {
         const pro = professionals.find(p => p.id === doctor.id);
-        fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+        fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

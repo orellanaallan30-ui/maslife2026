@@ -657,10 +657,10 @@ const ProfessionalAgenda: React.FC = () => {
                                     updateAppointment(updatedApp);
 
                                     // Enviar comprobante de pago al paciente al marcar como Pagado
-                                    if (markingAsPaid && import.meta.env.VITE_RESEND_ENDPOINT && loggedPro?.email) {
+                                    if (markingAsPaid && loggedPro?.email) {
                                        const pat = patients.find(p => p.id === editingApp.patientId);
                                        if (pat?.email) {
-                                          fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+                                          fetch('/api/notify', {
                                              method: 'POST',
                                              headers: { 'Content-Type': 'application/json' },
                                              body: JSON.stringify({

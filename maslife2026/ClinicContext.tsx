@@ -299,9 +299,9 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
     // Notificación por email al profesional (si hay API configurada)
     const pro = professionals.find(p => p.id === app.professionalId);
-    if (pro?.email && import.meta.env.VITE_RESEND_ENDPOINT) {
+    if (pro?.email) {
       try {
-        await fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+        await fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
