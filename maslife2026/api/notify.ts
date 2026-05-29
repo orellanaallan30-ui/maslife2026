@@ -149,6 +149,25 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // ── DIAGNÓSTICO TEMPORAL — eliminar tras verificar configuración ──
+  if (req.method === 'GET' && req.query?.diag === 'maslife2026') {
+    const hasKey = !!process.env.RESEND_API_KEY;
+    const from = process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>';
+    if (!hasKey) return res.status(200).json({ diag: true, hasKey: false, from });
+    try {
+      const r = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from, to: ['orellanaallan30@gmail.com'], subject: 'Diagnóstico AgendaMasLife', html: '<p>Prueba de diagnóstico del sistema de correos.</p>' })
+      });
+      const data = await r.json();
+      return res.status(200).json({ diag: true, hasKey: true, from, resendStatus: r.status, resendBody: data });
+    } catch (e: any) {
+      return res.status(200).json({ diag: true, hasKey: true, from, error: e.message });
+    }
+  }
+  // ── FIN DIAGNÓSTICO ──
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   // Rate limiting: 20 emails por IP por hora (previene spam masivo)
