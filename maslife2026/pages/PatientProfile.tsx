@@ -31,6 +31,7 @@ const PatientProfile: React.FC = () => {
 
   // MercadoPago Bricks
   const [mpError, setMpError]       = useState('');
+  const [bookingError, setBookingError] = useState('');
   const [usarPagoManual, setUsarPagoManual] = useState(false);
   const [brickStatus, setBrickStatus] = useState<'idle'|'loading'|'ready'|'error'>('idle');
   const brickControllerRef = React.useRef<any>(null);
@@ -281,6 +282,7 @@ const PatientProfile: React.FC = () => {
 
   const finalizeBooking = async () => {
     setIsProcessing(true);
+    setBookingError('');
     
     const newApp: Appointment = {
       id: Math.random().toString(36).substr(2, 9).toUpperCase(),
@@ -355,6 +357,7 @@ const PatientProfile: React.FC = () => {
     } catch (error) {
       console.error("Error booking appointment:", error);
       setIsProcessing(false);
+      setBookingError('Ocurrió un error al confirmar tu cita. Por favor intenta de nuevo.');
     }
   };
 
@@ -936,14 +939,21 @@ const PatientProfile: React.FC = () => {
                     )}
                   </div>
                 ) : (
-                  <button
-                      onClick={finalizeBooking}
-                      disabled={isProcessing}
-                      className="w-full py-6 mt-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
-                    >
-                      {isProcessing ? 'PROCESANDO...' : 'CONFIRMAR CITA GRATUITAMENTE'}
-                      <span className="material-icons-round text-sm">check_circle</span>
-                  </button>
+                  <div className="space-y-3">
+                    {bookingError && (
+                      <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
+                        {bookingError}
+                      </div>
+                    )}
+                    <button
+                        onClick={finalizeBooking}
+                        disabled={isProcessing}
+                        className="w-full py-6 mt-4 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
+                      >
+                        {isProcessing ? 'PROCESANDO...' : 'CONFIRMAR CITA GRATUITAMENTE'}
+                        <span className="material-icons-round text-sm">check_circle</span>
+                    </button>
+                  </div>
                 )}
               </div>
             )}

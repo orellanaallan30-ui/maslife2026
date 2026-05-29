@@ -322,9 +322,9 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     // Preparar notificación WhatsApp al profesional (abre enlace si está en el navegador del pro)
-    if (pro?.email) {
+    if (loggedPro?.email) {
       const waMsg = `Nueva cita agendada:\nPaciente: ${app.patientName}\nServicio: ${app.serviceName}\nFecha: ${app.date}\nHora: ${app.time}\nModalidad: ${app.type}`;
-      console.log(`[Notif] WhatsApp para ${pro.name}: ${waMsg}`);
+      console.log(`[Notif] WhatsApp para ${loggedPro.name}: ${waMsg}`);
     }
   };
 
