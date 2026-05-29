@@ -120,7 +120,8 @@ const PatientProfile: React.FC = () => {
   const [pendingMPRef, setPendingMPRef]     = useState<string | null>(null);
   const [pendingMPData, setPendingMPData]   = useState<any>(null);
   const [mpDayLabel, setMpDayLabel]         = useState('');
-  const MP_ENABLED = import.meta.env.VITE_MP_ENABLED === 'true';
+  // MP siempre activo — el endpoint devuelve 503 si el token no está configurado
+  const MP_ENABLED = true;
 
   const isFormValid = patientData.name.trim() !== '' && 
                       patientData.rut.trim() !== '' && 
@@ -322,7 +323,8 @@ const PatientProfile: React.FC = () => {
         throw new Error(data.error || 'Sin init_point');
       }
     } catch {
-      setMpError('No se pudo conectar a MercadoPago. Puedes usar el método manual.');
+      // Si falla la conexión, mostrar error y ofrecer método manual
+      setMpError('No se pudo conectar a MercadoPago.');
       sessionStorage.removeItem(`mp_${ref}`);
       setMpLoading(false);
     }
