@@ -150,7 +150,7 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // ── DIAGNÓSTICO TEMPORAL — eliminar tras verificar configuración ──
-  if (req.method === 'GET' && req.query?.diag === 'maslife2026') {
+  if (req.method === 'GET') {
     const hasKey = !!process.env.RESEND_API_KEY;
     const from = process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>';
     if (!hasKey) return res.status(200).json({ diag: true, hasKey: false, from });
