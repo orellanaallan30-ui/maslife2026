@@ -30,6 +30,73 @@ const PatientProfile: React.FC = () => {
     getAppointments(proId).then(setProAppointments).catch(() => {});
   }, [fetchedDoctor?.id]);
 
+  // Fase 1: Detectar retorno desde MercadoPago en la URL (solo al montar)
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('mp_fail')) {
+      setMpError('El pago fue cancelado o rechazado. Puedes intentarlo de nuevo.');
+      setStep(4);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+    if (p.get('mp_pending')) {
+      setMpError('Tu pago está en revisión. Te contactaremos en breve.');
+      setStep(4);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+    if (p.get('mp_ok') === '1') {
+      const ref = p.get('mp_ref') || '';
+      const raw = sessionStorage.getItem(`mp_${ref}`);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      setPendingMPRef(ref);
+      setPendingMPData(saved);
+      // Restaurar datos de pantalla inmediatamente
+      setPatientData(saved.patientData);
+      setSelectedSlot(saved.selectedSlot);
+      setSelectedModality(saved.selectedModality);
+      setSelectedService(saved.selectedService);
+      setMpDayLabel(saved.dayLabel);
+      setTransactionRef('MERCADOPAGO-AUTO');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fase 2: Cuando el profesional carga, confirmar la reserva pendiente de MP
+  useEffect(() => {
+    if (!pendingMPRef || !pendingMPData || !fetchedDoctor) return;
+    const saved = pendingMPData;
+    const ref   = pendingMPRef;
+    setPendingMPRef(null);
+    setPendingMPData(null);
+    sessionStorage.removeItem(`mp_${ref}`);
+
+    const newApp = saved.newApp;
+    addAppointment(newApp).catch(() => {});
+
+    if (fetchedDoctor.email) {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: fetchedDoctor.email,
+          professionalName: fetchedDoctor.name,
+          patientName: saved.patientData.name,
+          serviceName: saved.selectedService?.name || '',
+          date: saved.dayDate,
+          time: saved.selectedSlot,
+          type: saved.selectedModality === 'online' ? 'Online' : saved.selectedModality === 'home' ? 'Domicilio' : 'Presencial',
+          duration: saved.selectedService?.duration,
+          patientEmail: saved.patientData.email || undefined,
+          price: saved.selectedService?.price,
+        }),
+      }).catch(() => {});
+    }
+
+    setIsConfirmed(true);
+  }, [pendingMPRef, pendingMPData, fetchedDoctor]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const doctor = fetchedDoctor;
 
   // Nuevo Estado de Pasos
@@ -45,6 +112,15 @@ const PatientProfile: React.FC = () => {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [paymentLinkOpened, setPaymentLinkOpened] = useState(false);
   const [transactionRef, setTransactionRef] = useState('');
+
+  // MercadoPago automático
+  const [mpLoading, setMpLoading] = useState(false);
+  const [mpError, setMpError]     = useState('');
+  const [usarPagoManual, setUsarPagoManual] = useState(false);
+  const [pendingMPRef, setPendingMPRef]     = useState<string | null>(null);
+  const [pendingMPData, setPendingMPData]   = useState<any>(null);
+  const [mpDayLabel, setMpDayLabel]         = useState('');
+  const MP_ENABLED = import.meta.env.VITE_MP_ENABLED === 'true';
 
   const isFormValid = patientData.name.trim() !== '' && 
                       patientData.rut.trim() !== '' && 
@@ -191,6 +267,67 @@ const PatientProfile: React.FC = () => {
     }
   };
 
+  const handleMercadoPagoPayment = async () => {
+    if (!selectedService || !selectedSlot || !doctor) return;
+    setMpLoading(true);
+    setMpError('');
+    const ref = `mp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const newApp: Appointment = {
+      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
+      patientId: `p-${Date.now()}`,
+      patientName: patientData.name,
+      patientPhone: patientData.phone,
+      doctorName: doctor.name,
+      specialty: doctor.specialty,
+      serviceName: selectedService.name,
+      notes: patientData.reason,
+      date: availableDays[selectedDay].date,
+      time: selectedSlot,
+      duration: selectedService.duration,
+      type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
+      status: 'Confirmado',
+      price: selectedService.price,
+      paymentStatus: 'Pagado',
+      paidAt: new Date().toISOString(),
+      category: 'Medical',
+      professionalId: doctor.id,
+      bookingSource: 'web',
+      patientEmail: patientData.email || undefined,
+    };
+    sessionStorage.setItem(`mp_${ref}`, JSON.stringify({
+      newApp,
+      patientData,
+      dayLabel: availableDays[selectedDay].label,
+      dayDate: availableDays[selectedDay].date,
+      selectedSlot,
+      selectedService,
+      selectedModality,
+    }));
+    try {
+      const res = await fetch('/api/create-mp-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `Bono Reserva — ${selectedService.name} con ${doctor.name}`,
+          price: 5000,
+          professionalSlug: doctor.slug || doctor.id,
+          ref,
+          patientName: patientData.name,
+        }),
+      });
+      const data = await res.json();
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        throw new Error(data.error || 'Sin init_point');
+      }
+    } catch {
+      setMpError('No se pudo conectar a MercadoPago. Puedes usar el método manual.');
+      sessionStorage.removeItem(`mp_${ref}`);
+      setMpLoading(false);
+    }
+  };
+
   const generateGoogleCalendarLink = () => {
     if (!selectedService || !selectedSlot) return '#';
     const startDate = availableDays[selectedDay].date; 
@@ -279,7 +416,7 @@ const PatientProfile: React.FC = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fecha y Hora</span>
-                  <p className="text-sm font-black text-slate-900">{availableDays[selectedDay]?.label}</p>
+                  <p className="text-sm font-black text-slate-900">{mpDayLabel || availableDays[selectedDay]?.label}</p>
                   <p className="text-xl font-black text-primary">{selectedSlot}</p>
                 </div>
                 <div>
@@ -666,53 +803,90 @@ const PatientProfile: React.FC = () => {
                 
                 {doctor.paymentEnabled ? (
                   <div className="space-y-4 w-full">
-                    {/* Paso 1: Ir a pagar */}
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-icons-round text-blue-500 text-sm">info</span>
-                      <p className="text-xs font-bold text-blue-600">Completa los 2 pasos para confirmar tu cita</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        window.open(doctor.bookingPaymentLink || doctor.subscriptionLink || '#', '_blank');
-                        setPaymentLinkOpened(true);
-                      }}
-                      className={`w-full py-5 font-black rounded-2xl border-2 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center
-                        ${paymentLinkOpened
-                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                          : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-sm'
-                        }`}
-                    >
-                      <span className={`material-icons-round ${paymentLinkOpened ? 'text-emerald-600' : 'text-primary'}`}>
-                        {paymentLinkOpened ? 'check_circle' : 'open_in_new'}
-                      </span>
-                      {paymentLinkOpened ? 'Paso 1 ✓ — Pago iniciado' : '1. Pagar Bono de Reserva ($5.000)'}
-                    </button>
-
-                    {/* Paso 2: Código de transacción — solo visible tras ir al pago */}
-                    {paymentLinkOpened && (
-                      <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
-                          2. Ingresa tu código de transacción
-                        </label>
-                        <input
-                          type="text"
-                          value={transactionRef}
-                          onChange={e => setTransactionRef(e.target.value)}
-                          placeholder="Ej: 123456789 (código de Flow o MercadoPago)"
-                          className="w-full bg-white border-2 border-slate-200 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:font-normal placeholder:text-slate-400"
-                          autoFocus
-                        />
+                    {/* ── MercadoPago automático ── */}
+                    {MP_ENABLED && !usarPagoManual ? (
+                      <div className="space-y-3">
                         <button
-                          onClick={finalizeBooking}
-                          disabled={isProcessing || !transactionRef.trim()}
-                          className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-40 disabled:translate-y-0 disabled:cursor-not-allowed transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
+                          onClick={handleMercadoPagoPayment}
+                          disabled={mpLoading}
+                          className="w-full py-5 font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center text-white shadow-xl disabled:opacity-50"
+                          style={{ background: mpLoading ? '#6cb8e0' : '#009ee3' }}
                         >
-                          {isProcessing ? (
-                            <><span className="material-icons-round text-base animate-spin">sync</span>Confirmando...</>
+                          {mpLoading ? (
+                            <><span className="material-icons-round text-base animate-spin">sync</span>Conectando a MercadoPago...</>
                           ) : (
-                            <>Confirmar Reserva<span className="material-icons-round text-sm">verified</span></>
+                            <>
+                              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current flex-shrink-0">
+                                <path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.628 0 12-5.372 12-12C24 5.373 18.628 0 12 0zm5.49 8.444l-2.18 9.778a.42.42 0 01-.41.322h-1.638a.42.42 0 01-.418-.322l-1.084-4.626-1.083 4.626a.42.42 0 01-.418.322H8.62a.42.42 0 01-.41-.322L5.98 8.444a.42.42 0 01.41-.516h1.638c.2 0 .373.139.41.335l1.196 5.692 1.192-5.692a.42.42 0 01.41-.335h1.527c.2 0 .373.139.41.335l1.192 5.692 1.196-5.692a.42.42 0 01.41-.335h1.519a.42.42 0 01.41.516z"/>
+                              </svg>
+                              Pagar $5.000 con MercadoPago
+                            </>
                           )}
                         </button>
+                        {mpError && (
+                          <p className="text-rose-600 text-xs font-bold text-center bg-rose-50 rounded-xl p-3">{mpError}</p>
+                        )}
+                        <button
+                          onClick={() => setUsarPagoManual(true)}
+                          className="w-full text-center text-[11px] font-bold text-slate-400 hover:text-slate-600 py-2 transition-colors"
+                        >
+                          Pagar con Flow u otro método →
+                        </button>
+                      </div>
+                    ) : (
+                      /* ── Flujo manual (Flow / código de transacción) ── */
+                      <div className="space-y-4">
+                        {MP_ENABLED && usarPagoManual && (
+                          <button onClick={() => setUsarPagoManual(false)} className="text-xs font-bold text-primary flex items-center gap-1">
+                            <span className="material-icons-round text-sm">arrow_back</span>Volver a MercadoPago
+                          </button>
+                        )}
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="material-icons-round text-blue-500 text-sm">info</span>
+                          <p className="text-xs font-bold text-blue-600">Completa los 2 pasos para confirmar tu cita</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            window.open(doctor.bookingPaymentLink || doctor.subscriptionLink || '#', '_blank');
+                            setPaymentLinkOpened(true);
+                          }}
+                          className={`w-full py-5 font-black rounded-2xl border-2 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center
+                            ${paymentLinkOpened
+                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                              : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-sm'
+                            }`}
+                        >
+                          <span className={`material-icons-round ${paymentLinkOpened ? 'text-emerald-600' : 'text-primary'}`}>
+                            {paymentLinkOpened ? 'check_circle' : 'open_in_new'}
+                          </span>
+                          {paymentLinkOpened ? 'Paso 1 ✓ — Pago iniciado' : '1. Pagar Bono de Reserva ($5.000)'}
+                        </button>
+                        {paymentLinkOpened && (
+                          <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                              2. Ingresa tu código de transacción
+                            </label>
+                            <input
+                              type="text"
+                              value={transactionRef}
+                              onChange={e => setTransactionRef(e.target.value)}
+                              placeholder="Ej: 123456789 (código de Flow o MercadoPago)"
+                              className="w-full bg-white border-2 border-slate-200 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:font-normal placeholder:text-slate-400"
+                              autoFocus
+                            />
+                            <button
+                              onClick={finalizeBooking}
+                              disabled={isProcessing || !transactionRef.trim()}
+                              className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-40 disabled:translate-y-0 disabled:cursor-not-allowed transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
+                            >
+                              {isProcessing ? (
+                                <><span className="material-icons-round text-base animate-spin">sync</span>Confirmando...</>
+                              ) : (
+                                <>Confirmar Reserva<span className="material-icons-round text-sm">verified</span></>
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
