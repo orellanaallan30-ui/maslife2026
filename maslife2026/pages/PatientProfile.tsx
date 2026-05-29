@@ -519,7 +519,7 @@ const PatientProfile: React.FC = () => {
 
   // Interfaz por Pasos (Wizard)
   return (
-    <div className="w-full min-h-full bg-[#f8fafc] flex flex-col items-center overflow-y-auto">
+    <div className="flex-1 w-full bg-[#f8fafc] flex flex-col items-center overflow-y-auto">
       
       {/* Cabecera del Profesional (Fija) */}
       <div className="w-full bg-white border-b-2 border-slate-100 shadow-sm sticky top-0 z-40">

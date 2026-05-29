@@ -185,7 +185,7 @@ export async function saveProfessional(pro: ProfessionalProfile): Promise<void> 
 export async function getAllPublicProfessionals(): Promise<ProfessionalProfile[]> {
   const { data, error } = await supabase
     .from('professionals')
-    .select('*')
+    .select('id,name,specialty,city,slug,modalities,services,is_public,payment_enabled,booking_payment_link,working_hours,schedule,is_verified,subscription_status')
     .neq('is_public', false);
   if (error || !data) return [];
   return data.map(mapDBtoPro);

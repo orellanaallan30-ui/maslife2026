@@ -195,7 +195,7 @@ const PatientResults: React.FC = () => {
                   <div className="relative shrink-0">
                     <img
                       className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover group-hover:scale-105 transition-transform duration-300"
-                      src={doc.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=2563eb&color=fff&size=200`}
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0284c7&color=fff&size=200`}
                       alt={doc.name}
                     />
                     <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-lg border-2 border-white">
