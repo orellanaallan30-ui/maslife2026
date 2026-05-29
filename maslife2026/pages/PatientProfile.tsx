@@ -130,20 +130,40 @@ const PatientProfile: React.FC = () => {
     try {
       await addAppointment(newApp);
 
-      // Enviar comprobante de pago al paciente si pagó con código de transacción
-      if (doctor.paymentEnabled && transactionRef.trim() && patientData.email) {
-        const pro = professionals.find(p => p.id === doctor.id);
+      // Siempre enviar confirmación al profesional (y al paciente si dio email)
+      if (doctor.email) {
         fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            to: pro?.email || doctor.email,
+            to: doctor.email,
             professionalName: doctor.name,
             patientName: patientData.name,
             serviceName: selectedService!.name,
             date: availableDays[selectedDay].date,
             time: selectedSlot!,
             type: newApp.type,
+            duration: selectedService!.duration,
+            patientEmail: patientData.email || undefined,
+            price: selectedService!.price
+          })
+        }).catch(() => {});
+      }
+
+      // Adicionalmente enviar comprobante si pagó con código de transacción
+      if (doctor.paymentEnabled && transactionRef.trim() && patientData.email && doctor.email) {
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: doctor.email,
+            professionalName: doctor.name,
+            patientName: patientData.name,
+            serviceName: selectedService!.name,
+            date: availableDays[selectedDay].date,
+            time: selectedSlot!,
+            type: newApp.type,
+            duration: selectedService!.duration,
             patientEmail: patientData.email,
             isReceipt: true,
             transactionRef: transactionRef.trim(),

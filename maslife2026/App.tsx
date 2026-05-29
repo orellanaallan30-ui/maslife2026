@@ -246,7 +246,12 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                       ) : notifications.map(n => (
                         <div
                           key={n.id}
-                          onClick={() => !n.read && markNotificationRead(n.id)}
+                          onClick={() => {
+                            if (!n.read) markNotificationRead(n.id);
+                            setShowNotifications(false);
+                            if (n.type === 'appointment') navigate('/pro/dashboard');
+                            else if (n.type === 'payment') navigate('/pro/dashboard');
+                          }}
                           className={`flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors hover:bg-slate-50 ${!n.read ? 'bg-teal-50/60' : ''}`}
                         >
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${n.type === 'appointment' ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-500'}`}>

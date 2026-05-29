@@ -297,16 +297,17 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     // Persistir en Supabase
     saveAppointment(app).catch(() => {});
 
-    // Notificación por email al profesional (si hay API configurada)
-    const pro = professionals.find(p => p.id === app.professionalId);
-    if (pro?.email) {
+    // Notificación por email — solo cuando el profesional crea la cita manualmente (loggedPro disponible)
+    // Cuando un paciente agenda desde PatientProfile.tsx, el email se envía directamente desde allí
+    const proEmail = loggedPro?.id === app.professionalId ? loggedPro?.email : professionals.find(p => p.id === app.professionalId)?.email;
+    if (proEmail && loggedPro) {
       try {
         await fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            to: pro.email,
-            professionalName: pro.name,
+            to: proEmail,
+            professionalName: app.doctorName,
             patientName: app.patientName,
             serviceName: app.serviceName,
             date: app.date,
