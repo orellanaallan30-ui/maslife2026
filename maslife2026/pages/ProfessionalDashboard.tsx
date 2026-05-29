@@ -4,6 +4,27 @@ import { Appointment } from '../types';
 import { useClinic } from '../ClinicContext';
 import { supabase } from '../supabaseClient';
 
+interface MPPayment {
+  id: number;
+  status: string;
+  statusDetail: string;
+  amount: number;
+  currency: string;
+  description: string;
+  externalRef: string;
+  payerEmail: string | null;
+  payerName: string | null;
+  paymentMethod: string;
+  paymentType: string;
+  createdAt: string;
+  approvedAt: string | null;
+}
+interface MPSummary {
+  approvedCount: number; approvedAmount: number;
+  pendingCount: number;  pendingAmount: number;
+  rejectedCount: number; days: number;
+}
+
 const ProfessionalDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { appointments, manualTransactions, loggedPro } = useClinic();
@@ -32,6 +53,30 @@ const ProfessionalDashboard: React.FC = () => {
   const isPaused = (serverSubStatus ?? loggedPro.subscriptionStatus) === 'paused';
 
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // ── Panel de Ventas MP ──
+  const [activeTab, setActiveTab]       = useState<'agenda' | 'ventas'>('agenda');
+  const [mpPayments, setMpPayments]     = useState<MPPayment[]>([]);
+  const [mpSummary, setMpSummary]       = useState<MPSummary | null>(null);
+  const [mpLoading, setMpLoading]       = useState(false);
+  const [mpRange, setMpRange]           = useState<'7' | '30' | '90'>('30');
+  const [mpLoaded, setMpLoaded]         = useState(false);
+
+  useEffect(() => {
+    if (activeTab !== 'ventas' || mpLoaded) return;
+    setMpLoading(true);
+    fetch(`/api/mp-payments?range=${mpRange}&limit=100`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.payments) { setMpPayments(data.payments); setMpSummary(data.summary); setMpLoaded(true); }
+      })
+      .catch(() => {})
+      .finally(() => setMpLoading(false));
+  }, [activeTab, mpRange, mpLoaded]);
+
+  const reloadMP = (range: '7' | '30' | '90') => {
+    setMpRange(range); setMpLoaded(false);
+  };
 
   const bookingLink = `${window.location.origin}/p/${loggedPro.slug || loggedPro.id}`;
 
@@ -252,6 +297,25 @@ const ProfessionalDashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* ── Tabs ── */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setActiveTab('agenda')}
+              className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'agenda' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400'}`}
+            >
+              <span className="material-icons-round text-sm align-middle mr-1">event</span>Agenda
+            </button>
+            <button
+              onClick={() => setActiveTab('ventas')}
+              className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ventas' ? 'bg-[#009ee3] text-white shadow-lg shadow-[#009ee3]/30' : 'bg-white text-slate-500 border border-slate-200 hover:border-[#009ee3]'}`}
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 inline-block mr-1 fill-current align-middle"><path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.628 0 12-5.372 12-12C24 5.373 18.628 0 12 0zm5.49 8.444l-2.18 9.778a.42.42 0 01-.41.322h-1.638a.42.42 0 01-.418-.322l-1.084-4.626-1.083 4.626a.42.42 0 01-.418.322H8.62a.42.42 0 01-.41-.322L5.98 8.444a.42.42 0 01.41-.516h1.638c.2 0 .373.139.41.335l1.196 5.692 1.192-5.692a.42.42 0 01.41-.335h1.527c.2 0 .373.139.41.335l1.192 5.692 1.196-5.692a.42.42 0 01.41-.335h1.519a.42.42 0 01.41.516z"/></svg>
+              Ventas MP
+            </button>
+          </div>
+
+          {/* ── Tab: Agenda ── */}
+          {activeTab === 'agenda' && (
           <div className="bg-white rounded-3xl md:rounded-[3rem] border border-slate-100 shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] overflow-hidden">
             <div className="p-5 md:p-10 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/30">
               <h2 className="font-black text-2xl text-slate-900 tracking-tight flex items-center gap-4">
@@ -294,6 +358,108 @@ const ProfessionalDashboard: React.FC = () => {
               )}
             </div>
           </div>
+          )} {/* end tab agenda */}
+
+          {/* ── Tab: Ventas MercadoPago ── */}
+          {activeTab === 'ventas' && (
+          <div className="bg-white rounded-3xl md:rounded-[3rem] border border-slate-100 shadow-[0_48px_100px_-20px_rgba(0,158,227,0.12)] overflow-hidden">
+            {/* Header */}
+            <div className="p-5 md:p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-[#009ee3]/5 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#009ee3] flex items-center justify-center shadow-lg shadow-[#009ee3]/30">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.628 0 12-5.372 12-12C24 5.373 18.628 0 12 0zm5.49 8.444l-2.18 9.778a.42.42 0 01-.41.322h-1.638a.42.42 0 01-.418-.322l-1.084-4.626-1.083 4.626a.42.42 0 01-.418.322H8.62a.42.42 0 01-.41-.322L5.98 8.444a.42.42 0 01.41-.516h1.638c.2 0 .373.139.41.335l1.196 5.692 1.192-5.692a.42.42 0 01.41-.335h1.527c.2 0 .373.139.41.335l1.192 5.692 1.196-5.692a.42.42 0 01.41-.335h1.519a.42.42 0 01.41.516z"/></svg>
+                </div>
+                <div>
+                  <h2 className="font-black text-xl text-slate-900 tracking-tight">Panel de Ventas</h2>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MercadoPago · Pagos en línea</p>
+                </div>
+              </div>
+              {/* Rango */}
+              <div className="flex gap-2">
+                {(['7','30','90'] as const).map(r => (
+                  <button key={r} onClick={() => reloadMP(r)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mpRange === r ? 'bg-[#009ee3] text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                    {r}d
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {mpLoading ? (
+              <div className="p-20 text-center">
+                <span className="material-icons-round text-5xl text-[#009ee3] animate-spin">sync</span>
+                <p className="text-slate-400 font-black text-xs uppercase tracking-widest mt-4">Cargando pagos...</p>
+              </div>
+            ) : mpSummary ? (
+              <>
+                {/* Resumen */}
+                <div className="grid grid-cols-3 gap-4 p-5 md:p-8 border-b border-slate-50">
+                  <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100">
+                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Aprobados</p>
+                    <p className="text-2xl font-black text-emerald-700">{mpSummary.approvedCount}</p>
+                    <p className="text-xs font-bold text-emerald-600 mt-1">${mpSummary.approvedAmount.toLocaleString('es-CL')}</p>
+                  </div>
+                  <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Pendientes</p>
+                    <p className="text-2xl font-black text-amber-700">{mpSummary.pendingCount}</p>
+                    <p className="text-xs font-bold text-amber-600 mt-1">${mpSummary.pendingAmount.toLocaleString('es-CL')}</p>
+                  </div>
+                  <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100">
+                    <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Rechazados</p>
+                    <p className="text-2xl font-black text-rose-700">{mpSummary.rejectedCount}</p>
+                    <p className="text-xs font-bold text-rose-400 mt-1">últimos {mpSummary.days}d</p>
+                  </div>
+                </div>
+
+                {/* Lista de pagos */}
+                <div className="divide-y divide-slate-50">
+                  {mpPayments.length === 0 ? (
+                    <div className="p-20 text-center">
+                      <span className="material-icons-round text-5xl text-slate-200">payments</span>
+                      <p className="text-slate-400 font-black text-xs uppercase tracking-widest mt-4">Sin pagos en este período</p>
+                    </div>
+                  ) : mpPayments.map(p => {
+                    const isOk = p.status === 'approved';
+                    const isPending = p.status === 'pending' || p.status === 'in_process';
+                    const statusColor = isOk ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                                      : isPending ? 'text-amber-700 bg-amber-50 border-amber-200'
+                                      : 'text-rose-700 bg-rose-50 border-rose-200';
+                    const statusLabel = isOk ? 'Aprobado' : isPending ? 'Pendiente' : 'Rechazado';
+                    const fecha = new Date(p.createdAt).toLocaleDateString('es-CL', { day:'2-digit', month:'short', year:'numeric' });
+                    const hora  = new Date(p.createdAt).toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
+                    return (
+                      <div key={p.id} className="px-5 md:px-8 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isOk ? 'bg-emerald-100' : isPending ? 'bg-amber-100' : 'bg-rose-100'}`}>
+                            <span className={`material-icons-round text-lg ${isOk ? 'text-emerald-600' : isPending ? 'text-amber-600' : 'text-rose-500'}`}>
+                              {isOk ? 'check_circle' : isPending ? 'schedule' : 'cancel'}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-black text-slate-900 text-sm truncate">{p.description || `Pago #${p.id}`}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                              {p.payerName || p.payerEmail || 'Pagador desconocido'} · {fecha} {hora}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${statusColor}`}>{statusLabel}</span>
+                          <p className="font-black text-slate-900 text-base">${p.amount.toLocaleString('es-CL')}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="p-20 text-center">
+                <span className="material-icons-round text-5xl text-slate-200">cloud_off</span>
+                <p className="text-slate-400 font-black text-xs uppercase tracking-widest mt-4">No se pudo cargar. Verifica que MERCADOPAGO_ACCESS_TOKEN esté configurado en Vercel.</p>
+              </div>
+            )}
+          </div>
+          )} {/* end tab ventas */}
+
         </div>
       </main>
     </div>
