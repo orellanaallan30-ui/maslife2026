@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Appointment, Service } from '../types';
 import { useClinic } from '../ClinicContext';
-import { getProfessionalBySlugOrId } from '../supabaseService';
+import { getProfessionalBySlugOrId, getAppointments } from '../supabaseService';
 
 const PatientProfile: React.FC = () => {
   const { id } = useParams();
@@ -12,6 +12,8 @@ const PatientProfile: React.FC = () => {
   const localDoctor = professionals.find(p => p.id === id || p.slug === id);
   const [fetchedDoctor, setFetchedDoctor] = useState(localDoctor ?? null);
   const [loadingDoctor, setLoadingDoctor] = useState(!localDoctor);
+  // Citas reales del profesional desde Supabase (para bloquear cupos correctamente)
+  const [proAppointments, setProAppointments] = useState<Appointment[]>([]);
 
   useEffect(() => {
     if (localDoctor) { setFetchedDoctor(localDoctor); setLoadingDoctor(false); return; }
@@ -20,6 +22,13 @@ const PatientProfile: React.FC = () => {
       .then(pro => setFetchedDoctor(pro))
       .finally(() => setLoadingDoctor(false));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cargar citas del profesional desde Supabase para bloquear cupos correctamente
+  useEffect(() => {
+    const proId = fetchedDoctor?.id;
+    if (!proId) return;
+    getAppointments(proId).then(setProAppointments).catch(() => {});
+  }, [fetchedDoctor?.id]);
 
   const doctor = fetchedDoctor;
 
@@ -48,6 +57,8 @@ const PatientProfile: React.FC = () => {
   // useMemo ANTES de los returns condicionales — React exige orden estable de hooks
   const availableDays = useMemo(() => {
     if (!doctor) return [];
+    // Combinar citas del contexto + citas frescas de Supabase para bloquear cupos exactos
+    const allAppointments = [...appointments, ...proAppointments];
     const daysArr = [];
     const today = new Date();
 
@@ -70,7 +81,7 @@ const PatientProfile: React.FC = () => {
 
         for (let h = startH; h < endH; h++) {
           const timeStr = `${String(h).padStart(2, '0')}:00`;
-          const isBusy = appointments.some(a => a.professionalId === doctor.id && a.date === dateStr && a.time === timeStr);
+          const isBusy = allAppointments.some(a => a.professionalId === doctor.id && a.date === dateStr && a.time === timeStr);
           if (!isBusy) slots.push(timeStr);
         }
 
@@ -80,7 +91,7 @@ const PatientProfile: React.FC = () => {
       }
     }
     return daysArr;
-  }, [doctor, appointments]);
+  }, [doctor, appointments, proAppointments]);
 
   if (loadingDoctor) {
     return (
