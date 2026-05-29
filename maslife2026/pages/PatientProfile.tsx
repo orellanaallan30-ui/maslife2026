@@ -267,18 +267,30 @@ const PatientProfile: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Pagado</span>
-                  <p className="text-2xl font-black text-slate-900">${doctor.paymentEnabled ? '5.000' : '0'}</p>
+                  <p className="text-2xl font-black text-slate-900">${doctor.paymentEnabled && selectedService ? selectedService.price.toLocaleString('es-CL') : '0'}</p>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="mt-10 flex flex-col gap-4 no-print" id="receipt-actions">
+
+            {/* Email enviado */}
+            {patientData.email && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">
+                <span className="material-icons-round text-emerald-500 text-2xl flex-shrink-0">mark_email_read</span>
+                <div>
+                  <p className="text-emerald-800 font-black text-sm">Email de confirmación enviado</p>
+                  <p className="text-emerald-600 text-xs font-bold mt-0.5">Revisa <span className="underline">{patientData.email}</span> — incluye archivo de calendario (.ics)</p>
+                </div>
+              </div>
+            )}
+
             {/* Google Calendar — Card prominente */}
             <div className="bg-blue-50 border-2 border-blue-200 rounded-[2rem] p-6 text-center">
               <span className="material-icons-round text-blue-500 text-4xl mb-2 block">event_available</span>
               <h3 className="font-black text-blue-900 text-base mb-1">¿Lo agendamos en tu calendario?</h3>
-              <p className="text-blue-700 text-xs mb-4 font-bold">Para no olvidar tu cita</p>
+              <p className="text-blue-700 text-xs mb-4 font-bold">También puedes abrirlo desde el .ics del email</p>
               <a
                 href={generateGoogleCalendarLink()}
                 target="_blank"
