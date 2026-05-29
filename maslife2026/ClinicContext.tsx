@@ -313,7 +313,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             time: app.time,
             type: app.type,
             patientEmail: app.patientEmail,
-            price: app.price
+            price: app.price,
+            duration: app.duration
           })
         }).catch(() => {}); // No bloquear si falla
       } catch { /* silencioso */ }
