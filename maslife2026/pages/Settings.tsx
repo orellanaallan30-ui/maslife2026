@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProfessionalProfile, Service } from '../types';
 import { useClinic } from '../ClinicContext';
+import { saveProfessional } from '../supabaseService';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ const Settings: React.FC = () => {
     setHasChanges(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (localProfile) {
       // Auto-generar slug si no tiene o está vacío
       let profileToSave = { ...localProfile };
@@ -63,6 +64,7 @@ const Settings: React.FC = () => {
       }
       setLocalProfile(profileToSave);
       onSave(profileToSave);
+      saveProfessional(profileToSave).catch(() => {}); // persiste a Supabase
       setHasChanges(false);
       setShowSavedMsg(true);
       setTimeout(() => setShowSavedMsg(false), 3000);
