@@ -145,7 +145,12 @@ const PatientProfile: React.FC = () => {
       const dayIdx = d.getDay();
 
       const defaultSched = { active: dayIdx !== 0 && dayIdx !== 6, start: '09:00', end: '18:00' };
-      const sched = doctor.schedule?.[dayIdx] || defaultSched;
+      const raw = doctor.schedule?.[dayIdx];
+      const sched = {
+        active: raw ? (raw.active ?? false) : defaultSched.active,
+        start: (raw?.start) || defaultSched.start,
+        end: (raw?.end) || defaultSched.end,
+      };
 
       if (sched.active) {
         const dateStr = d.toISOString().split('T')[0];
@@ -153,8 +158,10 @@ const PatientProfile: React.FC = () => {
         const name = i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : d.toLocaleDateString('es-ES', { weekday: 'short' });
 
         const slots: string[] = [];
-        const [startH] = sched.start.split(':').map(Number);
-        const [endH] = sched.end.split(':').map(Number);
+        const startParts = String(sched.start).split(':');
+        const endParts   = String(sched.end).split(':');
+        const [startH] = startParts.map(Number);
+        const [endH]   = endParts.map(Number);
 
         for (let h = startH; h < endH; h++) {
           const timeStr = `${String(h).padStart(2, '0')}:00`;
@@ -172,7 +179,7 @@ const PatientProfile: React.FC = () => {
 
   if (loadingDoctor) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-20 gap-4">
+      <div className="flex-1 w-full flex flex-col items-center justify-center p-20 gap-4 bg-[#f8fafc]">
         <span className="material-icons-round text-primary text-5xl animate-spin">sync</span>
         <p className="text-slate-500 font-bold">Cargando perfil...</p>
       </div>
@@ -181,7 +188,7 @@ const PatientProfile: React.FC = () => {
 
   if (!doctor) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center p-20">
+      <div className="flex-1 w-full flex flex-col items-center justify-center p-20 bg-[#f8fafc]">
         <span className="material-icons-round text-slate-200 text-6xl mb-4">error_outline</span>
         <p className="text-slate-500 font-bold text-xl">Profesional no encontrado o no disponible.</p>
         <button onClick={() => navigate('/patient/results')} className="mt-6 text-primary font-black uppercase tracking-widest text-xs">Volver a la búsqueda</button>
@@ -600,7 +607,7 @@ const PatientProfile: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {doctor.services.length > 0 ? doctor.services.map((s) => (
+                  {Array.isArray(doctor.services) && doctor.services.length > 0 ? doctor.services.map((s) => (
                     <button
                       key={s.id}
                       onClick={() => { setSelectedService(s); setSelectedSlot(null); setStep(2); }}
