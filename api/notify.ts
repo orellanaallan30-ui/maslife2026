@@ -16,9 +16,18 @@ function checkRateLimit(headers: VercelRequest['headers'], max: number, windowMs
   return true;
 }
 
-// Genera contenido iCalendar (.ics) con tiempo flotante (sin TZ) para compatibilidad universal
-function generateIcs(p: { date: string; time: string; duration: number; summary: string; description: string; uid: string }): string {
-  const { date, time, duration, summary, description, uid } = p;
+// Email del remitente/organizador (solo la dirección, sin nombre)
+const ORGANIZER_EMAIL = 'notificaciones@clinicamaslife.cl';
+
+// Genera una invitación iCalendar (.ics) tiempo flotante (sin TZ) con ORGANIZER + ATTENDEE,
+// para que Gmail/Outlook la muestren como invitación interactiva y la agenden automáticamente.
+function generateIcs(p: {
+  date: string; time: string; duration: number;
+  summary: string; description: string; uid: string;
+  organizerName: string;
+  attendeeName: string; attendeeEmail: string;
+}): string {
+  const { date, time, duration, summary, description, uid, organizerName, attendeeName, attendeeEmail } = p;
   const [yyyy, mm, dd] = date.split('-');
   const [hh, min] = time.split(':');
   const startDt = `${yyyy}${mm}${dd}T${hh}${min}00`;
@@ -34,6 +43,8 @@ function generateIcs(p: { date: string; time: string; duration: number; summary:
 
   // RFC 5545: escapar \ primero, luego , y ; y newlines
   const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/[,;]/g, c => `\\${c}`).replace(/\n/g, '\\n');
+  // CN (nombre) no debe contener comas/dobles comillas sin escapar
+  const escCn = (s: string) => (s || '').replace(/[\\;,:"]/g, ' ').trim();
 
   return [
     'BEGIN:VCALENDAR', 'VERSION:2.0',
@@ -46,7 +57,12 @@ function generateIcs(p: { date: string; time: string; duration: number; summary:
     `DTEND:${endDt}`,
     `SUMMARY:${esc(summary)}`,
     `DESCRIPTION:${esc(description)}`,
+    `ORGANIZER;CN=${escCn(organizerName)}:mailto:${ORGANIZER_EMAIL}`,
+    `ATTENDEE;CN=${escCn(attendeeName)};ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${attendeeEmail}`,
+    'SEQUENCE:0',
     'STATUS:CONFIRMED',
+    'TRANSP:OPAQUE',
+    'BEGIN:VALARM', 'TRIGGER:-PT60M', 'ACTION:DISPLAY', `DESCRIPTION:${esc(summary)}`, 'END:VALARM',
     'END:VEVENT', 'END:VCALENDAR'
   ].join('\r\n');
 }
@@ -144,7 +160,10 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
   if (icsContent) {
     body.attachments = [{
       filename: 'cita.ics',
-      content: Buffer.from(icsContent).toString('base64')
+      content: Buffer.from(icsContent).toString('base64'),
+      // content_type de invitación: hace que Gmail/Outlook muestren el evento
+      // de forma interactiva y lo agreguen al calendario automáticamente
+      content_type: 'text/calendar; method=REQUEST; charset=UTF-8'
     }];
   }
   const response = await fetch('https://api.resend.com/emails', {
@@ -176,20 +195,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Limpia saltos de línea/espacios accidentales en la variable de entorno
   const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
 
-  // Generar .ics solo para confirmaciones (no comprobantes de pago), y solo si el date tiene formato YYYY-MM-DD
-  let icsContent: string | undefined;
-  if (!isReceipt && date && time && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    const appDuration = typeof duration === 'number' && duration > 0 ? duration : 60;
-    const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@clinicamaslife.cl`;
-    icsContent = generateIcs({
-      date,
-      time,
-      duration: appDuration,
-      summary: `Atención: ${serviceName || 'Consulta'} – ${professionalName}`,
-      description: `Paciente: ${patientName}\nProfesional: ${professionalName}\nServicio: ${serviceName || 'Consulta'}\nModalidad: ${type || 'Presencial'}\n\nClínica Maslife – clinicamaslife.cl`,
-      uid,
-    });
-  }
+  // Generar invitación .ics solo para confirmaciones (no comprobantes de pago),
+  // y solo si el date tiene formato YYYY-MM-DD. Cada destinatario recibe su propia
+  // invitación (él mismo como ATTENDEE), compartiendo el mismo UID del evento.
+  const canInvite = !isReceipt && date && time && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  const appDuration = typeof duration === 'number' && duration > 0 ? duration : 60;
+  const eventUid = `${Date.now()}-${Math.random().toString(36).slice(2)}@clinicamaslife.cl`;
+  const icsSummary = `Atención: ${serviceName || 'Consulta'} – ${professionalName}`;
+  const icsDescription = `Paciente: ${patientName}\nProfesional: ${professionalName}\nServicio: ${serviceName || 'Consulta'}\nModalidad: ${type || 'Presencial'}\n\nClínica Maslife – clinicamaslife.cl`;
+
+  const buildInvite = (attendeeName: string, attendeeEmail: string) => generateIcs({
+    date, time, duration: appDuration,
+    summary: icsSummary,
+    description: icsDescription,
+    uid: eventUid,
+    organizerName: professionalName || 'Clínica Maslife',
+    attendeeName,
+    attendeeEmail,
+  });
 
   try {
     const sends: Promise<any>[] = [];
@@ -203,7 +226,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sends.push(sendEmail(RESEND_API_KEY, FROM, to,
         `Nueva cita agendada – ${patientName}`,
         professionalNewBookingHtml({ professionalName, patientName, serviceName, date, time, type }),
-        icsContent
+        canInvite ? buildInvite(professionalName || 'Profesional', to) : undefined
       ));
     }
 
@@ -217,7 +240,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         sends.push(sendEmail(RESEND_API_KEY, FROM, patientEmail,
           `Tu cita ha sido confirmada – ${serviceName}`,
           patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type }),
-          icsContent
+          canInvite ? buildInvite(patientName, patientEmail) : undefined
         ));
       }
     }
