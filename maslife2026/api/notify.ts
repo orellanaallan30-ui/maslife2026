@@ -4,6 +4,37 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { checkIpRateLimit } from './_lib/auth';
 
+// Genera contenido iCalendar (.ics) con tiempo flotante (sin TZ) para compatibilidad universal
+function generateIcs(p: { date: string; time: string; duration: number; summary: string; description: string; uid: string }): string {
+  const { date, time, duration, summary, description, uid } = p;
+  const [yyyy, mm, dd] = date.split('-');
+  const [hh, min] = time.split(':');
+  const startDt = `${yyyy}${mm}${dd}T${hh}${min}00`;
+
+  const endMs = new Date(`${date}T${time}:00`).getTime() + duration * 60000;
+  const e = new Date(endMs);
+  const endDt = `${e.getFullYear()}${String(e.getMonth()+1).padStart(2,'0')}${String(e.getDate()).padStart(2,'0')}T${String(e.getHours()).padStart(2,'0')}${String(e.getMinutes()).padStart(2,'0')}00`;
+
+  const stamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0,15) + 'Z';
+  const safeDesc = description.replace(/\n/g, '\\n').replace(/[,;]/g, c => `\\${c}`);
+  const safeSummary = summary.replace(/[,;]/g, c => `\\${c}`);
+
+  return [
+    'BEGIN:VCALENDAR', 'VERSION:2.0',
+    'PRODID:-//Clinica Maslife//AgendaMaslife//ES',
+    'CALSCALE:GREGORIAN', 'METHOD:REQUEST',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${startDt}`,
+    `DTEND:${endDt}`,
+    `SUMMARY:${safeSummary}`,
+    `DESCRIPTION:${safeDesc}`,
+    'STATUS:CONFIRMED',
+    'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n');
+}
+
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
 
 const BASE_STYLE = `font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#f8fafc;padding:24px;`;
@@ -95,11 +126,18 @@ function paymentReceiptHtml(p: { patientName: string; doctorName: string; servic
   </div>`;
 }
 
-async function sendEmail(apiKey: string, from: string, to: string, subject: string, html: string) {
+async function sendEmail(apiKey: string, from: string, to: string, subject: string, html: string, icsContent?: string) {
+  const body: Record<string, unknown> = { from, to: [to], subject, html };
+  if (icsContent) {
+    body.attachments = [{
+      filename: 'cita.ics',
+      content: Buffer.from(icsContent).toString('base64')
+    }];
+  }
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from, to: [to], subject, html })
+    body: JSON.stringify(body)
   });
   const data = await response.json();
   if (!response.ok) throw new Error(JSON.stringify(data));
@@ -117,7 +155,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_API_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
 
-  const { to, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price } = req.body;
+  const { to, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price, duration } = req.body;
   if (!to || !patientName) return res.status(400).json({ error: 'Faltan campos requeridos' });
 
   // Validar formato de email para prevenir uso como spam relay
@@ -125,6 +163,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (patientEmail && !EMAIL_RE.test(patientEmail)) return res.status(400).json({ error: 'Email de paciente inválido' });
 
   const FROM = process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@maslife2026.vercel.app>';
+
+  // Generar .ics solo para confirmaciones (no comprobantes de pago), y solo si el date tiene formato YYYY-MM-DD
+  let icsContent: string | undefined;
+  if (!isReceipt && date && time && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const appDuration = typeof duration === 'number' && duration > 0 ? duration : 60;
+    const uid = `${Date.now()}-${Math.random().toString(36).slice(2)}@clinicamaslife.cl`;
+    icsContent = generateIcs({
+      date,
+      time,
+      duration: appDuration,
+      summary: `Atención: ${serviceName || 'Consulta'} – ${professionalName}`,
+      description: `Paciente: ${patientName}\nProfesional: ${professionalName}\nServicio: ${serviceName || 'Consulta'}\nModalidad: ${type || 'Presencial'}\n\nClínica Maslife – clinicamaslife.cl`,
+      uid,
+    });
+  }
 
   try {
     const sends: Promise<any>[] = [];
@@ -138,7 +191,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else {
       sends.push(sendEmail(RESEND_API_KEY, FROM, to,
         `Nueva cita agendada – ${patientName}`,
-        professionalNewBookingHtml({ professionalName, patientName, serviceName, date, time, type })
+        professionalNewBookingHtml({ professionalName, patientName, serviceName, date, time, type }),
+        icsContent
       ));
     }
 
@@ -152,7 +206,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else {
         sends.push(sendEmail(RESEND_API_KEY, FROM, patientEmail,
           `Tu cita ha sido confirmada – ${serviceName}`,
-          patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type })
+          patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type }),
+          icsContent
         ));
       }
     }
