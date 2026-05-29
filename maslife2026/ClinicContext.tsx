@@ -120,7 +120,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       if (event === 'SIGNED_OUT') {
         setLoggedPro(null);
       } else if (event === 'PASSWORD_RECOVERY') {
-        window.location.replace(window.location.origin + window.location.pathname + '#/pro/reset-password');
+        window.location.replace(window.location.origin + '/pro/reset-password');
       }
     });
     return () => subscription.unsubscribe();
@@ -297,16 +297,17 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     // Persistir en Supabase
     saveAppointment(app).catch(() => {});
 
-    // Notificación por email al profesional (si hay API configurada)
-    const pro = professionals.find(p => p.id === app.professionalId);
-    if (pro?.email && import.meta.env.VITE_RESEND_ENDPOINT) {
+    // Notificación por email — solo cuando el profesional crea la cita manualmente (loggedPro disponible)
+    // Cuando un paciente agenda desde PatientProfile.tsx, el email se envía directamente desde allí
+    const proEmail = loggedPro?.id === app.professionalId ? loggedPro?.email : professionals.find(p => p.id === app.professionalId)?.email;
+    if (proEmail && loggedPro) {
       try {
-        await fetch(import.meta.env.VITE_RESEND_ENDPOINT, {
+        await fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            to: pro.email,
-            professionalName: pro.name,
+            to: proEmail,
+            professionalName: app.doctorName,
             patientName: app.patientName,
             serviceName: app.serviceName,
             date: app.date,

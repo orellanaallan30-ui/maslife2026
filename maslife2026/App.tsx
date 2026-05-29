@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  HashRouter, Routes, Route, Navigate,
+  BrowserRouter, Routes, Route, Navigate,
   useNavigate, useLocation, Outlet
 } from 'react-router-dom';
 import MainHome              from './pages/MainHome';
@@ -243,24 +243,69 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                           <span className="material-icons-round text-slate-300 text-4xl block mb-2">notifications_none</span>
                           <p className="text-xs text-slate-400 font-bold">Sin notificaciones</p>
                         </div>
-                      ) : notifications.map(n => (
-                        <div
-                          key={n.id}
-                          onClick={() => !n.read && markNotificationRead(n.id)}
-                          className={`flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors hover:bg-slate-50 ${!n.read ? 'bg-teal-50/60' : ''}`}
-                        >
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${n.type === 'appointment' ? 'bg-teal-100 text-teal-600' : 'bg-slate-100 text-slate-500'}`}>
-                            <span className="material-icons-round text-base">
-                              {n.type === 'appointment' ? 'event' : 'info'}
-                            </span>
+                      ) : notifications.map(n => {
+                        // Parsear datos de cita desde el título: "Nueva cita: Nombre - Servicio (YYYY-MM-DD HH:MM)"
+                        const citaMatch = n.type === 'appointment'
+                          ? n.title.match(/Nueva cita: (.+?) - (.+?) \((\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})\)/)
+                          : null;
+                        return (
+                          <div
+                            key={n.id}
+                            className={`px-4 py-3 transition-colors ${!n.read ? 'bg-teal-50/70' : 'hover:bg-slate-50'}`}
+                          >
+                            {citaMatch ? (
+                              // Notificación de cita — formato enriquecido
+                              <div>
+                                <div className="flex items-start gap-3">
+                                  <div className="w-9 h-9 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center shrink-0 mt-0.5">
+                                    <span className="material-icons-round text-base">event</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-black text-teal-600 uppercase tracking-wider">Nueva Cita</p>
+                                    <p className={`text-sm font-black text-slate-900 truncate`}>{citaMatch[1]}</p>
+                                    <p className="text-xs font-bold text-slate-500 truncate">{citaMatch[2]}</p>
+                                    <p className="text-xs text-slate-400 font-bold mt-0.5">
+                                      {new Date(citaMatch[3] + 'T00:00').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} · {citaMatch[4]}
+                                    </p>
+                                  </div>
+                                  {!n.read && <div className="w-2 h-2 bg-teal-500 rounded-full shrink-0 mt-2" />}
+                                </div>
+                                <div className="flex gap-2 mt-2.5 ml-12">
+                                  <button
+                                    onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); navigate('/pro/dashboard'); }}
+                                    className="flex-1 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                                  >
+                                    <span className="material-icons-round text-xs">calendar_today</span>
+                                    Ver Agenda
+                                  </button>
+                                  <button
+                                    onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); navigate('/pro/patients'); }}
+                                    className="flex-1 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                                  >
+                                    <span className="material-icons-round text-xs">person_add</span>
+                                    Crear Ficha
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              // Notificación genérica
+                              <div
+                                onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); }}
+                                className="flex items-start gap-3 cursor-pointer"
+                              >
+                                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                                  <span className="material-icons-round text-base">info</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm leading-snug ${!n.read ? 'font-black text-slate-900' : 'font-medium text-slate-600'}`}>{n.title}</p>
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
+                                </div>
+                                {!n.read && <div className="w-2 h-2 bg-slate-400 rounded-full shrink-0 mt-1.5" />}
+                              </div>
+                            )}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm leading-snug ${!n.read ? 'font-black text-slate-900' : 'font-medium text-slate-600'}`}>{n.title}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
-                          </div>
-                          {!n.read && <div className="w-2 h-2 bg-teal-500 rounded-full shrink-0 mt-1.5" />}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     {notifications.length > 0 && (
                       <div className="border-t border-slate-100 p-3">
@@ -345,12 +390,12 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <HashRouter>
+  <BrowserRouter>
     <ClinicProvider>
       <AppContent />
       <ToastContainer />
     </ClinicProvider>
-  </HashRouter>
+  </BrowserRouter>
 );
 
 export default App;

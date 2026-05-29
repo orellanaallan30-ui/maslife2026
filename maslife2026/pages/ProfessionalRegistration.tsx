@@ -117,7 +117,7 @@ const ProfessionalRegistration: React.FC = () => {
         password: form.password,
         options: {
           data: { name: form.name.trim(), specialty: form.specialty.trim() },
-          emailRedirectTo: 'https://www.clinicamaslife.cl/#/pro/login',
+          emailRedirectTo: 'https://clinicamaslife.cl/pro/login',
         },
       });
       if (timedOut) return;
@@ -355,7 +355,20 @@ const ProfessionalRegistration: React.FC = () => {
                   </div>
                 )}
                 <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Especialidad *</label>
-                  <input value={form.specialty} onChange={e=>setForm(f=>({...f,specialty:e.target.value}))} className={inp} placeholder="Ej: Kinesiología, Fonoaudiología..."/></div>
+                  <select value={form.specialty} onChange={e=>setForm(f=>({...f,specialty:e.target.value}))} className={inp}>
+                    <option value="">— Selecciona tu especialidad —</option>
+                    <option value="Kinesiología y Rehabilitación">Kinesiología y Rehabilitación</option>
+                    <option value="Nutrición y Dietética">Nutrición y Dietética</option>
+                    <option value="Psicología Clínica">Psicología Clínica</option>
+                    <option value="Fonoaudiología">Fonoaudiología</option>
+                    <option value="Terapia Ocupacional">Terapia Ocupacional</option>
+                    <option value="Quiropráctica">Quiropráctica</option>
+                    <option value="Podología">Podología</option>
+                    <option value="Enfermería a Domicilio">Enfermería a Domicilio</option>
+                    <option value="Medicina General">Medicina General</option>
+                    <option value="Fisioterapia">Fisioterapia</option>
+                    <option value="Otra Especialidad">Otra Especialidad</option>
+                  </select></div>
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Ciudad *</label>
                   <select value={form.city} onChange={e=>setForm(f=>({...f,city:e.target.value}))} className={inp}>

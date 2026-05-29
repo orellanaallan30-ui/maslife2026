@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProfessionalProfile, Service } from '../types';
 import { useClinic } from '../ClinicContext';
+import { saveProfessional } from '../supabaseService';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { loggedPro: profile, updatePro: onSave, logout } = useClinic();
 
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
@@ -19,7 +21,7 @@ const Settings: React.FC = () => {
   const [linkCopied, setLinkCopied] = useState(false);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
-  const mpLinkWithBack = `${MP_SUBSCRIPTION_LINK}&back_url=${encodeURIComponent('https://www.clinicamaslife.cl/#/pro/settings?subscribed=1')}`;
+  const mpLinkWithBack = `${MP_SUBSCRIPTION_LINK}&back_url=${encodeURIComponent('https://clinicamaslife.cl/pro/settings?subscribed=1')}`;
   const SUPPORT_PHONE = import.meta.env.VITE_SUPPORT_PHONE || '+56965329974';
   const [subscribedMsg, setSubscribedMsg] = useState(false);
 
@@ -35,12 +37,10 @@ const Settings: React.FC = () => {
   }, [profile, navigate]);
 
   useEffect(() => {
-    const hashParts = window.location.hash.split('?');
-    const params = new URLSearchParams(hashParts[1] || '');
-    if (params.get('subscribed') === '1') {
+    if (searchParams.get('subscribed') === '1') {
       setSubscribedMsg(true);
       setActiveTab('suscripcion');
-      window.history.replaceState({}, '', window.location.pathname + hashParts[0]);
+      setSearchParams({}, { replace: true });
     }
   }, []);
 
@@ -51,7 +51,7 @@ const Settings: React.FC = () => {
     setHasChanges(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (localProfile) {
       // Auto-generar slug si no tiene o está vacío
       let profileToSave = { ...localProfile };
@@ -64,6 +64,7 @@ const Settings: React.FC = () => {
       }
       setLocalProfile(profileToSave);
       onSave(profileToSave);
+      saveProfessional(profileToSave).catch(() => {}); // persiste a Supabase
       setHasChanges(false);
       setShowSavedMsg(true);
       setTimeout(() => setShowSavedMsg(false), 3000);
@@ -134,7 +135,7 @@ const Settings: React.FC = () => {
 
   const getShareableLink = () => {
     const base = window.location.origin + window.location.pathname;
-    return `${base}#/patient/profile/${localProfile.slug || localProfile.id}`;
+    return `${base}/patient/profile/${localProfile.slug || localProfile.id}`;
   };
 
   const handleCopyLink = () => {
@@ -156,14 +157,26 @@ const Settings: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es demasiado grande. Por favor selecciona una imagen menor a 5 MB.');
+      if (file.size > 10 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 10 MB.');
         e.target.value = '';
         return;
       }
       const reader = new FileReader();
       reader.onload = (event) => {
-        handleUpdate({ avatar: event.target?.result as string });
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX = 300;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+          else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+          handleUpdate({ avatar: canvas.toDataURL('image/jpeg', 0.85) });
+        };
+        img.src = event.target?.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -171,15 +184,15 @@ const Settings: React.FC = () => {
 
   return (
     <div className="flex-1 w-full overflow-y-auto bg-slate-50">
-      <main className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
-        <div className="max-w-5xl mx-auto space-y-10 pb-20">
+      <main className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
+        <div className="max-w-5xl mx-auto space-y-5 pb-10">
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <p className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Configuración Maslife</p>
-              <h1 className="text-4xl font-black tracking-tight text-black">Ajustes de Cuenta</h1>
-              <div className="flex bg-slate-50 p-2 rounded-2xl mt-8 max-w-fit border border-slate-200 shadow-inner gap-2">
-                <button onClick={() => setActiveTab('perfil')} className={`px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'perfil' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Mi Perfil</button>
-                <button onClick={() => setActiveTab('suscripcion')} className={`px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'suscripcion' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Suscripción</button>
+              <h1 className="text-2xl font-black tracking-tight text-black">Ajustes de Cuenta</h1>
+              <div className="flex bg-slate-50 p-1.5 rounded-xl mt-4 max-w-fit border border-slate-200 shadow-inner gap-1.5">
+                <button onClick={() => setActiveTab('perfil')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'perfil' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Mi Perfil</button>
+                <button onClick={() => setActiveTab('suscripcion')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'suscripcion' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Suscripción</button>
               </div>
             </div>
             {activeTab === 'perfil' && (
@@ -188,7 +201,7 @@ const Settings: React.FC = () => {
                 <button
                   disabled={!hasChanges}
                   onClick={handleSave}
-                  className={`px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${hasChanges ? 'bg-slate-900 text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border-b-4 border-slate-800 active:border-b-0 active:translate-y-1' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
+                  className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${hasChanges ? 'bg-slate-900 text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border-b-4 border-slate-800 active:border-b-0 active:translate-y-1' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
                 >
                   Guardar Cambios
                 </button>
@@ -197,20 +210,20 @@ const Settings: React.FC = () => {
           </header>
 
           {activeTab === 'perfil' && (
-            <div className="space-y-6 md:space-y-12 animate-in fade-in duration-500">
-              <section className="bg-white rounded-3xl md:rounded-[3rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] overflow-hidden p-5 md:p-14 flex flex-col lg:flex-row gap-6 md:gap-12">
+            <div className="space-y-4 md:space-y-5 animate-in fade-in duration-500">
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] overflow-hidden p-4 md:p-8 flex flex-col lg:flex-row gap-4 md:gap-6">
                 <div className="relative group shrink-0 mx-auto lg:mx-0">
-                  <img className="w-48 h-48 rounded-3xl object-cover border-8 border-slate-50 shadow-2xl" src={localProfile.avatar || "https://picsum.photos/seed/doc/400/400"} alt="Avatar" />
-                  <label className="absolute -bottom-2 -right-2 w-14 h-14 bg-primary text-white rounded-2xl shadow-xl cursor-pointer hover:scale-110 transition-transform flex items-center justify-center border-4 border-white">
-                    <span className="material-icons-round text-2xl">photo_camera</span>
+                  <img className="w-28 h-28 rounded-2xl object-cover border-4 border-slate-50 shadow-lg" src={localProfile.avatar || "https://picsum.photos/seed/doc/400/400"} alt="Avatar" />
+                  <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition-transform flex items-center justify-center border-2 border-white">
+                    <span className="material-icons-round text-lg">photo_camera</span>
                     <input type="file" onChange={handleFileChange} className="hidden" />
                   </label>
                 </div>
 
-                <div className="flex-1 space-y-6 md:space-y-10">
-                  <div className="p-6 bg-slate-100 rounded-2xl border-2 border-slate-200 shadow-inner">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest block mb-3 ml-1">Slug Personalizado (URL)</label>
-                    <div className="flex items-center bg-white border-2 border-slate-300 rounded-2xl px-6 py-4 shadow-sm group focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                <div className="flex-1 space-y-4 md:space-y-5">
+                  <div className="p-4 bg-slate-100 rounded-xl border-2 border-slate-200 shadow-inner">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest block mb-2 ml-1">Slug Personalizado (URL)</label>
+                    <div className="flex items-center bg-white border-2 border-slate-300 rounded-xl px-4 py-3 shadow-sm group focus-within:ring-4 focus-within:ring-primary/10 transition-all">
                       <span className="text-slate-500 font-black text-sm hidden sm:inline mr-1">clinicamaslife.cl/pro/</span>
                       <input
                         className="flex-1 bg-transparent border-none p-0 font-black text-primary focus:ring-0 text-base"
@@ -295,23 +308,36 @@ const Settings: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre Completo</label>
-                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" value={localProfile.name} onChange={e => handleUpdate({ name: e.target.value })} />
+                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" value={localProfile.name} onChange={e => handleUpdate({ name: e.target.value })} />
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Especialidad</label>
-                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" value={localProfile.specialty} onChange={e => handleUpdate({ specialty: e.target.value })} />
+                      <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" value={localProfile.specialty} onChange={e => handleUpdate({ specialty: e.target.value })}>
+                        <option value="">— Selecciona tu especialidad —</option>
+                        <option value="Kinesiología y Rehabilitación">Kinesiología y Rehabilitación</option>
+                        <option value="Nutrición y Dietética">Nutrición y Dietética</option>
+                        <option value="Psicología Clínica">Psicología Clínica</option>
+                        <option value="Fonoaudiología">Fonoaudiología</option>
+                        <option value="Terapia Ocupacional">Terapia Ocupacional</option>
+                        <option value="Quiropráctica">Quiropráctica</option>
+                        <option value="Podología">Podología</option>
+                        <option value="Enfermería a Domicilio">Enfermería a Domicilio</option>
+                        <option value="Medicina General">Medicina General</option>
+                        <option value="Fisioterapia">Fisioterapia</option>
+                        <option value="Otra Especialidad">Otra Especialidad</option>
+                      </select>
                     </div>
                   </div>
 
-                  <div className="border-t-2 border-slate-100 pt-10">
-                    <h3 className="text-2xl font-black text-black flex items-center gap-3 mb-6">
+                  <div className="border-t-2 border-slate-100 pt-5">
+                    <h3 className="text-base font-black text-black flex items-center gap-3 mb-3">
                       <span className="material-icons-round text-primary">payments</span>
                       Configuración de Pagos
                     </h3>
-                    <div className="bg-slate-50 rounded-3xl p-8 border-2 border-slate-200 space-y-8">
+                    <div className="bg-slate-50 rounded-2xl p-5 border-2 border-slate-200 space-y-5">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-black text-black">Habilitar Pagos Anticipados</p>
@@ -339,10 +365,10 @@ const Settings: React.FC = () => {
                               />
                             </div>
                           </div>
-                          
+
                           <div className="space-y-2">
                             <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Link de Bono de Reserva ($5.000)</label>
-                            <div className="flex items-center bg-white border-2 border-slate-300 rounded-2xl px-6 py-4 shadow-sm focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                            <div className="flex items-center bg-white border-2 border-slate-300 rounded-xl px-4 py-3 shadow-sm focus-within:ring-4 focus-within:ring-primary/10 transition-all">
                               <span className="material-icons-round text-slate-400 mr-3">volunteer_activism</span>
                               <input
                                 className="flex-1 bg-transparent border-none p-0 font-bold text-black focus:ring-0 text-base"
@@ -360,24 +386,24 @@ const Settings: React.FC = () => {
                 </div>
               </section>
 
-              <section className="bg-white rounded-[3rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] p-10 md:p-14 space-y-10">
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] p-5 md:p-8 space-y-5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-black text-black flex items-center gap-3">
+                  <h3 className="text-base font-black text-black flex items-center gap-3">
                     <span className="material-icons-round text-primary">medical_services</span>
                     Mis Servicios y Tarifas
                   </h3>
                   <button
                     onClick={() => setShowServiceModal(true)}
-                    className="bg-slate-900 text-white px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border-b-4 border-slate-800 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
+                    className="bg-slate-900 text-white px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border-b-4 border-slate-800 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
                   >
                     <span className="material-icons-round text-sm">add</span>
                     Nuevo Servicio
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {localProfile.services.map((service) => (
-                    <div key={service.id} className="bg-slate-50 rounded-3xl p-8 border-2 border-slate-200 group hover:border-primary/30 transition-all flex flex-col justify-between relative overflow-hidden">
+                    <div key={service.id} className="bg-slate-50 rounded-2xl p-5 border-2 border-slate-200 group hover:border-primary/30 transition-all flex flex-col justify-between relative overflow-hidden">
                       {service.image && (
                         <img src={service.image} alt={service.name} className="absolute inset-0 w-full h-full object-cover opacity-5 group-hover:opacity-10 transition-opacity" />
                       )}
@@ -400,7 +426,7 @@ const Settings: React.FC = () => {
                         <h4 className="text-xl font-black text-black">{service.name}</h4>
                         <p className="text-sm text-slate-500 font-medium line-clamp-2">{service.description}</p>
                       </div>
-                      <div className="relative mt-8 flex items-end justify-between border-t-2 border-slate-100 pt-6">
+                      <div className="relative mt-4 flex items-end justify-between border-t border-slate-100 pt-4">
                         <div className="space-y-1">
                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Precio</p>
                           <p className="text-2xl font-black text-black">${service.price.toLocaleString('es-CL')}</p>
@@ -418,8 +444,8 @@ const Settings: React.FC = () => {
                 </div>
               </section>
 
-              <section className="bg-white rounded-[3rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] p-10 md:p-14 space-y-10">
-                <h3 className="text-2xl font-black text-black flex items-center gap-3">
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] p-5 md:p-8 space-y-5">
+                <h3 className="text-base font-black text-black flex items-center gap-3">
                   <span className="material-icons-round text-primary">schedule</span>
                   Horarios de Atención Semanal
                 </h3>
@@ -489,22 +515,22 @@ const Settings: React.FC = () => {
               )}
 
               {/* Hero card */}
-              <div className={`rounded-[3rem] p-8 md:p-14 relative overflow-hidden text-white
+              <div className={`rounded-2xl p-5 md:p-8 relative overflow-hidden text-white
                 ${localProfile.subscriptionStatus === 'paused'
                   ? 'bg-rose-600 shadow-[0_48px_100px_-20px_rgba(220,38,38,0.4)]'
                   : localProfile.subscriptionStatus === 'trial' && daysLeft !== null && daysLeft <= 7
                   ? 'bg-amber-500 shadow-[0_48px_100px_-20px_rgba(245,158,11,0.4)]'
                   : 'bg-primary shadow-[0_48px_100px_-20px_rgba(19,91,236,0.4)]'}`}>
 
-                <div className="flex flex-col md:flex-row gap-10 items-center relative z-10">
-                  <div className="w-24 h-24 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xl border border-white/30">
-                    <span className="material-icons-round text-6xl text-white">
+                <div className="flex flex-col md:flex-row gap-5 items-center relative z-10">
+                  <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xl border border-white/30">
+                    <span className="material-icons-round text-4xl text-white">
                       {localProfile.subscriptionStatus === 'paused' ? 'pause_circle' : localProfile.subscriptionStatus === 'trial' ? 'hourglass_top' : 'verified'}
                     </span>
                   </div>
-                  <div className="flex-1 text-center md:text-left space-y-4">
+                  <div className="flex-1 text-center md:text-left space-y-3">
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                      <h3 className="text-3xl md:text-4xl font-black tracking-tight">Estatus de Agenda Maslife</h3>
+                      <h3 className="text-xl md:text-2xl font-black tracking-tight">Estatus de Agenda Maslife</h3>
                       <span className="px-5 py-2 rounded-full bg-white/20 border border-white/30 text-white text-xs font-black uppercase tracking-[0.2em]">
                         {localProfile.subscriptionStatus === 'trial' ? 'Prueba Gratis'
                           : localProfile.subscriptionStatus === 'active' ? 'Activo'
@@ -534,7 +560,7 @@ const Settings: React.FC = () => {
                 </div>
 
                 {/* Stats grid */}
-                <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
                     <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Próximo Cobro</h4>
                     <p className="text-xl font-black tracking-tight">
@@ -558,7 +584,7 @@ const Settings: React.FC = () => {
                 </div>
 
                 {/* CTA footer */}
-                <div className="mt-10 pt-10 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="mt-5 pt-5 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
                       <span className="material-icons-round text-white text-base">security</span>
@@ -567,7 +593,7 @@ const Settings: React.FC = () => {
                   </div>
                   <a
                     href={mpLinkWithBack}
-                    className="w-full sm:w-auto px-12 py-5 bg-white text-primary border-b-4 border-slate-200 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
+                    className="w-full sm:w-auto px-8 py-3 bg-white text-primary border-b-4 border-slate-200 rounded-2xl font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
                   >
                     <span className="material-icons-round">payment</span>
                     {localProfile.subscriptionStatus === 'paused' ? 'REACTIVAR SUSCRIPCIÓN' : 'PAGAR SUSCRIPCIÓN'}
@@ -627,29 +653,29 @@ const Settings: React.FC = () => {
           )}
           {showServiceModal && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-              <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200">
-                <div className="p-10 space-y-8">
+              <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200">
+                <div className="p-6 space-y-5">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-3xl font-black text-black tracking-tight">Nuevo Servicio</h3>
+                    <h3 className="text-xl font-black text-black tracking-tight">Nuevo Servicio</h3>
                     <button onClick={() => setShowServiceModal(false)} className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all flex items-center justify-center">
                       <span className="material-icons-round">close</span>
                     </button>
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre del Servicio</label>
-                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })} placeholder="Ej: Consulta Médica General" />
+                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })} placeholder="Ej: Consulta Médica General" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Precio ($)</label>
-                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" inputMode="numeric" value={newService.price || ''} onChange={e => setNewService({ ...newService, price: Number(e.target.value.replace(/\D/g, '')) || 0 })} placeholder="0" />
+                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" inputMode="numeric" value={newService.price || ''} onChange={e => setNewService({ ...newService, price: Number(e.target.value.replace(/\D/g, '')) || 0 })} placeholder="0" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Duración (Min)</label>
-                        <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all appearance-none" value={newService.duration} onChange={e => setNewService({ ...newService, duration: Number(e.target.value) })}>
+                        <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all appearance-none" value={newService.duration} onChange={e => setNewService({ ...newService, duration: Number(e.target.value) })}>
                           <option value={15}>15 minutos</option>
                           <option value={30}>30 minutos</option>
                           <option value={45}>45 minutos</option>
@@ -661,7 +687,7 @@ const Settings: React.FC = () => {
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Descripción</label>
-                      <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[120px]" value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} placeholder="Describe brevemente de qué trata este servicio..." />
+                      <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[100px]" value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} placeholder="Describe brevemente de qué trata este servicio..." />
                     </div>
 
                     <div className="space-y-2">
@@ -677,9 +703,9 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-4 pt-4">
-                    <button onClick={() => setShowServiceModal(false)} className="flex-1 py-5 rounded-2xl bg-slate-100 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
-                    <button onClick={handleAddService} className="flex-1 py-5 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Crear Servicio</button>
+                  <div className="flex gap-4 pt-2">
+                    <button onClick={() => setShowServiceModal(false)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
+                    <button onClick={handleAddService} className="flex-1 py-3 rounded-xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Crear Servicio</button>
                   </div>
                 </div>
               </div>
@@ -689,29 +715,29 @@ const Settings: React.FC = () => {
           {/* Modal Editar Servicio */}
           {showEditServiceModal && editingService && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-              <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200">
-                <div className="p-10 space-y-8">
+              <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200">
+                <div className="p-6 space-y-5">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-3xl font-black text-black tracking-tight">Editar Servicio</h3>
+                    <h3 className="text-xl font-black text-black tracking-tight">Editar Servicio</h3>
                     <button onClick={() => setShowEditServiceModal(false)} className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 hover:bg-slate-200 transition-all flex items-center justify-center">
                       <span className="material-icons-round">close</span>
                     </button>
                   </div>
 
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre del Servicio</label>
-                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} />
+                      <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" value={editingService.name} onChange={e => setEditingService({ ...editingService, name: e.target.value })} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Precio ($)</label>
-                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" inputMode="numeric" value={editingService.price || ''} onChange={e => setEditingService({ ...editingService, price: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
+                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" inputMode="numeric" value={editingService.price || ''} onChange={e => setEditingService({ ...editingService, price: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Duración (Min)</label>
-                        <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all appearance-none" value={editingService.duration} onChange={e => setEditingService({ ...editingService, duration: Number(e.target.value) })}>
+                        <select className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all appearance-none" value={editingService.duration} onChange={e => setEditingService({ ...editingService, duration: Number(e.target.value) })}>
                           <option value={15}>15 minutos</option>
                           <option value={30}>30 minutos</option>
                           <option value={45}>45 minutos</option>
@@ -723,15 +749,15 @@ const Settings: React.FC = () => {
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Descripción</label>
-                      <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-5 px-6 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[100px]" value={editingService.description} onChange={e => setEditingService({ ...editingService, description: e.target.value })} />
+                      <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[90px]" value={editingService.description} onChange={e => setEditingService({ ...editingService, description: e.target.value })} />
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Imagen del Servicio (opcional)</label>
                       {editingService.image && (
-                        <img src={editingService.image} alt="preview" className="w-full h-32 object-cover rounded-2xl mb-2 border-2 border-slate-200" />
+                        <img src={editingService.image} alt="preview" className="w-full h-28 object-cover rounded-xl mb-2 border-2 border-slate-200" />
                       )}
-                      <label className="flex items-center gap-3 cursor-pointer w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl py-4 px-6 hover:border-primary hover:bg-primary/5 transition-all">
+                      <label className="flex items-center gap-3 cursor-pointer w-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl py-3 px-4 hover:border-primary hover:bg-primary/5 transition-all">
                         <span className="material-icons-round text-slate-400">add_photo_alternate</span>
                         <span className="text-sm font-bold text-slate-500">{editingService.image ? 'Cambiar imagen' : 'Subir imagen (máx. 5MB)'}</span>
                         <input type="file" accept="image/*" className="hidden" onChange={e => handleServiceImageChange(e, true)} />
@@ -739,9 +765,9 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-4 pt-4">
-                    <button onClick={() => setShowEditServiceModal(false)} className="flex-1 py-5 rounded-2xl bg-slate-100 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
-                    <button onClick={handleSaveEditService} className="flex-1 py-5 rounded-2xl bg-emerald-500 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <div className="flex gap-4 pt-2">
+                    <button onClick={() => setShowEditServiceModal(false)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Cancelar</button>
+                    <button onClick={handleSaveEditService} className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
                       <span className="material-icons-round text-sm">save</span>
                       Guardar Cambios
                     </button>
