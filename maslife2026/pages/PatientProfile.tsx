@@ -296,59 +296,65 @@ const PatientProfile: React.FC = () => {
           <div className="mt-10 flex flex-col gap-4 no-print" id="receipt-actions">
 
             {/* Email enviado */}
-            {patientData.email && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">
-                <span className="material-icons-round text-emerald-500 text-2xl flex-shrink-0">mark_email_read</span>
-                <div>
-                  <p className="text-emerald-800 font-black text-sm">Email de confirmación enviado</p>
-                  <p className="text-emerald-600 text-xs font-bold mt-0.5">Revisa <span className="underline">{patientData.email}</span> — incluye archivo de calendario (.ics)</p>
-                </div>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">
+              <span className="material-icons-round text-emerald-500 text-2xl flex-shrink-0">mark_email_read</span>
+              <div>
+                <p className="text-emerald-800 font-black text-sm">¡Tu cita ha sido confirmada con éxito!</p>
+                <p className="text-emerald-600 text-xs font-bold mt-0.5">
+                  {patientData.email
+                    ? <>Te enviaremos un correo de confirmación a <span className="underline">{patientData.email}</span> con el archivo de calendario (.ics)</>
+                    : 'Tu cita quedó registrada correctamente en el sistema.'}
+                </p>
+              </div>
+            </div>
+
+            {/* En caso de consultas — WhatsApp prominente */}
+            {doctor.phone && (
+              <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5">
+                <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">En caso de consultas, comunícate con nosotros:</p>
+                <a
+                  href={`https://wa.me/${doctor.phone.replace(/\D/g,'')}?text=${encodeURIComponent(
+                    `Hola, tengo una consulta referente a mi cita realizada con el profesional ${doctor.name}. Mi nombre es ${patientData.name}.`
+                  )}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-4 bg-[#25D366] hover:bg-[#1ebe5d] text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-green-500/20"
+                >
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current flex-shrink-0"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
+                  Consultar por mi cita vía WhatsApp
+                </a>
               </div>
             )}
 
-            {/* Google Calendar — Card prominente */}
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-[2rem] p-6 text-center">
-              <span className="material-icons-round text-blue-500 text-4xl mb-2 block">event_available</span>
-              <h3 className="font-black text-blue-900 text-base mb-1">¿Lo agendamos en tu calendario?</h3>
-              <p className="text-blue-700 text-xs mb-4 font-bold">También puedes abrirlo desde el .ics del email</p>
+            {/* Google Calendar */}
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-center gap-4">
+              <span className="material-icons-round text-blue-500 text-3xl flex-shrink-0">event_available</span>
+              <div className="flex-1">
+                <p className="font-black text-blue-900 text-sm mb-0.5">¿Agregar a tu calendario?</p>
+                <p className="text-blue-700 text-xs font-bold">También puedes usar el .ics del correo</p>
+              </div>
               <a
                 href={generateGoogleCalendarLink()}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-2xl font-black text-xs tracking-widest shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0"
+                className="shrink-0 px-5 py-3 bg-[#4285F4] hover:bg-[#3367D6] text-white rounded-xl font-black text-xs tracking-widest shadow transition-all"
               >
-                <span className="material-icons-round text-sm">calendar_month</span>
-                Agregar a Google Calendar
+                Google Calendar
               </a>
             </div>
 
-            {/* WhatsApp notification to professional */}
-            {doctor.phone && (
-              <a
-                href={`https://wa.me/${doctor.phone.replace(/\D/g,'')}?text=${encodeURIComponent(
-                  `📅 Nueva reserva confirmada\n\nServicio: ${selectedService?.name}\nFecha: ${availableDays[selectedDay]?.label}\nHora: ${selectedSlot}\nModalidad: ${selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial'}`
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-4 bg-[#25D366] hover:bg-[#1ebe5d] text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-green-500/20"
-              >
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current flex-shrink-0"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
-                Notificar al Profesional
-              </a>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleDownloadImage}
                 disabled={isProcessing}
-                className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <span className="material-icons-round text-sm">download</span>
-                {isProcessing ? 'Descargando...' : 'Guardar o Descargar'}
+                {isProcessing ? 'Descargando...' : 'Guardar comprobante'}
               </button>
               <button
                 onClick={() => navigate('/')}
-                className="flex-1 py-4 bg-slate-800 hover:bg-slate-900 text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2"
+                className="flex-1 py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-black rounded-2xl transition-all uppercase text-xs tracking-widest flex items-center justify-center gap-2"
               >
                 <span className="material-icons-round text-sm">home</span>
                 Finalizar
