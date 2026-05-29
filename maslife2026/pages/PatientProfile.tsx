@@ -15,6 +15,82 @@ const PatientProfile: React.FC = () => {
   // Citas reales del profesional desde Supabase (para bloquear cupos correctamente)
   const [proAppointments, setProAppointments] = useState<Appointment[]>([]);
 
+  // Pasos y formulario — declarados ANTES de todos los useEffects para evitar TDZ
+  const [step, setStep] = useState(1);
+  const [selectedDay, setSelectedDay] = useState(0);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedModality, setSelectedModality] = useState<'online' | 'inPerson' | 'home'>('inPerson');
+  const [patientData, setPatientData] = useState({
+    name: '', rut: '', reason: '', phone: '', email: '', city: '', address: '', houseNumber: ''
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [paymentLinkOpened, setPaymentLinkOpened] = useState(false);
+  const [transactionRef, setTransactionRef] = useState('');
+
+  // MercadoPago Bricks
+  const [mpError, setMpError]       = useState('');
+  const [usarPagoManual, setUsarPagoManual] = useState(false);
+  const [brickStatus, setBrickStatus] = useState<'idle'|'loading'|'ready'|'error'>('idle');
+  const brickControllerRef = React.useRef<any>(null);
+  const mpBookingRef       = React.useRef<Appointment | null>(null);
+  const MP_ENABLED = true;
+
+  const doctor = fetchedDoctor;
+
+  const isFormValid = patientData.name.trim() !== '' &&
+                      patientData.rut.trim() !== '' &&
+                      patientData.phone.trim() !== '' &&
+                      patientData.email.trim() !== '' &&
+                      patientData.city.trim() !== '' &&
+                      patientData.reason.trim() !== '' &&
+                      (selectedModality !== 'home' || (patientData.address.trim() !== '' && patientData.houseNumber.trim() !== ''));
+
+  const availableDays = useMemo(() => {
+    if (!doctor) return [];
+    const allAppointments = [...appointments, ...proAppointments];
+    const daysArr = [];
+    const today = new Date();
+
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dayIdx = d.getDay();
+
+      const defaultSched = { active: dayIdx !== 0 && dayIdx !== 6, start: '09:00', end: '18:00' };
+      const raw = doctor.schedule?.[dayIdx];
+      const sched = {
+        active: raw ? (raw.active ?? false) : defaultSched.active,
+        start: (raw?.start) || defaultSched.start,
+        end: (raw?.end) || defaultSched.end,
+      };
+
+      if (sched.active) {
+        const dateStr = d.toISOString().split('T')[0];
+        const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+        const name = i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : d.toLocaleDateString('es-ES', { weekday: 'short' });
+
+        const slots: string[] = [];
+        const startParts = String(sched.start).split(':');
+        const endParts   = String(sched.end).split(':');
+        const [startH] = startParts.map(Number);
+        const [endH]   = endParts.map(Number);
+
+        for (let h = startH; h < endH; h++) {
+          const timeStr = `${String(h).padStart(2, '0')}:00`;
+          const isBusy = allAppointments.some(a => a.professionalId === doctor.id && a.date === dateStr && a.time === timeStr);
+          if (!isBusy) slots.push(timeStr);
+        }
+
+        if (slots.length > 0) {
+          daysArr.push({ name, date: dateStr, label, slots });
+        }
+      }
+    }
+    return daysArr;
+  }, [doctor, appointments, proAppointments]);
+
   useEffect(() => {
     if (localDoctor) { setFetchedDoctor(localDoctor); setLoadingDoctor(false); return; }
     if (!id) { setLoadingDoctor(false); return; }
@@ -183,84 +259,6 @@ const PatientProfile: React.FC = () => {
       brickControllerRef.current = null;
     };
   }, [step, usarPagoManual]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const doctor = fetchedDoctor;
-
-  // Nuevo Estado de Pasos
-  const [step, setStep] = useState(1);
-  const [selectedDay, setSelectedDay] = useState(0);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [selectedModality, setSelectedModality] = useState<'online' | 'inPerson' | 'home'>('inPerson');
-  const [patientData, setPatientData] = useState({
-    name: '', rut: '', reason: '', phone: '', email: '', city: '', address: '', houseNumber: ''
-  });
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [paymentLinkOpened, setPaymentLinkOpened] = useState(false);
-  const [transactionRef, setTransactionRef] = useState('');
-
-  // MercadoPago Bricks
-  const [mpError, setMpError]       = useState('');
-  const [usarPagoManual, setUsarPagoManual] = useState(false);
-  const [brickStatus, setBrickStatus] = useState<'idle'|'loading'|'ready'|'error'>('idle');
-  const brickControllerRef = React.useRef<any>(null);
-  const mpBookingRef       = React.useRef<Appointment | null>(null);
-  const MP_ENABLED = true;
-
-  const isFormValid = patientData.name.trim() !== '' && 
-                      patientData.rut.trim() !== '' && 
-                      patientData.phone.trim() !== '' && 
-                      patientData.email.trim() !== '' && 
-                      patientData.city.trim() !== '' && 
-                      patientData.reason.trim() !== '' &&
-                      (selectedModality !== 'home' || (patientData.address.trim() !== '' && patientData.houseNumber.trim() !== ''));
-
-  // useMemo ANTES de los returns condicionales — React exige orden estable de hooks
-  const availableDays = useMemo(() => {
-    if (!doctor) return [];
-    // Combinar citas del contexto + citas frescas de Supabase para bloquear cupos exactos
-    const allAppointments = [...appointments, ...proAppointments];
-    const daysArr = [];
-    const today = new Date();
-
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const dayIdx = d.getDay();
-
-      const defaultSched = { active: dayIdx !== 0 && dayIdx !== 6, start: '09:00', end: '18:00' };
-      const raw = doctor.schedule?.[dayIdx];
-      const sched = {
-        active: raw ? (raw.active ?? false) : defaultSched.active,
-        start: (raw?.start) || defaultSched.start,
-        end: (raw?.end) || defaultSched.end,
-      };
-
-      if (sched.active) {
-        const dateStr = d.toISOString().split('T')[0];
-        const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-        const name = i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : d.toLocaleDateString('es-ES', { weekday: 'short' });
-
-        const slots: string[] = [];
-        const startParts = String(sched.start).split(':');
-        const endParts   = String(sched.end).split(':');
-        const [startH] = startParts.map(Number);
-        const [endH]   = endParts.map(Number);
-
-        for (let h = startH; h < endH; h++) {
-          const timeStr = `${String(h).padStart(2, '0')}:00`;
-          const isBusy = allAppointments.some(a => a.professionalId === doctor.id && a.date === dateStr && a.time === timeStr);
-          if (!isBusy) slots.push(timeStr);
-        }
-
-        if (slots.length > 0) {
-          daysArr.push({ name, date: dateStr, label, slots });
-        }
-      }
-    }
-    return daysArr;
-  }, [doctor, appointments, proAppointments]);
 
   if (loadingDoctor) {
     return (
