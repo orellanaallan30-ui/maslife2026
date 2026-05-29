@@ -11,13 +11,17 @@ function generateIcs(p: { date: string; time: string; duration: number; summary:
   const [hh, min] = time.split(':');
   const startDt = `${yyyy}${mm}${dd}T${hh}${min}00`;
 
-  const endMs = new Date(`${date}T${time}:00`).getTime() + duration * 60000;
-  const e = new Date(endMs);
-  const endDt = `${e.getFullYear()}${String(e.getMonth()+1).padStart(2,'0')}${String(e.getDate()).padStart(2,'0')}T${String(e.getHours()).padStart(2,'0')}${String(e.getMinutes()).padStart(2,'0')}00`;
+  // Aritmética pura — sin new Date() para evitar conversión UTC que desplaza la hora
+  const startMinutes = parseInt(hh) * 60 + parseInt(min);
+  const endTotalMinutes = startMinutes + duration;
+  const endH = String(Math.floor(endTotalMinutes / 60) % 24).padStart(2, '0');
+  const endM = String(endTotalMinutes % 60).padStart(2, '0');
+  const endDt = `${yyyy}${mm}${dd}T${endH}${endM}00`;
 
   const stamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0,15) + 'Z';
-  const safeDesc = description.replace(/\n/g, '\\n').replace(/[,;]/g, c => `\\${c}`);
-  const safeSummary = summary.replace(/[,;]/g, c => `\\${c}`);
+
+  // RFC 5545: escapar \ primero, luego , y ; y newlines
+  const esc = (s: string) => s.replace(/\\/g, '\\\\').replace(/[,;]/g, c => `\\${c}`).replace(/\n/g, '\\n');
 
   return [
     'BEGIN:VCALENDAR', 'VERSION:2.0',
@@ -28,8 +32,8 @@ function generateIcs(p: { date: string; time: string; duration: number; summary:
     `DTSTAMP:${stamp}`,
     `DTSTART:${startDt}`,
     `DTEND:${endDt}`,
-    `SUMMARY:${safeSummary}`,
-    `DESCRIPTION:${safeDesc}`,
+    `SUMMARY:${esc(summary)}`,
+    `DESCRIPTION:${esc(description)}`,
     'STATUS:CONFIRMED',
     'END:VEVENT', 'END:VCALENDAR'
   ].join('\r\n');
@@ -162,7 +166,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!EMAIL_RE.test(to)) return res.status(400).json({ error: 'Email de destinatario inválido' });
   if (patientEmail && !EMAIL_RE.test(patientEmail)) return res.status(400).json({ error: 'Email de paciente inválido' });
 
-  const FROM = process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@maslife2026.vercel.app>';
+  const FROM = process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>';
 
   // Generar .ics solo para confirmaciones (no comprobantes de pago), y solo si el date tiene formato YYYY-MM-DD
   let icsContent: string | undefined;
