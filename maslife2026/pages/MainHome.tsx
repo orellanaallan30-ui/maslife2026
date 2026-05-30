@@ -378,11 +378,6 @@ const MainHome: React.FC = () => {
             style={{ color: 'inherit' }}>
             Planes
           </button>
-          <button onClick={() => navigate('/pro/login')}
-            className="text-[.8rem] font-semibold uppercase tracking-[1.8px] px-5 py-2 rounded-full border border-current opacity-80 hover:opacity-100 transition-opacity"
-            style={{ color: 'inherit' }}>
-            Portal Pro
-          </button>
         </div>
 
         {/* Mobile Button */}
@@ -406,13 +401,6 @@ const MainHome: React.FC = () => {
                 {label}
               </button>
             ))}
-            <div className="pt-4 border-t" style={{ borderColor: 'rgba(15,23,42,0.12)' }}>
-              <button onClick={() => { navigate('/pro/login'); setMobileMenuOpen(false); }}
-                className="w-full py-4 rounded-2xl text-sm font-semibold text-white text-center"
-                style={{ background: '#0284c7' }}>
-                Portal Profesional
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -998,7 +986,6 @@ const MainHome: React.FC = () => {
                 {[
                   { label: 'Método Life', action: () => {} },
                   { label: 'Nosotros', action: () => setIsContactFormOpen(true) },
-                  { label: 'Portal Profesional', action: () => navigate('/pro/login') },
                 ].map(({ label, action }) => (
                   <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
                       style={{ color: 'rgba(255,255,255,.55)' }}
