@@ -423,8 +423,8 @@ const MainHome: React.FC = () => {
                style={{ background: '#a5f3fc', filter: 'blur(60px)', opacity: .4, animation: 'blobFloat 11s ease-in-out infinite reverse' }} />
         </div>
 
-        {/* Imagen hero — solo mobile, lado derecho con degradé */}
-        <div className="absolute top-0 right-0 w-[52%] lg:hidden pointer-events-none" style={{ height: '66%' }}>
+        {/* Imagen hero — solo mobile, acento superior derecho con degradé */}
+        <div className="absolute top-0 right-0 w-[46%] max-w-[260px] lg:hidden pointer-events-none" style={{ height: '78%' }}>
           {/* REEMPLAZAR src con la URL de la imagen definitiva */}
           <img
             src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500&fit=crop&q=80&crop=top"
@@ -432,13 +432,13 @@ const MainHome: React.FC = () => {
             className="w-full h-full object-cover object-top"
             draggable={false}
           />
-          {/* Degradé izquierda */}
+          {/* Degradé izquierda — funde con el texto */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to right, white 0%, rgba(255,255,255,0.82) 30%, rgba(255,255,255,0.2) 62%, transparent 88%)'
+            background: 'linear-gradient(to right, white 0%, rgba(255,255,255,0.55) 35%, rgba(255,255,255,0.05) 75%, transparent 100%)'
           }} />
           {/* Degradé abajo */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.6) 25%, transparent 55%)'
+            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.5) 22%, transparent 50%)'
           }} />
         </div>
 
@@ -447,14 +447,14 @@ const MainHome: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
             {/* Columna izquierda — texto */}
-            <div className="max-w-[58%] sm:max-w-xl lg:max-w-xl">
+            <div className="max-w-xl relative z-10">
               <p className="text-[.88rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#0284c7' }}>
                 Agenda clínica inteligente · Región de Coquimbo
               </p>
 
               {/* Título Fraunces */}
               <div ref={heroTitleRef} className="mb-8" style={{ overflow: 'hidden' }}>
-                <div className="font-display text-[clamp(3.8rem,9.5vw,7.5rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
+                <div className="font-display text-[clamp(2.9rem,12vw,7.5rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
                   {[
                     { text: 'Tu salud,', italic: false },
                     { text: 'en buenas', italic: false },
