@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProfessionalProfile, Service } from '../types';
 import { useClinic } from '../ClinicContext';
-import { saveProfessional } from '../supabaseService';
+import { saveProfessional, getProfessionalBySlugOrId } from '../supabaseService';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -44,6 +44,15 @@ const Settings: React.FC = () => {
     }
     if (searchParams.get('mp_connected') === '1') {
       setSearchParams({}, { replace: true });
+      // Recargar perfil desde Supabase para mostrar badge verde inmediatamente
+      if (profile?.id) {
+        getProfessionalBySlugOrId(profile.id).then(freshPro => {
+          if (freshPro) {
+            onSave(freshPro);
+            setLocalProfile(freshPro);
+          }
+        });
+      }
     }
     if (searchParams.get('mp_error')) {
       setSearchParams({}, { replace: true });
