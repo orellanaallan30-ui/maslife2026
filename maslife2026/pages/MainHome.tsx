@@ -427,7 +427,7 @@ const MainHome: React.FC = () => {
         <div className="absolute top-0 right-0 w-[46%] max-w-[260px] lg:hidden pointer-events-none" style={{ height: '78%' }}>
           {/* REEMPLAZAR src con la URL de la imagen definitiva */}
           <img
-            src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500&fit=crop&q=80&crop=top"
+            src="/hero-profesional.jpg"
             alt=""
             className="w-full h-full object-cover object-top"
             draggable={false}
