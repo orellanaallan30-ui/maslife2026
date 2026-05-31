@@ -986,6 +986,7 @@ const MainHome: React.FC = () => {
                 {[
                   { label: 'Método Life', action: () => {} },
                   { label: 'Nosotros', action: () => setIsContactFormOpen(true) },
+                  { label: 'Ingresar como profesional', action: () => navigate('/pro/login') },
                 ].map(({ label, action }) => (
                   <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
                       style={{ color: 'rgba(255,255,255,.55)' }}
