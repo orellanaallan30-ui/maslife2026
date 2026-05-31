@@ -424,20 +424,20 @@ const MainHome: React.FC = () => {
         </div>
 
         {/* Imagen hero — solo mobile, acento superior derecho con degradé */}
-        <div className="absolute top-0 right-0 w-[50%] max-w-[300px] lg:hidden pointer-events-none" style={{ height: '56%' }}>
+        <div className="absolute top-0 right-0 w-[64%] max-w-[380px] lg:hidden pointer-events-none" style={{ height: '58%' }}>
           <img
             src="/hero-profesional.jpg"
             alt=""
-            className="w-full h-full object-cover object-top"
+            className="w-full h-full object-cover object-[center_top]"
             draggable={false}
           />
-          {/* Degradé izquierda — protege legibilidad sin lavar tanto la imagen */}
+          {/* Degradé izquierda — solo blanco en el borde, deja ver más la imagen */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to right, white 0%, white 16%, rgba(255,255,255,0.78) 40%, rgba(255,255,255,0.18) 72%, transparent 100%)'
+            background: 'linear-gradient(to right, white 0%, rgba(255,255,255,0.85) 14%, rgba(255,255,255,0.35) 34%, transparent 58%)'
           }} />
           {/* Degradé abajo — funde con el contenido */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.85) 28%, transparent 60%)'
+            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.8) 24%, transparent 55%)'
           }} />
         </div>
 
@@ -447,7 +447,7 @@ const MainHome: React.FC = () => {
 
             {/* Columna izquierda — texto */}
             <div className="max-w-xl relative z-10">
-              <span className="inline-block text-[.72rem] font-outfit font-semibold uppercase tracking-[1.8px] mb-7 px-5 py-2.5 rounded-full text-white"
+              <span className="inline-block text-[.6rem] font-outfit font-bold uppercase tracking-[1px] mb-7 px-3.5 py-1.5 rounded-full text-white"
                     style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', boxShadow: '0 8px 24px -8px rgba(2,132,199,.5)' }}>
                 Profesionales de salud cerca de ti
               </span>
