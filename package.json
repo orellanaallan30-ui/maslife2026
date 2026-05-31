@@ -5,7 +5,8 @@
   "description": "Wrapper root package for Vercel deployment - actual project is in maslife2026/",
   "devDependencies": {
     "@vercel/node": "^3.2.23",
-    "@supabase/supabase-js": "^2.39.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "@google/stitch-sdk": "^0.1.0"
   },
   "scripts": {
     "install": "npm install --ignore-scripts && cd maslife2026 && npm install",

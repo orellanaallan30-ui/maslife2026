@@ -16,6 +16,7 @@ import AdminManagement       from './pages/AdminManagement';
 import AdminLogin            from './pages/AdminLogin';
 import Finances              from './pages/Finances';
 import Settings              from './pages/Settings';
+import StitchDesigner        from './pages/StitchDesigner';
 import ProfessionalAgenda    from './pages/ProfessionalAgenda';
 import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
@@ -377,6 +378,7 @@ const AppContent: React.FC = () => {
             <Route path="/pro/session/:id" element={<ConsultationSession />} />
             <Route path="/pro/finances"    element={<Finances />} />
             <Route path="/pro/settings"    element={<Settings />} />
+            <Route path="/pro/stitch"      element={<StitchDesigner />} />
           </Route>
           {/* Protegidas admin */}
           <Route element={<AdminGuard><ProLayout /></AdminGuard>}>

@@ -17,6 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
     { icon: 'calendar_today', label: 'Agenda',     path: '/pro/agenda' },
     { icon: 'people',         label: 'Pacientes',  path: '/pro/patients' },
     { icon: 'bar_chart',      label: 'Finanzas',   path: '/pro/finances' },
+    { icon: 'palette',        label: 'Diseñador',  path: '/pro/stitch' },
     { icon: 'settings',       label: 'Ajustes',    path: '/pro/settings' },
   ];
 
