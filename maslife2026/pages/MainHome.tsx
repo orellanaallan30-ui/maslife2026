@@ -424,20 +424,20 @@ const MainHome: React.FC = () => {
         </div>
 
         {/* Imagen hero — solo mobile, acento superior derecho con degradé */}
-        <div className="absolute top-0 right-0 w-[46%] max-w-[260px] lg:hidden pointer-events-none" style={{ height: '48%' }}>
+        <div className="absolute top-0 right-0 w-[50%] max-w-[300px] lg:hidden pointer-events-none" style={{ height: '56%' }}>
           <img
             src="/hero-profesional.jpg"
             alt=""
             className="w-full h-full object-cover object-top"
             draggable={false}
           />
-          {/* Degradé izquierda — protege legibilidad del texto */}
+          {/* Degradé izquierda — protege legibilidad sin lavar tanto la imagen */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to right, white 0%, white 22%, rgba(255,255,255,0.88) 45%, rgba(255,255,255,0.35) 72%, transparent 100%)'
+            background: 'linear-gradient(to right, white 0%, white 16%, rgba(255,255,255,0.78) 40%, rgba(255,255,255,0.18) 72%, transparent 100%)'
           }} />
-          {/* Degradé abajo — corta la imagen antes del subtítulo */}
+          {/* Degradé abajo — funde con el contenido */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.92) 35%, transparent 65%)'
+            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.85) 28%, transparent 60%)'
           }} />
         </div>
 
@@ -447,9 +447,10 @@ const MainHome: React.FC = () => {
 
             {/* Columna izquierda — texto */}
             <div className="max-w-xl relative z-10">
-              <p className="text-[.88rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#0284c7' }}>
-                Agenda clínica inteligente · Región de Coquimbo
-              </p>
+              <span className="inline-block text-[.72rem] font-outfit font-semibold uppercase tracking-[1.8px] mb-7 px-5 py-2.5 rounded-full text-white"
+                    style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', boxShadow: '0 8px 24px -8px rgba(2,132,199,.5)' }}>
+                Profesionales de salud cerca de ti
+              </span>
 
               {/* Título Fraunces */}
               <div ref={heroTitleRef} className="mb-8" style={{ overflow: 'hidden' }}>
@@ -462,7 +463,7 @@ const MainHome: React.FC = () => {
                     <div key={li} className="overflow-hidden">
                       <span className="hero-word inline-block">
                         {line.italic
-                          ? <em style={{ color: '#0284c7', fontStyle: 'italic' }}>manos.</em>
+                          ? <><em style={{ color: '#0284c7', fontStyle: 'italic' }}>manos.</em><span className="material-icons-round align-middle ml-3" style={{ color: '#7dd3fc', fontSize: '0.42em' }}>favorite_border</span></>
                           : line.text
                         }
                       </span>
@@ -474,7 +475,6 @@ const MainHome: React.FC = () => {
               <p className="font-outfit font-light text-xl sm:text-2xl max-w-lg leading-relaxed mb-10" style={{ color: '#475569' }}>
                 Kinesiología, psicología, nutrición y más — con profesionales verificados en{' '}
                 <strong className="font-semibold" style={{ color: '#0f172a' }}>Ovalle, Coquimbo y La Serena</strong>.
-                Presencial, online o a domicilio.
               </p>
 
               {/* CTAs */}
