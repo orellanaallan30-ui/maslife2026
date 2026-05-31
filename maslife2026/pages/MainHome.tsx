@@ -447,7 +447,7 @@ const MainHome: React.FC = () => {
 
             {/* Columna izquierda — texto */}
             <div className="max-w-xl relative z-10">
-              <span className="inline-block text-[.6rem] font-outfit font-bold uppercase tracking-[1px] mb-7 px-3.5 py-1.5 rounded-full text-white"
+              <span className="inline-block text-[.5rem] font-outfit font-bold uppercase tracking-[.5px] mb-7 px-3 py-1 rounded-full text-white"
                     style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', boxShadow: '0 8px 24px -8px rgba(2,132,199,.5)' }}>
                 Profesionales de salud cerca de ti
               </span>
