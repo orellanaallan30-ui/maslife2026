@@ -21,15 +21,15 @@ const PatientResults: React.FC = () => {
   }, []);
 
   const areas = [
-    { value: '', label: 'Todas las áreas' },
-    { value: 'Kinesiología', label: 'Kinesiología' },
-    { value: 'Psicología', label: 'Psicología' },
-    { value: 'Nutrición', label: 'Nutrición' },
-    { value: 'Fonoaudiología', label: 'Fonoaudiología' },
-    { value: 'Terapia Ocupacional', label: 'Terapia Ocupacional' },
-    { value: 'Podología', label: 'Podología' },
-    { value: 'Técnico en Enfermería', label: 'Téc. Enfermería (TENS)' },
-    { value: 'Masoterapia', label: 'Masoterapia' },
+    { value: '', label: 'Todas', icon: 'grid_view', grad: 'linear-gradient(135deg, #475569, #64748b)' },
+    { value: 'Kinesiología', label: 'Kinesiología', icon: 'directions_run', grad: 'linear-gradient(135deg, #0284c7, #0ea5e9)' },
+    { value: 'Psicología', label: 'Psicología', icon: 'psychology', grad: 'linear-gradient(135deg, #6366f1, #818cf8)' },
+    { value: 'Nutrición', label: 'Nutrición', icon: 'restaurant', grad: 'linear-gradient(135deg, #059669, #10b981)' },
+    { value: 'Fonoaudiología', label: 'Fonoaudiología', icon: 'record_voice_over', grad: 'linear-gradient(135deg, #0891b2, #22d3ee)' },
+    { value: 'Terapia Ocupacional', label: 'T. Ocupacional', icon: 'accessibility_new', grad: 'linear-gradient(135deg, #d97706, #f59e0b)' },
+    { value: 'Podología', label: 'Podología', icon: 'directions_walk', grad: 'linear-gradient(135deg, #db2777, #f472b6)' },
+    { value: 'Técnico en Enfermería', label: 'TENS', icon: 'medical_services', grad: 'linear-gradient(135deg, #dc2626, #f87171)' },
+    { value: 'Masoterapia', label: 'Masoterapia', icon: 'spa', grad: 'linear-gradient(135deg, #7c3aed, #a78bfa)' },
   ];
 
   const toggleModality = (mode: string) => {
@@ -85,6 +85,46 @@ const PatientResults: React.FC = () => {
           </button>
         </div>
 
+        {/* ── Selector de área — círculos horizontales ── */}
+        <div className="mb-6">
+          <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-3">Selecciona un área</h3>
+          <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0" style={{ scrollbarWidth: 'none' }}>
+            {areas.map(a => {
+              const active = selectedArea === a.value;
+              return (
+                <button
+                  key={a.value || 'todas'}
+                  onClick={() => setSelectedArea(a.value)}
+                  className="flex flex-col items-center gap-2 shrink-0 group focus:outline-none"
+                  style={{ width: 76 }}
+                >
+                  <div
+                    className="flex items-center justify-center rounded-full transition-all duration-300 group-active:scale-95"
+                    style={{
+                      width: 64,
+                      height: 64,
+                      background: active ? a.grad : '#f1f5f9',
+                      boxShadow: active ? '0 8px 22px -6px rgba(2,132,199,.45)' : 'none',
+                      border: active ? '2px solid white' : '2px solid transparent',
+                      transform: active ? 'scale(1.06)' : 'scale(1)',
+                    }}
+                  >
+                    <span className="material-icons-round" style={{ fontSize: 28, color: active ? '#fff' : '#64748b' }}>
+                      {a.icon}
+                    </span>
+                  </div>
+                  <span
+                    className="text-[11px] font-bold text-center leading-tight"
+                    style={{ color: active ? '#0284c7' : '#64748b' }}
+                  >
+                    {a.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="flex flex-col lg:grid lg:grid-cols-12 gap-5">
 
           {/* ── Filtros ── */}
@@ -100,20 +140,6 @@ const PatientResults: React.FC = () => {
               </div>
 
               <div className="space-y-5">
-                {/* Área */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Área profesional</label>
-                  <select
-                    value={selectedArea}
-                    onChange={(e) => setSelectedArea(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    {areas.map(a => (
-                      <option key={a.value} value={a.value}>{a.label}</option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* Ciudad */}
                 <div>
                   <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ciudad</label>
