@@ -986,7 +986,6 @@ const MainHome: React.FC = () => {
                 {[
                   { label: 'Método Life', action: () => {} },
                   { label: 'Nosotros', action: () => setIsContactFormOpen(true) },
-                  { label: 'Ingresar como profesional', action: () => navigate('/pro/login') },
                 ].map(({ label, action }) => (
                   <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
                       style={{ color: 'rgba(255,255,255,.55)' }}
@@ -995,6 +994,13 @@ const MainHome: React.FC = () => {
                       onClick={action}>{label}</li>
                 ))}
               </ul>
+              <button onClick={() => navigate('/pro/login')}
+                className="mt-4 font-outfit text-sm font-semibold px-4 py-2 rounded-full border transition-all"
+                style={{ borderColor: '#0ea5e9', color: '#0ea5e9' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#0ea5e9'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#0ea5e9'; }}>
+                Ingresar como profesional
+              </button>
             </div>
 
             {/* Legal */}
