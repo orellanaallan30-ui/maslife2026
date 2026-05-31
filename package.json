@@ -3,6 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "description": "Wrapper root package for Vercel deployment - actual project is in maslife2026/",
+  "devDependencies": {
+    "@vercel/node": "^3.2.23",
+    "@supabase/supabase-js": "^2.39.0"
+  },
   "scripts": {
     "install": "cd maslife2026 && npm install",
     "build": "cd maslife2026 && npm run build",
