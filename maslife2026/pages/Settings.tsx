@@ -42,6 +42,12 @@ const Settings: React.FC = () => {
       setActiveTab('suscripcion');
       setSearchParams({}, { replace: true });
     }
+    if (searchParams.get('mp_connected') === '1') {
+      setSearchParams({}, { replace: true });
+    }
+    if (searchParams.get('mp_error')) {
+      setSearchParams({}, { replace: true });
+    }
   }, []);
 
   if (!localProfile) return null;
@@ -338,6 +344,42 @@ const Settings: React.FC = () => {
                       Configuración de Pagos
                     </h3>
                     <div className="bg-slate-50 rounded-2xl p-5 border-2 border-slate-200 space-y-5">
+                      {/* MercadoPago Marketplace connect */}
+                      {localProfile.mpAccessToken ? (
+                        <div className="flex items-center gap-3 bg-green-50 border-2 border-green-200 rounded-xl px-4 py-3">
+                          <span className="material-icons-round text-green-500">check_circle</span>
+                          <div className="flex-1">
+                            <p className="font-black text-green-800 text-sm">Cuenta MercadoPago conectada</p>
+                            <p className="text-xs text-green-600">Los pagos llegan directo a tu cuenta MP</p>
+                          </div>
+                          <button
+                            onClick={() => handleUpdate({ mpAccessToken: undefined, mpPublicKey: undefined, mpUserId: undefined })}
+                            className="text-xs text-red-500 font-bold hover:underline"
+                          >
+                            Desconectar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 bg-blue-50 border-2 border-blue-100 rounded-xl px-4 py-3">
+                          <img src="https://http2.mlstatic.com/frontend-assets/ui-navigation/5.19.1/mercadopago/logo__large-v2.png" alt="MercadoPago" className="h-5 object-contain" />
+                          <div className="flex-1">
+                            <p className="font-black text-slate-800 text-sm">Conecta tu cuenta MercadoPago</p>
+                            <p className="text-xs text-slate-500">Recibe pagos directo en tu cuenta, sin intermediarios</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const appId = import.meta.env.VITE_MP_APP_ID;
+                              const redirectUri = encodeURIComponent('https://clinicamaslife.cl/api/mp-oauth');
+                              window.location.href = `https://auth.mercadopago.com/authorization?client_id=${appId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${localProfile.id}`;
+                            }}
+                            className="shrink-0 text-xs font-black text-white px-3 py-1.5 rounded-lg"
+                            style={{ background: 'linear-gradient(135deg, #009ee3, #007eb5)' }}
+                          >
+                            Conectar
+                          </button>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-black text-black">Habilitar Pagos Anticipados</p>

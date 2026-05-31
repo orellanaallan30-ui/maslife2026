@@ -280,6 +280,9 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     createdAt: (d.created_at as string) || new Date().toISOString(),
     rut: d.rut as string | undefined,
     schedule: d.schedule as ProfessionalProfile['schedule'],
+    mpAccessToken: (d.mp_access_token as string) || undefined,
+    mpPublicKey: (d.mp_public_key as string) || undefined,
+    mpUserId: (d.mp_user_id as string) || undefined,
   } as ProfessionalProfile;
 }
 
@@ -296,6 +299,9 @@ function mapProToDB(pro: ProfessionalProfile): Record<string, unknown> {
     booking_payment_link: (pro as any).bookingPaymentLink || null,
     subscription_link: pro.subscriptionLink,
     rut: (pro as any).rut || null, schedule: pro.schedule || null,
+    mp_access_token: (pro as any).mpAccessToken || null,
+    mp_public_key: (pro as any).mpPublicKey || null,
+    mp_user_id: (pro as any).mpUserId || null,
   };
 }
 

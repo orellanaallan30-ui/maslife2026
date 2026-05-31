@@ -84,6 +84,9 @@ export interface ProfessionalProfile {
   schedule?: any;
   isApproved?: boolean;
   paymentEnabled?: boolean;
+  mpAccessToken?: string;
+  mpPublicKey?: string;
+  mpUserId?: string;
 }
 
 export interface Appointment {
