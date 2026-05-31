@@ -423,12 +423,31 @@ const MainHome: React.FC = () => {
                style={{ background: '#a5f3fc', filter: 'blur(60px)', opacity: .4, animation: 'blobFloat 11s ease-in-out infinite reverse' }} />
         </div>
 
+        {/* Imagen hero — solo mobile, lado derecho con degradé */}
+        <div className="absolute top-0 right-0 w-[52%] lg:hidden pointer-events-none" style={{ height: '66%' }}>
+          {/* REEMPLAZAR src con la URL de la imagen definitiva */}
+          <img
+            src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=500&fit=crop&q=80&crop=top"
+            alt=""
+            className="w-full h-full object-cover object-top"
+            draggable={false}
+          />
+          {/* Degradé izquierda */}
+          <div className="absolute inset-0" style={{
+            background: 'linear-gradient(to right, white 0%, rgba(255,255,255,0.82) 30%, rgba(255,255,255,0.2) 62%, transparent 88%)'
+          }} />
+          {/* Degradé abajo */}
+          <div className="absolute inset-0" style={{
+            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.6) 25%, transparent 55%)'
+          }} />
+        </div>
+
         {/* Contenido */}
         <div className="relative z-10 max-w-7xl mx-auto px-[6vw] pt-32 sm:pt-40 pb-28 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
             {/* Columna izquierda — texto */}
-            <div className="max-w-xl">
+            <div className="max-w-[58%] sm:max-w-xl lg:max-w-xl">
               <p className="text-[.88rem] font-outfit font-medium uppercase tracking-[4px] mb-7" style={{ color: '#0284c7' }}>
                 Agenda clínica inteligente · Región de Coquimbo
               </p>
