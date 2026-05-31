@@ -37,8 +37,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const tokenData = await tokenRes.json();
 
     if (!tokenRes.ok || !tokenData.access_token) {
-      console.error('[mp-oauth] Token exchange failed:', tokenData);
-      return res.redirect('/pro/settings?mp_error=token_exchange_failed');
+      const mpErr = tokenData.error || tokenData.message || 'unknown';
+      const mpDesc = tokenData.error_description || tokenData.cause?.[0]?.description || '';
+      console.error('[mp-oauth] Token exchange failed:', JSON.stringify(tokenData));
+      return res.redirect(`/pro/settings?mp_error=token_exchange_failed&mp_detail=${encodeURIComponent(mpErr)}&mp_desc=${encodeURIComponent(mpDesc)}`);
     }
 
     const { access_token, public_key, refresh_token, user_id } = tokenData;
