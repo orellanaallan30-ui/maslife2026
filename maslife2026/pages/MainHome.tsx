@@ -424,21 +424,20 @@ const MainHome: React.FC = () => {
         </div>
 
         {/* Imagen hero — solo mobile, acento superior derecho con degradé */}
-        <div className="absolute top-0 right-0 w-[46%] max-w-[260px] lg:hidden pointer-events-none" style={{ height: '78%' }}>
-          {/* REEMPLAZAR src con la URL de la imagen definitiva */}
+        <div className="absolute top-0 right-0 w-[46%] max-w-[260px] lg:hidden pointer-events-none" style={{ height: '48%' }}>
           <img
             src="/hero-profesional.jpg"
             alt=""
             className="w-full h-full object-cover object-top"
             draggable={false}
           />
-          {/* Degradé izquierda — funde con el texto */}
+          {/* Degradé izquierda — protege legibilidad del texto */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to right, white 0%, rgba(255,255,255,0.55) 35%, rgba(255,255,255,0.05) 75%, transparent 100%)'
+            background: 'linear-gradient(to right, white 0%, white 22%, rgba(255,255,255,0.88) 45%, rgba(255,255,255,0.35) 72%, transparent 100%)'
           }} />
-          {/* Degradé abajo */}
+          {/* Degradé abajo — corta la imagen antes del subtítulo */}
           <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.5) 22%, transparent 50%)'
+            background: 'linear-gradient(to top, white 0%, rgba(255,255,255,0.92) 35%, transparent 65%)'
           }} />
         </div>
 
