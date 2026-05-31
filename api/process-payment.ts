@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.VITE_SUPABASE_ANON_KEY!
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let ACCESS_TOKEN = PLATFORM_TOKEN;
   let marketplaceFee: number | undefined;
 
-  if (professional_id && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (professional_id && process.env.VITE_SUPABASE_URL) {
     const { data: pro } = await supabase
       .from('professionals')
       .select('mp_access_token')
