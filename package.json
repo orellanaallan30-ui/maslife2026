@@ -8,7 +8,7 @@
     "@supabase/supabase-js": "^2.39.0"
   },
   "scripts": {
-    "install": "cd maslife2026 && npm install",
+    "install": "npm install --ignore-scripts && cd maslife2026 && npm install",
     "build": "cd maslife2026 && npm run build",
     "dev": "cd maslife2026 && npm run dev",
     "preview": "cd maslife2026 && npm run preview"
