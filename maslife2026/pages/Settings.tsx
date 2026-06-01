@@ -389,6 +389,25 @@ const Settings: React.FC = () => {
                         </div>
                       )}
 
+                      {/* Tarifa de bono de reserva */}
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-black text-black">Bono de Reserva</p>
+                          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Monto que paga el paciente al reservar una cita</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-slate-500 text-sm font-bold">$</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={100}
+                            value={localProfile.bookingFee ?? 5000}
+                            onChange={e => handleUpdate({ bookingFee: Number(e.target.value) })}
+                            className="w-24 text-right border-2 border-slate-200 rounded-xl px-3 py-1.5 text-sm font-black focus:border-primary focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-black text-black">Habilitar Pagos Anticipados</p>

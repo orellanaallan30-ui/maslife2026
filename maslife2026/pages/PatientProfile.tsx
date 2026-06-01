@@ -39,6 +39,7 @@ const PatientProfile: React.FC = () => {
   const MP_ENABLED = true;
 
   const doctor = fetchedDoctor;
+  const bookingFee = doctor?.bookingFee || 5000;
 
   const isFormValid = patientData.name.trim() !== '' &&
                       patientData.rut.trim() !== '' &&
@@ -167,7 +168,7 @@ const PatientProfile: React.FC = () => {
         const bricksBuilder = mp.bricks();
 
         const controller = await bricksBuilder.create('payment', 'mp-brick-container', {
-          initialization: { amount: 5000 },
+          initialization: { amount: bookingFee },
           customization: {
             paymentMethods: {
               creditCard: 'all',
@@ -196,7 +197,7 @@ const PatientProfile: React.FC = () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       ...formData,
-                      amount: 5000,
+                      amount: bookingFee,
                       external_reference: externalRef,
                       description: `Bono Reserva — ${app.serviceName} con ${app.doctorName}`,
                       professional_id: doctor?.id,
