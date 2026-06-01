@@ -332,6 +332,16 @@ const MainHome: React.FC = () => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  useEffect(() => {
+    const target = sessionStorage.getItem('maslife_scrollTo');
+    if (target) {
+      sessionStorage.removeItem('maslife_scrollTo');
+      setTimeout(() => {
+        document.getElementById(target)?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+    }
+  }, []);
+
   return (
     <div id="main-home-scroll" className="landing-page w-full h-full overflow-y-auto font-outfit scroll-smooth relative" style={{ background: '#ffffff', color: '#0f172a' }}>
 

@@ -160,7 +160,22 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                       </p>
                     </div>
 
-                    {/* Buscar Profesional */}
+                    {/* Agendar — CTA principal */}
+                    <button
+                      onClick={() => { setMenuOpen(false); navigate('/patient/results'); }}
+                      className="w-full text-left p-4 rounded-2xl shadow-lg hover:scale-[1.02] transition-all flex items-center gap-4 group"
+                      style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', boxShadow: '0 8px 24px -8px rgba(2,132,199,.5)' }}>
+                      <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-white text-xl">event_available</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-white uppercase tracking-wide">Agendar</p>
+                        <p className="text-xs font-medium mt-0.5" style={{ color: 'rgba(186,230,253,.85)' }}>Reserva tu consulta ahora</p>
+                      </div>
+                      <span className="material-icons-round text-white/50 text-base ml-auto group-hover:translate-x-1 transition-transform">chevron_right</span>
+                    </button>
+
+                    {/* Buscar Profesionales */}
                     <button
                       onClick={() => { setMenuOpen(false); navigate('/patient/results'); }}
                       className="w-full text-left p-4 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg shadow-teal-200 hover:shadow-teal-300 hover:scale-[1.02] transition-all flex items-center gap-4 group">
@@ -168,10 +183,54 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                         <span className="material-icons-round text-white text-xl">person_search</span>
                       </div>
                       <div>
-                        <p className="text-sm font-black text-white uppercase tracking-wide">Buscar Profesional</p>
+                        <p className="text-sm font-black text-white uppercase tracking-wide">Buscar Profesionales</p>
                         <p className="text-xs text-teal-100 font-medium mt-0.5">Encuentra tu especialista</p>
                       </div>
                       <span className="material-icons-round text-white/50 text-base ml-auto group-hover:translate-x-1 transition-transform">chevron_right</span>
+                    </button>
+
+                    {/* Testimonios */}
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        if (window.location.pathname === '/') {
+                          document.getElementById('testimonios')?.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                          sessionStorage.setItem('maslife_scrollTo', 'testimonios');
+                          navigate('/');
+                        }
+                      }}
+                      className="w-full text-left p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:scale-[1.02] transition-all flex items-center gap-4 group">
+                      <div className="w-11 h-11 rounded-xl bg-slate-200 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-slate-600 text-xl">format_quote</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-800 uppercase tracking-wide">Testimonios</p>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">Lo que dicen nuestros pacientes</p>
+                      </div>
+                      <span className="material-icons-round text-slate-400 text-base ml-auto group-hover:translate-x-1 transition-transform">chevron_right</span>
+                    </button>
+
+                    {/* Filosofía */}
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        if (window.location.pathname === '/') {
+                          document.getElementById('filosofia')?.scrollIntoView({ behavior: 'smooth' });
+                        } else {
+                          sessionStorage.setItem('maslife_scrollTo', 'filosofia');
+                          navigate('/');
+                        }
+                      }}
+                      className="w-full text-left p-4 rounded-2xl bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:scale-[1.02] transition-all flex items-center gap-4 group">
+                      <div className="w-11 h-11 rounded-xl bg-slate-200 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-slate-600 text-xl">auto_stories</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-slate-800 uppercase tracking-wide">Filosofía</p>
+                        <p className="text-xs text-slate-500 font-medium mt-0.5">Nuestra visión de la salud</p>
+                      </div>
+                      <span className="material-icons-round text-slate-400 text-base ml-auto group-hover:translate-x-1 transition-transform">chevron_right</span>
                     </button>
 
                     {/* Panel Profesional */}
