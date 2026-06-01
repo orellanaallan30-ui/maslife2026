@@ -160,7 +160,7 @@ const PatientProfile: React.FC = () => {
           });
         }
 
-        const pubKey = import.meta.env.VITE_MP_PUBLIC_KEY as string | undefined;
+        const pubKey = (doctor?.mpPublicKey || import.meta.env.VITE_MP_PUBLIC_KEY) as string | undefined;
         if (!pubKey) throw new Error('NO_PUBLIC_KEY');
 
         const mp = new (window as any).MercadoPago(pubKey, { locale: 'es-CL' });
@@ -199,6 +199,7 @@ const PatientProfile: React.FC = () => {
                       amount: 5000,
                       external_reference: externalRef,
                       description: `Bono Reserva — ${app.serviceName} con ${app.doctorName}`,
+                      professional_id: doctor?.id,
                     }),
                   });
                   const data = await res.json();
