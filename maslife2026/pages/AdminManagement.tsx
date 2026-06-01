@@ -21,19 +21,30 @@ const AdminManagement: React.FC = () => {
   // Guard
   useEffect(() => { if (!isAdmin) navigate('/admin/login'); }, [isAdmin, navigate]);
 
-  // Cargar TODOS los profesionales (incluyendo no aprobados) con service role
-  // Como no tenemos service role en el frontend, usamos la anon key con RLS deshabilitado
-  // mediante una política especial para admin — o cargamos todos desde el contexto
+  // Helper: todas las llamadas admin usan el token JWT almacenado en sessionStorage
+  function adminFetch(method: string, body?: object, action?: string) {
+    const token = sessionStorage.getItem('maslife_admin_token') || '';
+    const url = '/api/admin-verify' + (action ? `?action=${action}` : '');
+    return fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    });
+  }
+
+  // Cargar TODOS los profesionales via API segura (service_role en el servidor)
   useEffect(() => {
     const loadAll = async () => {
-      const { data, error } = await supabase
-        .from('professionals')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setAllPros(data.map(mapDBtoPro));
+      const res = await adminFetch('GET', undefined, 'list');
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        console.error('[admin] loadAll error:', json.error);
+        return;
       }
+      setAllPros((json.data as Record<string, unknown>[]).map(mapDBtoPro));
     };
     if (isAdmin) loadAll();
   }, [isAdmin]);
@@ -58,13 +69,8 @@ const AdminManagement: React.FC = () => {
   const handleApprove = async (pro: ProfessionalProfile) => {
     setLoading(pro.id, true);
     try {
-      const { error } = await supabase
-        .from('professionals')
-        .update({ is_verified: true, is_approved: true })
-        .eq('id', pro.id);
-
-      if (error) throw error;
-
+      const res = await adminFetch('PATCH', { id: pro.id, is_verified: true, is_approved: true });
+      if (!res.ok) throw new Error((await res.json()).error);
       const updated = { ...pro, isVerified: true, isApproved: true };
       setAllPros(prev => prev.map(p => p.id === pro.id ? updated : p));
       showToast(`✅ ${pro.name} aprobado — ya puede ingresar`);
@@ -80,12 +86,8 @@ const AdminManagement: React.FC = () => {
     if (!confirm(`¿Rechazar a ${pro.name}? Su cuenta quedará desactivada.`)) return;
     setLoading(pro.id, true);
     try {
-      const { error } = await supabase
-        .from('professionals')
-        .update({ is_approved: false, is_verified: false })
-        .eq('id', pro.id);
-
-      if (error) throw error;
+      const res = await adminFetch('PATCH', { id: pro.id, is_approved: false, is_verified: false });
+      if (!res.ok) throw new Error((await res.json()).error);
       const updated = { ...pro, isApproved: false, isVerified: false };
       setAllPros(prev => prev.map(p => p.id === pro.id ? updated : p));
       showToast(`⛔ ${pro.name} desactivado`);
@@ -101,8 +103,8 @@ const AdminManagement: React.FC = () => {
     if (!confirm(`¿ELIMINAR permanentemente a ${pro.name}? Esta acción no se puede deshacer.`)) return;
     setLoading(pro.id, true);
     try {
-      const { error } = await supabase.from('professionals').delete().eq('id', pro.id);
-      if (error) throw error;
+      const res = await adminFetch('DELETE', { id: pro.id });
+      if (!res.ok) throw new Error((await res.json()).error);
       setAllPros(prev => prev.filter(p => p.id !== pro.id));
       showToast(`🗑️ ${pro.name} eliminado`);
     } catch {
@@ -114,11 +116,12 @@ const AdminManagement: React.FC = () => {
 
   // ── Gestión de suscripción ─────────────────────────────────────
   const setSubStatus = async (pro: ProfessionalProfile, next: SubscriptionStatus) => {
-    const { error } = await supabase.from('professionals').update({
+    const res = await adminFetch('PATCH', {
+      id: pro.id,
       subscription_status: next,
       is_subscribed: next === 'active',
-    }).eq('id', pro.id);
-    if (!error) {
+    });
+    if (res.ok) {
       const updated = { ...pro, subscriptionStatus: next, isSubscribed: next === 'active' };
       setAllPros(prev => prev.map(p => p.id === pro.id ? updated : p));
       const label = next === 'active' ? 'Activo' : next === 'paused' ? 'Pausado' : 'Trial';
