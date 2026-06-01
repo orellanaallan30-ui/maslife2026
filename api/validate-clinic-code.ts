@@ -1,6 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import crypto from 'crypto';
 
 const ipCounts = new Map<string, { count: number; windowStart: number }>();
+
+// Comparación en tiempo constante para evitar timing attacks al validar el código
+function timingSafeEqualStr(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  if (bufA.length !== bufB.length) {
+    // Comparar contra sí mismo mantiene el tiempo constante aunque difiera el largo
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 function checkRateLimit(headers: VercelRequest['headers'], max: number, windowMs: number): boolean {
   const forwarded = headers['x-forwarded-for'];
@@ -33,6 +46,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   await new Promise(r => setTimeout(r, 400));
 
-  const valid = (code as string).toUpperCase().trim() === CLINIC_CODE.toUpperCase().trim();
+  const valid = timingSafeEqualStr(
+    (code as string).toUpperCase().trim(),
+    CLINIC_CODE.toUpperCase().trim()
+  );
   return res.status(200).json({ valid });
 }

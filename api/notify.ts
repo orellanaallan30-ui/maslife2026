@@ -68,6 +68,23 @@ function generateIcs(p: {
 }
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
+
+// Escapa entidades HTML para evitar inyección de HTML/scripts en los correos
+// (los nombres, servicios, etc. provienen de input del usuario sin confianza)
+function escapeHtml(str: unknown): string {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// Elimina saltos de línea para evitar header injection en asuntos de correo
+function cleanLine(str: unknown): string {
+  return String(str ?? '').replace(/[\r\n]+/g, ' ').trim();
+}
+
 const BASE_STYLE = `font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#f8fafc;padding:24px;`;
 const CARD_STYLE = `background:white;padding:32px;border-radius:0 0 16px 16px;border:1px solid #e2e8f0;`;
 const ROW_LABEL = `padding:8px 0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;`;
@@ -75,8 +92,9 @@ const ROW_VALUE = `padding:8px 0;color:#0f172a;font-weight:bold;text-align:right
 const INFO_BOX = `background:#f0f9ff;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #2563eb;`;
 const FOOTER = `color:#94a3b8;font-size:12px;text-align:center;margin-top:24px;`;
 
+// value se escapa como HTML; los labels son literales de confianza
 function tableRow(label: string, value: string) {
-  return `<tr><td style="${ROW_LABEL}">${label}</td><td style="${ROW_VALUE}">${value}</td></tr>`;
+  return `<tr><td style="${ROW_LABEL}">${label}</td><td style="${ROW_VALUE}">${escapeHtml(value)}</td></tr>`;
 }
 
 function professionalNewBookingHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; time: string; type: string }) {
@@ -86,7 +104,7 @@ function professionalNewBookingHtml(p: { professionalName: string; patientName: 
       <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px;">Clínica Maslife – Agenda Online</p>
     </div>
     <div style="${CARD_STYLE}">
-      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${p.professionalName || 'Profesional'}</strong>,</p>
+      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(p.professionalName || 'Profesional')}</strong>,</p>
       <p style="color:#64748b;font-size:14px;">Tienes una nueva cita agendada:</p>
       <div style="${INFO_BOX}">
         <table style="width:100%;border-collapse:collapse;">
@@ -110,7 +128,7 @@ function patientConfirmationHtml(p: { patientName: string; doctorName: string; s
       <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">Clínica Maslife – Agenda Online</p>
     </div>
     <div style="${CARD_STYLE}">
-      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${p.patientName}</strong>,</p>
+      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
       <p style="color:#64748b;font-size:14px;">Tu hora médica ha quedado reservada exitosamente. Aquí están los detalles:</p>
       <div style="background:#f0fdf4;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #10b981;">
         <table style="width:100%;border-collapse:collapse;">
@@ -137,7 +155,7 @@ function paymentReceiptHtml(p: { patientName: string; doctorName: string; servic
       <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">Clínica Maslife – Agenda Online</p>
     </div>
     <div style="${CARD_STYLE}">
-      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${p.patientName}</strong>,</p>
+      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
       <p style="color:#64748b;font-size:14px;">Tu pago ha sido confirmado:</p>
       <div style="${INFO_BOX}">
         <table style="width:100%;border-collapse:collapse;">
@@ -217,14 +235,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const sends: Promise<any>[] = [];
 
+    const subjName = cleanLine(patientName);
+    const subjService = cleanLine(serviceName);
+
     if (isReceipt) {
       sends.push(sendEmail(RESEND_API_KEY, FROM, to,
-        `Pago confirmado – ${patientName}`,
+        `Pago confirmado – ${subjName}`,
         paymentReceiptHtml({ patientName, doctorName: professionalName, serviceName, date, time, transactionRef, price })
       ));
     } else {
       sends.push(sendEmail(RESEND_API_KEY, FROM, to,
-        `Nueva cita agendada – ${patientName}`,
+        `Nueva cita agendada – ${subjName}`,
         professionalNewBookingHtml({ professionalName, patientName, serviceName, date, time, type }),
         canInvite ? buildInvite(professionalName || 'Profesional', to) : undefined
       ));
@@ -233,12 +254,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (patientEmail) {
       if (isReceipt) {
         sends.push(sendEmail(RESEND_API_KEY, FROM, patientEmail,
-          `Comprobante de pago – ${serviceName}`,
+          `Comprobante de pago – ${subjService}`,
           paymentReceiptHtml({ patientName, doctorName: professionalName, serviceName, date, time, transactionRef, price })
         ));
       } else {
         sends.push(sendEmail(RESEND_API_KEY, FROM, patientEmail,
-          `Tu cita ha sido confirmada – ${serviceName}`,
+          `Tu cita ha sido confirmada – ${subjService}`,
           patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type }),
           canInvite ? buildInvite(patientName, patientEmail) : undefined
         ));

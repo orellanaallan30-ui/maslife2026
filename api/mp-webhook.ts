@@ -32,8 +32,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
-  // Validar firma si el secreto está configurado
-  if (WEBHOOK_SECRET && !validateSignature(req, WEBHOOK_SECRET)) {
+  // La validación de firma es OBLIGATORIA: sin el secreto configurado, el webhook
+  // rechaza todo, ya que un atacante podría falsificar eventos (p.ej. activar
+  // suscripciones sin pagar). Configura MERCADOPAGO_WEBHOOK_SECRET en Vercel.
+  if (!WEBHOOK_SECRET) {
+    console.error('[mp-webhook] MERCADOPAGO_WEBHOOK_SECRET no configurado — rechazando');
+    return res.status(503).json({ error: 'Webhook secret not configured' });
+  }
+  if (!validateSignature(req, WEBHOOK_SECRET)) {
     console.warn('[mp-webhook] Invalid signature');
     return res.status(401).json({ error: 'Invalid signature' });
   }
@@ -66,9 +72,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
         });
         const sub = await mpRes.json();
-        console.log('[mp-webhook] preapproval status:', sub.status, sub.payer_email);
 
         const email = sub.payer_email as string | undefined;
+        // Enmascara el email en logs para no exponer PII
+        const masked = email ? email.replace(/^(.).*(@.*)$/, '$1***$2') : '(sin email)';
+        console.log('[mp-webhook] preapproval status:', sub.status, masked);
+
         if (email) {
           const newStatus = sub.status === 'authorized' ? 'active'
             : (sub.status === 'cancelled' || sub.status === 'paused') ? 'paused'
@@ -84,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               .eq('email', email);
 
             if (error) console.error('[mp-webhook] supabase update error:', error.message);
-            else console.log('[mp-webhook] subscription updated for', email, '->', newStatus);
+            else console.log('[mp-webhook] subscription updated for', masked, '->', newStatus);
           }
         }
       } catch (e) {
