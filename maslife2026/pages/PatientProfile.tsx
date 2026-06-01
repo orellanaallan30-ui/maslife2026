@@ -227,9 +227,9 @@ const PatientProfile: React.FC = () => {
                     setIsConfirmed(true);
                     resolve();
                   } else {
-                    const detail = data.statusDetail || data.status || 'rechazado';
-                    setMpError(`Pago ${detail}. Verifica los datos e intenta de nuevo.`);
-                    reject(new Error(detail));
+                    const detail = data.cause?.[0]?.description || data.error || data.statusDetail || data.status || 'rechazado';
+                    setMpError(`Pago rechazado: ${detail}. Verifica los datos e intenta de nuevo.`);
+                    reject(new Error(String(detail)));
                   }
                 } catch (e) {
                   setMpError('Error al procesar el pago. Intenta con otro método.');
@@ -824,7 +824,7 @@ const PatientProfile: React.FC = () => {
                         {doctor.paymentEnabled && <span className="text-xs font-bold text-slate-500">Bono de Reserva de Cupo</span>}
                       </div>
                       <span className="text-4xl font-black text-primary tracking-tighter">
-                        {doctor.paymentEnabled ? '$5.000' : 'Gratis'}
+                        {doctor.paymentEnabled ? `$${bookingFee.toLocaleString('es-CL')}` : 'Gratis'}
                       </span>
                     </div>
                 </div>
@@ -909,7 +909,7 @@ const PatientProfile: React.FC = () => {
                           <span className={`material-icons-round ${paymentLinkOpened ? 'text-emerald-600' : 'text-primary'}`}>
                             {paymentLinkOpened ? 'check_circle' : 'open_in_new'}
                           </span>
-                          {paymentLinkOpened ? 'Paso 1 ✓ — Pago iniciado' : '1. Pagar Bono de Reserva ($5.000)'}
+                          {paymentLinkOpened ? 'Paso 1 ✓ — Pago iniciado' : `1. Pagar Bono de Reserva ($${bookingFee.toLocaleString('es-CL')})`}
                         </button>
                         {paymentLinkOpened && (
                           <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">

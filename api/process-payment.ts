@@ -34,7 +34,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (pro?.mp_access_token) {
       ACCESS_TOKEN = pro.mp_access_token;
-      marketplaceFee = Number(process.env.MP_MARKETPLACE_FEE ?? 500);
+      const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 15);
+      const fee = Math.round((Number(amount) || 0) * pct / 100);
+      // application_fee debe ser > 0 y < monto, si no MP devuelve 400
+      if (fee > 0 && fee < (Number(amount) || 0)) marketplaceFee = fee;
     }
   }
 
@@ -66,6 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const data = await mpRes.json();
     if (!mpRes.ok) {
+      console.error('[process-payment] MP error:', JSON.stringify(data));
       return res.status(mpRes.status).json({
         error: data.message || 'MP error',
         cause: data.cause,
