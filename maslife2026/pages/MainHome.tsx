@@ -362,10 +362,12 @@ const MainHome: React.FC = () => {
         </div>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-9">
+        <div className="hidden md:flex items-center gap-7">
           {[
             { label: 'Cómo funciona', id: 'como-funciona' },
             { label: 'Especialidades', id: 'especialidades' },
+            { label: 'Testimonios', id: 'testimonios' },
+            { label: 'Filosofía', id: 'filosofia' },
           ].map(({ label, id }) => (
             <button key={id} onClick={() => scrollToSection(id)}
               className="text-[.8rem] font-medium uppercase tracking-[1.8px] opacity-80 hover:opacity-100 transition-opacity"
@@ -373,10 +375,15 @@ const MainHome: React.FC = () => {
               {label}
             </button>
           ))}
-          <button onClick={handleShowPlans}
+          <button onClick={() => navigate('/patient/results')}
             className="text-[.8rem] font-medium uppercase tracking-[1.8px] opacity-80 hover:opacity-100 transition-opacity"
             style={{ color: 'inherit' }}>
-            Planes
+            Buscar profesionales
+          </button>
+          <button onClick={() => setIsGeneralFormOpen(true)}
+            className="text-[.8rem] font-semibold px-5 py-2.5 rounded-full text-white transition-all hover:shadow-lg hover:-translate-y-px"
+            style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', boxShadow: '0 6px 20px -6px rgba(2,132,199,.5)' }}>
+            Agendar
           </button>
         </div>
 
@@ -394,13 +401,25 @@ const MainHome: React.FC = () => {
             {[
               { label: 'Cómo funciona', id: 'como-funciona' },
               { label: 'Especialidades', id: 'especialidades' },
-              { label: 'Planes', id: 'planes' },
+              { label: 'Testimonios', id: 'testimonios' },
+              { label: 'Filosofía', id: 'filosofia' },
             ].map(({ label, id }) => (
               <button key={id} onClick={() => { scrollToSection(id); setMobileMenuOpen(false); }}
                 className="w-full text-left font-display text-3xl font-light tracking-tight" style={{ color: '#0f172a' }}>
                 {label}
               </button>
             ))}
+            <button
+              onClick={() => { navigate('/patient/results'); setMobileMenuOpen(false); }}
+              className="w-full text-left font-display text-3xl font-light tracking-tight" style={{ color: '#0f172a' }}>
+              Buscar profesionales
+            </button>
+            <button
+              onClick={() => { setIsGeneralFormOpen(true); setMobileMenuOpen(false); }}
+              className="w-full text-left font-display text-3xl font-semibold tracking-tight"
+              style={{ color: '#0284c7' }}>
+              Agendar →
+            </button>
           </div>
         </div>
       )}
@@ -588,7 +607,7 @@ const MainHome: React.FC = () => {
       </div>
 
       {/* ═══════════════════ MANIFESTO ═══════════════════ */}
-      <section className="relative overflow-hidden" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center', padding: '18vh 6vw', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 60%, #ecfeff 100%)' }}>
+      <section id="filosofia" className="relative overflow-hidden" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center', padding: '18vh 6vw', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 60%, #ecfeff 100%)' }}>
         {/* Comillas decorativas de fondo */}
         <span className="absolute top-0 left-4 font-display select-none pointer-events-none"
           style={{ fontSize: '18rem', lineHeight: 1, color: 'rgba(14,165,233,.1)', fontStyle: 'italic' }}>"</span>
@@ -857,7 +876,7 @@ const MainHome: React.FC = () => {
       )}
 
       {/* ═══════════════════ TESTIMONIOS CARRUSEL ═══════════════════ */}
-      <section className="px-5 sm:px-8 py-20 sm:py-28 overflow-hidden" style={{ background: '#f0f9ff' }}>
+      <section id="testimonios" className="px-5 sm:px-8 py-20 sm:py-28 overflow-hidden" style={{ background: '#f0f9ff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-12">
             <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Testimonios reales</p>

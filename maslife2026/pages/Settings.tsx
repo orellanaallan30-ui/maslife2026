@@ -346,6 +346,16 @@ const Settings: React.FC = () => {
                         <option value="Otra Especialidad">Otra Especialidad</option>
                       </select>
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Ciudad</label>
+                      <input
+                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all"
+                        type="text"
+                        placeholder="Ej: La Serena"
+                        value={localProfile.city || ''}
+                        onChange={e => handleUpdate({ city: e.target.value })}
+                      />
+                    </div>
                   </div>
 
                   <div className="border-t-2 border-slate-100 pt-5">
