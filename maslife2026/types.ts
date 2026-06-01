@@ -88,6 +88,7 @@ export interface ProfessionalProfile {
   chargeFullService?: boolean;
   mpConnected?: boolean;
   mpPublicKey?: string;
+  instagram?: string;
 }
 
 export interface Appointment {

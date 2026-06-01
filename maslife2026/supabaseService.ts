@@ -284,6 +284,7 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     schedule: d.schedule as ProfessionalProfile['schedule'],
     mpConnected: (d.mp_connected as boolean) ?? false,
     mpPublicKey: (d.mp_public_key as string) || undefined,
+    instagram: (d.instagram as string) || undefined,
   } as ProfessionalProfile;
 }
 
@@ -303,6 +304,7 @@ function mapProToDB(pro: ProfessionalProfile): Record<string, unknown> {
     subscription_link: pro.subscriptionLink,
     rut: (pro as any).rut || null, schedule: pro.schedule || null,
     mp_public_key: (pro as any).mpPublicKey || null,
+    instagram: pro.instagram || null,
   };
 }
 

@@ -28,7 +28,7 @@ const ADMIN_COLUMNS = [
   'subscription_status', 'trial_end_date', 'created_at', 'payment_enabled',
   'booking_fee', 'charge_full_service', 'booking_payment_link',
   'subscription_link', 'rut', 'modalities', 'services',
-  'working_hours', 'schedule', 'needs_password_reset',
+  'working_hours', 'schedule', 'needs_password_reset', 'instagram',
 ].join(', ');
 
 function getAdminSupabase() {
