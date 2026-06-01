@@ -85,6 +85,7 @@ export interface ProfessionalProfile {
   isApproved?: boolean;
   paymentEnabled?: boolean;
   bookingFee?: number;
+  chargeFullService?: boolean;
   mpAccessToken?: string;
   mpPublicKey?: string;
   mpUserId?: string;

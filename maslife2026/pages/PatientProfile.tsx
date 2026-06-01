@@ -26,13 +26,10 @@ const PatientProfile: React.FC = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  const [paymentLinkOpened, setPaymentLinkOpened] = useState(false);
-  const [transactionRef, setTransactionRef] = useState('');
 
   // MercadoPago Bricks
   const [mpError, setMpError]       = useState('');
   const [bookingError, setBookingError] = useState('');
-  const [usarPagoManual, setUsarPagoManual] = useState(false);
   const [brickStatus, setBrickStatus] = useState<'idle'|'loading'|'ready'|'error'>('idle');
   const brickControllerRef = React.useRef<any>(null);
   const mpBookingRef       = React.useRef<Appointment | null>(null);
@@ -40,6 +37,9 @@ const PatientProfile: React.FC = () => {
 
   const doctor = fetchedDoctor;
   const bookingFee = doctor?.bookingFee || 5000;
+  const paymentAmount = (doctor?.chargeFullService && selectedService)
+    ? selectedService.price
+    : bookingFee;
 
   const isFormValid = patientData.name.trim() !== '' &&
                       patientData.rut.trim() !== '' &&
@@ -110,7 +110,7 @@ const PatientProfile: React.FC = () => {
 
   // MercadoPago Bricks — inicializar cuando se llega al paso 4
   useEffect(() => {
-    if (step !== 4 || usarPagoManual || !MP_ENABLED || !doctor || !selectedService || !selectedSlot) {
+    if (step !== 4 || !MP_ENABLED || !doctor || !selectedService || !selectedSlot) {
       if (brickControllerRef.current) {
         brickControllerRef.current.unmount?.();
         brickControllerRef.current = null;
@@ -168,7 +168,7 @@ const PatientProfile: React.FC = () => {
         const bricksBuilder = mp.bricks();
 
         const controller = await bricksBuilder.create('payment', 'mp-brick-container', {
-          initialization: { amount: bookingFee },
+          initialization: { amount: paymentAmount },
           customization: {
             paymentMethods: {
               creditCard: 'all',
@@ -197,9 +197,9 @@ const PatientProfile: React.FC = () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       ...formData,
-                      amount: bookingFee,
+                      amount: paymentAmount,
                       external_reference: externalRef,
-                      description: `Bono Reserva — ${app.serviceName} con ${app.doctorName}`,
+                      description: `Reserva — ${app.serviceName} con ${app.doctorName}`,
                       professional_id: doctor?.id,
                     }),
                   });
@@ -248,9 +248,9 @@ const PatientProfile: React.FC = () => {
         console.error('[MP Brick init]', e);
         setBrickStatus('error');
         if (e.message === 'NO_PUBLIC_KEY') {
-          setMpError('Pasarela no configurada. Usa el método alternativo.');
+          setMpError('Pasarela de pago no configurada. Contacta al profesional.');
         } else {
-          setMpError('No se pudo inicializar el formulario de pago. Usa el método alternativo.');
+          setMpError('No se pudo inicializar el formulario de pago. Intenta recargar la página.');
         }
       }
     };
@@ -261,7 +261,7 @@ const PatientProfile: React.FC = () => {
       brickControllerRef.current?.unmount?.();
       brickControllerRef.current = null;
     };
-  }, [step, usarPagoManual]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loadingDoctor) {
     return (
@@ -301,8 +301,8 @@ const PatientProfile: React.FC = () => {
       type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
       status: 'Confirmado',
       price: selectedService!.price,
-      paymentStatus: (doctor.paymentEnabled && transactionRef.trim()) ? 'Pagado' : 'Pendiente',
-      paidAt: (doctor.paymentEnabled && transactionRef.trim()) ? new Date().toISOString() : undefined,
+      paymentStatus: 'Pendiente',
+      paidAt: undefined,
       category: 'Medical',
       professionalId: doctor.id,
       bookingSource: 'web',
@@ -327,28 +327,6 @@ const PatientProfile: React.FC = () => {
             type: newApp.type,
             duration: selectedService!.duration,
             patientEmail: patientData.email || undefined,
-            price: selectedService!.price
-          })
-        }).catch(() => {});
-      }
-
-      // Adicionalmente enviar comprobante si pagó con código de transacción
-      if (doctor.paymentEnabled && transactionRef.trim() && patientData.email && doctor.email) {
-        fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: doctor.email,
-            professionalName: doctor.name,
-            patientName: patientData.name,
-            serviceName: selectedService!.name,
-            date: availableDays[selectedDay].date,
-            time: selectedSlot!,
-            type: newApp.type,
-            duration: selectedService!.duration,
-            patientEmail: patientData.email,
-            isReceipt: true,
-            transactionRef: transactionRef.trim(),
             price: selectedService!.price
           })
         }).catch(() => {});
@@ -477,7 +455,7 @@ const PatientProfile: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Pagado</span>
-                        <p className="text-2xl font-black text-slate-900">${doctor.paymentEnabled && selectedService ? selectedService.price.toLocaleString('es-CL') : '0'}</p>
+                        <p className="text-2xl font-black text-slate-900">${doctor.paymentEnabled ? paymentAmount.toLocaleString('es-CL') : '0'}</p>
                       </div>
                     </div>
                   </div>
@@ -849,106 +827,36 @@ const PatientProfile: React.FC = () => {
                 </div>
                 
                 {doctor.paymentEnabled ? (
-                  <div className="space-y-4 w-full">
-                    {/* ── MercadoPago Bricks (formulario embebido) ── */}
-                    {MP_ENABLED && !usarPagoManual ? (
-                      <div className="space-y-3">
-                        {/* Encabezado MP */}
-                        <div className="flex items-center gap-2 mb-1">
-                          <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0" style={{ fill: '#009ee3' }}>
-                            <path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.628 0 12-5.372 12-12C24 5.373 18.628 0 12 0zm5.49 8.444l-2.18 9.778a.42.42 0 01-.41.322h-1.638a.42.42 0 01-.418-.322l-1.084-4.626-1.083 4.626a.42.42 0 01-.418.322H8.62a.42.42 0 01-.41-.322L5.98 8.444a.42.42 0 01.41-.516h1.638c.2 0 .373.139.41.335l1.196 5.692 1.192-5.692a.42.42 0 01.41-.335h1.527c.2 0 .373.139.41.335l1.192 5.692 1.196-5.692a.42.42 0 01.41-.335h1.519a.42.42 0 01.41.516z"/>
-                          </svg>
-                          <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Pago Seguro con MercadoPago</p>
-                        </div>
+                  <div className="space-y-3 w-full">
+                    {/* Encabezado MP */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0" style={{ fill: '#009ee3' }}>
+                        <path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.628 0 12-5.372 12-12C24 5.373 18.628 0 12 0zm5.49 8.444l-2.18 9.778a.42.42 0 01-.41.322h-1.638a.42.42 0 01-.418-.322l-1.084-4.626-1.083 4.626a.42.42 0 01-.418.322H8.62a.42.42 0 01-.41-.322L5.98 8.444a.42.42 0 01.41-.516h1.638c.2 0 .373.139.41.335l1.196 5.692 1.192-5.692a.42.42 0 01.41-.335h1.527c.2 0 .373.139.41.335l1.192 5.692 1.196-5.692a.42.42 0 01.41-.335h1.519a.42.42 0 01.41.516z"/>
+                      </svg>
+                      <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Pago Seguro con MercadoPago</p>
+                    </div>
 
-                        {/* Spinner mientras carga el Brick */}
-                        {brickStatus === 'loading' && (
-                          <div className="flex flex-col items-center justify-center py-10 gap-3 bg-slate-50 rounded-2xl border border-slate-100">
-                            <span className="material-icons-round animate-spin text-3xl" style={{ color: '#009ee3' }}>sync</span>
-                            <p className="text-xs font-bold text-slate-500">Cargando formulario de pago...</p>
-                          </div>
-                        )}
-
-                        {/* Contenedor del Brick — siempre renderizado en DOM para que MP pueda insertar */}
-                        <div
-                          id="mp-brick-container"
-                          className={brickStatus === 'ready' ? 'block' : 'hidden'}
-                        />
-
-                        {/* Error crítico (no pudo inicializar) */}
-                        {brickStatus === 'error' && (
-                          <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
-                            {mpError || 'Error al cargar el formulario de pago.'}
-                          </div>
-                        )}
-
-                        {/* Error de pago rechazado (Brick sigue visible) */}
-                        {mpError && brickStatus === 'ready' && (
-                          <p className="text-rose-600 text-xs font-bold text-center bg-rose-50 rounded-xl p-3">{mpError}</p>
-                        )}
-
-                        <button
-                          onClick={() => { setUsarPagoManual(true); setMpError(''); }}
-                          className="w-full text-center text-[11px] font-bold text-slate-400 hover:text-slate-600 py-2 transition-colors"
-                        >
-                          Pagar con Flow u otro método →
-                        </button>
+                    {/* Spinner mientras carga el Brick */}
+                    {brickStatus === 'loading' && (
+                      <div className="flex flex-col items-center justify-center py-10 gap-3 bg-slate-50 rounded-2xl border border-slate-100">
+                        <span className="material-icons-round animate-spin text-3xl" style={{ color: '#009ee3' }}>sync</span>
+                        <p className="text-xs font-bold text-slate-500">Cargando formulario de pago...</p>
                       </div>
-                    ) : (
-                      /* ── Flujo manual (Flow / código de transacción) ── */
-                      <div className="space-y-4">
-                        {MP_ENABLED && usarPagoManual && (
-                          <button onClick={() => setUsarPagoManual(false)} className="text-xs font-bold text-primary flex items-center gap-1">
-                            <span className="material-icons-round text-sm">arrow_back</span>Volver a MercadoPago
-                          </button>
-                        )}
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="material-icons-round text-blue-500 text-sm">info</span>
-                          <p className="text-xs font-bold text-blue-600">Completa los 2 pasos para confirmar tu cita</p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            window.open(doctor.bookingPaymentLink || doctor.subscriptionLink || '#', '_blank');
-                            setPaymentLinkOpened(true);
-                          }}
-                          className={`w-full py-5 font-black rounded-2xl border-2 transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center
-                            ${paymentLinkOpened
-                              ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                              : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-sm'
-                            }`}
-                        >
-                          <span className={`material-icons-round ${paymentLinkOpened ? 'text-emerald-600' : 'text-primary'}`}>
-                            {paymentLinkOpened ? 'check_circle' : 'open_in_new'}
-                          </span>
-                          {paymentLinkOpened ? 'Paso 1 ✓ — Pago iniciado' : `1. Pagar Bono de Reserva ($${bookingFee.toLocaleString('es-CL')})`}
-                        </button>
-                        {paymentLinkOpened && (
-                          <div className="space-y-3 animate-in slide-in-from-bottom-2 duration-300">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
-                              2. Ingresa tu código de transacción
-                            </label>
-                            <input
-                              type="text"
-                              value={transactionRef}
-                              onChange={e => setTransactionRef(e.target.value)}
-                              placeholder="Ej: 123456789 (código de Flow o MercadoPago)"
-                              className="w-full bg-white border-2 border-slate-200 rounded-2xl py-4 px-5 text-sm font-bold text-slate-900 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:font-normal placeholder:text-slate-400"
-                              autoFocus
-                            />
-                            <button
-                              onClick={finalizeBooking}
-                              disabled={isProcessing || !transactionRef.trim()}
-                              className="w-full py-5 bg-primary text-white font-black rounded-2xl shadow-xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 disabled:opacity-40 disabled:translate-y-0 disabled:cursor-not-allowed transition-all uppercase text-xs tracking-widest flex items-center gap-3 justify-center"
-                            >
-                              {isProcessing ? (
-                                <><span className="material-icons-round text-base animate-spin">sync</span>Confirmando...</>
-                              ) : (
-                                <>Confirmar Reserva<span className="material-icons-round text-sm">verified</span></>
-                              )}
-                            </button>
-                          </div>
-                        )}
+                    )}
+
+                    {/* Contenedor del Brick */}
+                    <div id="mp-brick-container" className={brickStatus === 'ready' ? 'block' : 'hidden'} />
+
+                    {/* Error crítico */}
+                    {brickStatus === 'error' && (
+                      <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
+                        {mpError || 'Error al cargar el formulario de pago.'}
                       </div>
+                    )}
+
+                    {/* Error de pago rechazado */}
+                    {mpError && brickStatus === 'ready' && (
+                      <p className="text-rose-600 text-xs font-bold text-center bg-rose-50 rounded-xl p-3">{mpError}</p>
                     )}
                   </div>
                 ) : (

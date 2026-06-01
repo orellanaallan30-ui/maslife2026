@@ -1,5 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.VITE_SUPABASE_ANON_KEY!
+);
 
 function validateSignature(req: VercelRequest, secret: string): boolean {
   try {
@@ -35,22 +41,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { type, data, action } = req.body || {};
   console.log('[mp-webhook]', type, action, data?.id);
 
+  const ACCESS_TOKEN = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
+
   if (type === 'payment' || type === 'order') {
     const paymentId = data?.id;
-    if (paymentId) {
-      const ACCESS_TOKEN = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
-      if (ACCESS_TOKEN) {
-        try {
-          const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-            headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
-          });
-          const payment = await mpRes.json();
-          console.log('[mp-webhook] payment status:', payment.status, payment.status_detail, payment.external_reference);
-          // TODO: actualizar estado de la cita en Supabase si es necesario
-          // El flujo sync ya maneja el caso de approved, este webhook cubre pending → approved
-        } catch (e) {
-          console.error('[mp-webhook] Error consultando pago:', e);
+    if (paymentId && ACCESS_TOKEN) {
+      try {
+        const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+          headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+        });
+        const payment = await mpRes.json();
+        console.log('[mp-webhook] payment status:', payment.status, payment.status_detail, payment.external_reference);
+      } catch (e) {
+        console.error('[mp-webhook] Error consultando pago:', e);
+      }
+    }
+  }
+
+  if (type === 'preapproval') {
+    const preapprovalId = data?.id;
+    if (preapprovalId && ACCESS_TOKEN) {
+      try {
+        const mpRes = await fetch(`https://api.mercadopago.com/preapproval/${preapprovalId}`, {
+          headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+        });
+        const sub = await mpRes.json();
+        console.log('[mp-webhook] preapproval status:', sub.status, sub.payer_email);
+
+        const email = sub.payer_email as string | undefined;
+        if (email) {
+          const newStatus = sub.status === 'authorized' ? 'active'
+            : (sub.status === 'cancelled' || sub.status === 'paused') ? 'paused'
+            : null;
+
+          if (newStatus) {
+            const { error } = await supabase
+              .from('professionals')
+              .update({
+                subscription_status: newStatus,
+                is_subscribed: newStatus === 'active',
+              })
+              .eq('email', email);
+
+            if (error) console.error('[mp-webhook] supabase update error:', error.message);
+            else console.log('[mp-webhook] subscription updated for', email, '->', newStatus);
+          }
         }
+      } catch (e) {
+        console.error('[mp-webhook] Error consultando preapproval:', e);
       }
     }
   }

@@ -389,25 +389,6 @@ const Settings: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Tarifa de bono de reserva */}
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="font-black text-black">Bono de Reserva</p>
-                          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Monto que paga el paciente al reservar una cita</p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-slate-500 text-sm font-bold">$</span>
-                          <input
-                            type="number"
-                            min={0}
-                            step={100}
-                            value={localProfile.bookingFee ?? 5000}
-                            onChange={e => handleUpdate({ bookingFee: Number(e.target.value) })}
-                            className="w-24 text-right border-2 border-slate-200 rounded-xl px-3 py-1.5 text-sm font-black focus:border-primary focus:outline-none"
-                          />
-                        </div>
-                      </div>
-
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-black text-black">Habilitar Pagos Anticipados</p>
@@ -422,32 +403,53 @@ const Settings: React.FC = () => {
                       </div>
 
                       {localProfile.paymentEnabled && (
-                        <div className="space-y-6 animate-in slide-in-from-top-4 duration-300">
-                          <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Link de Cobro General / Servicios Completos</label>
-                            <div className="flex items-center bg-white border-2 border-slate-300 rounded-2xl px-6 py-4 shadow-sm focus-within:ring-4 focus-within:ring-primary/10 transition-all">
-                              <span className="material-icons-round text-slate-400 mr-3">link</span>
-                              <input
-                                className="flex-1 bg-transparent border-none p-0 font-bold text-black focus:ring-0 text-base"
-                                placeholder="https://link.mercadopago.cl/tu-servicio-total"
-                                value={localProfile.subscriptionLink || ''}
-                                onChange={e => handleUpdate({ subscriptionLink: e.target.value })}
-                              />
-                            </div>
-                          </div>
+                        <div className="space-y-3 animate-in slide-in-from-top-4 duration-300">
+                          <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Modo de cobro al reservar</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
-                          <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Link de Bono de Reserva ($5.000)</label>
-                            <div className="flex items-center bg-white border-2 border-slate-300 rounded-xl px-4 py-3 shadow-sm focus-within:ring-4 focus-within:ring-primary/10 transition-all">
-                              <span className="material-icons-round text-slate-400 mr-3">volunteer_activism</span>
-                              <input
-                                className="flex-1 bg-transparent border-none p-0 font-bold text-black focus:ring-0 text-base"
-                                placeholder="https://www.flow.cl/app/pay.php?token=reserva5000"
-                                value={localProfile.bookingPaymentLink || ''}
-                                onChange={e => handleUpdate({ bookingPaymentLink: e.target.value })}
-                              />
+                            {/* Opción: Bono de Reserva */}
+                            <div
+                              onClick={() => handleUpdate({ chargeFullService: false })}
+                              className={`cursor-pointer text-left p-4 rounded-2xl border-2 transition-all ${!localProfile.chargeFullService ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${!localProfile.chargeFullService ? 'border-primary' : 'border-slate-300'}`}>
+                                  {!localProfile.chargeFullService && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                </div>
+                                <span className="text-sm font-black text-slate-900">Bono de Reserva</span>
+                              </div>
+                              <p className="text-xs text-slate-500 font-bold mb-3">Se cobra un monto fijo al reservar la cita</p>
+                              {!localProfile.chargeFullService && (
+                                <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                  <span className="text-slate-500 text-sm font-bold">$</span>
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={(localProfile.bookingFee ?? 5000).toLocaleString('es-CL')}
+                                    onChange={e => {
+                                      const raw = e.target.value.replace(/\./g, '').replace(/[^0-9]/g, '');
+                                      handleUpdate({ bookingFee: raw === '' ? 0 : Number(raw) });
+                                    }}
+                                    className="w-28 text-right border-2 border-slate-200 rounded-xl px-3 py-1.5 text-sm font-black focus:border-primary focus:outline-none bg-white"
+                                  />
+                                </div>
+                              )}
                             </div>
-                            <p className="text-xs text-slate-500 font-bold ml-1">Este link será mostrado a los pacientes al momento de agendar para asegurar su cupo.</p>
+
+                            {/* Opción: Precio completo del servicio */}
+                            <div
+                              onClick={() => handleUpdate({ chargeFullService: true })}
+                              className={`cursor-pointer text-left p-4 rounded-2xl border-2 transition-all ${localProfile.chargeFullService ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${localProfile.chargeFullService ? 'border-primary' : 'border-slate-300'}`}>
+                                  {localProfile.chargeFullService && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                </div>
+                                <span className="text-sm font-black text-slate-900">Precio del Servicio</span>
+                              </div>
+                              <p className="text-xs text-slate-500 font-bold">Se cobra el precio del servicio seleccionado por el paciente</p>
+                            </div>
+
                           </div>
                         </div>
                       )}

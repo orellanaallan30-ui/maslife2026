@@ -112,14 +112,17 @@ const AdminManagement: React.FC = () => {
     }
   };
 
-  // ── Toggle suscripción ─────────────────────────────────────────
-  const toggleSub = async (pro: ProfessionalProfile) => {
-    const next: SubscriptionStatus = pro.subscriptionStatus === 'paused' ? 'active' : 'paused';
-    const { error } = await supabase.from('professionals').update({ subscription_status: next }).eq('id', pro.id);
+  // ── Gestión de suscripción ─────────────────────────────────────
+  const setSubStatus = async (pro: ProfessionalProfile, next: SubscriptionStatus) => {
+    const { error } = await supabase.from('professionals').update({
+      subscription_status: next,
+      is_subscribed: next === 'active',
+    }).eq('id', pro.id);
     if (!error) {
-      const updated = { ...pro, subscriptionStatus: next };
+      const updated = { ...pro, subscriptionStatus: next, isSubscribed: next === 'active' };
       setAllPros(prev => prev.map(p => p.id === pro.id ? updated : p));
-      showToast(`${pro.name} → ${next === 'active' ? 'Activado' : 'Pausado'}`);
+      const label = next === 'active' ? 'Activo' : next === 'paused' ? 'Pausado' : 'Trial';
+      showToast(`${pro.name} → ${label}`);
     }
   };
 
@@ -319,13 +322,27 @@ const AdminManagement: React.FC = () => {
                                 : 'lock_reset'}
                             </span>
                           </button>
-                          <button onClick={() => toggleSub(pro)}
-                            title={pro.subscriptionStatus === 'paused' ? 'Reactivar' : 'Pausar'}
-                            className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-teal-500 hover:text-white transition-all border border-white/5">
-                            <span className="material-icons-round text-sm">
-                              {pro.subscriptionStatus === 'paused' ? 'play_arrow' : 'pause'}
-                            </span>
-                          </button>
+                          {pro.subscriptionStatus !== 'active' && (
+                            <button onClick={() => setSubStatus(pro, 'active')}
+                              title="Activar suscripción"
+                              className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-emerald-500 hover:text-white transition-all border border-white/5">
+                              <span className="material-icons-round text-sm">play_arrow</span>
+                            </button>
+                          )}
+                          {pro.subscriptionStatus !== 'paused' && (
+                            <button onClick={() => setSubStatus(pro, 'paused')}
+                              title="Pausar suscripción"
+                              className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-amber-500 hover:text-white transition-all border border-white/5">
+                              <span className="material-icons-round text-sm">pause</span>
+                            </button>
+                          )}
+                          {pro.subscriptionStatus !== 'trial' && (
+                            <button onClick={() => setSubStatus(pro, 'trial')}
+                              title="Pasar a Trial"
+                              className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-blue-500 hover:text-white transition-all border border-white/5">
+                              <span className="material-icons-round text-sm">schedule</span>
+                            </button>
+                          )}
                           <button onClick={() => handleReject(pro)} title="Desactivar"
                             className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-amber-500 hover:text-white transition-all border border-white/5">
                             <span className="material-icons-round text-sm">block</span>
