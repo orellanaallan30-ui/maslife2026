@@ -75,32 +75,32 @@ const Finances: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full overflow-hidden">
-      <main className="flex-1 overflow-y-auto bg-slate-50 custom-scrollbar p-6 md:p-10">
-        <div className="max-w-[1400px] mx-auto space-y-10">
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="flex-1 flex flex-col min-h-0 w-full">
+      <main className="flex-1 min-h-0 overflow-y-auto bg-slate-50 custom-scrollbar p-4 md:p-10 pb-24 md:pb-10">
+        <div className="max-w-[1400px] mx-auto space-y-4 md:space-y-10">
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-6">
             <div>
-              <p className="text-xs font-black text-teal-600 uppercase tracking-[0.2em] mb-1">AgendaMaslife Finanzas</p>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900">Balance de Gestión Clínica</h1>
+              <p className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] mb-0.5">AgendaMaslife Finanzas</p>
+              <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">Balance de Gestión Clínica</h1>
             </div>
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <button
                 onClick={() => setShowManualModal(true)}
-                className="bg-primary text-white px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 hover:brightness-110 flex items-center gap-3 transition-all shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)]"
+                className="flex-1 md:flex-none bg-primary text-white px-4 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 hover:brightness-110 flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)]"
               >
-                <span className="material-icons-round text-lg">add_circle</span>
-                NUEVO REGISTRO
+                <span className="material-icons-round text-base">add_circle</span>
+                <span>NUEVO REGISTRO</span>
               </button>
               <button
                 onClick={() => setShowConfirmReset(true)}
-                className="bg-white border-b-4 border-slate-200 text-rose-500 px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:border-rose-300 active:border-b-0 active:translate-y-1 flex items-center gap-2 transition-all shadow-sm"
+                className="bg-white border-b-4 border-slate-200 text-rose-500 px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:border-rose-300 active:border-b-0 active:translate-y-1 flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <span className="material-icons-round text-sm">history_toggle_off</span>
-                REINICIAR
+                <span className="hidden md:inline">REINICIAR</span>
               </button>
-              <button onClick={() => window.print()} className="bg-teal-500 text-white px-8 py-5 rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-teal-700 active:border-b-0 active:translate-y-1 shadow-[0_10px_30px_-10px_rgba(20,184,166,0.6)] hover:brightness-110 flex items-center gap-3 transition-all">
+              <button onClick={() => window.print()} className="bg-teal-500 text-white px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-teal-700 active:border-b-0 active:translate-y-1 shadow-[0_10px_30px_-10px_rgba(20,184,166,0.6)] hover:brightness-110 flex items-center gap-1.5 transition-all">
                 <span className="material-icons-round text-sm">download</span>
-                INFORME
+                <span className="hidden md:inline">INFORME</span>
               </button>
             </div>
           </header>
@@ -119,38 +119,38 @@ const Finances: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
             {[
               { label: 'Balance Neto', val: `$${netBalance.toLocaleString('es-CL')}`, grow: 'Saldo Final', icon: 'account_balance', color: 'text-indigo-600', bg: 'bg-indigo-50' },
               { label: 'Ingresos Totales', val: `$${totalIncome.toLocaleString('es-CL')}`, grow: 'Citas + Otros', icon: 'trending_up', color: 'text-teal-600', bg: 'bg-teal-50' },
               { label: 'Gastos Registrados', val: `$${expensesManual.toLocaleString('es-CL')}`, grow: 'Egresos', icon: 'trending_down', color: 'text-rose-500', bg: 'bg-rose-50' },
               { label: 'Ticket Promedio', val: `$${ticketPromedio.toLocaleString('es-CL')}`, grow: 'Eficiencia', icon: 'analytics', color: 'text-amber-500', bg: 'bg-amber-50' },
             ].map((stat, i) => (
-              <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] hover:-translate-y-1 hover:shadow-xl transition-all">
-                <div className="flex items-center justify-between mb-8">
-                  <div className={`w-16 h-16 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center shadow-sm`}>
-                    <span className="material-icons-round text-4xl">{stat.icon}</span>
+              <div key={i} className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:-translate-y-1 hover:shadow-xl transition-all">
+                <div className="flex items-center justify-between mb-3 md:mb-8">
+                  <div className={`w-10 h-10 md:w-16 md:h-16 ${stat.bg} ${stat.color} rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm`}>
+                    <span className="material-icons-round text-2xl md:text-4xl">{stat.icon}</span>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl bg-slate-50 text-slate-500 border border-slate-100 shadow-inner">
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl bg-slate-50 text-slate-500 border border-slate-100 shadow-inner">
                     {stat.grow}
                   </span>
                 </div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
-                <h3 className="text-3xl font-black mt-2 tracking-tight text-slate-900">{stat.val}</h3>
+                <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
+                <h3 className="text-xl md:text-3xl font-black mt-1 md:mt-2 tracking-tight text-slate-900">{stat.val}</h3>
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            {/* Se añade min-h-[400px] para asegurar que Recharts detecte altura siempre */}
-            <div className="lg:col-span-8 bg-white p-10 md:p-12 rounded-[3rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] relative overflow-hidden min-h-[450px]">
-              <div className="flex items-center justify-between mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-10">
+            {/* Se añade min-h para asegurar que Recharts detecte altura siempre */}
+            <div className="lg:col-span-8 bg-white p-5 md:p-12 rounded-2xl md:rounded-[3rem] border border-slate-100 shadow-sm md:shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] relative overflow-hidden min-h-[280px] md:min-h-[450px]">
+              <div className="flex items-center justify-between mb-5 md:mb-12">
                 <div>
-                  <h3 className="font-black text-2xl tracking-tight text-slate-900">Actividad Económica</h3>
-                  <p className="text-sm text-slate-500 font-medium">Historial consolidado de la red</p>
+                  <h3 className="font-black text-lg md:text-2xl tracking-tight text-slate-900">Actividad Económica</h3>
+                  <p className="text-xs md:text-sm text-slate-500 font-medium">Historial consolidado de la red</p>
                 </div>
               </div>
-              <div className="h-80 w-full min-h-[320px]">
+              <div className="h-48 md:h-80 w-full min-h-[180px] md:min-h-[320px]">
                 {/* minWidth 0 ayuda a evitar el error de ancho -1 en layouts de grid/flex */}
                 <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <AreaChart data={incomeData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -173,8 +173,8 @@ const Finances: React.FC = () => {
               </div>
             </div>
 
-            <div className="lg:col-span-4 bg-white p-10 md:p-12 rounded-[3rem] border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] flex flex-col">
-              <h3 className="text-lg font-black tracking-tight mb-8 text-slate-900">Últimos Movimientos</h3>
+            <div className="lg:col-span-4 bg-white p-5 md:p-12 rounded-2xl md:rounded-[3rem] border border-slate-100 shadow-sm md:shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] flex flex-col">
+              <h3 className="text-base md:text-lg font-black tracking-tight mb-4 md:mb-8 text-slate-900">Últimos Movimientos</h3>
               <div className="flex-1 space-y-4 overflow-y-auto max-h-[350px] custom-scrollbar pr-2">
                 {manualTransactions.length === 0 && appointments.length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center opacity-30 italic py-10">
