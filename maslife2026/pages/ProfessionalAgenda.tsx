@@ -211,85 +211,74 @@ const ProfessionalAgenda: React.FC = () => {
 
    return (
       <div className="flex-1 w-full h-screen bg-[#f8fafc] overflow-hidden">
-         <main className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-12">
-            <div className="max-w-7xl mx-auto space-y-10">
-                <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-                   <div>
-                      <p className="text-[12px] font-black text-primary uppercase tracking-[0.3em] mb-2">{viewMode === 'year' ? 'Calendario Anual' : `${capitalizedMonth} ${currentDate.getFullYear()}`}</p>
-                      <h1 className="text-4xl font-black text-black tracking-tight flex items-center gap-3">
-                         {viewMode === 'day' ? currentDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' }) : viewMode === 'week' ? `Semana del ${weekDays[0].getDate()}` : `${currentDate.getFullYear()}`}
-                      </h1>
-                   </div>
-                   <div className="flex flex-wrap items-center gap-4">
-                      <div className="bg-slate-50/80 p-2 rounded-2xl shadow-inner border border-slate-200 flex gap-2">
-                         <button onClick={() => setViewMode('day')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'day' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Día</button>
-                         <button onClick={() => setViewMode('week')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'week' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Semana</button>
-                         <button onClick={() => setViewMode('year')} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'year' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Año</button>
-                      </div>
-                      <div className="flex items-center gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-                         <button onClick={() => { 
-                           const d = new Date(currentDate); 
-                           if (viewMode === 'year') d.setFullYear(d.getFullYear() - 1);
-                           else d.setDate(d.getDate() - (viewMode === 'day' ? 1 : 7)); 
-                           setCurrentDate(d); 
-                         }} className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-all active:scale-95"><span className="material-icons-round text-xl">chevron_left</span></button>
-                         <button onClick={() => setCurrentDate(new Date())} className="px-6 text-[10px] font-black uppercase text-slate-500 hover:text-primary transition-all">Hoy</button>
-                         <button onClick={() => { 
-                           const d = new Date(currentDate); 
-                           if (viewMode === 'year') d.setFullYear(d.getFullYear() + 1);
-                           else d.setDate(d.getDate() + (viewMode === 'day' ? 1 : 7)); 
-                           setCurrentDate(d); 
-                         }} className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-all active:scale-95"><span className="material-icons-round text-xl">chevron_right</span></button>
-                      </div>
-                   </div>
-                </header>
+         <main className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-12">
+            <div className="max-w-7xl mx-auto space-y-3 md:space-y-10">
 
-               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
-                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="material-icons-round text-primary text-xl">event</span>
-                     </div>
-                     <div>
-                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').length}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Citas hoy</p>
-                     </div>
+                {/* Barra compacta: título + navegación + tabs — todo en una fila en mobile */}
+                <div className="flex items-center gap-2">
+                  {/* Navegación de fecha */}
+                  <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-100 shadow-sm px-1 py-1 shrink-0">
+                    <button onClick={() => {
+                      const d = new Date(currentDate);
+                      if (viewMode === 'year') d.setFullYear(d.getFullYear() - 1);
+                      else d.setDate(d.getDate() - (viewMode === 'day' ? 1 : 7));
+                      setCurrentDate(d);
+                    }} className="p-1.5 hover:bg-slate-100 text-slate-500 rounded-lg transition-all active:scale-95">
+                      <span className="material-icons-round text-lg">chevron_left</span>
+                    </button>
+                    <div className="px-1 text-center min-w-[80px]">
+                      <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">{capitalizedMonth}</p>
+                      <p className="text-sm font-black text-slate-900 leading-tight">
+                        {viewMode === 'day' ? currentDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }) : viewMode === 'week' ? `Sem. ${weekDays[0].getDate()}` : currentDate.getFullYear()}
+                      </p>
+                    </div>
+                    <button onClick={() => {
+                      const d = new Date(currentDate);
+                      if (viewMode === 'year') d.setFullYear(d.getFullYear() + 1);
+                      else d.setDate(d.getDate() + (viewMode === 'day' ? 1 : 7));
+                      setCurrentDate(d);
+                    }} className="p-1.5 hover:bg-slate-100 text-slate-500 rounded-lg transition-all active:scale-95">
+                      <span className="material-icons-round text-lg">chevron_right</span>
+                    </button>
                   </div>
-                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
-                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="material-icons-round text-primary text-xl">check_circle</span>
-                     </div>
-                     <div>
-                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => a.date === formatDate(currentDate) && a.status === 'Confirmado').length}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Confirmadas</p>
-                     </div>
+                  <button onClick={() => setCurrentDate(new Date())} className="px-3 py-2 bg-white rounded-xl border border-slate-100 shadow-sm text-[10px] font-black uppercase text-slate-500 hover:text-primary transition-all shrink-0">HOY</button>
+                  {/* Tabs vista */}
+                  <div className="flex-1 flex justify-end">
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex p-1 gap-1">
+                      {([['day','DÍA'],['week','SEM'],['year','AÑO']] as const).map(([mode, label]) => (
+                        <button key={mode} onClick={() => setViewMode(mode)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all ${viewMode === mode ? 'bg-primary text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{label}</button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
-                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="material-icons-round text-primary text-xl">payments</span>
-                     </div>
-                     <div>
-                        <p className="text-2xl font-black text-slate-900 leading-none">${appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').reduce((sum, a) => sum + (a.price || 0), 0).toLocaleString('es-CL')}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Ingreso esperado hoy</p>
-                     </div>
-                  </div>
-                  <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-5 flex items-center gap-4">
-                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="material-icons-round text-primary text-xl">date_range</span>
-                     </div>
-                     <div>
-                        <p className="text-2xl font-black text-slate-900 leading-none">{appointments.filter(a => weekDays.some(d => formatDate(d) === a.date) && a.status !== 'Cancelado').length}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Citas esta semana</p>
-                     </div>
-                  </div>
+                </div>
+
+               {/* Stat chips — fila horizontal scrollable */}
+               <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 md:mx-0 md:px-0 md:grid md:grid-cols-4">
+                  {[
+                    { icon: 'event', label: 'Citas hoy', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').length },
+                    { icon: 'check_circle', label: 'Confirmadas', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status === 'Confirmado').length },
+                    { icon: 'payments', label: 'Ingreso hoy', value: '$' + appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').reduce((sum, a) => sum + (a.price || 0), 0).toLocaleString('es-CL') },
+                    { icon: 'date_range', label: 'Esta semana', value: appointments.filter(a => weekDays.some(d => formatDate(d) === a.date) && a.status !== 'Cancelado').length },
+                  ].map(({ icon, label, value }) => (
+                    <div key={label} className="bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex items-center gap-2 shrink-0 min-w-[130px] md:min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="material-icons-round text-primary text-base">{icon}</span>
+                      </div>
+                      <div>
+                        <p className="text-base font-black text-slate-900 leading-none">{value}</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide mt-0.5">{label}</p>
+                      </div>
+                    </div>
+                  ))}
                </div>
 
-               <div className="bg-white rounded-[3rem] shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] border border-slate-100 overflow-hidden">
+               <div className="bg-white rounded-2xl md:rounded-[3rem] shadow-sm md:shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] border border-slate-100 overflow-hidden">
                   {viewMode === 'day' ? (
                      <div className="grid grid-cols-1 divide-y-2 divide-slate-100">
                         {hours.map(hour => {
                            const appsInSlot = appointments.filter(a => a.time === hour && a.date === formatDate(currentDate));
                            return (
-                               <div key={hour} className="flex min-h-[70px] group">
+                               <div key={hour} className="flex min-h-[52px] sm:min-h-[70px] group">
                                   <div className="w-24 shrink-0 flex items-center justify-center border-r-2 border-slate-100 bg-slate-50/50">
                                      <span className="text-sm font-bold text-slate-900 uppercase">{hour}</span>
                                   </div>

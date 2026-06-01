@@ -122,6 +122,28 @@ const ProfessionalDashboard: React.FC = () => {
     return appsIncome + manualIncome;
   }, [myTodayApps, manualTransactions, today]);
 
+  const proximasCitas = React.useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const nowTime = new Date().toTimeString().slice(0, 5);
+    return appointments
+      .filter(a =>
+        (!a.professionalId || a.professionalId === loggedPro.id) &&
+        a.status !== 'Cancelado' && a.status !== 'Finalizado' && a.status !== 'Bloqueado' &&
+        (a.date > todayStr || (a.date === todayStr && a.time >= nowTime))
+      )
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+      .slice(0, 3);
+  }, [appointments, loggedPro.id]);
+
+  const formatAppDate = (dateStr: string): string => {
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    if (dateStr === today) return 'HOY';
+    if (dateStr === tomorrow) return 'MAÑANA';
+    const d = new Date(dateStr + 'T12:00:00');
+    return d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric' }).toUpperCase();
+  };
+
   const getStatusStyles = (status: Appointment['status'], appColor?: string) => {
     const baseColor = appColor || 'bg-primary';
 
@@ -174,191 +196,168 @@ const ProfessionalDashboard: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50/50 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-8 text-center md:text-left">
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 leading-tight">Hola, {loggedPro.name}</h1>
-            <p className="text-primary font-black text-xs uppercase tracking-[0.4em] mt-3 opacity-80">Panel de Control Clínico</p>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-950 leading-tight">Hola, {loggedPro.name.split(' ')[0]}</h1>
+              <p className="text-primary font-black text-[10px] uppercase tracking-[0.4em] mt-0.5 opacity-80">Panel de Control Clínico</p>
+            </div>
           </div>
 
           {/* ── Tu Link de Reservas ── */}
-          <div className={`mb-8 rounded-[2.5rem] border p-6 md:p-7 flex flex-col md:flex-row items-stretch md:items-center gap-5 overflow-hidden transition-all ${
-            profileComplete
-              ? 'bg-white border-slate-100 shadow-sm'
-              : 'bg-amber-50 border-amber-200'
+          <div className={`mb-4 rounded-2xl border p-4 md:p-7 flex items-center gap-3 overflow-hidden transition-all ${
+            profileComplete ? 'bg-white border-slate-100 shadow-sm' : 'bg-amber-50 border-amber-200'
           }`}>
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${
-              profileComplete ? 'bg-blue-50' : 'bg-amber-100'
-            }`}>
-              <span className={`material-icons-round text-2xl ${profileComplete ? 'text-blue-600' : 'text-amber-600'}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${profileComplete ? 'bg-blue-50' : 'bg-amber-100'}`}>
+              <span className={`material-icons-round text-xl ${profileComplete ? 'text-blue-600' : 'text-amber-600'}`}>
                 {profileComplete ? 'link' : 'warning'}
               </span>
             </div>
-
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Tu Link de Reservas Online</p>
-                {profileComplete ? (
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-lg uppercase tracking-widest">
-                    ✓ Activo
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] font-black rounded-lg uppercase tracking-widest">
-                    Perfil incompleto
-                  </span>
-                )}
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Link de Reservas</p>
+                {profileComplete
+                  ? <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-md uppercase tracking-widest">✓ Activo</span>
+                  : <span className="px-1.5 py-0.5 bg-amber-200 text-amber-800 text-[9px] font-black rounded-md uppercase">Incompleto</span>}
               </div>
-              <p className="text-sm font-bold text-blue-600 truncate">{bookingLink}</p>
-              {!profileComplete && (
-                <p className="text-[10px] text-amber-700 font-bold mt-1">
-                  Completa en{' '}
-                  <button onClick={() => navigate('/pro/settings')} className="underline">Configuración</button>
-                  {': '}
-                  {!loggedPro.specialty && 'especialidad · '}
-                  {(!loggedPro.services || loggedPro.services.length === 0) && 'al menos 1 servicio'}
-                </p>
-              )}
+              <p className="text-xs font-bold text-blue-600 truncate">{bookingLink}</p>
             </div>
-
-            <div className="flex flex-wrap gap-2 shrink-0">
-              <button
-                onClick={() => window.open(bookingLink, '_blank')}
-                className="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
-              >
-                <span className="material-icons-round text-sm">visibility</span>
-                Ver Perfil
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button onClick={() => window.open(bookingLink, '_blank')} className="hidden md:flex px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all items-center gap-1.5">
+                <span className="material-icons-round text-sm">visibility</span>Ver
               </button>
-              <button
-                onClick={handleCopyBookingLink}
-                className={`px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 ${
-                  linkCopied ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >
+              <button onClick={handleCopyBookingLink} className={`px-3 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-1.5 ${linkCopied ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
                 <span className="material-icons-round text-sm">{linkCopied ? 'check_circle' : 'content_copy'}</span>
-                {linkCopied ? '¡Copiado!' : 'Copiar Link'}
+                <span className="hidden sm:inline">{linkCopied ? '¡Copiado!' : 'Copiar'}</span>
               </button>
-              <button
-                onClick={handleShareBookingLink}
-                className="w-10 h-10 rounded-xl bg-[#25D366] text-white font-black text-xs hover:bg-[#1ebe5d] transition-all flex items-center justify-center"
-                title="Compartir por WhatsApp"
-              >
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
+              <button onClick={handleShareBookingLink} className="w-9 h-9 rounded-xl bg-[#25D366] text-white hover:bg-[#1ebe5d] transition-all flex items-center justify-center shrink-0" title="Compartir por WhatsApp">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white p-5 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] transition-all transform hover:-translate-y-2 hover:shadow-2xl group flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-5 md:mb-8 text-slate-400 group-hover:text-primary transition-colors">
-                <span className="font-black text-[10px] uppercase tracking-[0.2em]">Pacientes Hoy</span>
-                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                  <span className="material-icons-round text-2xl">groups</span>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+            <div className="bg-white p-4 md:p-7 rounded-2xl border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md group flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-3 md:mb-6 text-slate-400 group-hover:text-primary transition-colors">
+                <span className="font-black text-[9px] uppercase tracking-[0.2em]">Pacientes Hoy</span>
+                <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                  <span className="material-icons-round text-xl">groups</span>
                 </div>
               </div>
-              <div className="flex items-baseline gap-4">
-                <span className="text-6xl font-black text-slate-900 tracking-tighter">{myTodayApps.length}</span>
-                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl uppercase tracking-widest border border-emerald-100">En cola</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tighter">{myTodayApps.length}</span>
+                <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase tracking-widest border border-emerald-100">En cola</span>
               </div>
             </div>
 
-            <div className="bg-white p-5 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] transition-all transform hover:-translate-y-2 hover:shadow-2xl group flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-5 md:mb-8 text-slate-400 group-hover:text-primary transition-colors">
-                <span className="font-black text-[10px] uppercase tracking-[0.2em]">Ingresos</span>
-                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                  <span className="material-icons-round text-2xl">payments</span>
+            <div className="bg-white p-4 md:p-7 rounded-2xl border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md group flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-3 md:mb-6 text-slate-400 group-hover:text-primary transition-colors">
+                <span className="font-black text-[9px] uppercase tracking-[0.2em]">Ingresos Hoy</span>
+                <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                  <span className="material-icons-round text-xl">payments</span>
                 </div>
               </div>
               <div>
-                <h3 className="text-4xl font-black text-slate-900 tracking-tighter">${totalIncomeToday.toLocaleString('es-CL')}</h3>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Total parcial hoy</p>
+                <h3 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tighter">${totalIncomeToday.toLocaleString('es-CL')}</h3>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total parcial</p>
               </div>
             </div>
 
             <div
-              className="bg-gradient-to-br from-teal-500 to-teal-600 p-5 md:p-8 rounded-2xl md:rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(20,184,166,0.5)] border-b-4 md:border-b-8 border-teal-700 text-white cursor-pointer group relative overflow-hidden transform transition-all hover:-translate-y-2 hover:shadow-teal-500/60 active:border-b-0 active:translate-y-2"
+              className="bg-gradient-to-br from-teal-500 to-teal-600 p-4 md:p-7 rounded-2xl border-b-4 border-teal-700 text-white cursor-pointer group relative overflow-hidden transform transition-all hover:-translate-y-1 active:border-b-0 active:translate-y-1 col-span-2 md:col-span-1"
               onClick={() => navigate('/pro/settings')}
             >
-              <div className="relative z-10 flex flex-col h-full justify-between">
+              <div className="relative z-10 flex items-center justify-between h-full">
                 <div>
-                  <span className="text-white/90 font-black text-[10px] uppercase tracking-[0.3em] block mb-3">Sistema de Agenda</span>
-                  <h3 className="text-3xl font-black tracking-tight uppercase drop-shadow-lg mb-2">
-                    AGENDA MASLIFE
-                  </h3>
-                  <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-xl border border-white/30 backdrop-blur-md">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">ACTIVE</span>
+                  <span className="text-white/80 font-black text-[9px] uppercase tracking-[0.3em] block mb-1">Sistema de Agenda</span>
+                  <h3 className="text-lg sm:text-2xl font-black tracking-tight uppercase drop-shadow mb-1.5">AGENDA MASLIFE</h3>
+                  <div className="inline-flex items-center gap-1.5 bg-white/20 px-2.5 py-1 rounded-lg border border-white/30">
+                    <div className="w-1.5 h-1.5 bg-emerald-300 rounded-full animate-pulse"></div>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">ACTIVE</span>
                   </div>
                 </div>
-                <div className="mt-6 bg-white/20 p-4 rounded-2xl border border-white/30 backdrop-blur-md inline-block group-hover:bg-white group-hover:text-teal-600 transition-colors shadow-lg self-start">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                    <span className="material-icons-round text-sm">settings</span>
-                    Configurar Plan
-                  </p>
+                <div className="bg-white/20 p-2.5 rounded-xl border border-white/30 group-hover:bg-white group-hover:text-teal-600 transition-colors shrink-0">
+                  <span className="material-icons-round text-xl">settings</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── Tabs ── */}
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setActiveTab('agenda')}
-              className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'agenda' ? 'bg-slate-900 text-white shadow-lg' : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400'}`}
-            >
-              <span className="material-icons-round text-sm align-middle mr-1">event</span>Agenda
-            </button>
-            <button
-              onClick={() => setActiveTab('ventas')}
-              className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ventas' ? 'bg-[#009ee3] text-white shadow-lg shadow-[#009ee3]/30' : 'bg-white text-slate-500 border border-slate-200 hover:border-[#009ee3]'}`}
-            >
-              <svg viewBox="0 0 24 24" className="w-4 h-4 inline-block mr-1 fill-current align-middle"><path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.628 0 12-5.372 12-12C24 5.373 18.628 0 12 0zm5.49 8.444l-2.18 9.778a.42.42 0 01-.41.322h-1.638a.42.42 0 01-.418-.322l-1.084-4.626-1.083 4.626a.42.42 0 01-.418.322H8.62a.42.42 0 01-.41-.322L5.98 8.444a.42.42 0 01.41-.516h1.638c.2 0 .373.139.41.335l1.196 5.692 1.192-5.692a.42.42 0 01.41-.335h1.527c.2 0 .373.139.41.335l1.192 5.692 1.196-5.692a.42.42 0 01.41-.335h1.519a.42.42 0 01.41.516z"/></svg>
-              Ventas MP
-            </button>
+          {/* ── Próximas Citas ── */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
+            <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between bg-slate-50/40">
+              <h2 className="font-black text-sm text-slate-900 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Próximas Citas
+              </h2>
+              <button onClick={() => navigate('/pro/agenda')} className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-widest hover:opacity-70 transition-opacity">
+                Ver agenda <span className="material-icons-round text-sm">arrow_forward</span>
+              </button>
+            </div>
+            <div className="divide-y divide-slate-50">
+              {proximasCitas.length > 0 ? proximasCitas.map((p, i) => {
+                const styles = getStatusStyles(p.status, p.color);
+                return (
+                  <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/session/${p.patientId}`) : navigate('/pro/agenda')}>
+                    <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shrink-0">{p.patientName.charAt(0)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-slate-900 text-sm truncate">{p.patientName}</p>
+                      <p className="text-[10px] font-bold text-slate-400">{formatAppDate(p.date)} · {p.time} · {p.type}</p>
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
+                    <div className="w-8 h-8 bg-primary text-white rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform"><span className="material-icons-round text-base">play_arrow</span></div>
+                  </div>
+                );
+              }) : (
+                <div className="px-4 py-8 text-center">
+                  <span className="material-icons-round text-slate-200 text-4xl block mb-2">event_available</span>
+                  <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">No hay citas próximas agendadas</p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* ── Tab: Agenda ── */}
-          {activeTab === 'agenda' && (
-          <div className="bg-white rounded-3xl md:rounded-[3rem] border border-slate-100 shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] overflow-hidden">
-            <div className="p-5 md:p-10 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/30">
-              <h2 className="font-black text-2xl text-slate-900 tracking-tight flex items-center gap-4">
-                 <span className="w-4 h-4 rounded-full bg-emerald-400 animate-pulse"></span>
-                 Citas de Hoy
-              </h2>
-              <button onClick={() => navigate('/pro/agenda')} className="group bg-white px-8 py-4 rounded-2xl border-b-4 border-slate-200 text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:border-primary active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2">
-                VER TODA LA AGENDA
-                <span className="material-icons-round text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </button>
+          {/* ── Citas de Hoy ── */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
+            <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between bg-slate-50/40">
+              <h2 className="font-black text-sm text-slate-900">Citas de Hoy</h2>
+              <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded-lg">{myTodayApps.length}</span>
             </div>
             <div className="divide-y divide-slate-50">
               {myTodayApps.length > 0 ? myTodayApps.map((p, i) => {
                 const styles = getStatusStyles(p.status, p.color);
                 return (
-                  <div key={i} className="p-4 md:p-8 flex flex-col md:flex-row items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/session/${p.patientId}`) : alert('Cita sin paciente asociado')}>
-                    <div className="flex items-center gap-6 w-full md:w-auto">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-xl shadow-lg group-hover:scale-110 transition-transform">{p.patientName.charAt(0)}</div>
-                      <div>
-                        <p className="font-black text-slate-900 text-lg tracking-tight mb-1">{p.patientName}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.time} • {p.type}</p>
-                      </div>
+                  <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/session/${p.patientId}`) : alert('Cita sin paciente asociado')}>
+                    <div className="w-9 h-9 rounded-xl bg-slate-800 text-white flex items-center justify-center font-black text-sm shrink-0">{p.patientName.charAt(0)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-slate-900 text-sm truncate">{p.patientName}</p>
+                      <p className="text-[10px] font-bold text-slate-400">{p.time} · {p.type}</p>
                     </div>
-                    <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-                      <span className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ${styles.bg} ${styles.text} ${styles.border} flex items-center gap-2`}>
-                        <span className="material-icons-round text-[14px]">{styles.icon}</span>
-                        {p.status}
-                      </span>
-                      <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-[0_10px_20px_-10px_rgba(19,91,236,0.5)] border-b-4 border-blue-700 group-hover:scale-110 active:border-b-0 active:translate-y-1 transition-all"><span className="material-icons-round text-2xl">play_arrow</span></div>
-                    </div>
+                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
+                    <div className="w-8 h-8 bg-primary text-white rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform"><span className="material-icons-round text-base">play_arrow</span></div>
                   </div>
                 );
               }) : (
-                <div className="p-24 text-center">
-                  <div className="w-24 h-24 bg-slate-100 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-                    <span className="material-icons-round text-slate-300 text-5xl">event_busy</span>
-                  </div>
-                  <p className="text-slate-400 font-black text-xs uppercase tracking-[0.3em]">No hay citas registradas para hoy.</p>
+                <div className="px-4 py-8 text-center">
+                  <span className="material-icons-round text-slate-200 text-4xl block mb-2">event_busy</span>
+                  <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Sin citas para hoy</p>
                 </div>
               )}
             </div>
           </div>
-          )} {/* end tab agenda */}
+
+          {/* ── Ventas MP (colapsable) ── */}
+          <div className="mb-4">
+            <button
+              onClick={() => setActiveTab(activeTab === 'ventas' ? 'agenda' : 'ventas')}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-black uppercase tracking-widest transition-all ${activeTab === 'ventas' ? 'bg-[#009ee3] text-white shadow-lg shadow-[#009ee3]/30' : 'bg-white text-slate-600 border border-slate-200 hover:border-[#009ee3]'}`}
+            >
+              <span className="flex items-center gap-2">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.628 0 12-5.372 12-12C24 5.373 18.628 0 12 0zm5.49 8.444l-2.18 9.778a.42.42 0 01-.41.322h-1.638a.42.42 0 01-.418-.322l-1.084-4.626-1.083 4.626a.42.42 0 01-.418.322H8.62a.42.42 0 01-.41-.322L5.98 8.444a.42.42 0 01.41-.516h1.638c.2 0 .373.139.41.335l1.196 5.692 1.192-5.692a.42.42 0 01.41-.335h1.527c.2 0 .373.139.41.335l1.192 5.692 1.196-5.692a.42.42 0 01.41-.335h1.519a.42.42 0 01.41.516z"/></svg>
+                Ventas MercadoPago
+              </span>
+              <span className="material-icons-round text-lg">{activeTab === 'ventas' ? 'expand_less' : 'expand_more'}</span>
+            </button>
+          </div>
 
           {/* ── Tab: Ventas MercadoPago ── */}
           {activeTab === 'ventas' && (
