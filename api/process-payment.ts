@@ -33,14 +33,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let marketplaceFee: number | undefined;
 
   if (professional_id && process.env.VITE_SUPABASE_URL) {
-    const { data: pro } = await supabase
-      .from('professionals')
+    const { data: secret } = await supabase
+      .from('professional_secrets')
       .select('mp_access_token')
-      .eq('id', professional_id)
+      .eq('professional_id', professional_id)
       .single();
 
-    if (pro?.mp_access_token) {
-      ACCESS_TOKEN = pro.mp_access_token;
+    if (secret?.mp_access_token) {
+      ACCESS_TOKEN = secret.mp_access_token;
       const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 15);
       const fee = Math.round(amountNum * pct / 100);
       // application_fee debe ser > 0 y < monto, si no MP devuelve 400

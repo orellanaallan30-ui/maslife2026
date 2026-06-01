@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProfessionalProfile, Service } from '../types';
 import { useClinic } from '../ClinicContext';
 import { saveProfessional, getProfessionalBySlugOrId } from '../supabaseService';
+import { supabase } from '../supabaseClient';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -354,7 +355,7 @@ const Settings: React.FC = () => {
                     </h3>
                     <div className="bg-slate-50 rounded-2xl p-5 border-2 border-slate-200 space-y-5">
                       {/* MercadoPago Marketplace connect */}
-                      {localProfile.mpAccessToken ? (
+                      {localProfile.mpConnected ? (
                         <div className="flex items-center gap-3 bg-green-50 border-2 border-green-200 rounded-xl px-4 py-3">
                           <span className="material-icons-round text-green-500">check_circle</span>
                           <div className="flex-1">
@@ -362,7 +363,24 @@ const Settings: React.FC = () => {
                             <p className="text-xs text-green-600">Los pagos llegan directo a tu cuenta MP</p>
                           </div>
                           <button
-                            onClick={() => handleUpdate({ mpAccessToken: undefined, mpPublicKey: undefined, mpUserId: undefined })}
+                            onClick={async () => {
+                              if (!localProfile) return;
+                              const { data: { session } } = await supabase.auth.getSession();
+                              if (!session) return;
+                              const res = await fetch('/api/mp-oauth', {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  Authorization: `Bearer ${session.access_token}`,
+                                },
+                                body: JSON.stringify({ action: 'disconnect' }),
+                              });
+                              if (res.ok) {
+                                const updated = { ...localProfile, mpConnected: false, mpPublicKey: undefined };
+                                setLocalProfile(updated);
+                                onSave(updated);
+                              }
+                            }}
                             className="text-xs text-red-500 font-bold hover:underline"
                           >
                             Desconectar
