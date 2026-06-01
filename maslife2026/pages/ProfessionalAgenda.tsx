@@ -210,8 +210,8 @@ const ProfessionalAgenda: React.FC = () => {
    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
    return (
-      <div className="flex-1 w-full h-screen bg-[#f8fafc] overflow-hidden">
-         <main className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-12">
+      <div className="flex-1 flex flex-col min-h-0 w-full bg-[#f8fafc]">
+         <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3 md:p-12 pb-24 md:pb-12">
             <div className="max-w-7xl mx-auto space-y-3 md:space-y-10">
 
                 {/* Barra compacta: título + navegación + tabs — todo en una fila en mobile */}

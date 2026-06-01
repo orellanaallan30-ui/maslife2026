@@ -177,7 +177,7 @@ const ProfessionalDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full h-full overflow-hidden bg-white relative">
+    <div className="flex-1 flex flex-col min-h-0 w-full bg-white relative">
 
       {isPaused && (
         <div className="absolute inset-0 z-[200] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 transition-all">
@@ -194,7 +194,7 @@ const ProfessionalDashboard: React.FC = () => {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50/50 custom-scrollbar">
+      <main className="flex-1 min-h-0 overflow-y-auto p-4 md:p-10 pb-24 md:pb-10 bg-slate-50/50 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
           <div className="mb-4 flex items-center justify-between">
             <div>
