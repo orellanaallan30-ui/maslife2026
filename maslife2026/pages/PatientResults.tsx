@@ -70,7 +70,8 @@ const PatientResults: React.FC = () => {
           <div className="flex items-center gap-4">
             <img src={logoAgenda} alt="Agenda Online ClinicaMaslife" className="h-10 w-auto object-contain" />
             <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Especialistas Disponibles</h2>
+              {/* ── RESPONSIVE: base=mobile  lg:=desktop ── */}
+              <h2 className="text-lg lg:text-2xl font-extrabold text-slate-900 tracking-tight">Especialistas Disponibles</h2>
               <p className="text-sm font-medium text-slate-500">{visibleDoctors.length} profesionales encontrados</p>
             </div>
           </div>
@@ -215,12 +216,12 @@ const PatientResults: React.FC = () => {
                 <div
                   key={doc.id}
                   onClick={() => navigate(`/patient/profile/${doc.id}`)}
-                  className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex flex-col sm:flex-row gap-4 sm:gap-6 items-center cursor-pointer"
+                  className="bg-white p-4 lg:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex flex-col lg:flex-row gap-4 lg:gap-6 items-center cursor-pointer"
                 >
                   {/* Avatar */}
                   <div className="relative shrink-0">
                     <img
-                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl object-cover group-hover:scale-105 transition-transform duration-300"
                       src={doc.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0284c7&color=fff&size=200`}
                       onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0284c7&color=fff&size=200`; }}
                       alt={doc.name}
@@ -231,14 +232,15 @@ const PatientResults: React.FC = () => {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1 text-center sm:text-left min-w-0">
-                    <h3 className="text-base sm:text-lg font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{doc.name}</h3>
+                  {/* ── RESPONSIVE: info — base=mobile(center) lg:=desktop(left) ── */}
+                  <div className="flex-1 text-center lg:text-left min-w-0">
+                    <h3 className="text-base lg:text-lg font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{doc.name}</h3>
                     <p className="text-sm font-medium text-slate-500 mb-2">{doc.specialty}</p>
-                    <div className="flex items-center justify-center sm:justify-start gap-1.5 mb-3">
+                    <div className="flex items-center justify-center lg:justify-start gap-1.5 mb-3">
                       <span className="material-icons-round text-blue-500 text-sm">location_on</span>
                       <span className="text-xs font-bold text-slate-500">{doc.city || 'Chile'}</span>
                     </div>
-                    <div className="flex flex-wrap justify-center sm:justify-start gap-1.5">
+                    <div className="flex flex-wrap justify-center lg:justify-start gap-1.5">
                       {doc.modalities?.online && <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md">Online</span>}
                       {doc.modalities?.inPerson && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md">Presencial</span>}
                       {doc.modalities?.home && <span className="px-2.5 py-1 bg-teal-50 text-teal-600 text-[10px] font-bold rounded-md">Domicilio</span>}
@@ -246,10 +248,10 @@ const PatientResults: React.FC = () => {
                   </div>
 
                   {/* CTA */}
-                  <div className="w-full sm:w-auto shrink-0">
+                  <div className="w-full lg:w-auto shrink-0">
                     <button
                       onClick={e => { e.stopPropagation(); navigate(`/patient/profile/${doc.id}`); }}
-                      className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95">
+                      className="w-full lg:w-auto px-6 py-3 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95">
                       Agendar Ahora
                     </button>
                   </div>

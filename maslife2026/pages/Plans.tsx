@@ -72,13 +72,14 @@ const Plans: React.FC = () => {
   return (
     <div className="w-full h-full overflow-y-auto bg-white custom-scrollbar">
       {/* HEADER DE PLANES */}
-      <section className="px-6 py-16 md:px-24 md:py-24 space-y-12 animate-in fade-in duration-700">
-        <div className="space-y-6">
+      {/* ── RESPONSIVE: base=mobile  lg:=desktop ── */}
+      <section className="px-6 py-10 lg:px-24 lg:py-24 space-y-8 lg:space-y-12 animate-in fade-in duration-700">
+        <div className="space-y-4 lg:space-y-6">
           <span className="text-xs font-black text-teal-600 bg-teal-50 px-5 py-2 rounded-full uppercase tracking-widest">Planes Personalizados</span>
-          <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-none">
+          <h1 className="text-3xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-none">
             Tu bienestar es nuestra <br/><span className="text-teal-500 italic">prioridad número uno</span>
           </h1>
-          <p className="text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">
+          <p className="text-base lg:text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">
             Selecciona la modalidad que mejor se adapte a tu ritmo de vida y accede a servicios de salud de alta calidad con nuestros especialistas.
           </p>
         </div>

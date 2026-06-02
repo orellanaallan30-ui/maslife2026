@@ -551,7 +551,8 @@ const PatientProfile: React.FC = () => {
             <button onClick={() => { if(step > 1) setStep(step - 1); else navigate(-1); }} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-primary transition-all">
               <span className="material-icons-round text-xl">arrow_back</span>
             </button>
-            <div className="flex items-center gap-3 hidden sm:flex">
+            {/* ── RESPONSIVE: doctor info — hidden on mobile, visible lg:=desktop ── */}
+            <div className="hidden lg:flex items-center gap-3">
                 <img className="w-12 h-12 rounded-xl object-cover border border-slate-100 shadow-sm" src={doctor.avatar || 'https://picsum.photos/seed/doc/100/100'} alt="Doc" />
                 <div>
                   <h1 className="text-sm font-black text-slate-900 leading-tight">{doctor.name}</h1>

@@ -20,10 +20,11 @@ const PROFESIONALES = [
     color: 'from-teal-400 to-emerald-500' },
 ];
 
+// ── RESPONSIVE: posiciones mobile (base) y desktop (lg:) para tarjetas del hero
 const CARD_POSITIONS = [
   'top-8 left-0 z-20',
-  'top-40 left-[155px] z-10',
-  'top-4 left-[295px] z-0',
+  'top-40 left-[155px] lg:left-[185px] z-10',
+  'top-4 left-[295px] lg:left-[355px] z-0',
 ];
 
 const MainHome: React.FC = () => {
@@ -476,14 +477,16 @@ const MainHome: React.FC = () => {
 
             {/* Columna izquierda — texto */}
             <div className="max-w-xl relative z-10">
-              <span className="inline-block text-[.5rem] font-outfit font-bold uppercase tracking-[.5px] mb-7 px-3 py-1 rounded-full text-white"
+              {/* ── RESPONSIVE: badge — base=mobile  lg:=desktop ── */}
+              <span className="inline-block text-[.6rem] lg:text-xs font-outfit font-bold uppercase tracking-[.5px] mb-7 px-3 py-1 rounded-full text-white"
                     style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', boxShadow: '0 8px 24px -8px rgba(2,132,199,.5)' }}>
                 Profesionales de salud cerca de ti
               </span>
 
               {/* Título Fraunces */}
               <div ref={heroTitleRef} className="mb-8" style={{ overflow: 'hidden' }}>
-                <div className="font-display text-[clamp(2.9rem,12vw,7.5rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
+                {/* ── RESPONSIVE: título — mobile escala agresivo con vw angosto, desktop empieza desde 4rem ── */}
+                <div className="font-display text-[clamp(2.9rem,10vw,5.5rem)] lg:text-[clamp(4rem,6vw,7.5rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
                   {[
                     { text: 'Tu salud,', italic: false },
                     { text: 'en buenas', italic: false },
@@ -501,7 +504,8 @@ const MainHome: React.FC = () => {
                 </div>
               </div>
 
-              <p className="font-outfit font-light text-xl sm:text-2xl max-w-lg leading-relaxed mb-10" style={{ color: '#475569' }}>
+              {/* ── RESPONSIVE: subtítulo — base=mobile sm:intermedio lg:desktop ── */}
+              <p className="font-outfit font-light text-base sm:text-lg lg:text-xl max-w-lg leading-relaxed mb-10" style={{ color: '#475569' }}>
                 Kinesiología, psicología, nutrición y más — con profesionales verificados en{' '}
                 <strong className="font-semibold" style={{ color: '#0f172a' }}>Ovalle, Coquimbo y La Serena</strong>.
               </p>
@@ -535,7 +539,7 @@ const MainHome: React.FC = () => {
                   { icon: 'home', label: 'Atención a domicilio' },
                   { icon: 'videocam', label: 'Consulta online' },
                 ].map(({ icon, label }) => (
-                  <div key={label} className="flex items-center gap-2 text-sm font-medium" style={{ color: '#475569' }}>
+                  <div key={label} className="flex items-center gap-2 text-xs lg:text-sm font-medium" style={{ color: '#475569' }}>
                     <span className="material-icons-round text-base" style={{ color: '#0ea5e9' }}>{icon}</span>
                     {label}
                   </div>
@@ -553,7 +557,8 @@ const MainHome: React.FC = () => {
                  style={{ color: '#94a3b8' }}>
                 ✦ Arrastra las tarjetas
               </p>
-              <div className="relative w-full max-w-[500px] h-[420px] mt-10">
+              {/* ── RESPONSIVE: contenedor tarjetas — base=mobile lg:desktop ── */}
+              <div className="relative w-full max-w-[500px] lg:max-w-[580px] h-[420px] lg:h-[480px] mt-10">
                 {PROFESIONALES.map((prof, index) => (
                   <motion.div
                     key={prof.id}
@@ -564,7 +569,7 @@ const MainHome: React.FC = () => {
                     initial={{ opacity: 0, y: 50 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ type: 'spring', stiffness: 60, delay: index * 0.2 }}
-                    className={`absolute cursor-grab active:cursor-grabbing w-[190px] ${CARD_POSITIONS[index]}`}
+                    className={`absolute cursor-grab active:cursor-grabbing w-[190px] lg:w-[210px] ${CARD_POSITIONS[index]}`}
                     style={{
                       background: 'rgba(255,255,255,0.88)',
                       backdropFilter: 'blur(12px)',
@@ -601,7 +606,8 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ STATS BAR ═══════════════════ */}
       <div className="py-12 px-5 sm:px-8" style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #0ea5e9 100%)' }}>
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+        {/* ── RESPONSIVE: stats — base=2col mobile, lg:=4col desktop ── */}
+        <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
           {[
             { num: '500+', label: 'Sesiones Realizadas' },
             { num: '8', label: 'Especialidades' },
@@ -609,7 +615,7 @@ const MainHome: React.FC = () => {
             { num: '3', label: 'Ciudades + Online' },
           ].map((stat, i) => (
             <div key={i} data-reveal={`stat-${i}`} className={`text-center ${rv(`stat-${i}`)}`} style={{ transitionDelay: `${i * 100}ms` }}>
-              <p className="font-display font-light text-3xl sm:text-4xl tracking-tight text-white">{stat.num}</p>
+              <p className="font-display font-light text-2xl lg:text-4xl tracking-tight text-white">{stat.num}</p>
               <p className="font-outfit text-[.72rem] uppercase tracking-[2px] mt-1" style={{ color: 'rgba(186,230,253,.85)' }}>{stat.label}</p>
             </div>
           ))}
@@ -617,7 +623,8 @@ const MainHome: React.FC = () => {
       </div>
 
       {/* ═══════════════════ MANIFESTO ═══════════════════ */}
-      <section id="filosofia" className="relative overflow-hidden" style={{ minHeight: '85vh', display: 'flex', alignItems: 'center', padding: '18vh 6vw', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 60%, #ecfeff 100%)' }}>
+      {/* ── RESPONSIVE: filosofía — py base=mobile (10vh) lg:=desktop (18vh) ── */}
+      <section id="filosofia" className="relative overflow-hidden flex items-center px-[6vw] py-[10vh] lg:py-[18vh]" style={{ minHeight: '85vh', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 60%, #ecfeff 100%)' }}>
         {/* Comillas decorativas de fondo */}
         <span className="absolute top-0 left-4 font-display select-none pointer-events-none"
           style={{ fontSize: '18rem', lineHeight: 1, color: 'rgba(14,165,233,.1)', fontStyle: 'italic' }}>"</span>
@@ -709,7 +716,8 @@ const MainHome: React.FC = () => {
       </div>
 
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
-      <section id="como-funciona" style={{ padding: '16vh 6vw', background: '#ffffff' }}>
+      {/* ── RESPONSIVE: padding — base=mobile (menos vh) lg:=desktop ── */}
+      <section id="como-funciona" className="px-[6vw] py-[10vh] lg:py-[16vh]" style={{ background: '#ffffff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="max-w-xl mb-[9vh]">
             <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Proceso simple</p>
@@ -721,7 +729,7 @@ const MainHome: React.FC = () => {
             </p>
           </div>
 
-          <div ref={featuresRef} className="grid grid-cols-1 md:grid-cols-3 gap-7 sm:gap-8">
+          <div ref={featuresRef} className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
             {[
               { icon: 'assignment', step: '01', title: 'Rellenas el formulario', desc: 'Tu información y requerimiento, en segundos.' },
               { icon: 'groups', step: '02', title: 'Asignación profesional', desc: 'Un agente revisa y te asigna el especialista ideal.' },
@@ -767,7 +775,8 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ ÁREAS PROFESIONALES ═══════════════════ */}
       {/* ═══════════════════ ESPECIALIDADES ═══════════════════ */}
-      <section id="especialidades" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#ffffff' }}>
+      {/* ── RESPONSIVE: especialidades — padding unificado con hero (6vw), py mobile/desktop separados ── */}
+      <section id="especialidades" className="px-[6vw] py-14 lg:py-28" style={{ background: '#ffffff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
             <div>
@@ -886,7 +895,8 @@ const MainHome: React.FC = () => {
       )}
 
       {/* ═══════════════════ TESTIMONIOS CARRUSEL ═══════════════════ */}
-      <section id="testimonios" className="px-5 sm:px-8 py-20 sm:py-28 overflow-hidden" style={{ background: '#f0f9ff' }}>
+      {/* ── RESPONSIVE: testimonios — padding base=mobile lg:=desktop ── */}
+      <section id="testimonios" className="px-[6vw] py-14 lg:py-28 overflow-hidden" style={{ background: '#f0f9ff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-12">
             <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Testimonios reales</p>
@@ -901,7 +911,7 @@ const MainHome: React.FC = () => {
                 style={{ transform: `translateX(-${testimonialIndex * 100}%)` }}
               >
                 {Array.from({ length: maxIndex + 1 }).map((_, pageIdx) => (
-                  <div key={pageIdx} className="w-full flex-shrink-0 grid grid-cols-1 md:grid-cols-3 gap-5 px-1">
+                  <div key={pageIdx} className="w-full flex-shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-5 px-1">
                     {testimonials.slice(pageIdx * testimonialsPerView, pageIdx * testimonialsPerView + testimonialsPerView).map((t, i) => (
                       <div key={i} className="bg-white rounded-2xl p-6 sm:p-7" style={{ border: '1px solid rgba(15,23,42,.09)' }}>
                         <div className="flex gap-0.5 mb-4" style={{ color: '#06b6d4' }}>
@@ -958,7 +968,8 @@ const MainHome: React.FC = () => {
       </section>
 
       {/* ═══════════════════ CTA FINAL ═══════════════════ */}
-      <section className="px-5 sm:px-8 py-24 relative overflow-hidden"
+      {/* ── RESPONSIVE: CTA final — padding base=mobile lg:=desktop ── */}
+      <section className="px-[6vw] py-16 lg:py-24 relative overflow-hidden"
                style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 45%, #0ea5e9 100%)' }}>
         {/* Glow blobs celestes */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -995,9 +1006,10 @@ const MainHome: React.FC = () => {
       </section>
 
       {/* ═══════════════════ FOOTER ═══════════════════ */}
-      <footer className="pt-16 sm:pt-20 pb-8 px-5 sm:px-8" style={{ background: '#0f172a', color: '#f0f9ff' }}>
+      {/* ── RESPONSIVE: footer — base=mobile lg:=desktop ── */}
+      <footer className="pt-12 lg:pt-20 pb-8 px-[6vw]" style={{ background: '#0f172a', color: '#f0f9ff' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 sm:gap-12 mb-14">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-10 mb-10 lg:mb-14">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1 space-y-5">
               <div className="flex items-center">
