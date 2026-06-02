@@ -597,8 +597,8 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
   }
 
   return (
-    <div className="flex-1 w-full h-screen bg-[#f8fafc] overflow-hidden font-sans text-slate-900">
-      <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-white md:bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-0 w-full bg-[#f8fafc] font-sans text-slate-900">
+      <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative bg-white md:bg-[#f8fafc]">
         <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm no-print">
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm bg-slate-100 flex items-center justify-center">
