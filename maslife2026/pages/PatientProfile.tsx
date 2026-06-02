@@ -399,7 +399,8 @@ const PatientProfile: React.FC = () => {
   // Si ya  está confirmado, mostramos directamente la pantalla de Ticket
   if (isConfirmed) {
     return (
-      <div className="w-full min-h-screen bg-gradient-to-br from-slate-100 to-emerald-50 flex flex-col items-center justify-start md:justify-center py-8 px-4 md:px-8 animate-in fade-in duration-500">
+      // RESPONSIVE: pantalla confirmación — base=mobile lg:=desktop
+      <div className="w-full min-h-screen bg-gradient-to-br from-slate-100 to-emerald-50 flex flex-col items-center justify-start lg:justify-center py-8 px-4 lg:px-8 animate-in fade-in duration-500">
 
         <div className="w-full max-w-5xl">
 
@@ -408,12 +409,12 @@ const PatientProfile: React.FC = () => {
             <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-5 border-4 border-white shadow-lg">
               <span className="material-icons-round text-5xl">check_circle</span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">¡Reserva Exitosa!</h2>
+            <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-2">¡Reserva Exitosa!</h2>
             <p className="text-slate-500 font-bold max-w-lg">Tu hora ha quedado agendada correctamente en el sistema del profesional.</p>
           </div>
 
-          {/* Columna única en móvil — dos columnas en escritorio */}
-          <div className="flex flex-col md:flex-row gap-6 items-start">
+          {/* ── RESPONSIVE: columna única mobile, dos columnas lg:desktop ── */}
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
 
             {/* Ticket (capturado por html2canvas) */}
             <div className="bg-white w-full md:flex-1 rounded-[2rem] shadow-2xl relative overflow-hidden border border-slate-200" id="receipt-ticket">
@@ -514,8 +515,8 @@ const PatientProfile: React.FC = () => {
                 </a>
               </div>
 
-              {/* Botones finales */}
-              <div className="flex flex-col sm:flex-row gap-3 mt-2">
+              {/* ── RESPONSIVE: botones recibo — stack mobile, fila lg:desktop ── */}
+              <div className="flex flex-col lg:flex-row gap-3 mt-2">
                 <button
                   onClick={handleDownloadImage}
                   disabled={isProcessing}
@@ -548,7 +549,7 @@ const PatientProfile: React.FC = () => {
       <div className="w-full bg-white border-b-2 border-slate-100 shadow-sm sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => { if(step > 1) setStep(step - 1); else navigate(-1); }} className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-primary transition-all">
+            <button onClick={() => { if(step > 1) setStep(step - 1); else navigate(-1); }} className="w-11 h-11 rounded-full bg-slate-50 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-primary transition-all">
               <span className="material-icons-round text-xl">arrow_back</span>
             </button>
             {/* ── RESPONSIVE: doctor info — hidden on mobile, visible lg:=desktop ── */}

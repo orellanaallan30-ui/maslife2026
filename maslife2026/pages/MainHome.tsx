@@ -372,8 +372,8 @@ const MainHome: React.FC = () => {
           <span className="hidden font-display text-lg font-light tracking-wide ml-2">AgendaMás<span style={{ opacity:.6 }}>Life</span></span>
         </div>
 
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-7">
+        {/* ── RESPONSIVE: Desktop Nav — oculto mobile, visible lg:desktop ── */}
+        <div className="hidden lg:flex items-center gap-7">
           {[
             { label: 'Cómo funciona', id: 'como-funciona' },
             { label: 'Especialidades', id: 'especialidades' },
@@ -398,9 +398,9 @@ const MainHome: React.FC = () => {
           </button>
         </div>
 
-        {/* Mobile Button */}
+        {/* Mobile Button — oculto en lg:desktop, touch target 44px mínimo ── */}
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden w-10 h-10 flex items-center justify-center" style={{ color: 'inherit' }}>
+          className="lg:hidden w-11 h-11 flex items-center justify-center" style={{ color: 'inherit' }}>
           <span className="material-icons-round text-xl">{mobileMenuOpen ? 'close' : 'menu'}</span>
         </button>
       </nav>
@@ -605,7 +605,8 @@ const MainHome: React.FC = () => {
       </section>
 
       {/* ═══════════════════ STATS BAR ═══════════════════ */}
-      <div className="py-12 px-5 sm:px-8" style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #0ea5e9 100%)' }}>
+      {/* ── RESPONSIVE: stats bar — px base=mobile lg:=desktop ── */}
+      <div className="py-12 px-[6vw]" style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #0ea5e9 100%)' }}>
         {/* ── RESPONSIVE: stats — base=2col mobile, lg:=4col desktop ── */}
         <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-8">
           {[
@@ -828,8 +829,9 @@ const MainHome: React.FC = () => {
       </section>
 
       {/* ═══════════════════ PLANES KINESIOLÓGICOS (CONDICIONAL) ═══════════════════ */}
+      {/* ── RESPONSIVE: planes kiné — padding base=mobile lg:=desktop ── */}
       {showKinePlans && (
-        <section id="kine-plans" className="px-5 sm:px-8 py-20 sm:py-28" style={{ background: '#f8faff', animation: 'fadeIn .5s ease-out' }}>
+        <section id="kine-plans" className="px-[6vw] py-14 lg:py-28" style={{ background: '#f8faff', animation: 'fadeIn .5s ease-out' }}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
               <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Atención a domicilio</p>

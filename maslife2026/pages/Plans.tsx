@@ -76,8 +76,9 @@ const Plans: React.FC = () => {
       <section className="px-6 py-10 lg:px-24 lg:py-24 space-y-8 lg:space-y-12 animate-in fade-in duration-700">
         <div className="space-y-4 lg:space-y-6">
           <span className="text-xs font-black text-teal-600 bg-teal-50 px-5 py-2 rounded-full uppercase tracking-widest">Planes Personalizados</span>
-          <h1 className="text-3xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-none">
-            Tu bienestar es nuestra <br/><span className="text-teal-500 italic">prioridad número uno</span>
+          {/* ── RESPONSIVE: H1 — break-words evita overflow en 375px ── */}
+          <h1 className="text-3xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-none break-words hyphens-auto">
+            Tu bienestar es nuestra <br className="hidden lg:block"/><span className="text-teal-500 italic">prioridad número uno</span>
           </h1>
           <p className="text-base lg:text-lg text-slate-500 font-medium max-w-2xl leading-relaxed">
             Selecciona la modalidad que mejor se adapte a tu ritmo de vida y accede a servicios de salud de alta calidad con nuestros especialistas.
@@ -85,7 +86,8 @@ const Plans: React.FC = () => {
         </div>
 
         {/* SELECTOR DE MODALIDAD */}
-        <div className="flex justify-center md:justify-start">
+        {/* ── RESPONSIVE: selector modalidad — centrado mobile, izquierda lg:desktop ── */}
+        <div className="flex justify-center lg:justify-start">
            <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl flex gap-2">
               {[
                 { id: 'domicilio', label: 'Domiciliaria', icon: 'home' },
@@ -157,10 +159,11 @@ const Plans: React.FC = () => {
       </section>
 
       {/* POR QUÉ ELEGIRNOS */}
-      <section className="px-6 py-24 md:px-24 bg-slate-50/30">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-20">
+      {/* ── RESPONSIVE: por qué elegirnos — md: → lg: breakpoint principal ── */}
+      <section className="px-6 py-16 lg:px-24 lg:py-24 bg-slate-50/30">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
            <div className="flex-1 space-y-12">
-              <h2 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-[1.1]">Por qué elegir Clínica Mas Life</h2>
+              <h2 className="text-3xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.1]">Por qué elegir Clínica Mas Life</h2>
               
               <div className="space-y-8">
                  <div className="flex gap-6">
@@ -205,8 +208,9 @@ const Plans: React.FC = () => {
       </section>
 
       {/* FOOTER BASADO EN IMAGEN 2 */}
-      <footer className="bg-white border-t border-slate-100 pt-24 pb-12 px-6 md:px-24">
-         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 mb-24">
+      {/* ── RESPONSIVE: footer — md: → lg: breakpoint principal ── */}
+      <footer className="bg-white border-t border-slate-100 pt-16 pb-12 px-6 lg:px-24 lg:pt-24">
+         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-10 lg:gap-16 mb-16 lg:mb-24">
             <div className="space-y-6">
                <div className="flex items-center gap-3">
                   <span className="material-icons-round text-teal-500 text-4xl">medical_services</span>

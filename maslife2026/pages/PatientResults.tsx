@@ -63,7 +63,7 @@ const PatientResults: React.FC = () => {
 
   return (
     <div className="w-full bg-slate-50 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 80px)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
 
         {/* Header con logo Agenda Online */}
         <div className="flex items-center justify-between mb-5">
@@ -78,7 +78,7 @@ const PatientResults: React.FC = () => {
           {/* Mobile filter toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="lg:hidden flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-200 text-sm font-bold text-slate-700 shadow-sm"
+            className="lg:hidden flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-slate-200 text-sm font-bold text-slate-700 shadow-sm active:scale-95 transition-all"
           >
             <span className="material-icons-round text-base">tune</span>
             Filtros
@@ -89,7 +89,7 @@ const PatientResults: React.FC = () => {
         {/* ── Selector de área — círculos horizontales ── */}
         <div className="mb-6">
           <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-3">Selecciona un área</h3>
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0" style={{ scrollbarWidth: 'none' }}>
             {areas.map(a => {
               const active = selectedArea === a.value;
               return (
@@ -130,7 +130,7 @@ const PatientResults: React.FC = () => {
 
           {/* ── Filtros ── */}
           <aside className={`lg:col-span-3 space-y-4 ${showFilters ? 'block' : 'hidden lg:block'}`}>
-            <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
+            <div className="bg-white p-5 lg:p-6 rounded-2xl shadow-sm border border-slate-100">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Filtros de Búsqueda</h3>
                 {hasActiveFilters && (
