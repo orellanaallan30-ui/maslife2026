@@ -89,6 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               .update({
                 subscription_status: newStatus,
                 is_subscribed: newStatus === 'active',
+                is_public: newStatus === 'active',
               })
               .eq('email', email);
 

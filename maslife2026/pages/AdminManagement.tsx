@@ -15,6 +15,7 @@ const AdminManagement: React.FC = () => {
   const [loadingIds, setLoadingIds]   = useState<Set<string>>(new Set());
   const [toast, setToast]             = useState('');
   const [linkCopied, setLinkCopied]   = useState(false);
+  const [giftModal, setGiftModal]     = useState<{ pro: ProfessionalProfile; days: string } | null>(null);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
 
@@ -116,16 +117,44 @@ const AdminManagement: React.FC = () => {
 
   // ── Gestión de suscripción ─────────────────────────────────────
   const setSubStatus = async (pro: ProfessionalProfile, next: SubscriptionStatus) => {
+    const isActive = next === 'active';
+    const isPausedNext = next === 'paused';
     const res = await adminFetch('PATCH', {
       id: pro.id,
       subscription_status: next,
-      is_subscribed: next === 'active',
+      is_subscribed: isActive,
+      is_public: !isPausedNext,
     });
     if (res.ok) {
-      const updated = { ...pro, subscriptionStatus: next, isSubscribed: next === 'active' };
+      const updated = { ...pro, subscriptionStatus: next, isSubscribed: isActive, isPublic: !isPausedNext };
       setAllPros(prev => prev.map(p => p.id === pro.id ? updated : p));
-      const label = next === 'active' ? 'Activo' : next === 'paused' ? 'Pausado' : 'Trial';
+      const label = isActive ? '✅ Activo' : isPausedNext ? '⏸️ Pausado' : '⏳ Trial';
       showToast(`${pro.name} → ${label}`);
+    }
+  };
+
+  // ── Regalar días de prueba ─────────────────────────────────────
+  const handleGiftDays = async () => {
+    if (!giftModal) return;
+    const days = parseInt(giftModal.days, 10);
+    if (!days || days < 1 || days > 365) return;
+    const base = giftModal.pro.trialEndDate && new Date(giftModal.pro.trialEndDate) > new Date()
+      ? new Date(giftModal.pro.trialEndDate)
+      : new Date();
+    base.setDate(base.getDate() + days);
+    const newDate = base.toISOString().split('T')[0];
+    const res = await adminFetch('PATCH', {
+      id: giftModal.pro.id,
+      subscription_status: 'trial',
+      trial_end_date: newDate,
+      is_subscribed: false,
+      is_public: true,
+    });
+    if (res.ok) {
+      const updated = { ...giftModal.pro, subscriptionStatus: 'trial' as SubscriptionStatus, trialEndDate: newDate, isSubscribed: false, isPublic: true };
+      setAllPros(prev => prev.map(p => p.id === giftModal!.pro.id ? updated : p));
+      showToast(`🎁 ${giftModal.pro.name} → +${days} días (hasta ${new Date(newDate + 'T12:00:00').toLocaleDateString('es-CL')})`);
+      setGiftModal(null);
     }
   };
 
@@ -291,23 +320,37 @@ const AdminManagement: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/10 text-emerald-400">
-                          Activo
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${pro.isPublic ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-700 text-slate-500'}`}>
+                          {pro.isPublic ? 'Visible' : 'Oculto'}
                         </span>
                       </td>
                       <td className="px-6 py-5">
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black
-                          ${pro.subscriptionStatus === 'active'
-                            ? 'bg-emerald-500/10 text-emerald-400'
-                            : pro.subscriptionStatus === 'trial'
-                            ? 'bg-blue-500/10 text-blue-400'
-                            : 'bg-rose-500/10 text-rose-400'}`}>
-                          {pro.subscriptionStatus === 'trial' ? 'Prueba'
-                            : pro.subscriptionStatus === 'active' ? 'Suscrito' : 'Pausado'}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-2.5 py-1 rounded-lg text-xs font-black w-fit
+                            ${pro.subscriptionStatus === 'active'
+                              ? 'bg-emerald-500/10 text-emerald-400'
+                              : pro.subscriptionStatus === 'trial'
+                              ? 'bg-blue-500/10 text-blue-400'
+                              : 'bg-rose-500/10 text-rose-400'}`}>
+                            {pro.subscriptionStatus === 'trial' ? 'Prueba'
+                              : pro.subscriptionStatus === 'active' ? 'Suscrito' : 'Pausado'}
+                          </span>
+                          {pro.trialEndDate && (
+                            <span className="text-[10px] text-slate-500 font-bold">
+                              {pro.subscriptionStatus === 'active' ? 'desde' : 'vence'} {new Date(pro.trialEndDate + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short', year: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-2 flex-wrap">
+                          {/* Regalar días */}
+                          <button onClick={() => setGiftModal({ pro, days: '30' })}
+                            title="Regalar días de prueba"
+                            className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-violet-500 hover:text-white transition-all border border-white/5">
+                            <span className="material-icons-round text-sm">card_giftcard</span>
+                          </button>
+                          {/* Reset contraseña */}
                           <button
                             onClick={() => sendPasswordReset(pro)}
                             disabled={resetSent[pro.id] === 'loading' || resetSent[pro.id] === 'sent'}
@@ -325,6 +368,7 @@ const AdminManagement: React.FC = () => {
                                 : 'lock_reset'}
                             </span>
                           </button>
+                          {/* Activar */}
                           {pro.subscriptionStatus !== 'active' && (
                             <button onClick={() => setSubStatus(pro, 'active')}
                               title="Activar suscripción"
@@ -332,24 +376,20 @@ const AdminManagement: React.FC = () => {
                               <span className="material-icons-round text-sm">play_arrow</span>
                             </button>
                           )}
+                          {/* Pausar */}
                           {pro.subscriptionStatus !== 'paused' && (
                             <button onClick={() => setSubStatus(pro, 'paused')}
-                              title="Pausar suscripción"
+                              title="Pausar (oculta perfil)"
                               className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-amber-500 hover:text-white transition-all border border-white/5">
                               <span className="material-icons-round text-sm">pause</span>
                             </button>
                           )}
-                          {pro.subscriptionStatus !== 'trial' && (
-                            <button onClick={() => setSubStatus(pro, 'trial')}
-                              title="Pasar a Trial"
-                              className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-blue-500 hover:text-white transition-all border border-white/5">
-                              <span className="material-icons-round text-sm">schedule</span>
-                            </button>
-                          )}
-                          <button onClick={() => handleReject(pro)} title="Desactivar"
-                            className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-amber-500 hover:text-white transition-all border border-white/5">
+                          {/* Desactivar aprobación */}
+                          <button onClick={() => handleReject(pro)} title="Desactivar aprobación"
+                            className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-amber-600 hover:text-white transition-all border border-white/5">
                             <span className="material-icons-round text-sm">block</span>
                           </button>
+                          {/* Eliminar */}
                           <button onClick={() => handleDelete(pro)} title="Eliminar permanentemente"
                             className="p-2.5 rounded-xl bg-slate-800 text-slate-400 hover:bg-rose-500 hover:text-white transition-all border border-white/5">
                             <span className="material-icons-round text-sm">delete</span>
@@ -397,6 +437,70 @@ const AdminManagement: React.FC = () => {
         )}
 
       </div>
+
+      {/* ── MODAL: Regalar días de prueba ── */}
+      {giftModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-violet-500/20 flex items-center justify-center">
+                <span className="material-icons-round text-violet-400 text-2xl">card_giftcard</span>
+              </div>
+              <div>
+                <h3 className="text-white font-black text-lg">Regalar días de prueba</h3>
+                <p className="text-slate-400 text-sm">{giftModal.pro.name}</p>
+              </div>
+            </div>
+
+            {giftModal.pro.trialEndDate && (
+              <div className="bg-slate-800/60 rounded-2xl px-4 py-3 mb-5 text-sm text-slate-400">
+                Vence actual: <span className="text-white font-black">
+                  {new Date(giftModal.pro.trialEndDate + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+            )}
+
+            <div className="space-y-2 mb-6">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Días a regalar</label>
+              <input
+                type="number"
+                min={1}
+                max={365}
+                value={giftModal.days}
+                onChange={e => setGiftModal({ ...giftModal, days: e.target.value })}
+                className="w-full bg-slate-800 border border-white/10 rounded-2xl px-5 py-4 text-white text-2xl font-black focus:outline-none focus:border-violet-500/50 text-center"
+                placeholder="30"
+                autoFocus
+              />
+              {parseInt(giftModal.days) > 0 && (
+                <p className="text-xs text-slate-500 text-center">
+                  Nueva fecha: {(() => {
+                    const base = giftModal.pro.trialEndDate && new Date(giftModal.pro.trialEndDate) > new Date()
+                      ? new Date(giftModal.pro.trialEndDate)
+                      : new Date();
+                    base.setDate(base.getDate() + parseInt(giftModal.days));
+                    return base.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+                  })()}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => setGiftModal(null)}
+                className="flex-1 py-3 text-slate-400 text-xs font-black uppercase tracking-widest hover:text-white transition-all">
+                Cancelar
+              </button>
+              <button
+                onClick={handleGiftDays}
+                disabled={!parseInt(giftModal.days) || parseInt(giftModal.days) < 1}
+                className="flex-1 py-3 bg-violet-500 hover:bg-violet-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-b-4 border-violet-700 active:border-b-0 active:translate-y-1">
+                Confirmar regalo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
