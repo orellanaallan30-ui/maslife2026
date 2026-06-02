@@ -1,4 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
+);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
@@ -7,11 +13,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).end();
 
-  const ACCESS_TOKEN = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
-  if (!ACCESS_TOKEN) return res.status(503).json({ error: 'MP_NOT_CONFIGURED' });
+  const { range = '30', limit = '50', professional_id } = req.query as Record<string, string>;
 
-  const { range = '30', limit = '50' } = req.query as Record<string, string>;
+  if (!professional_id) {
+    return res.status(400).json({ error: 'professional_id requerido' });
+  }
 
+  // Obtener el token MP del profesional — cada profesional solo ve sus propios pagos
+  const { data: secret, error: secretErr } = await supabase
+    .from('professional_secrets')
+    .select('mp_access_token')
+    .eq('professional_id', professional_id)
+    .maybeSingle();
+
+  if (secretErr) {
+    console.error('[MP payments] Supabase error:', secretErr);
+    return res.status(500).json({ error: 'Error al obtener credenciales' });
+  }
+
+  if (!secret?.mp_access_token) {
+    return res.status(200).json({ error: 'MP_NOT_CONNECTED', payments: [], summary: null });
+  }
+
+  const ACCESS_TOKEN = secret.mp_access_token.trim();
   const days = Math.min(parseInt(range) || 30, 90);
   const beginDate = new Date(Date.now() - days * 86400000).toISOString().slice(0, 19) + '.000-03:00';
 
@@ -43,7 +67,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       paymentType: p.payment_type_id,
       createdAt: p.date_created,
       approvedAt: p.date_approved,
-      statementDescriptor: p.statement_descriptor,
     }));
 
     const approved = payments.filter((p: any) => p.status === 'approved');
