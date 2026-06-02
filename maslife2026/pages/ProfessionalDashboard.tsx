@@ -106,7 +106,7 @@ const ProfessionalDashboard: React.FC = () => {
 
   const profileComplete = !!(loggedPro.slug && loggedPro.specialty && loggedPro.services?.length > 0);
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
-  const mpLinkWithBack = `${MP_SUBSCRIPTION_LINK}&back_url=${encodeURIComponent('https://clinicamaslife.cl/pro/settings?subscribed=1')}`;
+  const mpLinkWithBack = MP_SUBSCRIPTION_LINK;
 
   const today = new Date().toISOString().split('T')[0];
   const myTodayApps = React.useMemo(() =>
