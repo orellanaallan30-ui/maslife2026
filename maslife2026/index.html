@@ -180,6 +180,8 @@
         }
 
         p, span, label { color: #334155; }
+        /* spans/paragraphs inside buttons and links inherit the button's text color */
+        button span, button p, a span, a p { color: inherit; }
         header { z-index: 50; }
 
         @media print {
