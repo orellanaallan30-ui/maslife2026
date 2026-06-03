@@ -13,18 +13,18 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
   const isAdmin = loggedPro?.email === import.meta.env.VITE_ADMIN_EMAIL;
 
   const menuItems = [
-    { icon: 'dashboard',      label: 'Inicio',     path: '/pro/dashboard' },
-    { icon: 'calendar_today', label: 'Agenda',     path: '/pro/agenda' },
-    { icon: 'people',         label: 'Pacientes',  path: '/pro/patients' },
-    { icon: 'bar_chart',      label: 'Finanzas',   path: '/pro/finances' },
-    { icon: 'settings',       label: 'Ajustes',    path: '/pro/settings' },
+    { icon: 'home',           label: 'Inicio',    path: '/pro/dashboard' },
+    { icon: 'calendar_month', label: 'Agenda',    path: '/pro/agenda' },
+    { icon: 'group',          label: 'Pacientes', path: '/pro/patients' },
+    { icon: 'bar_chart',      label: 'Finanzas',  path: '/pro/finances' },
+    { icon: 'settings',       label: 'Ajustes',   path: '/pro/settings' },
   ];
 
   return (
     <>
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden md:flex w-20 lg:w-64 h-full overflow-hidden bg-white border-r border-slate-200 flex-col shrink-0 transition-all">
-        {/* Logo Agenda Online */}
+      <aside className="hidden md:flex w-20 lg:w-64 h-full overflow-hidden bg-white border-r border-slate-100 flex-col shrink-0 transition-all">
+        {/* Logo */}
         <div className="px-4 lg:px-6 pt-5 pb-3 border-b border-slate-100 flex items-center justify-center lg:justify-start">
           <img
             src="/logo-agenda-online.svg"
@@ -35,46 +35,58 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           <span className="hidden text-lg font-extrabold tracking-tight text-slate-900">Agenda</span>
         </div>
 
-        <nav className="flex-1 p-4 lg:p-5 space-y-2">
+        <nav className="flex-1 p-3 lg:p-4 space-y-1">
           {menuItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all ${isActive
-                  ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-primary'
+                `flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${isActive
+                  ? 'bg-primary shadow-lg shadow-primary/20'
+                  : 'hover:bg-primary/5'
                 }`
               }
             >
-              <span className="material-icons-round text-xl">{item.icon}</span>
-              <span className="font-bold text-sm hidden lg:inline">{item.label}</span>
+              {({ isActive }) => (
+                <>
+                  <span className={`material-icons-round text-2xl flex-shrink-0 ${isActive ? 'text-white' : 'text-primary'}`}>
+                    {item.icon}
+                  </span>
+                  <span className={`font-semibold text-base hidden lg:inline ${isActive ? 'text-white' : 'text-slate-800'}`}>
+                    {item.label}
+                  </span>
+                </>
+              )}
             </NavLink>
           ))}
 
-          {/* AI Assistant */}
+          {/* Asistente IA */}
           <button
             onClick={onToggleAI}
-            className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all w-full text-amber-600 hover:bg-amber-50 hover:text-amber-700 group"
+            className="flex items-center gap-3 px-4 py-4 rounded-2xl transition-all w-full hover:bg-primary/5 group"
           >
-            <span className="material-icons-round text-xl group-hover:scale-110 transition-transform">smart_toy</span>
-            <span className="font-bold text-sm hidden lg:inline">Asistente IA</span>
+            <span className="material-icons-round text-2xl text-primary flex-shrink-0 group-hover:scale-110 transition-transform">
+              smart_toy
+            </span>
+            <span className="font-semibold text-base text-slate-800 hidden lg:inline">Asistente IA</span>
           </button>
 
           {/* Admin — solo si el email coincide con VITE_ADMIN_EMAIL */}
           {isAdmin && (
             <button
               onClick={() => navigate('/admin/management')}
-              className="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all w-full text-rose-500 hover:bg-rose-50 hover:text-rose-600 group"
+              className="flex items-center gap-3 px-4 py-4 rounded-2xl transition-all w-full hover:bg-primary/5 group"
             >
-              <span className="material-icons-round text-xl">admin_panel_settings</span>
-              <span className="font-bold text-sm hidden lg:inline">Admin</span>
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-md shadow-primary/30 group-hover:scale-105 transition-transform">
+                <span className="material-icons-round text-white text-base">person</span>
+              </div>
+              <span className="font-semibold text-base text-slate-800 hidden lg:inline">Admin</span>
             </button>
           )}
         </nav>
 
-        <div className="p-4 lg:p-5 mt-auto space-y-4">
-          <div className="bg-teal-50/50 rounded-2xl p-5 hidden lg:block border border-teal-100/50">
+        <div className="p-3 lg:p-4 mt-auto space-y-3">
+          <div className="bg-primary/5 rounded-2xl p-4 hidden lg:block border border-primary/10">
             <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">Soporte Médico</p>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">¿Necesitas ayuda técnica?</p>
             <button
@@ -86,11 +98,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           </div>
 
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              if (onLogout) onLogout();
-            }}
-            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-all font-bold text-sm group"
+            onClick={(e) => { e.preventDefault(); if (onLogout) onLogout(); }}
+            className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all font-semibold text-sm group"
           >
             <span className="material-icons-round text-xl group-hover:translate-x-1 transition-transform">logout</span>
             <span className="hidden lg:inline">Cerrar Sesión</span>
@@ -100,7 +109,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
 
       {/* ── Mobile Bottom Nav ── */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex items-center justify-around px-1 z-[100] shadow-[0_-4px_24px_rgba(0,0,0,0.08)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 flex items-center justify-around px-1 z-[100] shadow-[0_-4px_24px_rgba(0,0,0,0.08)]"
         style={{ height: 68, paddingBottom: 'env(safe-area-inset-bottom, 6px)' }}
       >
         {menuItems.map((item) => (
@@ -113,7 +122,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           >
             {({ isActive }) => (
               <>
-                <span className="material-icons-round text-[20px]">{item.icon}</span>
+                <span className={`material-icons-round text-[22px] ${isActive ? 'text-primary' : 'text-slate-400'}`}>
+                  {item.icon}
+                </span>
                 <span className="text-[9px] font-bold mt-0.5 leading-none">{item.label}</span>
                 {isActive && <div className="mt-0.5 w-1 h-1 rounded-full bg-primary" />}
               </>
@@ -124,21 +135,23 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
         {/* IA */}
         <button
           onClick={onToggleAI}
-          className="flex flex-col items-center justify-center flex-1 h-full text-amber-500"
+          className="flex flex-col items-center justify-center flex-1 h-full text-primary"
         >
-          <span className="material-icons-round text-[20px]">smart_toy</span>
+          <span className="material-icons-round text-[22px]">smart_toy</span>
           <span className="text-[9px] font-bold mt-0.5 leading-none">IA</span>
-          <div className="mt-0.5 w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+          <div className="mt-0.5 w-1 h-1 rounded-full bg-primary animate-pulse" />
         </button>
 
-        {/* Admin — solo si isAdmin */}
+        {/* Admin */}
         {isAdmin && (
           <button
             onClick={() => navigate('/admin/management')}
-            className="flex flex-col items-center justify-center flex-1 h-full text-rose-500"
+            className="flex flex-col items-center justify-center flex-1 h-full gap-0.5"
           >
-            <span className="material-icons-round text-[20px]">admin_panel_settings</span>
-            <span className="text-[9px] font-bold mt-0.5 leading-none">Admin</span>
+            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-sm">
+              <span className="material-icons-round text-white text-xs">person</span>
+            </div>
+            <span className="text-[9px] font-bold text-primary leading-none">Admin</span>
           </button>
         )}
       </nav>
