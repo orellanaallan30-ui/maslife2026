@@ -9,7 +9,6 @@ import PatientProfile        from './pages/PatientProfile';
 import ProfessionalDashboard from './pages/ProfessionalDashboard';
 import ClinicalRecord        from './pages/ClinicalRecord';
 import PatientList           from './pages/PatientList';
-import ConsultationSession   from './pages/ConsultationSession';
 import ProfessionalRegistration from './pages/ProfessionalRegistration';
 import ProfessionalLogin     from './pages/ProfessionalLogin';
 import AdminManagement       from './pages/AdminManagement';
@@ -433,7 +432,6 @@ const AppContent: React.FC = () => {
             <Route path="/pro/agenda"      element={<ProfessionalAgenda />} />
             <Route path="/pro/patients"    element={<PatientList />} />
             <Route path="/pro/record/:id"  element={<ClinicalRecord />} />
-            <Route path="/pro/session/:id" element={<ConsultationSession />} />
             <Route path="/pro/finances"    element={<Finances />} />
             <Route path="/pro/settings"    element={<Settings />} />
           </Route>
