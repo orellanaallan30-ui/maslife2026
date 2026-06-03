@@ -24,7 +24,7 @@ const ProfessionalAgenda: React.FC = () => {
    const [selectedSlot, setSelectedSlot] = useState<{ time: string, date: string } | null>(null);
    const [editingApp, setEditingApp] = useState<Appointment | null>(null);
    const [searchQuery, setSearchQuery] = useState('');
-   const [newPatientForm, setNewPatientForm] = useState({ name: '', rut: '', phone: '' });
+   const [newPatientForm, setNewPatientForm] = useState({ name: '', rut: '', phone: '', email: '' });
    const [blockNote, setBlockNote] = useState('');
    const [blockDuration, setBlockDuration] = useState(60);
    const [selectedColor, setSelectedColor] = useState('bg-primary');
@@ -93,7 +93,7 @@ const ProfessionalAgenda: React.FC = () => {
 
    const handleSlotClick = (time: string, date: string) => {
       setSelectedSlot({ time, date });
-      setNewPatientForm({ name: '', rut: '', phone: '' });
+      setNewPatientForm({ name: '', rut: '', phone: '', email: '' });
       setSelectedColor('bg-primary');
       setBlockNote('');
       setActiveTab('existing');
@@ -115,6 +115,7 @@ const ProfessionalAgenda: React.FC = () => {
          patientId: patient?.id,
          patientName: isBlock ? (blockNote || 'Bloqueo Administrativo') : (patient?.name || 'Nuevo Paciente'),
          patientPhone: patient?.phone,
+         patientEmail: isBlock ? undefined : (patient?.email || undefined),
          doctorName: loggedPro?.name || '',
          specialty: loggedPro?.specialty || '',
          serviceName: isBlock ? 'Bloqueo' : (selectedService?.name || loggedPro?.services[0]?.name || 'Consulta'),
@@ -517,6 +518,10 @@ const ProfessionalAgenda: React.FC = () => {
                                     <input value={newPatientForm.phone} onChange={e => setNewPatientForm({ ...newPatientForm, phone: e.target.value })} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400" placeholder="+56 9..." />
                                  </div>
                               </div>
+                              <div>
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Correo del paciente <span className="normal-case text-slate-300">(opcional — recibe confirmación)</span></label>
+                                 <input type="email" value={newPatientForm.email} onChange={e => setNewPatientForm({ ...newPatientForm, email: e.target.value })} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400" placeholder="paciente@correo.cl" />
+                              </div>
                               <div className="mt-4">
                                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
                                  <textarea
@@ -534,7 +539,7 @@ const ProfessionalAgenda: React.FC = () => {
                                     name: newPatientForm.name,
                                     rut: newPatientForm.rut || '',
                                     phone: newPatientForm.phone || '',
-                                    email: '',
+                                    email: newPatientForm.email || '',
                                     age: 0,
                                     gender: '',
                                     prevision: '',
