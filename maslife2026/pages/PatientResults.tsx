@@ -8,17 +8,21 @@ import logoAgenda from '../assets/logo-agenda.png';
 const PatientResults: React.FC = () => {
   const navigate = useNavigate();
   const { professionals } = useClinic();
-  const [publicPros, setPublicPros] = useState<ProfessionalProfile[]>([]);
+  // Mostrar inmediatamente los profesionales públicos del caché local mientras Supabase responde
+  const [publicPros, setPublicPros] = useState<ProfessionalProfile[]>(() => professionals.filter(p => p.isPublic));
+  const [loading, setLoading] = useState(true);
   const [citySearch, setCitySearch] = useState('');
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedModality, setSelectedModality] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     getAllPublicProfessionals()
-      .then(setPublicPros)
-      .catch(() => setPublicPros(professionals.filter(p => p.isPublic)));
-  }, []);
+      .then(data => { if (data.length > 0) setPublicPros(data); })
+      .catch(() => { /* mantener caché local */ })
+      .finally(() => setLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const areas = [
     { value: '', label: 'Todas', icon: 'grid_view', grad: 'linear-gradient(135deg, #475569, #64748b)' },
@@ -62,7 +66,7 @@ const PatientResults: React.FC = () => {
   const hasActiveFilters = citySearch || selectedArea || selectedModality.length > 0;
 
   return (
-    <div className="w-full bg-slate-50 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 80px)' }}>
+    <div className="w-full h-full bg-slate-50 overflow-y-auto" style={{ paddingBottom: 'env(safe-area-inset-bottom, 80px)' }}>
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 lg:py-8">
 
         {/* Header con logo Agenda Online */}
@@ -72,7 +76,9 @@ const PatientResults: React.FC = () => {
             <div>
               {/* ── RESPONSIVE: base=mobile  lg:=desktop ── */}
               <h2 className="text-lg lg:text-2xl font-extrabold text-slate-900 tracking-tight">Especialistas Disponibles</h2>
-              <p className="text-sm font-medium text-slate-500">{visibleDoctors.length} profesionales encontrados</p>
+              <p className="text-sm font-medium text-slate-500">
+                {loading && publicPros.length === 0 ? 'Cargando profesionales...' : `${visibleDoctors.length} profesionales encontrados`}
+              </p>
             </div>
           </div>
           {/* Mobile filter toggle */}
@@ -210,6 +216,26 @@ const PatientResults: React.FC = () => {
               </div>
             )}
 
+            {/* Skeleton mientras Supabase carga y no hay datos locales */}
+            {loading && publicPros.length === 0 && (
+              <div className="grid grid-cols-1 gap-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-white p-4 lg:p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col lg:flex-row gap-4 lg:gap-6 items-center animate-pulse">
+                    <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-2xl bg-slate-200 shrink-0" />
+                    <div className="flex-1 w-full space-y-3">
+                      <div className="h-4 bg-slate-200 rounded-lg w-1/2 mx-auto lg:mx-0" />
+                      <div className="h-3 bg-slate-100 rounded-lg w-1/3 mx-auto lg:mx-0" />
+                      <div className="flex gap-2 justify-center lg:justify-start">
+                        <div className="h-5 w-16 bg-slate-100 rounded-md" />
+                        <div className="h-5 w-20 bg-slate-100 rounded-md" />
+                      </div>
+                    </div>
+                    <div className="w-full lg:w-32 h-10 bg-slate-200 rounded-xl shrink-0" />
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Cards de profesionales */}
             <div className="grid grid-cols-1 gap-4">
               {visibleDoctors.length > 0 ? visibleDoctors.map((doc) => (
@@ -256,7 +282,7 @@ const PatientResults: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              )) : (
+              )) : !loading && (
                 <div className="py-16 text-center bg-white rounded-2xl border border-slate-100">
                   <span className="material-icons-round text-slate-200 text-5xl mb-4 block">person_search</span>
                   <p className="text-slate-500 font-bold text-base mb-2">No hay especialistas que coincidan.</p>

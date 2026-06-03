@@ -186,7 +186,8 @@ export async function getAllPublicProfessionals(): Promise<ProfessionalProfile[]
   const { data, error } = await supabase
     .from('professionals')
     .select('*')
-    .neq('is_public', false);
+    .eq('is_public', true)
+    .order('name', { ascending: true });
   if (error || !data) return [];
   return data.map(mapDBtoPro);
 }
