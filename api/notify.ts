@@ -16,15 +16,16 @@ function checkRateLimit(headers: VercelRequest['headers'], max: number, windowMs
   return true;
 }
 
-// Email del remitente/organizador (solo la dirección, sin nombre)
-const ORGANIZER_EMAIL = 'notificaciones@clinicamaslife.cl';
+// Email del remitente/organizador se toma del campo `to` (email del profesional)
+// para que los RSVP del paciente lleguen directamente al profesional, no a un buzón sin configurar.
+const FALLBACK_ORGANIZER = 'notificaciones@clinicamaslife.cl';
 
 // Genera una invitación iCalendar (.ics) tiempo flotante (sin TZ) con ORGANIZER + ATTENDEE,
 // para que Gmail/Outlook la muestren como invitación interactiva y la agenden automáticamente.
 function generateIcs(p: {
   date: string; time: string; duration: number;
   summary: string; description: string; uid: string;
-  organizerName: string;
+  organizerName: string; organizerEmail?: string;
   attendeeName: string; attendeeEmail: string;
 }): string {
   const { date, time, duration, summary, description, uid, organizerName, attendeeName, attendeeEmail } = p;
@@ -57,7 +58,7 @@ function generateIcs(p: {
     `DTEND:${endDt}`,
     `SUMMARY:${esc(summary)}`,
     `DESCRIPTION:${esc(description)}`,
-    `ORGANIZER;CN=${escCn(organizerName)}:mailto:${ORGANIZER_EMAIL}`,
+    `ORGANIZER;CN=${escCn(organizerName)}:mailto:${p.organizerEmail || FALLBACK_ORGANIZER}`,
     `ATTENDEE;CN=${escCn(attendeeName)};ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${attendeeEmail}`,
     'SEQUENCE:0',
     'STATUS:CONFIRMED',
@@ -222,12 +223,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const icsSummary = `Atención: ${serviceName || 'Consulta'} – ${professionalName}`;
   const icsDescription = `Paciente: ${patientName}\nProfesional: ${professionalName}\nServicio: ${serviceName || 'Consulta'}\nModalidad: ${type || 'Presencial'}\n\nClínica Maslife – clinicamaslife.cl`;
 
+  // `to` is the professional's email — use it as ORGANIZER so RSVPs reach the doctor directly
   const buildInvite = (attendeeName: string, attendeeEmail: string) => generateIcs({
     date, time, duration: appDuration,
     summary: icsSummary,
     description: icsDescription,
     uid: eventUid,
     organizerName: professionalName || 'Clínica Maslife',
+    organizerEmail: EMAIL_RE.test(to) ? to : FALLBACK_ORGANIZER,
     attendeeName,
     attendeeEmail,
   });
