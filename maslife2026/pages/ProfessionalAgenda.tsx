@@ -26,7 +26,8 @@ const ProfessionalAgenda: React.FC = () => {
    const [searchQuery, setSearchQuery] = useState('');
    const [newPatientForm, setNewPatientForm] = useState({ name: '', rut: '', phone: '', email: '' });
    const [blockNote, setBlockNote] = useState('');
-   const [blockDuration, setBlockDuration] = useState(60);
+   const [blockDate, setBlockDate] = useState('');
+   const [blockTimes, setBlockTimes] = useState<string[]>([]);
    const [selectedColor, setSelectedColor] = useState('bg-primary');
    const [selectedServiceId, setSelectedServiceId] = useState<string>('');
    const [appointmentNotes, setAppointmentNotes] = useState('');
@@ -91,11 +92,62 @@ const ProfessionalAgenda: React.FC = () => {
       });
    }, [currentDate]);
 
+   // Days the professional works, for the block date picker (next 14 days)
+   const blockableDays = useMemo(() => {
+      if (!loggedPro) return [];
+      const days: { date: string; label: string }[] = [];
+      const today = new Date();
+      for (let i = 0; i < 14; i++) {
+         const d = new Date(today);
+         d.setDate(today.getDate() + i);
+         const dayIdx = d.getDay();
+         const raw = loggedPro.schedule?.[dayIdx];
+         const isActive = raw ? (raw.active ?? false) : (dayIdx !== 0 && dayIdx !== 6);
+         if (isActive) {
+            const dateStr = d.toISOString().split('T')[0];
+            const label = i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+            days.push({ date: dateStr, label });
+         }
+      }
+      return days;
+   }, [loggedPro]);
+
+   // Apply multiple block slots at once
+   const handleApplyBlocks = () => {
+      if (!blockDate || blockTimes.length === 0) return;
+      blockTimes.forEach(time => {
+         addAppointment({
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
+            patientName: blockNote || 'Bloqueo Administrativo',
+            doctorName: loggedPro?.name || '',
+            specialty: loggedPro?.specialty || '',
+            serviceName: 'Bloqueo',
+            date: blockDate,
+            time,
+            duration: 60,
+            type: 'Personal',
+            status: 'Bloqueado',
+            price: 0,
+            paymentStatus: 'Pagado',
+            category: 'Personal',
+            color: 'bg-slate-800',
+            professionalId: loggedPro?.id,
+            bookingSource: 'presencial',
+         } as any);
+      });
+      setIsCreateModalOpen(false);
+      setSelectedSlot(null);
+      setBlockNote('');
+      setBlockTimes([]);
+   };
+
    const handleSlotClick = (time: string, date: string) => {
       setSelectedSlot({ time, date });
       setNewPatientForm({ name: '', rut: '', phone: '', email: '' });
       setSelectedColor('bg-primary');
       setBlockNote('');
+      setBlockDate(date);
+      setBlockTimes([time]);
       setActiveTab('existing');
       setSelectedServiceId('');
       setAppointmentNotes('');
@@ -561,27 +613,74 @@ const ProfessionalAgenda: React.FC = () => {
                         )}
 
                         {activeTab === 'block' && (
-                           <div className="space-y-8">
-                              <div className="p-5 bg-slate-900 border border-slate-800 text-white rounded-2xl flex items-start gap-4 shadow-inner">
-                                 <span className="material-icons-round text-2xl text-rose-400">info</span>
-                                 <p className="text-[10px] font-black leading-relaxed uppercase tracking-widest text-slate-300">El horario seleccionado quedará <span className="text-rose-400">bloqueado</span> para recepción pública.</p>
-                              </div>
+                           <div className="space-y-6">
+                              {/* Date picker */}
                               <div>
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Motivo del Bloqueo</label>
-                                 <input value={blockNote} onChange={e => setBlockNote(e.target.value)} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-inner placeholder:text-slate-400" placeholder="Ej: Trámite Personal..." />
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 ml-1">Día</label>
+                                 <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+                                    {blockableDays.map(d => (
+                                       <button
+                                          key={d.date}
+                                          onClick={() => { setBlockDate(d.date); setBlockTimes([]); }}
+                                          className={`flex-none px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${blockDate === d.date ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400'}`}
+                                       >{d.label}</button>
+                                    ))}
+                                 </div>
                               </div>
+
+                              {/* Hour chips multi-select */}
                               <div>
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Duración (minutos)</label>
-                                 <select value={blockDuration} onChange={e => setBlockDuration(Number(e.target.value))} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-inner mt-1">
-                                    <option value={15}>15 minutos</option>
-                                    <option value={30}>30 minutos</option>
-                                    <option value={45}>45 minutos</option>
-                                    <option value={60}>1 hora</option>
-                                    <option value={90}>1 hora 30m</option>
-                                    <option value={120}>2 horas</option>
-                                 </select>
+                                 <div className="flex items-center justify-between mb-2">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Horas a bloquear</label>
+                                    <button
+                                       onClick={() => {
+                                          const freeHours = hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h));
+                                          setBlockTimes(freeHours.length === blockTimes.length ? [] : freeHours);
+                                       }}
+                                       className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline"
+                                    >
+                                       {hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)).length === blockTimes.length ? 'Desmarcar todo' : 'Seleccionar todo'}
+                                    </button>
+                                 </div>
+                                 <div className="grid grid-cols-4 gap-2">
+                                    {hours.map(h => {
+                                       const isOccupied = appointments.some(a => a.date === blockDate && a.time === h);
+                                       const isSelected = blockTimes.includes(h);
+                                       return (
+                                          <button
+                                             key={h}
+                                             disabled={isOccupied}
+                                             onClick={() => setBlockTimes(prev => isSelected ? prev.filter(t => t !== h) : [...prev, h])}
+                                             className={`py-2.5 rounded-xl text-xs font-black transition-all border-2 ${
+                                                isOccupied ? 'bg-rose-50 border-rose-100 text-rose-300 cursor-not-allowed' :
+                                                isSelected ? 'bg-slate-900 border-slate-900 text-white shadow-md' :
+                                                'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400'
+                                             }`}
+                                          >
+                                             {isOccupied ? <span className="material-icons-round text-xs">block</span> : h}
+                                          </button>
+                                       );
+                                    })}
+                                 </div>
+                                 {blockTimes.length > 0 && (
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-2 ml-1">{blockTimes.length} hora{blockTimes.length > 1 ? 's' : ''} seleccionada{blockTimes.length > 1 ? 's' : ''}</p>
+                                 )}
                               </div>
-                              <button onClick={() => handleAddAppointment(null, true)} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border-b-4 border-slate-800 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg text-rose-400">block</span> Aplicar Bloqueo</button>
+
+                              {/* Motivo */}
+                              <div>
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Motivo (opcional)</label>
+                                 <input value={blockNote} onChange={e => setBlockNote(e.target.value)} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-inner placeholder:text-slate-400" placeholder="Ej: Trámite personal, reunión..." />
+                              </div>
+
+                              <button
+                                 onClick={handleApplyBlocks}
+                                 disabled={blockTimes.length === 0}
+                                 className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-b-4 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 ${blockTimes.length > 0 ? 'bg-slate-900 text-white border-slate-800 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}
+                              >
+                                 <span className="material-icons-round text-lg text-rose-400">block</span>
+                                 Bloquear {blockTimes.length > 0 ? `${blockTimes.length} hora${blockTimes.length > 1 ? 's' : ''}` : 'horarios'}
+                              </button>
                            </div>
                         )}
                      </div>

@@ -73,7 +73,7 @@ const PatientProfile: React.FC = () => {
         const label = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
         const name = i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : d.toLocaleDateString('es-ES', { weekday: 'short' });
 
-        const slots: string[] = [];
+        const slots: { time: string; available: boolean }[] = [];
         const startParts = String(sched.start).split(':');
         const endParts   = String(sched.end).split(':');
         const [startH] = startParts.map(Number);
@@ -82,11 +82,12 @@ const PatientProfile: React.FC = () => {
         for (let h = startH; h < endH; h++) {
           const timeStr = `${String(h).padStart(2, '0')}:00`;
           const isBusy = allAppointments.some(a => a.professionalId === doctor.id && a.date === dateStr && a.time === timeStr);
-          if (!isBusy) slots.push(timeStr);
+          slots.push({ time: timeStr, available: !isBusy });
         }
 
         if (slots.length > 0) {
-          daysArr.push({ name, date: dateStr, label, slots });
+          daysArr.push({ name, date: dateStr, label, slots,
+            hasAvailable: slots.some(s => s.available) });
         }
       }
     }
@@ -688,25 +689,37 @@ const PatientProfile: React.FC = () => {
                     <button
                       key={i}
                       onClick={() => setSelectedDay(i)}
-                      className={`flex-none w-28 py-5 px-2 rounded-[1.5rem] flex flex-col items-center gap-2 border-2 transition-all ${selectedDay === i ? 'border-primary bg-primary shadow-lg shadow-primary/20 text-white' : 'border-slate-100 bg-white text-slate-500 hover:border-primary/50'}`}
+                      className={`flex-none w-28 py-5 px-2 rounded-[1.5rem] flex flex-col items-center gap-2 border-2 transition-all relative ${selectedDay === i ? 'border-primary bg-primary shadow-lg shadow-primary/20 text-white' : 'border-slate-100 bg-white text-slate-500 hover:border-primary/50'}`}
                     >
                       <span className={`text-[10px] font-black uppercase tracking-widest ${selectedDay === i ? 'text-white/80' : 'text-slate-400'}`}>{day.name}</span>
                       <span className="text-lg font-black tracking-tighter">{day.label.split(' ')[0]} {day.label.split(' ')[1]}</span>
+                      {!day.hasAvailable && (
+                        <span className={`text-[8px] font-black uppercase tracking-wider ${selectedDay === i ? 'text-white/70' : 'text-rose-400'}`}>Completo</span>
+                      )}
                     </button>
                   )) : (
                     <p className="text-slate-500 font-bold italic w-full text-center">No hay días disponibles.</p>
                   )}
                 </div>
                 
-                <p className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">Horarios Disponibles</p>
+                <p className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">Horarios del Día</p>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                   {availableDays[selectedDay]?.slots.map((slot) => (
                     <button
-                      key={slot}
-                      onClick={() => { setSelectedSlot(slot); setStep(3); }}
-                      className={`py-4 rounded-2xl text-sm font-black transition-all border-2 flex items-center justify-center gap-2 hover:-translate-y-1 ${selectedSlot === slot ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-700 hover:border-primary'}`}
+                      key={slot.time}
+                      disabled={!slot.available}
+                      onClick={() => { if (slot.available) { setSelectedSlot(slot.time); setStep(3); } }}
+                      title={slot.available ? slot.time : 'Hora no disponible'}
+                      className={`py-4 rounded-2xl text-sm font-black transition-all border-2 flex items-center justify-center gap-1.5 ${
+                        !slot.available
+                          ? 'bg-slate-100 border-slate-100 text-slate-300 cursor-not-allowed line-through'
+                          : selectedSlot === slot.time
+                            ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20'
+                            : 'bg-white border-slate-100 text-slate-700 hover:border-primary hover:-translate-y-1'
+                      }`}
                     >
-                      {slot}
+                      {!slot.available && <span className="material-icons-round text-xs">lock</span>}
+                      {slot.time}
                     </button>
                   ))}
                   {(!availableDays[selectedDay] || availableDays[selectedDay].slots.length === 0) && (
