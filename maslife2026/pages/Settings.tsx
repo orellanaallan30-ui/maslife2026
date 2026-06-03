@@ -189,7 +189,10 @@ const Settings: React.FC = () => {
           else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
           canvas.width = w;
           canvas.height = h;
-          canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+          const ctx = canvas.getContext('2d')!;
+          ctx.fillStyle = '#ffffff'; // evita marco negro en PNG/HEIC con transparencia al convertir a JPEG
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
           handleUpdate({ avatar: canvas.toDataURL('image/jpeg', 0.85) });
         };
         img.src = event.target?.result as string;
