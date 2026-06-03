@@ -597,16 +597,16 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 w-full bg-[#f8fafc] font-sans text-slate-900">
-      <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative bg-white md:bg-[#f8fafc]">
+    <div className="flex-1 flex flex-col min-h-0 w-full bg-slate-100 font-sans text-slate-900">
+      <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative bg-white md:bg-slate-100">
         <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm no-print">
           <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-slate-100 shadow-sm bg-slate-100 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-primary/30 shadow-md bg-primary/5 flex items-center justify-center">
               <span className="material-icons-round text-slate-500 text-4xl">person</span>
             </div>
             <div>
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">{personalData.name}</h1>
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1 italic">Paciente Maslife Premium</p>
+              <p className="text-xs font-bold text-primary uppercase tracking-widest mt-1">Paciente Maslife Premium</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -622,7 +622,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             {/* Descargar PDF */}
             <button
               onClick={handleExportFicha}
-              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-white border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 transition-all border-b-4 border-slate-200 active:border-b-0 active:translate-y-1"
+              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-600 shadow-sm hover:bg-rose-100 transition-all border-b-4 border-rose-300 active:border-b-0 active:translate-y-1"
               title="Descargar Ficha como PDF"
             >
               <span className="material-icons-round text-lg">picture_as_pdf</span>
@@ -631,7 +631,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             {/* Orden */}
             <button
               onClick={() => setShowOrdenModal(true)}
-              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-white border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 transition-all border-b-4 border-slate-200 active:border-b-0 active:translate-y-1"
+              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-sky-50 border border-sky-200 text-sky-600 shadow-sm hover:bg-sky-100 transition-all border-b-4 border-sky-300 active:border-b-0 active:translate-y-1"
               title="Emitir Orden Profesional"
             >
               <span className="material-icons-round text-lg">assignment</span>
@@ -665,9 +665,9 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         </div>
 
         <div className="max-w-6xl mx-auto p-6 space-y-10 pb-24 print:p-0">
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100 print:border-none print:shadow-none">
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 print:border-none print:shadow-none">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-primary pl-4">Identificación del Paciente</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Identificación del Paciente</h2>
               <button onClick={addCustomField} className="text-xs font-black text-primary bg-primary/5 px-6 py-3 rounded-xl no-print hover:bg-primary/10 transition-all">+ AGREGAR CAMPO</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -680,12 +680,12 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 { label: 'Teléfono', val: personalData.phone, k: 'phone' }
               ].map(f => (
                 <div key={f.k} className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{f.label}</label>
+                  <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{f.label}</label>
                   <input
                     type={f.t || 'text'}
                     value={f.val}
                     onChange={e => { setPersonalData({ ...personalData, [f.k]: f.t === 'number' ? Number(e.target.value) : e.target.value }); setIsDirtyTrue(); }}
-                    className={`w-full bg-slate-50/80 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700`}
+                    className={`w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700`}
                   />
                 </div>
               ))}
@@ -706,23 +706,23 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                   <input
                     value={cf.value}
                     onChange={e => { updateCustomField(idx, 'value', e.target.value); setIsDirtyTrue(); }}
-                    className="w-full bg-slate-50/80 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
+                    className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
                   />
                 </div>
               ))}
 
               <div className="md:col-span-3 space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Diagnóstico Principal</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Diagnóstico Principal</label>
                 <input value={personalData.diagnoses} onChange={e => { setPersonalData({ ...personalData, diagnoses: e.target.value }); setIsDirtyTrue(); }} className="w-full bg-primary/5 text-primary shadow-inner border border-primary/20 rounded-2xl py-5 px-6 font-black text-lg print:bg-white" placeholder="Ej: Esguince de tobillo grado II..." />
               </div>
             </div>
           </section>
 
           {specialtyKey === 'kinesiologia' && (
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100 overflow-hidden relative">
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
             <div className="flex justify-between items-center mb-10">
               <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-primary pl-4">Análisis Biomecánico Inteligente</h2>
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico Inteligente</h2>
                 <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Soportado por Gemini 3 Pro AI</p>
               </div>
               <div className="flex bg-slate-50/80 shadow-inner border border-slate-200 p-2 rounded-2xl no-print">
@@ -805,8 +805,8 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
           {/* ── Sección Nutrición ──────────────────────────────────────────── */}
           {specialtyKey === 'nutricion' && (
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100 space-y-10">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-10">
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
 
             {/* Inputs antropométricos */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -819,7 +819,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 <div key={f.l} className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</label>
                   <input type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
+                    className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                 </div>
               ))}
             </div>
@@ -840,7 +840,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel de Actividad Física</label>
                 <select value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
-                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
                   {(Object.entries(ACTIVITY_FACTORS) as [ActivityLevel, { label: string; factor: number }][]).map(([k, v]) => (
                     <option key={k} value={k}>{v.label}</option>
                   ))}
@@ -873,7 +873,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
             {/* ── Composición Corporal ──────────────────────────────── */}
             <div className="space-y-6 border-t border-slate-100 pt-8">
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-emerald-400 pl-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-emerald-400 pl-4">
                 Composición Corporal Tetracompartimental
               </h3>
 
@@ -889,7 +889,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                   <div key={f.l} className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</label>
                     <input type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
+                      className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                   </div>
                 ))}
               </div>
@@ -990,13 +990,13 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objetivos Nutricionales</label>
                 <textarea value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Reducir peso corporal 5 kg en 3 meses, normalizar glicemia..."
-                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suplementación Indicada</label>
                 <textarea value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Vitamina D 2000 UI/día, Omega-3 1g/día..."
-                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
             </div>
 
@@ -1059,8 +1059,8 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
           {/* ── Sección Psicología ─────────────────────────────────────────── */}
           {specialtyKey === 'psicologia' && (
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100 space-y-8">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-8">
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
 
             {/* Escala de ánimo */}
             <div className="space-y-4">
@@ -1082,13 +1082,13 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
                 <textarea value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Diagnósticos previos, hospitalizaciones, intentos de autolesión, medicación psiquiátrica..."
-                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
                 <textarea value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Ej: TCC — reestructuración cognitiva de pensamientos automáticos negativos. EMDR fase 3..."
-                  className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
             </div>
 
@@ -1097,7 +1097,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objetivo Próxima Sesión</label>
               <textarea value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
-                className="w-full bg-slate-50 shadow-inner border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
             </div>
           </section>
           )}
@@ -1146,9 +1146,9 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             );
           })()}
 
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100">
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
             <div className="flex justify-between items-center mb-10">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-primary pl-4">Objetivos del Tratamiento</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Objetivos del Tratamiento</h2>
               <button onClick={addGoal} className="text-[10px] bg-teal-500 text-white shadow-[0_10px_30px_-10px_rgba(20,184,166,0.5)] border-b-4 border-teal-700 px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all no-print flex items-center gap-2">
                 <span className="material-icons-round text-sm">add</span> NUEVO OBJETIVO
               </button>
@@ -1175,9 +1175,9 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             </div>
           </section>
 
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100">
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
             <div className="flex justify-between items-center mb-10">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-primary pl-4">Documentos y Exámenes</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Documentos y Exámenes</h2>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="text-[10px] bg-white border-b-4 border-slate-200 text-primary shadow-sm px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:bg-slate-50 transition-all no-print flex items-center gap-2"
@@ -1226,9 +1226,9 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             )}
           </section>
 
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] border border-slate-100">
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
             <div className="flex justify-between items-center mb-10">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 border-l-4 border-primary pl-4">Bitácora de Evolución</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Bitácora de Evolución</h2>
               <button onClick={addSessionLog} className="text-[10px] bg-white border-b-4 border-slate-200 text-primary shadow-sm px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:bg-slate-50 transition-all no-print flex items-center gap-2">
                 <span className="material-icons-round text-sm">add</span> NUEVA SESIÓN
               </button>
