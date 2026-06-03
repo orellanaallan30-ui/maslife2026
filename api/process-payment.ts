@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (secret?.mp_access_token) {
       ACCESS_TOKEN = secret.mp_access_token;
-      const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 15);
+      const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 10);
       const fee = Math.round(amountNum * pct / 100);
       // application_fee debe ser > 0 y < monto, si no MP devuelve 400
       if (fee > 0 && fee < amountNum) marketplaceFee = fee;
