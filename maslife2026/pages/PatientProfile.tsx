@@ -543,7 +543,7 @@ const PatientProfile: React.FC = () => {
 
   // Interfaz por Pasos (Wizard)
   return (
-    <div className="flex-1 w-full bg-[#f8fafc] flex flex-col items-center overflow-y-auto">
+    <div className="flex-1 w-full bg-[#f8fafc] flex flex-col items-center overflow-y-auto pb-28 lg:pb-10"> {/* RESPONSIVE: base=mobile lg:=desktop */}
       
       {/* Cabecera del Profesional (Fija) */}
       <div className="w-full bg-white border-b-2 border-slate-100 shadow-sm sticky top-0 z-40">
@@ -578,7 +578,7 @@ const PatientProfile: React.FC = () => {
         </div>
       </div>
 
-      <div className="w-full max-w-3xl mx-auto px-6 py-10 flex-1 flex flex-col">
+      <div className="w-full max-w-3xl mx-auto px-3 lg:px-6 py-6 lg:py-10 flex-1 flex flex-col">
           <div className="mb-10 text-center animate-in slide-in-from-bottom-4 duration-500">
             <span className="text-xs font-black text-primary uppercase tracking-widest bg-primary/10 px-4 py-1.5 rounded-full inline-block mb-4">Paso {step} de 4</span>
             <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
@@ -809,10 +809,10 @@ const PatientProfile: React.FC = () => {
 
             {/* ------------ PASO 4: PAGO / SIMULADOR ------------ */}
             {step === 4 && (
-              <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-2xl border border-slate-200 animate-in slide-in-from-right-8 duration-300">
+              <div className="bg-white rounded-3xl lg:rounded-[2.5rem] p-4 lg:p-8 shadow-2xl border border-slate-200 animate-in slide-in-from-right-8 duration-300">
                 
                 {/* Resumen Final Box */}
-                <div className="bg-slate-50 rounded-3xl p-8 mb-8 border-2 border-slate-100">
+                <div className="bg-slate-50 rounded-2xl lg:rounded-3xl p-4 lg:p-8 mb-6 lg:mb-8 border-2 border-slate-100">
                     <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Resumen de tu Reserva</h3>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
@@ -869,7 +869,7 @@ const PatientProfile: React.FC = () => {
                     )}
 
                     {/* Contenedor del Brick */}
-                    <div id="mp-brick-container" className={brickStatus === 'ready' ? 'block' : 'hidden'} />
+                    <div id="mp-brick-container" className={`w-full overflow-x-hidden ${brickStatus === 'ready' ? 'block' : 'hidden'}`} />
 
                     {/* Error crítico */}
                     {brickStatus === 'error' && (
