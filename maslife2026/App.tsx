@@ -75,10 +75,10 @@ const ProLayout: React.FC = () => {
   const location = useLocation();
   const [showAI, setShowAI] = useState(false);
   return (
-    <div className="flex w-full h-full overflow-hidden bg-white">
+    <div className="flex flex-1 min-h-0 overflow-hidden bg-white">
       <Sidebar onLogout={() => logout(navigate, 'PROFESSIONAL')} onToggleAI={() => setShowAI(p => !p)} />
-      <div className="flex-1 flex overflow-hidden">
-        <div key={location.pathname} className="flex-1 flex flex-col overflow-hidden fade-in">
+      <div className="flex-1 min-h-0 flex overflow-hidden">
+        <div key={location.pathname} className="flex-1 min-h-0 flex flex-col overflow-hidden fade-in">
           <Outlet />
         </div>
       </div>

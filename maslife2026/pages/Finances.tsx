@@ -371,22 +371,22 @@ const Finances: React.FC = () => {
         {/* MODAL: REGISTRO MANUAL (INGRESO O GASTO) */}
         {showManualModal && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className={`p-10 ${newManual.type === 'Ingreso' ? 'bg-primary' : 'bg-rose-500'} text-white`}>
-                <div className="flex justify-between items-center mb-8">
-                  <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center shadow-sm backdrop-blur-md">
-                    <span className="material-icons-round text-3xl">{newManual.type === 'Ingreso' ? 'paid' : 'receipt'}</span>
+            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-100 overflow-hidden max-h-[92dvh] flex flex-col animate-in zoom-in-95 duration-300">
+              <div className={`p-6 lg:p-10 shrink-0 ${newManual.type === 'Ingreso' ? 'bg-primary' : 'bg-rose-500'} text-white`}>
+                <div className="flex justify-between items-center mb-4 lg:mb-8">
+                  <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-white/20 flex items-center justify-center shadow-sm backdrop-blur-md">
+                    <span className="material-icons-round text-2xl lg:text-3xl">{newManual.type === 'Ingreso' ? 'paid' : 'receipt'}</span>
                   </div>
-                  <button onClick={() => setShowManualModal(false)} className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center">
+                  <button onClick={() => setShowManualModal(false)} className="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/20 transition-all active:scale-95 flex items-center justify-center">
                     <span className="material-icons-round">close</span>
                   </button>
                 </div>
-                <h3 className="text-3xl font-black tracking-tight mb-2">Registro de {newManual.type}</h3>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">Gestión directa de flujos de caja</p>
+                <h3 className="text-2xl lg:text-3xl font-black tracking-tight mb-1">Registro de {newManual.type}</h3>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Gestión directa de flujos de caja</p>
               </div>
 
-              <form onSubmit={handleAddManualEntry} className="p-10 space-y-6">
-                <div className="flex bg-slate-50/80 shadow-inner p-2 rounded-2xl border border-slate-200 gap-2 mb-8">
+              <form onSubmit={handleAddManualEntry} className="p-6 lg:p-10 space-y-4 lg:space-y-6 overflow-y-auto flex-1">
+                <div className="flex bg-slate-50/80 shadow-inner p-2 rounded-2xl border border-slate-200 gap-2 mb-4 lg:mb-8">
                   <button
                     type="button"
                     onClick={() => setNewManual({ ...newManual, type: 'Ingreso' })}
@@ -431,7 +431,7 @@ const Finances: React.FC = () => {
                   />
                 </div>
 
-                <button type="submit" className={`w-full py-5 ${newManual.type === 'Ingreso' ? 'bg-slate-900 border-b-4 border-black' : 'bg-rose-600 border-b-4 border-rose-800'} text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] active:border-b-0 active:translate-y-1 transition-all mt-8`}>
+                <button type="submit" className={`w-full py-4 lg:py-5 ${newManual.type === 'Ingreso' ? 'bg-slate-900 border-b-4 border-black' : 'bg-rose-600 border-b-4 border-rose-800'} text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] active:border-b-0 active:translate-y-1 transition-all mt-4 lg:mt-8`}>
                   CONFIRMAR REGISTRO
                 </button>
               </form>

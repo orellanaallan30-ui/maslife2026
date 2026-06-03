@@ -23,7 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
   return (
     <>
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden md:flex w-20 lg:w-64 bg-white border-r border-slate-200 flex-col shrink-0 transition-all">
+      <aside className="hidden md:flex w-20 lg:w-64 h-full overflow-hidden bg-white border-r border-slate-200 flex-col shrink-0 transition-all">
         {/* Logo Agenda Online */}
         <div className="px-4 lg:px-6 pt-5 pb-3 border-b border-slate-100 flex items-center justify-center lg:justify-start">
           <img
