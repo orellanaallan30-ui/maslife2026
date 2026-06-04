@@ -234,14 +234,14 @@ const MainHome: React.FC = () => {
     {
       name: 'Fonoaudiología',
       desc: 'Especialistas en comunicación, habla y deglución.',
-      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/fono.jpg',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/fono.png',
       alt: 'Fonoaudiólogo atendiendo paciente en Clínica Mas Life',
       cta: 'Buscar profesional'
     },
     {
       name: 'Podología',
       desc: 'Cuidado profesional del pie y tratamiento de patologías podológicas.',
-      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/podolog%C3%ADa.jpg',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/podo.jpg',
       alt: 'Podóloga realizando tratamiento de pie en Clínica Mas Life',
       cta: 'Buscar profesional'
     },
