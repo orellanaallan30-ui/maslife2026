@@ -476,6 +476,7 @@ const MainHome: React.FC = () => {
 
         {/* Imagen hero — solo mobile, acento superior derecho con degradé */}
         <div className="absolute top-0 right-0 w-[64%] max-w-[380px] lg:hidden pointer-events-none" style={{ height: '58%' }}>
+
           <img
             src="/hero-profesional.jpg"
             alt=""
@@ -568,50 +569,18 @@ const MainHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Columna derecha — tarjetas arrastrables */}
+            {/* Columna derecha — imagen hero (desktop) */}
             <div className="relative hidden lg:flex items-center justify-end mt-10 lg:mt-0">
-              <p className="absolute top-0 right-0 text-sm font-bold text-right leading-tight z-30"
-                 style={{ color: '#475569' }}>
-                Especialistas bajo<br />Sello MásLife
-              </p>
-              <p className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap z-30"
-                 style={{ color: '#94a3b8' }}>
-                ✦ Arrastra las tarjetas
-              </p>
-              {/* ── RESPONSIVE: contenedor tarjetas — base=mobile lg:desktop ── */}
-              <div className="relative w-full max-w-[500px] lg:max-w-[580px] h-[420px] lg:h-[480px] mt-10">
-                {PROFESIONALES.map((prof, index) => (
-                  <motion.div
-                    key={prof.id}
-                    drag
-                    dragConstraints={{ left: -80, right: 80, top: -40, bottom: 120 }}
-                    whileDrag={{ scale: 1.06, zIndex: 50 }}
-                    whileHover={{ y: -8, scale: 1.02 }}
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 60, delay: index * 0.2 }}
-                    className={`absolute cursor-grab active:cursor-grabbing w-[190px] lg:w-[210px] ${CARD_POSITIONS[index]}`}
-                    style={{
-                      background: 'rgba(255,255,255,0.88)',
-                      backdropFilter: 'blur(12px)',
-                      border: '1px solid rgba(14,165,233,0.15)',
-                      borderRadius: '2.5rem',
-                      padding: '1.25rem',
-                      boxShadow: '0 10px 32px rgba(2,132,199,0.12)',
-                    }}
-                  >
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
-                      {prof.rol}
-                    </span>
-                    <div style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', marginBottom: 14, position: 'relative', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-                      <img src={prof.foto} alt={prof.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} />
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <h4 style={{ fontWeight: 700, color: '#0f172a', fontSize: 13, marginBottom: 2 }}>{prof.nombre}</h4>
-                      <p style={{ fontSize: 11, fontWeight: 600, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{prof.especialidad}</p>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="relative w-full max-w-[520px] h-[580px] rounded-3xl overflow-hidden shadow-2xl">
+                <img
+                  src="/hero-profesional.jpg"
+                  alt="Profesional de salud Clínica Mas Life"
+                  className="w-full h-full object-cover object-[center_top]"
+                  draggable={false}
+                />
+                <div className="absolute inset-0" style={{
+                  background: 'linear-gradient(to left, transparent 60%, rgba(255,255,255,0.18) 100%)'
+                }} />
               </div>
             </div>
 
@@ -675,67 +644,6 @@ const MainHome: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* ═══════════════════ IMAGE EXPANSION ═══════════════════ */}
-      <div ref={expansionWrap} className="relative hidden md:block" style={{ height: '200vh' }}>
-        <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden" style={{ background: '#0f172a' }}>
-          <p className="absolute top-10 left-1/2 -translate-x-1/2 font-outfit text-[.72rem] uppercase tracking-[3px] z-20 whitespace-nowrap"
-             style={{ color: 'rgba(6,182,212,.45)' }}>
-            Una sola pantalla
-          </p>
-          <div
-            ref={expansionRef}
-            className="relative overflow-hidden"
-            style={{ width: '42vw', height: '54vh', borderRadius: '18px', boxShadow: '0 40px 90px -30px rgba(15,23,42,.6)' }}
-          >
-            {/* Header mockup */}
-            <div className="px-5 py-3.5 flex items-center justify-between shrink-0" style={{ background: '#0284c7' }}>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,.2)' }}>
-                  <span className="material-icons-round text-white text-xs">event_available</span>
-                </div>
-                <span className="font-display font-light text-white text-sm">AgendaMasLife</span>
-              </div>
-              <div className="flex gap-1.5">
-                {[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: 'rgba(255,255,255,.3)' }} />)}
-              </div>
-            </div>
-            {/* Body mockup */}
-            <div className="p-5 overflow-hidden" style={{ height: 'calc(100% - 48px)', background: '#f0f9ff' }}>
-              <p className="font-outfit text-[.65rem] uppercase tracking-[2px] mb-3" style={{ color: '#475569' }}>Especialidades</p>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {[
-                  ['Kinesiología', '#0ea5e9', 'accessibility_new'],
-                  ['Psicología', '#0284c7', 'psychology'],
-                  ['Nutrición', '#06b6d4', 'restaurant'],
-                  ['Fonoaudiología', '#475569', 'record_voice_over'],
-                ].map(([s, c, icon], i) => (
-                  <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-2" style={{ border: '1px solid rgba(15,23,42,.1)' }}>
-                    <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center" style={{ background: c as string }}>
-                      <span className="material-icons-round text-white text-sm">{icon as string}</span>
-                    </div>
-                    <p className="font-outfit text-[.68rem] font-medium" style={{ color: '#0f172a' }}>{s as string}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(14,165,233,.1)', border: '1px solid rgba(14,165,233,.25)' }}>
-                <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center" style={{ background: '#0ea5e9' }}>
-                  <span className="material-icons-round text-white text-base">bolt</span>
-                </div>
-                <div>
-                  <p className="font-outfit text-xs font-medium" style={{ color: '#0f172a' }}>Reserva en 3 pasos</p>
-                  <p className="font-outfit text-[.65rem]" style={{ color: '#475569' }}>Especialidad → Horario → Confirmación</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Caption */}
-          <div className="absolute left-[6vw] bottom-[8vh] z-10 max-w-xs">
-            <p className="font-outfit text-[.72rem] uppercase tracking-[3px] mb-2" style={{ color: 'rgba(6,182,212,.65)' }}>Tu consulta</p>
-            <h3 className="font-display font-light text-white leading-[1.05]" style={{ fontSize: 'clamp(1.6rem,2.5vw,2.4rem)' }}>Toda en calma.</h3>
-          </div>
-        </div>
-      </div>
 
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
       {/* ── RESPONSIVE: padding — base=mobile (menos vh) lg:=desktop ── */}
@@ -1128,8 +1036,7 @@ const MainHome: React.FC = () => {
         {/* Button */}
         <div className="relative bg-[#25D366] text-white w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-xl shadow-green-600/30 hover:shadow-green-600/50 hover:scale-110 active:scale-95 transition-all flex items-center justify-center">
           <svg viewBox="0 0 24 24" className="w-7 h-7 sm:w-8 sm:h-8 fill-current" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/>
-            <path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/>
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
           </svg>
         </div>
         {/* Tooltip */}

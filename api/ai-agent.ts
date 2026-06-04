@@ -1,25 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-const ipCounts = new Map<string, { count: number; windowStart: number }>();
-
-function checkRateLimit(headers: VercelRequest['headers'], max: number, windowMs: number): boolean {
-  const forwarded = headers['x-forwarded-for'];
-  const ip = (Array.isArray(forwarded) ? forwarded[0] : (forwarded || 'unknown')).split(',')[0].trim();
-  const now = Date.now();
-  const entry = ipCounts.get(ip);
-  if (!entry || now - entry.windowStart > windowMs) {
-    ipCounts.set(ip, { count: 1, windowStart: now });
-    return true;
-  }
-  if (entry.count >= max) return false;
-  entry.count++;
-  return true;
-}
+import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (!checkRateLimit(req.headers, 30, 60 * 1000)) {
+  const user = await requireSupabaseAuth(req, res);
+  if (!user) return;
+
+  if (!checkIpRateLimit(req.headers, 30, 60 * 1000)) {
     return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en un momento.' });
   }
 

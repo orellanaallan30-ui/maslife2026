@@ -2,7 +2,9 @@
 import { supabase } from './supabaseClient';
 import { Patient, Appointment, Transaction, ProfessionalProfile } from './types';
 
-// ── Hashing de contraseñas (SHA-256 cliente) ─────────────────
+// ── SHA-256 para verificación de integridad de documentos clínicos únicamente ──
+// NO usar para autenticar contraseñas de usuarios — SHA-256 sin salt es vulnerable
+// a rainbow tables. La autenticación real usa Supabase Auth (bcrypt server-side).
 export async function hashPassword(plain: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');

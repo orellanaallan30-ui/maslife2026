@@ -450,15 +450,16 @@ const Settings: React.FC = () => {
                           </div>
                           <button
                             onClick={async () => {
+                              const appId = import.meta.env.VITE_MP_APP_ID;
                               const { data: { session } } = await supabase.auth.getSession();
                               if (!session) return;
+                              // Obtener estado OAuth firmado del servidor (anti-CSRF)
                               const initRes = await fetch('/api/mp-oauth-init', {
                                 method: 'POST',
                                 headers: { Authorization: `Bearer ${session.access_token}` },
                               });
                               if (!initRes.ok) return;
                               const { state } = await initRes.json();
-                              const appId = import.meta.env.VITE_MP_APP_ID;
                               const redirectUri = encodeURIComponent('https://clinicamaslife.cl/api/mp-oauth');
                               window.location.href = `https://auth.mercadopago.com/authorization?client_id=${appId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${encodeURIComponent(state)}`;
                             }}
