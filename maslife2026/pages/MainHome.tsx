@@ -476,6 +476,7 @@ const MainHome: React.FC = () => {
 
         {/* Imagen hero — solo mobile, acento superior derecho con degradé */}
         <div className="absolute top-0 right-0 w-[64%] max-w-[380px] lg:hidden pointer-events-none" style={{ height: '58%' }}>
+
           <img
             src="/hero-profesional.jpg"
             alt=""
@@ -568,50 +569,18 @@ const MainHome: React.FC = () => {
               </div>
             </div>
 
-            {/* Columna derecha — tarjetas arrastrables */}
+            {/* Columna derecha — imagen hero (desktop) */}
             <div className="relative hidden lg:flex items-center justify-end mt-10 lg:mt-0">
-              <p className="absolute top-0 right-0 text-sm font-bold text-right leading-tight z-30"
-                 style={{ color: '#475569' }}>
-                Especialistas bajo<br />Sello MásLife
-              </p>
-              <p className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap z-30"
-                 style={{ color: '#94a3b8' }}>
-                ✦ Arrastra las tarjetas
-              </p>
-              {/* ── RESPONSIVE: contenedor tarjetas — base=mobile lg:desktop ── */}
-              <div className="relative w-full max-w-[500px] lg:max-w-[580px] h-[420px] lg:h-[480px] mt-10">
-                {PROFESIONALES.map((prof, index) => (
-                  <motion.div
-                    key={prof.id}
-                    drag
-                    dragConstraints={{ left: -80, right: 80, top: -40, bottom: 120 }}
-                    whileDrag={{ scale: 1.06, zIndex: 50 }}
-                    whileHover={{ y: -8, scale: 1.02 }}
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 60, delay: index * 0.2 }}
-                    className={`absolute cursor-grab active:cursor-grabbing w-[190px] lg:w-[210px] ${CARD_POSITIONS[index]}`}
-                    style={{
-                      background: 'rgba(255,255,255,0.88)',
-                      backdropFilter: 'blur(12px)',
-                      border: '1px solid rgba(14,165,233,0.15)',
-                      borderRadius: '2.5rem',
-                      padding: '1.25rem',
-                      boxShadow: '0 10px 32px rgba(2,132,199,0.12)',
-                    }}
-                  >
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
-                      {prof.rol}
-                    </span>
-                    <div style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', overflow: 'hidden', border: '4px solid white', marginBottom: 14, position: 'relative', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-                      <img src={prof.foto} alt={prof.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} />
-                    </div>
-                    <div style={{ textAlign: 'center' }}>
-                      <h4 style={{ fontWeight: 700, color: '#0f172a', fontSize: 13, marginBottom: 2 }}>{prof.nombre}</h4>
-                      <p style={{ fontSize: 11, fontWeight: 600, color: '#0ea5e9', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{prof.especialidad}</p>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="relative w-full max-w-[520px] h-[580px] rounded-3xl overflow-hidden shadow-2xl">
+                <img
+                  src="/hero-profesional.jpg"
+                  alt="Profesional de salud Clínica Mas Life"
+                  className="w-full h-full object-cover object-[center_top]"
+                  draggable={false}
+                />
+                <div className="absolute inset-0" style={{
+                  background: 'linear-gradient(to left, transparent 60%, rgba(255,255,255,0.18) 100%)'
+                }} />
               </div>
             </div>
 
