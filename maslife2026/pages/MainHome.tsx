@@ -213,7 +213,7 @@ const MainHome: React.FC = () => {
     {
       name: 'Kinesiología Integral',
       desc: 'Especialistas capacitados para rehabilitación integral y física.',
-      img: 'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?q=80&w=600',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/kine.jpg',
       alt: 'Kinesiólogo guiando ejercicio de rehabilitación en Ovalle y Coquimbo',
       cta: 'Buscar profesional'
     },
@@ -227,8 +227,8 @@ const MainHome: React.FC = () => {
     {
       name: 'Nutrición',
       desc: 'Planificación nutricional personalizada para hábitos saludables.',
-      img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=600',
-      alt: 'Nutricionista consulta presencial y online en Región de Coquimbo',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/nuti.jpg',
+      alt: 'Nutricionista realizando evaluación nutricional en Clínica Mas Life',
       cta: 'Buscar profesional'
     },
     {
@@ -237,7 +237,28 @@ const MainHome: React.FC = () => {
       img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600',
       alt: 'Fonoaudiólogo atendiendo paciente niño y adulto',
       cta: 'Buscar profesional'
-    }
+    },
+    {
+      name: 'Podología',
+      desc: 'Cuidado profesional del pie y tratamiento de patologías podológicas.',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/podologia.jpg',
+      alt: 'Podóloga realizando tratamiento de pie en Clínica Mas Life',
+      cta: 'Buscar profesional'
+    },
+    {
+      name: 'Terapia Ocupacional',
+      desc: 'Rehabilitación funcional para mejorar autonomía y calidad de vida.',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/ocupacional.jpg',
+      alt: 'Terapeuta ocupacional trabajando con niño en Clínica Mas Life',
+      cta: 'Buscar profesional'
+    },
+    {
+      name: 'Téc. en Enfermería',
+      desc: 'Atención domiciliaria y procedimientos de enfermería certificados.',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/tens.jpg',
+      alt: 'Técnico en enfermería atendiendo paciente a domicilio en Clínica Mas Life',
+      cta: 'Buscar profesional'
+    },
   ];
 
   const kinePlans = [
