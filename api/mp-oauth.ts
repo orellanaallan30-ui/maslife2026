@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createHmac } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { requireSupabaseAuth } from './_lib/auth';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -37,10 +38,22 @@ async function handleDisconnect(req: VercelRequest, res: VercelResponse) {
   return res.status(200).json({ disconnected: true });
 }
 
+async function handleGenerateState(req: VercelRequest, res: VercelResponse) {
+  const user = await requireSupabaseAuth(req, res);
+  if (!user) return;
+  const secret = process.env.MP_OAUTH_STATE_SECRET || process.env.MP_APP_SECRET;
+  if (!secret) return res.status(503).json({ error: 'MP_OAUTH_STATE_SECRET no configurado' });
+  const ts = Date.now().toString();
+  const payload = Buffer.from(`${user.id}:${ts}`).toString('base64url');
+  const sig = createHmac('sha256', secret).update(payload).digest('base64url');
+  return res.status(200).json({ state: `${payload}.${sig}` });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'POST') {
     const { action } = req.body || {};
     if (action === 'disconnect') return handleDisconnect(req, res);
+    if (action === 'generate-state') return handleGenerateState(req, res);
     return res.status(400).json({ error: 'Acción no soportada' });
   }
 
