@@ -325,7 +325,7 @@ const ProfessionalAgenda: React.FC = () => {
                   ))}
                </div>
 
-               <div className="bg-white rounded-2xl md:rounded-[3rem] shadow-sm md:shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] border border-slate-100 overflow-hidden">
+               <div className={`bg-white rounded-2xl md:rounded-[3rem] shadow-sm md:shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] border border-slate-100 ${viewMode === 'week' ? 'overflow-x-auto' : 'overflow-hidden'}`}>
                   {viewMode === 'day' ? (
                      <div className="grid grid-cols-1 divide-y-2 divide-slate-100">
                         {hours.map(hour => {
@@ -366,7 +366,7 @@ const ProfessionalAgenda: React.FC = () => {
                         })}
                      </div>
                   ) : viewMode === 'week' ? (
-                     <div className="flex flex-col overflow-x-auto min-w-[800px]">
+                     <div className="flex flex-col min-w-[800px]">
                         {/* Encabezados de Día */}
                         <div className="flex border-b-2 border-slate-100 bg-slate-50/50">
                            <div className="w-24 shrink-0 border-r-2 border-slate-100 p-4"></div>
