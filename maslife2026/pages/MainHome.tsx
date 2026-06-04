@@ -234,8 +234,8 @@ const MainHome: React.FC = () => {
     {
       name: 'Fonoaudiología',
       desc: 'Especialistas en comunicación, habla y deglución.',
-      img: 'https://images.unsplash.com/photo-1581056344415-3abb473d452c?q=80&w=600',
-      alt: 'Fonoaudiólogo atendiendo paciente niño y adulto',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/fono.jpg',
+      alt: 'Fonoaudiólogo atendiendo paciente en Clínica Mas Life',
       cta: 'Buscar profesional'
     },
     {
