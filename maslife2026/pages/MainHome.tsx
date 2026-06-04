@@ -645,67 +645,6 @@ const MainHome: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══════════════════ IMAGE EXPANSION ═══════════════════ */}
-      <div ref={expansionWrap} className="relative hidden md:block" style={{ height: '200vh' }}>
-        <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden" style={{ background: '#0f172a' }}>
-          <p className="absolute top-10 left-1/2 -translate-x-1/2 font-outfit text-[.72rem] uppercase tracking-[3px] z-20 whitespace-nowrap"
-             style={{ color: 'rgba(6,182,212,.45)' }}>
-            Una sola pantalla
-          </p>
-          <div
-            ref={expansionRef}
-            className="relative overflow-hidden"
-            style={{ width: '42vw', height: '54vh', borderRadius: '18px', boxShadow: '0 40px 90px -30px rgba(15,23,42,.6)' }}
-          >
-            {/* Header mockup */}
-            <div className="px-5 py-3.5 flex items-center justify-between shrink-0" style={{ background: '#0284c7' }}>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,.2)' }}>
-                  <span className="material-icons-round text-white text-xs">event_available</span>
-                </div>
-                <span className="font-display font-light text-white text-sm">AgendaMasLife</span>
-              </div>
-              <div className="flex gap-1.5">
-                {[0,1,2].map(i => <div key={i} className="w-2 h-2 rounded-full" style={{ background: 'rgba(255,255,255,.3)' }} />)}
-              </div>
-            </div>
-            {/* Body mockup */}
-            <div className="p-5 overflow-hidden" style={{ height: 'calc(100% - 48px)', background: '#f0f9ff' }}>
-              <p className="font-outfit text-[.65rem] uppercase tracking-[2px] mb-3" style={{ color: '#475569' }}>Especialidades</p>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {[
-                  ['Kinesiología', '#0ea5e9', 'accessibility_new'],
-                  ['Psicología', '#0284c7', 'psychology'],
-                  ['Nutrición', '#06b6d4', 'restaurant'],
-                  ['Fonoaudiología', '#475569', 'record_voice_over'],
-                ].map(([s, c, icon], i) => (
-                  <div key={i} className="bg-white rounded-xl p-3 flex items-center gap-2" style={{ border: '1px solid rgba(15,23,42,.1)' }}>
-                    <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center" style={{ background: c as string }}>
-                      <span className="material-icons-round text-white text-sm">{icon as string}</span>
-                    </div>
-                    <p className="font-outfit text-[.68rem] font-medium" style={{ color: '#0f172a' }}>{s as string}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(14,165,233,.1)', border: '1px solid rgba(14,165,233,.25)' }}>
-                <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center" style={{ background: '#0ea5e9' }}>
-                  <span className="material-icons-round text-white text-base">bolt</span>
-                </div>
-                <div>
-                  <p className="font-outfit text-xs font-medium" style={{ color: '#0f172a' }}>Reserva en 3 pasos</p>
-                  <p className="font-outfit text-[.65rem]" style={{ color: '#475569' }}>Especialidad → Horario → Confirmación</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Caption */}
-          <div className="absolute left-[6vw] bottom-[8vh] z-10 max-w-xs">
-            <p className="font-outfit text-[.72rem] uppercase tracking-[3px] mb-2" style={{ color: 'rgba(6,182,212,.65)' }}>Tu consulta</p>
-            <h3 className="font-display font-light text-white leading-[1.05]" style={{ fontSize: 'clamp(1.6rem,2.5vw,2.4rem)' }}>Toda en calma.</h3>
-          </div>
-        </div>
-      </div>
-
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
       {/* ── RESPONSIVE: padding — base=mobile (menos vh) lg:=desktop ── */}
       <section id="como-funciona" className="px-[6vw] py-[10vh] lg:py-[16vh]" style={{ background: '#ffffff' }}>
