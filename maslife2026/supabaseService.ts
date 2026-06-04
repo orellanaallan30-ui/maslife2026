@@ -196,9 +196,22 @@ export async function getAllPublicProfessionals(): Promise<ProfessionalProfile[]
 
 // ── Pacientes — siempre requieren proId ──────────────────────
 export async function getPatients(proId: string): Promise<Patient[]> {
-  const { data, error } = await supabase.from('patients').select('*').eq('professional_id', proId);
+  const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('patients')
+    .select('*')
+    .eq('professional_id', proId)
+    .or(`deleted_at.is.null,deleted_at.gt.${cutoff}`);
   if (error) throw error;
   return (data || []).map(mapDBtoPatient);
+}
+
+export async function softDeletePatient(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('patients')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
 }
 
 export async function savePatient(patient: Patient, proId: string): Promise<void> {
@@ -345,6 +358,7 @@ function mapDBtoPatient(p: Record<string, unknown>): Patient {
     professionalId: (p.professional_id as string) || undefined,
     diagnoses: (p.diagnoses as string) || '',
     specialtyData: (p.specialty_data as Record<string, unknown>) || undefined,
+    deletedAt: (p.deleted_at as string) || undefined,
   };
 }
 
@@ -362,6 +376,7 @@ function mapPatientToDB(p: Patient): Record<string, unknown> {
     professional_id: p.professionalId || null,
     diagnoses: p.diagnoses || '',
     specialty_data: p.specialtyData || null,
+    deleted_at: p.deletedAt || null,
   };
 }
 
@@ -411,6 +426,7 @@ const supabaseService = {
   getPatients,
   savePatient,
   deletePatient,
+  softDeletePatient,
   getAppointments,
   saveAppointment,
   deleteAppointment,

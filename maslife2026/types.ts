@@ -156,6 +156,7 @@ export interface Patient {
   soap?: any;
   specialtyData?: Record<string, unknown>;
   professionalId?: string;
+  deletedAt?: string;
 }
 
 export interface ClinicalTemplate {
