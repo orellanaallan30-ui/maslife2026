@@ -45,17 +45,24 @@ const Settings: React.FC = () => {
     }
     if (searchParams.get('mp_connected') === '1') {
       setSearchParams({}, { replace: true });
-      // Recargar perfil desde Supabase para mostrar badge verde inmediatamente
       if (profile?.id) {
         getProfessionalBySlugOrId(profile.id).then(freshPro => {
-          if (freshPro) {
-            onSave(freshPro);
-            setLocalProfile(freshPro);
-          }
+          if (freshPro) { onSave(freshPro); setLocalProfile(freshPro); }
         });
       }
     }
     if (searchParams.get('mp_error')) {
+      setSearchParams({}, { replace: true });
+    }
+    if (searchParams.get('google_connected') === '1') {
+      setSearchParams({}, { replace: true });
+      if (profile?.id) {
+        getProfessionalBySlugOrId(profile.id).then(freshPro => {
+          if (freshPro) { onSave(freshPro); setLocalProfile(freshPro); }
+        });
+      }
+    }
+    if (searchParams.get('google_error')) {
       setSearchParams({}, { replace: true });
     }
   }, []);
@@ -442,10 +449,18 @@ const Settings: React.FC = () => {
                             <p className="text-xs text-slate-500">Recibe pagos directo en tu cuenta, sin intermediarios</p>
                           </div>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
+                              const { data: { session } } = await supabase.auth.getSession();
+                              if (!session) return;
+                              const initRes = await fetch('/api/mp-oauth-init', {
+                                method: 'POST',
+                                headers: { Authorization: `Bearer ${session.access_token}` },
+                              });
+                              if (!initRes.ok) return;
+                              const { state } = await initRes.json();
                               const appId = import.meta.env.VITE_MP_APP_ID;
                               const redirectUri = encodeURIComponent('https://clinicamaslife.cl/api/mp-oauth');
-                              window.location.href = `https://auth.mercadopago.com/authorization?client_id=${appId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${localProfile.id}`;
+                              window.location.href = `https://auth.mercadopago.com/authorization?client_id=${appId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${encodeURIComponent(state)}`;
                             }}
                             className="shrink-0 text-xs font-black text-white px-3 py-1.5 rounded-lg"
                             style={{ background: 'linear-gradient(135deg, #009ee3, #007eb5)' }}
@@ -521,6 +536,83 @@ const Settings: React.FC = () => {
                       )}
                     </div>
                   </div>
+                </div>
+              </section>
+
+              {/* ── Google Calendar Sync ── */}
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] p-5 md:p-8 space-y-5">
+                <h3 className="text-base font-black text-black flex items-center gap-3">
+                  <span className="material-icons-round text-[#4285F4]">calendar_month</span>
+                  Google Calendar
+                </h3>
+                <div className="bg-slate-50 rounded-2xl p-5 border-2 border-slate-200">
+                  {localProfile.googleCalendarConnected ? (
+                    <div className="flex items-center gap-3 bg-green-50 border-2 border-green-200 rounded-xl px-4 py-3">
+                      <span className="material-icons-round text-green-500">check_circle</span>
+                      <div className="flex-1">
+                        <p className="font-black text-green-800 text-sm">Google Calendar conectado</p>
+                        <p className="text-xs text-green-600">Tus citas se sincronizan automáticamente en ambos sentidos</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={async () => {
+                            const { data: { session } } = await supabase.auth.getSession();
+                            if (!session) return;
+                            const r = await fetch('/api/google-calendar-sync', { method: 'GET', headers: { Authorization: `Bearer ${session.access_token}` } });
+                            if (r.ok) alert('Sincronización completada');
+                          }}
+                          className="text-xs text-sky-600 font-bold hover:underline"
+                        >
+                          Sincronizar ahora
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm('¿Desconectar Google Calendar?')) return;
+                            await supabase.from('professionals').update({ google_calendar_connected: false }).eq('id', localProfile.id);
+                            const updated = { ...localProfile, googleCalendarConnected: false };
+                            setLocalProfile(updated);
+                            onSave(updated);
+                          }}
+                          className="text-xs text-red-500 font-bold hover:underline"
+                        >
+                          Desconectar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 bg-blue-50 border-2 border-blue-100 rounded-xl px-4 py-3">
+                      <div className="w-8 h-8 shrink-0 flex items-center justify-center">
+                        <svg viewBox="0 0 48 48" className="w-7 h-7">
+                          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.36-8.16 2.36-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                          <path fill="none" d="M0 0h48v48H0z"/>
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-black text-slate-800 text-sm">Sincroniza con Google Calendar</p>
+                        <p className="text-xs text-slate-500">Tus citas aparecen en Google Calendar y los eventos externos bloquean tu agenda</p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const { data: { session } } = await supabase.auth.getSession();
+                          if (!session) return;
+                          const r = await fetch('/api/google-oauth-init', {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${session.access_token}` },
+                          });
+                          if (!r.ok) return;
+                          const { url } = await r.json();
+                          window.location.href = url;
+                        }}
+                        className="shrink-0 text-xs font-black text-white px-3 py-1.5 rounded-lg"
+                        style={{ background: 'linear-gradient(135deg, #4285F4, #1a6cf5)' }}
+                      >
+                        Conectar
+                      </button>
+                    </div>
+                  )}
                 </div>
               </section>
 
