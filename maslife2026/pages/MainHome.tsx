@@ -822,11 +822,7 @@ const MainHome: React.FC = () => {
 
           {/* Specialty Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {(activeSpecFilter === 'destacados' ? specialtyCards : specialtyCards.concat([
-              { name: 'Terapia Ocupacional', desc: 'Rehabilitación funcional para actividades diarias.', img: 'https://images.unsplash.com/photo-1576671285-d9df3bc08e01?q=80&w=600', alt: 'Terapeuta ocupacional con paciente adulto mayor en rehabilitación', cta: 'Buscar Profesional' },
-              { name: 'Podología', desc: 'Cuidado especializado de pies y extremidades.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=600', alt: 'Podólogo cuidado especializado de pies en Ovalle', cta: 'Buscar Profesional' },
-              { name: 'Téc. Enfermería (TENS)', desc: 'Técnicos en enfermería para cuidados especializados.', img: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?q=80&w=600', alt: 'Enfermera tomando signos vitales atención a domicilio', cta: 'Buscar Profesional' },
-            ])).map((card, i) => (
+            {(activeSpecFilter === 'destacados' ? specialtyCards.slice(0, 4) : specialtyCards).map((card, i) => (
               <div key={i} className="group bg-white rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer"
                    style={{ border: '1px solid rgba(15,23,42,.1)', boxShadow: 'none' }}
                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.boxShadow = '0 24px 48px -18px rgba(15,23,42,.22)'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'; }}
