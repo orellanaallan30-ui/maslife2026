@@ -16,6 +16,7 @@ const AdminManagement: React.FC = () => {
   const [toast, setToast]             = useState('');
   const [linkCopied, setLinkCopied]   = useState(false);
   const [giftModal, setGiftModal]     = useState<{ pro: ProfessionalProfile; days: string } | null>(null);
+  const [subLinkModal, setSubLinkModal] = useState<{ pro: ProfessionalProfile; link: string } | null>(null);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
 
@@ -130,6 +131,17 @@ const AdminManagement: React.FC = () => {
       setAllPros(prev => prev.map(p => p.id === pro.id ? updated : p));
       const label = isActive ? '✅ Activo' : isPausedNext ? '⏸️ Pausado' : '⏳ Trial';
       showToast(`${pro.name} → ${label}`);
+    }
+  };
+
+  // ── Guardar link de suscripción por profesional ───────────────
+  const handleSaveSubLink = async () => {
+    if (!subLinkModal) return;
+    const res = await adminFetch('PATCH', { id: subLinkModal.pro.id, subscription_link: subLinkModal.link.trim() });
+    if (res.ok) {
+      setAllPros(prev => prev.map(p => p.id === subLinkModal!.pro.id ? { ...p, subscriptionLink: subLinkModal!.link.trim() } : p));
+      showToast(`Link de pago actualizado: ${subLinkModal.pro.name}`);
+      setSubLinkModal(null);
     }
   };
 
@@ -344,6 +356,12 @@ const AdminManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex justify-end gap-2 flex-wrap">
+                          {/* Link de suscripción */}
+                          <button onClick={() => setSubLinkModal({ pro, link: pro.subscriptionLink || '' })}
+                            title="Editar link de pago de suscripción"
+                            className={`p-2.5 rounded-xl border transition-all ${pro.subscriptionLink ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-white/5 hover:bg-sky-500 hover:text-white'}`}>
+                            <span className="material-icons-round text-sm">link</span>
+                          </button>
                           {/* Regalar días */}
                           <button onClick={() => setGiftModal({ pro, days: '30' })}
                             title="Regalar días de prueba"
@@ -409,6 +427,15 @@ const AdminManagement: React.FC = () => {
         {activeTab === 'config' && (
           <div className="bg-slate-900/60 rounded-3xl border border-white/10 p-8 space-y-6">
             <h3 className="font-black text-white text-lg">Configuración del sistema</h3>
+
+            <div className="bg-slate-800/50 rounded-2xl p-5 border border-white/5">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Link global de suscripción (botón "Pagar Suscripción")</p>
+              <p className="text-slate-300 text-sm font-medium mb-1">
+                Variable: <code className="bg-slate-700 px-2 py-0.5 rounded text-teal-400">VITE_GLOBAL_SUBSCRIPTION_LINK</code>
+              </p>
+              <p className="text-white/80 text-sm mb-2 break-all">{MP_SUBSCRIPTION_LINK}</p>
+              <p className="text-xs text-slate-500">Para cambiarlo: Vercel → Settings → Environment Variables. También puedes asignar un link individual por profesional con el botón <span className="material-icons-round text-xs align-middle">link</span> en la tabla.</p>
+            </div>
 
             <div className="bg-slate-800/50 rounded-2xl p-5 border border-white/5">
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Código de autorización actual</p>
@@ -495,6 +522,47 @@ const AdminManagement: React.FC = () => {
                 disabled={!parseInt(giftModal.days) || parseInt(giftModal.days) < 1}
                 className="flex-1 py-3 bg-violet-500 hover:bg-violet-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-b-4 border-violet-700 active:border-b-0 active:translate-y-1">
                 Confirmar regalo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: Link de suscripción ── */}
+      {subLinkModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/20 flex items-center justify-center">
+                <span className="material-icons-round text-sky-400 text-2xl">link</span>
+              </div>
+              <div>
+                <h3 className="text-white font-black text-lg">Link de pago suscripción</h3>
+                <p className="text-slate-400 text-sm">{subLinkModal.pro.name}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+              URL de MercadoPago para que este profesional pague su suscripción. Si está vacío, se usa el link global configurado en Vercel (<code className="text-teal-400">VITE_GLOBAL_SUBSCRIPTION_LINK</code>).
+            </p>
+
+            <input
+              type="url"
+              value={subLinkModal.link}
+              onChange={e => setSubLinkModal({ ...subLinkModal, link: e.target.value })}
+              placeholder="https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=..."
+              className="w-full bg-slate-800 border border-white/10 rounded-2xl px-4 py-3 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-sky-500 mb-5"
+            />
+
+            <div className="flex gap-3">
+              <button onClick={() => setSubLinkModal(null)}
+                className="flex-1 py-3 text-slate-400 text-xs font-black uppercase tracking-widest hover:text-white transition-all">
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveSubLink}
+                className="flex-1 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-b-4 border-sky-700 active:border-b-0 active:translate-y-1">
+                Guardar link
               </button>
             </div>
           </div>
