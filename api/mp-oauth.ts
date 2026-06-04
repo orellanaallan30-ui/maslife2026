@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createHmac } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -43,9 +44,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Acción no soportada' });
   }
 
-  const { code, state: professionalId } = req.query;
+  const { code, state: rawState } = req.query;
 
-  if (!code || !professionalId) {
+  if (!code || !rawState) {
     return res.redirect('/pro/settings?mp_error=missing_params');
   }
 
@@ -55,6 +56,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!APP_ID || !APP_SECRET) {
     return res.redirect('/pro/settings?mp_error=app_not_configured');
+  }
+
+  // Verificar estado OAuth firmado (anti-CSRF).
+  // El estado tiene formato: base64url(professionalId:timestamp).signature
+  const STATE_SECRET = process.env.MP_OAUTH_STATE_SECRET || APP_SECRET;
+  let professionalId: string;
+  try {
+    const stateParts = (rawState as string).split('.');
+    if (stateParts.length !== 2) throw new Error('bad_format');
+    const [payload, sig] = stateParts;
+    const expectedSig = createHmac('sha256', STATE_SECRET).update(payload).digest('base64url');
+    if (sig !== expectedSig) throw new Error('bad_sig');
+    const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+    const colonIdx = decoded.lastIndexOf(':');
+    if (colonIdx === -1) throw new Error('bad_payload');
+    professionalId = decoded.slice(0, colonIdx);
+    const ts = parseInt(decoded.slice(colonIdx + 1));
+    const ageSec = (Date.now() - ts) / 1000;
+    if (!professionalId || ageSec < 0 || ageSec > 900) throw new Error('expired');
+  } catch {
+    console.warn('[mp-oauth] Estado inválido — posible CSRF');
+    return res.redirect('/pro/settings?mp_error=invalid_state');
   }
 
   try {

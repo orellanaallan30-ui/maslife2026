@@ -442,10 +442,19 @@ const Settings: React.FC = () => {
                             <p className="text-xs text-slate-500">Recibe pagos directo en tu cuenta, sin intermediarios</p>
                           </div>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               const appId = import.meta.env.VITE_MP_APP_ID;
+                              const { data: { session } } = await supabase.auth.getSession();
+                              if (!session) return;
+                              // Obtener estado OAuth firmado del servidor (anti-CSRF)
+                              const initRes = await fetch('/api/mp-oauth-init', {
+                                method: 'POST',
+                                headers: { Authorization: `Bearer ${session.access_token}` },
+                              });
+                              if (!initRes.ok) return;
+                              const { state } = await initRes.json();
                               const redirectUri = encodeURIComponent('https://clinicamaslife.cl/api/mp-oauth');
-                              window.location.href = `https://auth.mercadopago.com/authorization?client_id=${appId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${localProfile.id}`;
+                              window.location.href = `https://auth.mercadopago.com/authorization?client_id=${appId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${encodeURIComponent(state)}`;
                             }}
                             className="shrink-0 text-xs font-black text-white px-3 py-1.5 rounded-lg"
                             style={{ background: 'linear-gradient(135deg, #009ee3, #007eb5)' }}
