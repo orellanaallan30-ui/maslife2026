@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { checkIpRateLimit } from './_lib/auth';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
@@ -6,6 +7,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
+
+  // Rate limit: 20 preferencias por 5 minutos para prevenir spam de links de pago
+  if (!checkIpRateLimit(req.headers, 20, 5 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en unos minutos.' });
+  }
 
   const ACCESS_TOKEN = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
   if (!ACCESS_TOKEN) {

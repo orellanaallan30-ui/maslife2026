@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Appointment, Transaction } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useClinic } from '../ClinicContext';
+import { supabase } from '../supabaseService';
 
 interface MPPayment {
   id: number; status: string; amount: number; description: string;
@@ -48,14 +49,19 @@ const Finances: React.FC = () => {
   useEffect(() => {
     if (!mpExpanded || mpLoaded || !loggedPro?.id) return;
     setMpLoading(true);
-    fetch(`/api/mp-payments?range=${mpRange}&limit=100&professional_id=${loggedPro.id}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.error === 'MP_NOT_CONNECTED') { setMpNotConnected(true); return; }
-        if (data.payments) { setMpPayments(data.payments); setMpSummary(data.summary); setMpLoaded(true); }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const token = session?.access_token;
+      fetch(`/api/mp-payments?range=${mpRange}&limit=100&professional_id=${loggedPro.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
-      .catch(() => {})
-      .finally(() => setMpLoading(false));
+        .then(r => r.json())
+        .then(data => {
+          if (data.error === 'MP_NOT_CONNECTED') { setMpNotConnected(true); return; }
+          if (data.payments) { setMpPayments(data.payments); setMpSummary(data.summary); setMpLoaded(true); }
+        })
+        .catch(() => {})
+        .finally(() => setMpLoading(false));
+    });
   }, [mpExpanded, mpRange, mpLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const reloadMP = (range: '7' | '30' | '90') => { setMpRange(range); setMpLoaded(false); setMpNotConnected(false); };

@@ -1,10 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { checkIpRateLimit } from './_lib/auth';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
 );
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
@@ -12,6 +15,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
+
+  // Rate limit: 10 pagos por minuto por IP para prevenir abuso
+  if (!checkIpRateLimit(req.headers, 10, 60 * 1000)) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en un minuto.' });
+  }
 
   const PLATFORM_TOKEN = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
   if (!PLATFORM_TOKEN) return res.status(503).json({ error: 'MP_NOT_CONFIGURED' });
@@ -28,11 +36,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Monto inválido' });
   }
 
+  // Validar formato UUID del professional_id para prevenir sondeo arbitrario
+  if (professional_id && !UUID_RE.test(String(professional_id))) {
+    return res.status(400).json({ error: 'professional_id inválido' });
+  }
+
   // Look up professional's own MP token if professional_id is provided
   let ACCESS_TOKEN = PLATFORM_TOKEN;
   let marketplaceFee: number | undefined;
 
   if (professional_id && process.env.VITE_SUPABASE_URL) {
+    // Verificar que el profesional existe antes de buscar su token
+    const { data: proExists } = await supabase
+      .from('professionals')
+      .select('id')
+      .eq('id', professional_id)
+      .single();
+    if (!proExists) {
+      return res.status(400).json({ error: 'Profesional no encontrado' });
+    }
     const { data: secret } = await supabase
       .from('professional_secrets')
       .select('mp_access_token')
