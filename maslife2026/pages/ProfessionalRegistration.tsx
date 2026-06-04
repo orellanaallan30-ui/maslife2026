@@ -69,10 +69,10 @@ const ProfessionalRegistration: React.FC = () => {
     setLoading(true);
     setCodeError('');
     try {
-      const res = await fetch('/api/validate-clinic-code', {
+      const res = await fetch('/api/admin-auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: authCode.trim() }),
+        body: JSON.stringify({ action: 'validate-code', code: authCode.trim() }),
       });
       const data = await res.json();
       if (!res.ok || !data.valid) {

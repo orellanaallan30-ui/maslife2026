@@ -25,7 +25,7 @@ const AdminManagement: React.FC = () => {
   // Helper: todas las llamadas admin usan el token JWT almacenado en sessionStorage
   function adminFetch(method: string, body?: object, action?: string) {
     const token = sessionStorage.getItem('maslife_admin_token') || '';
-    const url = '/api/admin-verify' + (action ? `?action=${action}` : '');
+    const url = '/api/admin-auth' + (action ? `?action=${action}` : '');
     return fetch(url, {
       method,
       headers: {

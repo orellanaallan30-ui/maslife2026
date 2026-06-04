@@ -454,9 +454,10 @@ const Settings: React.FC = () => {
                               const { data: { session } } = await supabase.auth.getSession();
                               if (!session) return;
                               // Obtener estado OAuth firmado del servidor (anti-CSRF)
-                              const initRes = await fetch('/api/mp-oauth-init', {
+                              const initRes = await fetch('/api/mp-oauth', {
                                 method: 'POST',
-                                headers: { Authorization: `Bearer ${session.access_token}` },
+                                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+                                body: JSON.stringify({ action: 'generate-state' }),
                               });
                               if (!initRes.ok) return;
                               const { state } = await initRes.json();
@@ -599,7 +600,7 @@ const Settings: React.FC = () => {
                         onClick={async () => {
                           const { data: { session } } = await supabase.auth.getSession();
                           if (!session) return;
-                          const r = await fetch('/api/google-oauth-init', {
+                          const r = await fetch('/api/google-oauth', {
                             method: 'POST',
                             headers: { Authorization: `Bearer ${session.access_token}` },
                           });

@@ -42,7 +42,7 @@ const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const token = sessionStorage.getItem('maslife_admin_token');
     if (!token) { setVerified(false); return; }
 
-    fetch('/api/admin-verify', { headers: { Authorization: `Bearer ${token}` } })
+    fetch('/api/admin-auth', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => {
         if (d.valid === true) {
