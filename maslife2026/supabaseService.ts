@@ -222,11 +222,28 @@ export async function saveAppointment(app: Appointment): Promise<void> {
   if (!app.professionalId) throw new Error('Appointment sin professionalId');
   const { error } = await supabase.from('appointments').upsert(mapAppointmentToDB(app));
   if (error) throw error;
+  // Sync to Google Calendar (fire-and-forget, non-blocking)
+  syncToGoogleCalendar('upsert', app).catch(() => null);
 }
 
-export async function deleteAppointment(id: string): Promise<void> {
+export async function deleteAppointment(id: string, googleEventId?: string): Promise<void> {
   const { error } = await supabase.from('appointments').delete().eq('id', id);
   if (error) throw error;
+  // Sync deletion to Google Calendar (fire-and-forget)
+  syncToGoogleCalendar('delete', { id, googleEventId } as any).catch(() => null);
+}
+
+async function syncToGoogleCalendar(action: 'upsert' | 'delete', appointment: Partial<Appointment> & { id: string }): Promise<void> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return;
+  await fetch('/api/google-calendar-sync', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ action, appointment }),
+  });
 }
 
 // ── Transacciones ─────────────────────────────────────────────
@@ -288,6 +305,7 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     mpConnected: (d.mp_connected as boolean) ?? false,
     mpPublicKey: (d.mp_public_key as string) || undefined,
     instagram: (d.instagram as string) || undefined,
+    googleCalendarConnected: (d.google_calendar_connected as boolean) ?? false,
   } as ProfessionalProfile;
 }
 

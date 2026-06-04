@@ -2,9 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createHmac } from 'crypto';
 import { requireSupabaseAuth } from './_lib/auth';
 
-// Genera un estado OAuth firmado para prevenir ataques CSRF.
-// El estado incluye el ID del profesional y un timestamp firmado con HMAC-SHA256.
-// El callback /api/mp-oauth verifica la firma antes de aceptar el código de autorización.
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

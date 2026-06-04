@@ -89,6 +89,7 @@ export interface ProfessionalProfile {
   mpConnected?: boolean;
   mpPublicKey?: string;
   instagram?: string;
+  googleCalendarConnected?: boolean;
 }
 
 export interface Appointment {
