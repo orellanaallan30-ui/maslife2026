@@ -241,7 +241,7 @@ const MainHome: React.FC = () => {
     {
       name: 'Podología',
       desc: 'Cuidado profesional del pie y tratamiento de patologías podológicas.',
-      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/podologia.jpg',
+      img: 'https://qhtfjbbdxtmqhstzkyrw.supabase.co/storage/v1/object/public/assets/podolog%C3%ADa.jpg',
       alt: 'Podóloga realizando tratamiento de pie en Clínica Mas Life',
       cta: 'Buscar profesional'
     },
