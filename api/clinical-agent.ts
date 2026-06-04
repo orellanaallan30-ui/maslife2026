@@ -2,6 +2,7 @@
 // Ejecuta un loop agentico completo: Claude → tool_use → búsqueda → respuesta final
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
 
 // ── Función de búsqueda web (Tavily → Brave → DuckDuckGo) ────────────────────
 async function searchWeb(query: string): Promise<string> {
@@ -93,7 +94,20 @@ Puedes buscar en español o inglés.`,
 
 // ── Handler principal ─────────────────────────────────────────────────────────
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Solo profesionales autenticados pueden usar el agente clínico
+  const user = await requireSupabaseAuth(req, res);
+  if (!user) return;
+
+  // Rate limit: 20 consultas por 5 minutos por usuario/IP
+  if (!checkIpRateLimit(req.headers, 20, 5 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Demasiadas consultas. Intenta en 5 minutos.' });
+  }
 
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada en Vercel' });

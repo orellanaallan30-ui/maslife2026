@@ -4,6 +4,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createHmac } from 'crypto';
+import { checkIpRateLimit } from './_lib/auth';
 
 function createAdminToken(secret: string): string {
   const exp = Date.now() + 8 * 60 * 60 * 1000; // 8 horas
@@ -13,7 +14,16 @@ function createAdminToken(secret: string): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
+
+  // Rate limit: 5 intentos por 15 minutos para prevenir fuerza bruta
+  if (!checkIpRateLimit(req.headers, 5, 15 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Demasiados intentos de acceso. Espera 15 minutos.' });
+  }
 
   const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;

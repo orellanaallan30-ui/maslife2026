@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { requireSupabaseAuth } from './_lib/auth';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -9,14 +10,22 @@ const supabase = createClient(
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).end();
+
+  // Verificar que el profesional autenticado solo acceda a sus propios pagos
+  const user = await requireSupabaseAuth(req, res);
+  if (!user) return;
 
   const { range = '30', limit = '50', professional_id } = req.query as Record<string, string>;
 
   if (!professional_id) {
     return res.status(400).json({ error: 'professional_id requerido' });
+  }
+
+  if (user.id !== professional_id) {
+    return res.status(403).json({ error: 'Acceso denegado' });
   }
 
   // Obtener el token MP del profesional — cada profesional solo ve sus propios pagos

@@ -382,6 +382,12 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     supabase.auth.signOut().catch(() => {});
     setLoggedPro(null);
     setIsAdmin(false);
+    // Limpiar datos clínicos sensibles del localStorage al cerrar sesión
+    localStorage.removeItem('maslife_patients');
+    localStorage.removeItem('maslife_appointments');
+    localStorage.removeItem('maslife_manual_transactions');
+    localStorage.removeItem('maslife_logged_pro');
+    localStorage.removeItem('maslife_notifications');
     if (view === 'PROFESSIONAL') navigate('/pro/login');
     else if (view === 'ADMIN') navigate('/admin/login');
     else navigate('/');

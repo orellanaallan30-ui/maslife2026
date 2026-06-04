@@ -84,7 +84,7 @@ const AdminLogin: React.FC = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 md:py-5 pl-14 pr-5 font-bold text-sm text-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-slate-700 shadow-inner"
-                  placeholder="orellanaallan30@gmail.com"
+                  placeholder="correo@dominio.com"
                   required
                 />
               </div>

@@ -7,6 +7,7 @@ import { useClinic } from '../ClinicContext';
 import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
 import { toast } from '../lib/toast';
 import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF } from '../pdfExport';
+import { supabase } from '../supabaseService';
 
 interface Message {
   role: 'user' | 'model';
@@ -305,9 +306,11 @@ INSTRUCCIONES:
 - No prescribas medicamentos, sugiere consultar médico tratante
 ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
+      const { data: { session: _sess1 } } = await supabase.auth.getSession();
+      const _authH1 = _sess1?.access_token ? { Authorization: `Bearer ${_sess1.access_token}` } : {};
       const r = await fetch('/api/clinical-agent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ..._authH1 },
         body: JSON.stringify({
           messages: [{ role: 'user', content: userText === action ? (actionPrompt || userText) : userText }],
           system: systemPrompt,
@@ -346,9 +349,11 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         ? `Modifica el siguiente informe basándote en el comentario del profesional:\n<comentario>${sanitize(feedback)}</comentario>\n\nINFORME ANTERIOR:\n${reportContent}\n\nDATOS DEL PACIENTE:\n${clinicalContext}`
         : `Genera un Informe Clínico Profesional completo para el paciente ${sanitize(personalData.name)}.\n\nEstructura obligatoria:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\n\nDATOS CLÍNICOS:\n${clinicalContext}`;
 
+      const { data: { session: _sess2 } } = await supabase.auth.getSession();
+      const _authH2 = _sess2?.access_token ? { Authorization: `Bearer ${_sess2.access_token}` } : {};
       const r = await fetch('/api/clinical-agent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ..._authH2 },
         body: JSON.stringify({
           messages: [{ role: 'user', content: prompt }],
           system: `Eres un redactor de informes clínicos experto. Genera documentos con tono sobrio, estructurado y profesional, listos para imprimir. Usa texto plano con guiones o numeración. Sin markdown complejo. Especialidad: ${loggedPro?.specialty || 'Salud'}.`,

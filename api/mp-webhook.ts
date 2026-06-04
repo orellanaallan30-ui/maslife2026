@@ -19,6 +19,9 @@ function validateSignature(req: VercelRequest, secret: string): boolean {
     );
     const ts = parts['ts'];
     const hash = parts['v1'];
+    // Protección contra replay attacks: rechazar webhooks con más de 5 minutos de diferencia
+    const tsDiff = Math.abs(Date.now() - parseInt(ts) * 1000);
+    if (!ts || tsDiff > 5 * 60 * 1000) return false;
     const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`;
     const expected = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
     return expected === hash;

@@ -2,6 +2,7 @@
 // Prioridad: Tavily → Brave Search → DuckDuckGo (sin clave)
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
 
 async function searchTavily(query: string): Promise<string | null> {
   const key = process.env.TAVILY_API_KEY;
@@ -57,7 +58,18 @@ async function searchDDG(query: string): Promise<string> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const user = await requireSupabaseAuth(req, res);
+  if (!user) return;
+
+  if (!checkIpRateLimit(req.headers, 30, 60 * 1000)) {
+    return res.status(429).json({ error: 'Rate limit exceeded' });
+  }
 
   const { query } = req.body || {};
   if (!query?.trim()) return res.status(400).json({ error: 'query requerido' });
