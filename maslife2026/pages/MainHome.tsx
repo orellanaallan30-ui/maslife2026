@@ -570,7 +570,7 @@ const MainHome: React.FC = () => {
 
             {/* Columna derecha — imagen hero (desktop) */}
             <div className="relative hidden lg:flex items-center justify-end mt-10 lg:mt-0">
-              <div className="relative w-full max-w-[520px] h-[580px] rounded-3xl overflow-hidden shadow-2xl">
+              <div className="relative w-full max-w-[520px] h-[clamp(440px,68vh,580px)] rounded-3xl overflow-hidden shadow-2xl">
                 <img
                   src="/hero-profesional.jpg"
                   alt="Profesional de salud Clínica Mas Life"
@@ -614,7 +614,7 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ MANIFESTO ═══════════════════ */}
       {/* ── RESPONSIVE: filosofía — py base=mobile (10vh) lg:=desktop (18vh) ── */}
-      <section id="filosofia" className="relative overflow-hidden flex items-center px-[6vw] py-[10vh] lg:py-[18vh]" style={{ minHeight: '85vh', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 60%, #ecfeff 100%)' }}>
+      <section id="filosofia" className="relative overflow-hidden flex items-center px-[6vw] py-[7vh] lg:py-[11vh]" style={{ minHeight: '60vh', background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 60%, #ecfeff 100%)' }}>
         {/* Comillas decorativas de fondo */}
         <span className="absolute top-0 left-4 font-display select-none pointer-events-none"
           style={{ fontSize: '18rem', lineHeight: 1, color: 'rgba(14,165,233,.1)', fontStyle: 'italic' }}>"</span>
@@ -646,9 +646,9 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
       {/* ── RESPONSIVE: padding — base=mobile (menos vh) lg:=desktop ── */}
-      <section id="como-funciona" className="px-[6vw] py-[10vh] lg:py-[16vh]" style={{ background: '#ffffff' }}>
+      <section id="como-funciona" className="px-[6vw] py-[7vh] lg:py-[11vh]" style={{ background: '#ffffff' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="max-w-xl mb-[9vh]">
+          <div className="max-w-xl mb-[6vh]">
             <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Proceso simple</p>
             <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#0f172a' }}>
               Menos administración.<br /><em style={{ color: '#0ea5e9', fontStyle: 'italic' }}>Más presencia.</em>
