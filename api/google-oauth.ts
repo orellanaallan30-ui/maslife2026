@@ -38,7 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,
       response_type: 'code',
-      scope: 'https://www.googleapis.com/auth/calendar',
+      scope: 'https://www.googleapis.com/auth/calendar.events',
       access_type: 'offline',
       prompt: 'consent',
       state,
