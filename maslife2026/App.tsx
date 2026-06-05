@@ -19,6 +19,7 @@ import ProfessionalAgenda    from './pages/ProfessionalAgenda';
 import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
 import { ConsentAcceptPage } from './pages/ConsentAcceptPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import { PasswordRecovery, ResetPassword } from './pages/PasswordRecovery';
 import Sidebar          from './components/Sidebar';
 import GlobalAIPanel    from './components/GlobalAIPanel';
@@ -419,6 +420,7 @@ const AppContent: React.FC = () => {
           <Route path="/p/:id"               element={<PatientProfile />} />
           <Route path="/verify/:code"        element={<DocumentVerifier />} />
           <Route path="/consent/:id"         element={<ConsentAcceptPage />} />
+          <Route path="/privacidad"          element={<PrivacyPolicy />} />
           {/* Auth */}
           <Route path="/pro/login"           element={<ProfessionalLogin />} />
           <Route path="/pro/register"        element={<ProfessionalRegistration />} />
