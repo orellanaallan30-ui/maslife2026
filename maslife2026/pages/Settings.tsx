@@ -20,6 +20,8 @@ const Settings: React.FC = () => {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [showEditServiceModal, setShowEditServiceModal] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
   const mpLinkWithBack = (localProfile?.subscriptionLink && localProfile.subscriptionLink.trim()) || MP_SUBSCRIPTION_LINK;
@@ -555,17 +557,41 @@ const Settings: React.FC = () => {
                         <p className="font-black text-green-800 text-sm">Google Calendar conectado</p>
                         <p className="text-xs text-green-600">Tus citas se sincronizan automáticamente en ambos sentidos</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-col items-end gap-1">
+                        {syncMsg && (
+                          <span className={`text-[10px] font-bold ${syncMsg.ok ? 'text-green-600' : 'text-red-500'}`}>
+                            {syncMsg.text}
+                          </span>
+                        )}
+                        <div className="flex items-center gap-3">
                         <button
+                          disabled={isSyncing}
                           onClick={async () => {
-                            const { data: { session } } = await supabase.auth.getSession();
-                            if (!session) return;
-                            const r = await fetch('/api/google-calendar-sync', { method: 'GET', headers: { Authorization: `Bearer ${session.access_token}` } });
-                            if (r.ok) alert('Sincronización completada');
+                            setIsSyncing(true);
+                            setSyncMsg(null);
+                            try {
+                              const { data: { session } } = await supabase.auth.getSession();
+                              if (!session) { setSyncMsg({ ok: false, text: 'Sin sesión activa' }); return; }
+                              const r = await fetch('/api/google-calendar-sync', { method: 'GET', headers: { Authorization: `Bearer ${session.access_token}` } });
+                              if (r.ok) {
+                                setSyncMsg({ ok: true, text: '✓ Sincronización completada' });
+                                setTimeout(() => setSyncMsg(null), 4000);
+                              } else {
+                                const err = await r.json().catch(() => ({}));
+                                setSyncMsg({ ok: false, text: err.error || `Error ${r.status}` });
+                              }
+                            } catch {
+                              setSyncMsg({ ok: false, text: 'Error de red' });
+                            } finally {
+                              setIsSyncing(false);
+                            }
                           }}
-                          className="text-xs text-sky-600 font-bold hover:underline"
+                          className="text-xs text-sky-600 font-bold hover:underline flex items-center gap-1 disabled:opacity-50"
                         >
-                          Sincronizar ahora
+                          {isSyncing && (
+                            <span className="inline-block w-3 h-3 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin" />
+                          )}
+                          {isSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}
                         </button>
                         <button
                           onClick={async () => {
@@ -579,6 +605,7 @@ const Settings: React.FC = () => {
                         >
                           Desconectar
                         </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
