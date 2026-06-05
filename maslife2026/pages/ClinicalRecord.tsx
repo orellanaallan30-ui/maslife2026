@@ -88,6 +88,7 @@ const ClinicalRecord: React.FC = () => {
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [soapVersions, setSoapVersions] = useState<Array<{ saved_at: string; saved_by_name: string; soap_snapshot: Record<string, string> }>>([]);
   const [showVersions, setShowVersions] = useState(false);
+  const [consentWarning, setConsentWarning] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -243,6 +244,21 @@ const ClinicalRecord: React.FC = () => {
       .order('saved_at', { ascending: false })
       .limit(5)
       .then(({ data }) => { if (data) setSoapVersions(data); });
+  }, [initialPatient?.id, loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Verificar consentimiento informado (CENS RCE — Ley 20.584)
+  useEffect(() => {
+    if (!initialPatient?.id || !loggedPro?.id) return;
+    supabase
+      .from('informed_consents')
+      .select('id')
+      .eq('patient_id', initialPatient.id)
+      .eq('professional_id', loggedPro.id)
+      .eq('status', 'ACCEPTED')
+      .limit(1)
+      .then(({ data, error }) => {
+        if (!error) setConsentWarning(!data || data.length === 0);
+      });
   }, [initialPatient?.id, loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Construye el contexto clínico completo para el agente
@@ -798,6 +814,22 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         </div>
 
         <div className="max-w-6xl mx-auto p-6 space-y-10 pb-24 print:p-0">
+          {/* Aviso consentimiento informado — Ley 20.584 / CENS RCE */}
+          {consentWarning && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-5 py-4 no-print">
+              <span className="material-icons-round text-amber-500 text-lg shrink-0 mt-0.5">warning</span>
+              <div className="flex-1">
+                <p className="text-xs font-black text-amber-800">Sin consentimiento informado registrado</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Este paciente no tiene consentimiento informado aceptado en el sistema. Puedes obtenerlo desde la lista de pacientes antes de registrar notas clínicas — requerido por Ley 20.584 y CENS RCE.
+                </p>
+              </div>
+              <button onClick={() => setConsentWarning(false)} className="text-amber-400 hover:text-amber-600 shrink-0">
+                <span className="material-icons-round text-sm">close</span>
+              </button>
+            </div>
+          )}
+
           <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 print:border-none print:shadow-none">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Identificación del Paciente</h2>

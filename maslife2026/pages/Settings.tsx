@@ -11,7 +11,7 @@ const Settings: React.FC = () => {
   const { loggedPro: profile, updatePro: onSave, logout } = useClinic();
 
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
-  const [activeTab, setActiveTab] = useState<'perfil' | 'suscripcion'>('perfil');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'suscripcion' | 'seguridad'>('perfil');
   const [localProfile, setLocalProfile] = useState<ProfessionalProfile | null>(profile);
   const [hasChanges, setHasChanges] = useState(false);
   const [showSavedMsg, setShowSavedMsg] = useState(false);
@@ -22,6 +22,49 @@ const Settings: React.FC = () => {
   const [linkCopied, setLinkCopied] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // ── MFA State ──────────────────────────────────────────────────────────────
+  const [mfaFactors, setMfaFactors] = useState<Array<{ id: string; status: string; friendly_name?: string }>>([]);
+  const [mfaEnrolling, setMfaEnrolling] = useState(false);
+  const [mfaQr, setMfaQr] = useState<{ qr_code: string; secret: string; factorId: string; challengeId: string } | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaMsg, setMfaMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  useEffect(() => {
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      if (data?.totp) setMfaFactors(data.totp);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleMfaEnroll = async () => {
+    setMfaEnrolling(true);
+    setMfaMsg(null);
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+    if (error || !data) { setMfaMsg({ ok: false, text: error?.message || 'Error al iniciar registro' }); setMfaEnrolling(false); return; }
+    const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: data.id });
+    if (chErr || !ch) { setMfaMsg({ ok: false, text: 'Error al generar desafío' }); setMfaEnrolling(false); return; }
+    setMfaQr({ qr_code: data.totp.qr_code, secret: data.totp.secret, factorId: data.id, challengeId: ch.id });
+    setMfaEnrolling(false);
+  };
+
+  const handleMfaVerify = async () => {
+    if (!mfaQr || mfaCode.length !== 6) return;
+    const { error } = await supabase.auth.mfa.verify({ factorId: mfaQr.factorId, challengeId: mfaQr.challengeId, code: mfaCode });
+    if (error) { setMfaMsg({ ok: false, text: 'Código incorrecto. Intenta nuevamente.' }); return; }
+    setMfaMsg({ ok: true, text: 'Autenticación de dos factores activada correctamente.' });
+    setMfaQr(null);
+    setMfaCode('');
+    const { data } = await supabase.auth.mfa.listFactors();
+    if (data?.totp) setMfaFactors(data.totp);
+  };
+
+  const handleMfaUnenroll = async (factorId: string) => {
+    if (!confirm('¿Desactivar la autenticación de dos factores? Tu cuenta quedará menos protegida.')) return;
+    const { error } = await supabase.auth.mfa.unenroll({ factorId });
+    if (error) { setMfaMsg({ ok: false, text: error.message }); return; }
+    setMfaFactors(prev => prev.filter(f => f.id !== factorId));
+    setMfaMsg({ ok: true, text: 'MFA desactivado.' });
+  };
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
   const mpLinkWithBack = (localProfile?.subscriptionLink && localProfile.subscriptionLink.trim()) || MP_SUBSCRIPTION_LINK;
@@ -221,6 +264,7 @@ const Settings: React.FC = () => {
               <div className="flex bg-slate-50 p-1.5 rounded-xl mt-4 max-w-fit border border-slate-200 shadow-inner gap-1.5">
                 <button onClick={() => setActiveTab('perfil')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'perfil' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Mi Perfil</button>
                 <button onClick={() => setActiveTab('suscripcion')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'suscripcion' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Suscripción</button>
+                <button onClick={() => setActiveTab('seguridad')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'seguridad' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Seguridad</button>
               </div>
             </div>
             {activeTab === 'perfil' && (
@@ -968,6 +1012,112 @@ const Settings: React.FC = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ── Tab Seguridad — MFA (CENS RCE) ── */}
+          {activeTab === 'seguridad' && (
+            <div className="space-y-6 animate-in fade-in duration-500 max-w-xl">
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
+                <div className="flex items-center gap-3">
+                  <span className="material-icons-round text-slate-700">shield</span>
+                  <h3 className="text-base font-black text-black">Autenticación de Dos Factores (MFA)</h3>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Activa MFA para proteger tu cuenta con un código adicional desde una app de autenticación (Google Authenticator, Authy, etc.). Recomendado por CENS para proteger el acceso a fichas clínicas.
+                </p>
+
+                {mfaMsg && (
+                  <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-bold ${mfaMsg.ok ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                    <span className="material-icons-round text-sm">{mfaMsg.ok ? 'check_circle' : 'error'}</span>
+                    {mfaMsg.text}
+                  </div>
+                )}
+
+                {mfaFactors.filter(f => f.status === 'verified').length > 0 ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                      <span className="material-icons-round text-emerald-500">verified_user</span>
+                      <p className="text-xs font-black text-emerald-700">MFA activo — tu cuenta está protegida con dos factores.</p>
+                    </div>
+                    {mfaFactors.filter(f => f.status === 'verified').map(f => (
+                      <button
+                        key={f.id}
+                        onClick={() => handleMfaUnenroll(f.id)}
+                        className="text-xs font-bold text-rose-500 hover:text-rose-700 flex items-center gap-1"
+                      >
+                        <span className="material-icons-round text-sm">remove_circle_outline</span>
+                        Desactivar MFA
+                      </button>
+                    ))}
+                  </div>
+                ) : !mfaQr ? (
+                  <button
+                    onClick={handleMfaEnroll}
+                    disabled={mfaEnrolling}
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest border-b-4 border-slate-700 active:border-b-0 active:translate-y-1 transition-all disabled:opacity-50"
+                  >
+                    {mfaEnrolling
+                      ? <span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-white rounded-full animate-spin" />
+                      : <span className="material-icons-round text-sm">add_moderator</span>
+                    }
+                    {mfaEnrolling ? 'Generando...' : 'Activar MFA'}
+                  </button>
+                ) : (
+                  <div className="space-y-5">
+                    <p className="text-xs text-slate-600 font-medium">
+                      Escanea el código QR con tu app de autenticación, luego ingresa el código de 6 dígitos:
+                    </p>
+                    <div className="flex justify-center">
+                      <img src={mfaQr.qr_code} alt="QR Code MFA" className="w-48 h-48 border-4 border-white shadow-lg rounded-xl" />
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Clave manual</p>
+                      <p className="text-xs font-mono text-slate-600 break-all">{mfaQr.secret}</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={mfaCode}
+                        onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="000000"
+                        className="flex-1 bg-white border-2 border-slate-200 rounded-xl py-3 px-4 text-center text-xl font-black tracking-[0.5em] focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
+                      />
+                      <button
+                        onClick={handleMfaVerify}
+                        disabled={mfaCode.length !== 6}
+                        className="px-6 py-3 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest disabled:opacity-50 hover:brightness-110 transition-all"
+                      >
+                        Verificar
+                      </button>
+                    </div>
+                    <button onClick={() => { setMfaQr(null); setMfaCode(''); }} className="text-xs text-slate-400 hover:text-slate-600">
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+              </section>
+
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="material-icons-round text-slate-700">lock</span>
+                  <h3 className="text-base font-black text-black">Cambiar Contraseña</h3>
+                </div>
+                <p className="text-xs text-slate-500">Usa la recuperación de contraseña para actualizarla de forma segura.</p>
+                <button
+                  onClick={async () => {
+                    if (!profile?.email) return;
+                    await supabase.auth.resetPasswordForEmail(profile.email);
+                    setMfaMsg({ ok: true, text: 'Revisa tu correo para el enlace de cambio de contraseña.' });
+                  }}
+                  className="flex items-center gap-2 px-6 py-3 bg-slate-100 text-slate-700 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+                >
+                  <span className="material-icons-round text-sm">email</span>
+                  Enviar enlace por email
+                </button>
+              </section>
             </div>
           )}
 
