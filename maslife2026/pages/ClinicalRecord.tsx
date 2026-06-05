@@ -30,6 +30,33 @@ interface TherapeuticGoal {
 }
 
 
+const SOAP_LABELS: Record<string, Array<{ l: string; c: string; k: string; bg: string; ph: string }>> = {
+  kinesiologia: [
+    { l: 'Subjetivo',              c: 'S', k: 'subjective', bg: 'bg-primary',    ph: 'Lo que reporta el paciente: dolor EVA, funcionalidad...' },
+    { l: 'Objetivo',               c: 'O', k: 'objective',  bg: 'bg-teal-500',   ph: 'ROM, fuerza muscular (Daniels), test especiales...' },
+    { l: 'Evaluación',             c: 'A', k: 'assessment', bg: 'bg-indigo-500', ph: 'Diagnóstico kinésico, evolución clínica...' },
+    { l: 'Plan',                   c: 'P', k: 'plan',       bg: 'bg-slate-800',  ph: 'Técnicas, ejercicios, pauta domiciliaria...' },
+  ],
+  nutricion: [
+    { l: 'Anamnesis Alimentaria',  c: 'S', k: 'subjective', bg: 'bg-emerald-500', ph: 'Hábitos, horarios, aversiones, preferencias, hidratación...' },
+    { l: 'Evaluación Clínica',     c: 'O', k: 'objective',  bg: 'bg-teal-500',   ph: 'Los datos antropométricos están en la calculadora superior...' },
+    { l: 'Diagnóstico Nutricional',c: 'A', k: 'assessment', bg: 'bg-indigo-500', ph: 'Estado nutricional, diagnóstico, factores de riesgo...' },
+    { l: 'Indicaciones Dietéticas',c: 'P', k: 'plan',       bg: 'bg-slate-800',  ph: 'Indicaciones, restricciones, suplementación, metas calóricas...' },
+  ],
+  psicologia: [
+    { l: 'Motivo de Consulta',     c: 'S', k: 'subjective', bg: 'bg-violet-500',  ph: 'Describir motivo referido por el paciente en sus palabras...' },
+    { l: 'Estado Mental',          c: 'O', k: 'objective',  bg: 'bg-teal-500',   ph: 'Orientación, memoria, atención, lenguaje, afecto, juicio...' },
+    { l: 'Impresión Diagnóstica',  c: 'A', k: 'assessment', bg: 'bg-indigo-500', ph: 'Diagnóstico presuntivo DSM-5/CIE-11, hipótesis clínica...' },
+    { l: 'Plan Terapéutico',       c: 'P', k: 'plan',       bg: 'bg-slate-800',  ph: 'Técnica de intervención, frecuencia, objetivos próxima sesión...' },
+  ],
+  to: [
+    { l: 'Desempeño Ocupacional',  c: 'S', k: 'subjective', bg: 'bg-amber-500',  ph: 'AVD, AVDI, trabajo, juego, ocio, participación social...' },
+    { l: 'Áreas de Intervención',  c: 'O', k: 'objective',  bg: 'bg-teal-500',   ph: 'Áreas a trabajar, capacidades observadas, test funcionales...' },
+    { l: 'Análisis Funcional',     c: 'A', k: 'assessment', bg: 'bg-indigo-500', ph: 'Barreras, facilitadores, nivel de independencia...' },
+    { l: 'Plan de Intervención',   c: 'P', k: 'plan',       bg: 'bg-slate-800',  ph: 'Estrategias, adaptaciones, ortesis, entrenamiento...' },
+  ],
+};
+
 const ClinicalRecord: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -172,9 +199,7 @@ const ClinicalRecord: React.FC = () => {
   const [psychIntervention,  setPsychIntervention]  = useState<string>(savedSpec.psychIntervention  || '');
   const [psychNextObjective, setPsychNextObjective] = useState<string>(savedSpec.psychNextObjective || '');
 
-  const [soap, setSoap] = useState<Record<string, string>>(
-    (safePatient.soap as Record<string, string>) || { subjective: '', objective: '', assessment: '', plan: '' }
-  );
+  const [soap, setSoap] = useState({ subjective: '', objective: '', assessment: '', plan: '', ...((safePatient.soap as any) || {}) });
 
   const [goals, setGoals] = useState<TherapeuticGoal[]>([
     { id: 'g1', name: 'Rango de Movimiento', description: 'Recuperar 160° de flexión', progress: 75, status: 'En Proceso', color: 'bg-primary' },
@@ -725,15 +750,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             </div>
           </section>
 
-          {/* ── ÁREA: KINESIOLOGÍA ── */}
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-primary/20"></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary bg-blue-50 px-4 py-2 rounded-full border border-primary/20 flex items-center gap-2">
-              <span className="material-icons-round text-xs">accessibility_new</span>
-              Área: Kinesiología y Rehabilitación
-            </span>
-            <div className="h-px flex-1 bg-primary/20"></div>
-          </div>
+          {specialtyKey === 'kinesiologia' && (
           <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
             <div className="flex justify-between items-center mb-10">
               <div>
@@ -800,6 +817,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
               </div>
             </div>
           </section>
+          )}
 
           {/* ── Signos Vitales ─────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -817,15 +835,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             ))}
           </div>
 
-          {/* ── ÁREA: NUTRICIÓN ── */}
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-emerald-200"></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-700 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-200 flex items-center gap-2">
-              <span className="material-icons-round text-xs">restaurant</span>
-              Área: Nutrición y Dietética
-            </span>
-            <div className="h-px flex-1 bg-emerald-200"></div>
-          </div>
+          {specialtyKey === 'nutricion' && (
           <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-10">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
 
@@ -1076,16 +1086,9 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
               </div>
             </div>
           </section>
+          )}
 
-          {/* ── ÁREA: PSICOLOGÍA ── */}
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-violet-200"></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-violet-700 bg-violet-50 px-4 py-2 rounded-full border border-violet-200 flex items-center gap-2">
-              <span className="material-icons-round text-xs">psychology</span>
-              Área: Psicología y Salud Mental
-            </span>
-            <div className="h-px flex-1 bg-violet-200"></div>
-          </div>
+          {specialtyKey === 'psicologia' && (
           <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-8">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
 
@@ -1127,93 +1130,25 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
             </div>
           </section>
+          )}
 
-          {/* ── Notas Clínicas SOAP — todas las especialidades (revisión) ── */}
-          {(() => {
-            const ALL_SOAP: Array<{
-              key: string;
-              banner: { label: string; color: string; bg: string; border: string; icon: string };
-              accentFocus: string;
-              fields: Array<{ l: string; c: string; k: string; bg: string; ph: string }>;
-            }> = [
-              {
-                key: 'kinesiologia',
-                banner: { label: 'Kinesiología — Nota Clínica SOAP', color: 'text-primary', bg: 'bg-blue-50', border: 'border-primary/20', icon: 'accessibility_new' },
-                accentFocus: 'focus:ring-primary/5',
-                fields: [
-                  { l: 'Subjetivo',             c: 'S', k: 'soap_kine_s', bg: 'bg-primary',    ph: 'Lo que reporta el paciente: dolor EVA, funcionalidad...' },
-                  { l: 'Objetivo',              c: 'O', k: 'soap_kine_o', bg: 'bg-teal-500',   ph: 'ROM, fuerza muscular (Daniels), test especiales...' },
-                  { l: 'Evaluación',            c: 'A', k: 'soap_kine_a', bg: 'bg-indigo-500', ph: 'Diagnóstico kinésico, evolución clínica...' },
-                  { l: 'Plan',                  c: 'P', k: 'soap_kine_p', bg: 'bg-slate-800',  ph: 'Técnicas, ejercicios, pauta domiciliaria...' },
-                ],
-              },
-              {
-                key: 'nutricion',
-                banner: { label: 'Nutrición — Nota Clínica SOAP', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: 'restaurant' },
-                accentFocus: 'focus:ring-emerald-500/5',
-                fields: [
-                  { l: 'Anamnesis Alimentaria',  c: 'S', k: 'soap_nutr_s', bg: 'bg-emerald-500', ph: 'Hábitos, horarios, aversiones, preferencias, hidratación...' },
-                  { l: 'Evaluación Clínica',     c: 'O', k: 'soap_nutr_o', bg: 'bg-teal-500',    ph: 'Los datos antropométricos están en la calculadora superior...' },
-                  { l: 'Diagnóstico Nutricional',c: 'A', k: 'soap_nutr_a', bg: 'bg-indigo-500',  ph: 'Estado nutricional, diagnóstico, factores de riesgo...' },
-                  { l: 'Indicaciones Dietéticas',c: 'P', k: 'soap_nutr_p', bg: 'bg-slate-800',   ph: 'Indicaciones, restricciones, suplementación, metas calóricas...' },
-                ],
-              },
-              {
-                key: 'psicologia',
-                banner: { label: 'Psicología — Nota Clínica SOAP', color: 'text-violet-700', bg: 'bg-violet-50', border: 'border-violet-200', icon: 'psychology' },
-                accentFocus: 'focus:ring-violet-500/5',
-                fields: [
-                  { l: 'Motivo de Consulta',    c: 'S', k: 'soap_psic_s', bg: 'bg-violet-500',  ph: 'Describir motivo referido por el paciente en sus palabras...' },
-                  { l: 'Estado Mental',         c: 'O', k: 'soap_psic_o', bg: 'bg-teal-500',    ph: 'Orientación, memoria, atención, lenguaje, afecto, juicio...' },
-                  { l: 'Impresión Diagnóstica', c: 'A', k: 'soap_psic_a', bg: 'bg-indigo-500',  ph: 'Diagnóstico presuntivo DSM-5/CIE-11, hipótesis clínica...' },
-                  { l: 'Plan Terapéutico',      c: 'P', k: 'soap_psic_p', bg: 'bg-slate-800',   ph: 'Técnica de intervención, frecuencia, objetivos próxima sesión...' },
-                ],
-              },
-              {
-                key: 'to',
-                banner: { label: 'Terapia Ocupacional — Nota Clínica SOAP', color: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200', icon: 'handshake' },
-                accentFocus: 'focus:ring-amber-500/5',
-                fields: [
-                  { l: 'Desempeño Ocupacional', c: 'S', k: 'soap_to_s', bg: 'bg-amber-500',   ph: 'AVD, AVDI, trabajo, juego, ocio, participación social...' },
-                  { l: 'Áreas de Intervención', c: 'O', k: 'soap_to_o', bg: 'bg-teal-500',    ph: 'Áreas a trabajar, capacidades observadas, test funcionales...' },
-                  { l: 'Análisis Funcional',    c: 'A', k: 'soap_to_a', bg: 'bg-indigo-500',  ph: 'Barreras, facilitadores, nivel de independencia...' },
-                  { l: 'Plan de Intervención',  c: 'P', k: 'soap_to_p', bg: 'bg-slate-800',   ph: 'Estrategias, adaptaciones, ortesis, entrenamiento...' },
-                ],
-              },
-            ];
-            return (
-              <>
-                {ALL_SOAP.map(({ key, banner, accentFocus, fields }) => (
-                  <React.Fragment key={key}>
-                    <div className="flex items-center gap-3">
-                      <div className={`h-px flex-1 ${banner.bg}`}></div>
-                      <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${banner.color} ${banner.bg} px-4 py-2 rounded-full border ${banner.border} flex items-center gap-2`}>
-                        <span className="material-icons-round text-xs">{banner.icon}</span>
-                        {banner.label}
-                      </span>
-                      <div className={`h-px flex-1 ${banner.bg}`}></div>
-                    </div>
-                    <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      {fields.map(f => (
-                        <div key={f.k} className="bg-white rounded-[3rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
-                          <div className="px-10 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-xl ${f.bg} text-white flex items-center justify-center font-black text-sm shadow-sm`}>{f.c}</div>
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800">{f.l}</h4>
-                          </div>
-                          <textarea
-                            value={(soap as any)[f.k] || ''}
-                            onChange={e => { setSoap({ ...soap, [f.k]: e.target.value }); setIsDirtyTrue(); }}
-                            className={`p-10 h-56 border-none text-sm font-bold text-slate-600 focus:ring-4 ${accentFocus} inset-0 resize-none leading-relaxed`}
-                            placeholder={f.ph}
-                          />
-                        </div>
-                      ))}
-                    </section>
-                  </React.Fragment>
-                ))}
-              </>
-            );
-          })()}
+          {/* ── Nota Clínica SOAP ── */}
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {(SOAP_LABELS[specialtyKey] || SOAP_LABELS.kinesiologia).map(f => (
+              <div key={f.k} className="bg-white rounded-[3rem] border border-slate-200 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
+                <div className="px-10 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl ${f.bg} text-white flex items-center justify-center font-black text-sm shadow-sm`}>{f.c}</div>
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800">{f.l}</h4>
+                </div>
+                <textarea
+                  value={soap[f.k as keyof typeof soap] || ''}
+                  onChange={e => { setSoap({ ...soap, [f.k]: e.target.value }); setIsDirtyTrue(); }}
+                  className="p-10 h-56 border-none text-sm font-bold text-slate-600 focus:ring-4 focus:ring-primary/5 inset-0 resize-none leading-relaxed"
+                  placeholder={f.ph}
+                />
+              </div>
+            ))}
+          </section>
 
           <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
             <div className="flex justify-between items-center mb-10">
