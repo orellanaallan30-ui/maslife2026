@@ -418,7 +418,7 @@ const PatientProfile: React.FC = () => {
           <div className="flex flex-col lg:flex-row gap-6 items-start">
 
             {/* Ticket (capturado por html2canvas) */}
-            <div className="bg-white w-full md:flex-1 rounded-[2rem] shadow-2xl relative overflow-hidden border border-slate-200" id="receipt-ticket">
+            <div className="bg-white w-full lg:flex-1 rounded-[2rem] shadow-2xl relative overflow-hidden border border-slate-200" id="receipt-ticket">
               <div className="absolute top-0 left-0 w-full h-4 bg-emerald-500"></div>
 
               <div className="p-7 pt-10">
@@ -466,7 +466,7 @@ const PatientProfile: React.FC = () => {
             </div>
 
             {/* Acciones */}
-            <div className="w-full md:flex-1 flex flex-col gap-4 no-print" id="receipt-actions">
+            <div className="w-full lg:flex-1 flex flex-col gap-4 no-print" id="receipt-actions">
 
               {/* Confirmación por correo */}
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">

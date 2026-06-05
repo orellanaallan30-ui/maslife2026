@@ -386,8 +386,7 @@ const MainHome: React.FC = () => {
           style={{ color: scrollY > 80 ? '#0f172a' : 'inherit' }}
         >
           <img src={logoClinica} alt="Clínica Mas Life"
-            className="w-auto object-contain"
-            style={{ height: '150px' }}
+            className="w-auto object-contain h-14 lg:h-16"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
           <span className="hidden font-display text-lg font-light tracking-wide ml-2">AgendaMás<span style={{ opacity:.6 }}>Life</span></span>
@@ -493,12 +492,12 @@ const MainHome: React.FC = () => {
           }} />
         </div>
 
-        {/* Contenido */}
-        <div className="relative z-10 max-w-7xl mx-auto px-[6vw] pt-32 sm:pt-40 pb-28 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        {/* Contenido — RESPONSIVE: mobile usa padding top para librar nav; desktop centra vertical */}
+        <div className="relative z-10 max-w-7xl mx-auto px-[6vw] pt-28 pb-20 lg:py-28 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
             {/* Columna izquierda — texto */}
-            <div className="max-w-xl relative z-10">
+            <div className="max-w-xl lg:max-w-2xl relative z-10">
               {/* ── RESPONSIVE: badge — base=mobile  lg:=desktop ── */}
               <span className="inline-block text-[.6rem] lg:text-xs font-outfit font-bold uppercase tracking-[.5px] mb-7 px-3 py-1 rounded-full text-white"
                     style={{ background: 'linear-gradient(135deg, #0284c7, #0ea5e9)', boxShadow: '0 8px 24px -8px rgba(2,132,199,.5)' }}>
@@ -766,7 +765,7 @@ const MainHome: React.FC = () => {
               <p className="font-outfit font-light text-base sm:text-lg max-w-2xl mx-auto mt-4" style={{ color: '#475569' }}>Rehabilitación kinesiológica profesional en casa, reembolsable por seguros e Isapre.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
               {kinePlans.map((plan, i) => {
                 const isFeatured = !!plan.badge;
                 return (
