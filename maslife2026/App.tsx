@@ -20,6 +20,7 @@ import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
 import { ConsentAcceptPage } from './pages/ConsentAcceptPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import PatientPortal  from './pages/PatientPortal';
 import { PasswordRecovery, ResetPassword } from './pages/PasswordRecovery';
 import Sidebar          from './components/Sidebar';
 import GlobalAIPanel    from './components/GlobalAIPanel';
@@ -421,6 +422,7 @@ const AppContent: React.FC = () => {
           <Route path="/verify/:code"        element={<DocumentVerifier />} />
           <Route path="/consent/:id"         element={<ConsentAcceptPage />} />
           <Route path="/privacidad"          element={<PrivacyPolicy />} />
+          <Route path="/mi-ficha/:token"    element={<PatientPortal />} />
           {/* Auth */}
           <Route path="/pro/login"           element={<ProfessionalLogin />} />
           <Route path="/pro/register"        element={<ProfessionalRegistration />} />

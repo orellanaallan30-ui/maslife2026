@@ -7,6 +7,7 @@ import { useClinic } from '../ClinicContext';
 import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
 import { toast } from '../lib/toast';
 import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF } from '../pdfExport';
+import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
 
 interface Message {
@@ -83,6 +84,8 @@ const ClinicalRecord: React.FC = () => {
 
   const [isDirty, setIsDirty] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -413,6 +416,33 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     );
   };
 
+  const handleExportFhir = () => {
+    if (!loggedPro) { toast.error('No hay profesional conectado'); return; }
+    const patientObj = { ...safePatient, ...personalData, soap } as Patient;
+    downloadFhirBundle(patientObj, loggedPro);
+    toast.success('Exportación FHIR R4 descargada');
+  };
+
+  const handleShareWithPatient = async () => {
+    if (!initialPatient) { toast.error('Paciente no encontrado'); return; }
+    setShareLoading(true);
+    setShareLink(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error('Sin sesión activa'); return; }
+      const { data, error } = await supabase
+        .from('patient_access_tokens')
+        .insert({ patient_id: initialPatient.id, professional_id: session.user.id })
+        .select('token')
+        .single();
+      if (error || !data) { toast.error('No se pudo generar el enlace'); return; }
+      const link = `${window.location.origin}/mi-ficha/${data.token}`;
+      setShareLink(link);
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
   const handleExportOrden = async () => {
     if (!loggedPro) { toast.error('No hay profesional conectado'); return; }
     const patientObj = { ...safePatient, ...personalData } as Patient;
@@ -669,6 +699,46 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
               <span className="material-icons-round text-lg">assignment</span>
               ORDEN
             </button>
+            {/* Exportar FHIR R4 */}
+            <button
+              onClick={handleExportFhir}
+              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-violet-50 border border-violet-200 text-violet-600 shadow-sm hover:bg-violet-100 transition-all border-b-4 border-violet-300 active:border-b-0 active:translate-y-1"
+              title="Exportar registro en formato FHIR R4 (estándar interoperabilidad)"
+            >
+              <span className="material-icons-round text-lg">data_object</span>
+              FHIR
+            </button>
+            {/* Compartir con paciente */}
+            <div className="relative">
+              <button
+                onClick={handleShareWithPatient}
+                disabled={shareLoading}
+                className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-600 shadow-sm hover:bg-emerald-100 transition-all border-b-4 border-emerald-300 active:border-b-0 active:translate-y-1 disabled:opacity-50"
+                title="Generar enlace de acceso temporal para el paciente (Ley 20.584)"
+              >
+                {shareLoading
+                  ? <span className="inline-block w-4 h-4 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin" />
+                  : <span className="material-icons-round text-lg">share</span>
+                }
+                COMPARTIR
+              </button>
+              {shareLink && (
+                <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 w-80 space-y-3">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Enlace para el paciente (30 días)</p>
+                  <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 px-3 py-2">
+                    <span className="text-xs text-slate-600 truncate flex-1">{shareLink}</span>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(shareLink); toast.success('Enlace copiado'); }}
+                      className="text-primary hover:text-primary/80 shrink-0"
+                    >
+                      <span className="material-icons-round text-lg">content_copy</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-400">El paciente puede acceder a su ficha sin login durante 30 días.</p>
+                  <button onClick={() => setShareLink(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Cerrar</button>
+                </div>
+              )}
+            </div>
             {/* Guardar manualmente */}
             <button
               onClick={handleSaveAttention}
