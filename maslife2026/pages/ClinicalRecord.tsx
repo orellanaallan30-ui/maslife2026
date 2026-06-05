@@ -86,6 +86,8 @@ const ClinicalRecord: React.FC = () => {
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [shareLoading, setShareLoading] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
+  const [soapVersions, setSoapVersions] = useState<Array<{ saved_at: string; saved_by_name: string; soap_snapshot: Record<string, string> }>>([]);
+  const [showVersions, setShowVersions] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -229,6 +231,19 @@ const ClinicalRecord: React.FC = () => {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
+
+  // Cargar historial de versiones SOAP (CENS RCE — trazabilidad)
+  useEffect(() => {
+    if (!initialPatient?.id || !loggedPro?.id) return;
+    supabase
+      .from('soap_versions')
+      .select('saved_at, saved_by_name, soap_snapshot')
+      .eq('patient_id', initialPatient.id)
+      .eq('professional_id', loggedPro.id)
+      .order('saved_at', { ascending: false })
+      .limit(5)
+      .then(({ data }) => { if (data) setSoapVersions(data); });
+  }, [initialPatient?.id, loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Construye el contexto clínico completo para el agente
   const buildClinicalContext = (): string => {
@@ -637,6 +652,22 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     setIsSaving(true);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     onUpdatePatient(buildUpdatedPatient());
+
+    // Guardar versión SOAP inmutable (CENS RCE — historial de versiones)
+    if (initialPatient?.id && loggedPro?.id && Object.values(soap).some(v => v?.trim())) {
+      supabase.from('soap_versions').insert({
+        patient_id: initialPatient.id,
+        professional_id: loggedPro.id,
+        soap_snapshot: soap,
+        saved_by_name: loggedPro.name,
+      }).then(({ data: _d, error: _e }) => {
+        if (!_e) {
+          const newVer = { saved_at: new Date().toISOString(), saved_by_name: loggedPro.name, soap_snapshot: soap };
+          setSoapVersions(prev => [newVer, ...prev.slice(0, 4)]);
+        }
+      });
+    }
+
     setIsDirty(false);
     setAutoSaveStatus('idle');
     setIsSaving(false);
@@ -1325,6 +1356,43 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             </div>
           </section>
         </div>
+
+        {/* ── Historial de versiones SOAP (CENS RCE) ── */}
+        {soapVersions.length > 0 && (
+          <div className="px-6 md:px-10 pb-6 no-print">
+            <button
+              onClick={() => setShowVersions(v => !v)}
+              className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-700 transition-colors"
+            >
+              <span className="material-icons-round text-sm">{showVersions ? 'expand_less' : 'history'}</span>
+              {showVersions ? 'Ocultar historial' : `Historial SOAP (${soapVersions.length} versiones guardadas)`}
+            </button>
+            {showVersions && (
+              <div className="mt-4 space-y-3">
+                {soapVersions.map((v, i) => (
+                  <div key={i} className="bg-white border border-slate-200 rounded-2xl px-6 py-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        {new Date(v.saved_at).toLocaleString('es-CL')} — {v.saved_by_name}
+                      </p>
+                      {i === 0 && <span className="text-[9px] bg-emerald-100 text-emerald-700 font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Más reciente</span>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(['subjective', 'objective', 'assessment', 'plan'] as const).map(k =>
+                        v.soap_snapshot[k]?.trim() ? (
+                          <div key={k}>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{k}</p>
+                            <p className="text-xs text-slate-600 line-clamp-2">{v.soap_snapshot[k]}</p>
+                          </div>
+                        ) : null
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="fixed bottom-10 right-10 z-50 no-print flex flex-col items-end gap-4 animate-in slide-in-from-bottom-10 duration-700">
           <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full border border-slate-200 shadow-2xl flex items-center gap-4">

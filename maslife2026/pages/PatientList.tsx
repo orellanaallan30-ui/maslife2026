@@ -50,6 +50,16 @@ const PatientList: React.FC = () => {
     e.preventDefault();
     if (!newPatient.name || !newPatient.rut) return;
 
+    // Prevención de RUT duplicado (CENS RCE)
+    const normalizedRut = newPatient.rut.trim().replace(/\s/g, '').toLowerCase();
+    const duplicate = patients.find(
+      p => !p.deletedAt && p.rut.trim().replace(/\s/g, '').toLowerCase() === normalizedRut
+    );
+    if (duplicate) {
+      alert(`Ya existe un paciente con RUT ${newPatient.rut}: ${duplicate.name}`);
+      return;
+    }
+
     const patientToAdd: Patient = {
       ...newPatient,
       id: Math.random().toString(36).substr(2, 9),
