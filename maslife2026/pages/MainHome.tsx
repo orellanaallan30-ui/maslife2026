@@ -386,7 +386,7 @@ const MainHome: React.FC = () => {
           style={{ color: scrollY > 80 ? '#0f172a' : 'inherit' }}
         >
           <img src={logoClinica} alt="Clínica Mas Life"
-            className="w-auto object-contain h-20 lg:h-24"
+            className="w-auto object-contain h-28 lg:h-32"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
           <span className="hidden font-display text-lg font-light tracking-wide ml-2">AgendaMás<span style={{ opacity:.6 }}>Life</span></span>
