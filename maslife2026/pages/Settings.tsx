@@ -39,7 +39,11 @@ const Settings: React.FC = () => {
   const handleMfaEnroll = async () => {
     setMfaEnrolling(true);
     setMfaMsg(null);
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+    // Limpiar factores sin verificar antes de enrollar (evita error de nombre duplicado)
+    const { data: existing } = await supabase.auth.mfa.listFactors();
+    const unverified = existing?.totp?.filter(f => f.status !== 'verified') ?? [];
+    for (const f of unverified) await supabase.auth.mfa.unenroll({ factorId: f.id });
+    const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: `totp-${Date.now()}` });
     if (error || !data) { setMfaMsg({ ok: false, text: error?.message || 'Error al iniciar registro' }); setMfaEnrolling(false); return; }
     const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: data.id });
     if (chErr || !ch) { setMfaMsg({ ok: false, text: 'Error al generar desafío' }); setMfaEnrolling(false); return; }
