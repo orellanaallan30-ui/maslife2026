@@ -240,11 +240,29 @@ const PatientProfile: React.FC = () => {
             },
             onError: (error: any) => {
               console.error('[MP Brick]', error);
+              // Solo marcar como error crítico si el Brick aún no terminó de cargar
+              if (error?.type === 'critical' || error?.cause?.length) {
+                setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
+                setMpError(
+                  error?.cause?.[0]?.description ||
+                  error?.message ||
+                  'No se pudo cargar el formulario de pago. Intenta recargar la página.'
+                );
+              }
             },
           },
         });
 
         brickControllerRef.current = controller;
+
+        // Timeout de respaldo: si en 15s no cargó, mostrar error
+        const timeoutId = setTimeout(() => {
+          if (brickControllerRef.current && setBrickStatus) {
+            setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
+            setMpError('El formulario de pago tardó demasiado. Intenta recargar la página.');
+          }
+        }, 15000);
+        brickControllerRef.current._timeoutId = timeoutId;
       } catch (e: any) {
         console.error('[MP Brick init]', e);
         setBrickStatus('error');
@@ -259,6 +277,9 @@ const PatientProfile: React.FC = () => {
     initBrick();
 
     return () => {
+      if (brickControllerRef.current?._timeoutId) {
+        clearTimeout(brickControllerRef.current._timeoutId);
+      }
       brickControllerRef.current?.unmount?.();
       brickControllerRef.current = null;
     };
