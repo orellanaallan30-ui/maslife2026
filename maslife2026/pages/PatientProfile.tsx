@@ -32,6 +32,7 @@ const PatientProfile: React.FC = () => {
   const [bookingError, setBookingError] = useState('');
   const [brickStatus, setBrickStatus] = useState<'idle'|'loading'|'ready'|'error'>('idle');
   const brickControllerRef = React.useRef<any>(null);
+  const brickTimeoutRef    = React.useRef<any>(null);
   const mpBookingRef       = React.useRef<Appointment | null>(null);
   const MP_ENABLED = true;
 
@@ -149,6 +150,15 @@ const PatientProfile: React.FC = () => {
     setBrickStatus('loading');
     const externalRef = `mp-${Date.now()}`;
 
+    // Red de seguridad: se arma ANTES de create() para cubrir el caso en que
+    // el brick cuelgue o resuelva sin montar (onReady nunca dispara). Así el
+    // paciente nunca queda atrapado en un spinner infinito.
+    if (brickTimeoutRef.current) clearTimeout(brickTimeoutRef.current);
+    brickTimeoutRef.current = setTimeout(() => {
+      setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
+      setMpError(prev => prev || 'El formulario de pago no está disponible. Reserva y paga en la consulta, o coordina por WhatsApp.');
+    }, 12000);
+
     const initBrick = async () => {
       try {
         // Cargar SDK si no está disponible
@@ -187,7 +197,10 @@ const PatientProfile: React.FC = () => {
             },
           },
           callbacks: {
-            onReady: () => setBrickStatus('ready'),
+            onReady: () => {
+              if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
+              setBrickStatus('ready');
+            },
             onSubmit: ({ formData }: any) => {
               return new Promise<void>(async (resolve, reject) => {
                 const app = mpBookingRef.current;
@@ -274,37 +287,50 @@ const PatientProfile: React.FC = () => {
                   },
                 }),
               }).catch(() => {});
-              // Solo marcar como error crítico si el Brick aún no terminó de cargar
-              if (error?.type === 'critical' || error?.cause?.length) {
-                setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
-                setMpError(
-                  error?.cause?.[0]?.description ||
-                  error?.message ||
-                  'No se pudo cargar el formulario de pago. Intenta recargar la página.'
-                );
-              }
+              // Si el brick aún no terminó de cargar, cualquier error lo deja
+              // inservible: mostramos el fallback en vez de un spinner eterno.
+              setBrickStatus(prev => {
+                if (prev === 'loading') {
+                  if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
+                  setMpError('El formulario de pago no está disponible. Reserva y paga en la consulta, o coordina por WhatsApp.');
+                  return 'error';
+                }
+                return prev;
+              });
             },
           },
         });
 
-        brickControllerRef.current = controller;
-
-        // Timeout de respaldo: si en 15s no cargó, mostrar error
-        const timeoutId = setTimeout(() => {
-          if (brickControllerRef.current) {
-            setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
-            setMpError('El formulario de pago tardó demasiado. Intenta recargar la página.');
-          }
-        }, 15000);
-        // Null-check antes de asignar: cleanup puede haber anulado el ref entre
-        // la asignación del controller y esta línea (race condition).
-        if (brickControllerRef.current) {
-          brickControllerRef.current._timeoutId = timeoutId;
-        } else {
-          clearTimeout(timeoutId);
+        // create() puede resolver con null/undefined si el brick falló al montar
+        // (p. ej. clave pública inválida). En ese caso onReady nunca dispara, así
+        // que lo tratamos como error explícito en vez de esperar al timeout.
+        if (!controller) {
+          if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
+          fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientError: true,
+              context: 'mp-brick-null-controller',
+              error: 'create() devolvió null',
+              detail: {
+                hasPublicKey: !!doctor?.mpPublicKey,
+                usedFallbackKey: !doctor?.mpPublicKey,
+                publicKeyPrefix: (doctor?.mpPublicKey || '').slice(0, 12),
+                amount: paymentAmount,
+                professionalId: doctor?.id,
+              },
+            }),
+          }).catch(() => {});
+          setBrickStatus('error');
+          setMpError('El formulario de pago no está disponible. Reserva y paga en la consulta, o coordina por WhatsApp.');
+          return;
         }
+
+        brickControllerRef.current = controller;
       } catch (e: any) {
         console.error('[MP Brick init]', e);
+        if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
         // Registrar el error real de inicialización en el servidor
         fetch('/api/notify', {
           method: 'POST',
@@ -335,9 +361,7 @@ const PatientProfile: React.FC = () => {
     initBrick();
 
     return () => {
-      if (brickControllerRef.current?._timeoutId) {
-        clearTimeout(brickControllerRef.current._timeoutId);
-      }
+      if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
       brickControllerRef.current?.unmount?.();
       brickControllerRef.current = null;
     };
