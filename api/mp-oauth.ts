@@ -84,7 +84,7 @@ async function handleFixPublicKey(req: VercelRequest, res: VercelResponse) {
   return res.status(200).json({ fixed: true, key_length: public_key.length });
 }
 
-
+async function handleGenerateState(req: VercelRequest, res: VercelResponse) {
   const user = await requireSupabaseAuth(req, res);
   if (!user) return;
   const secret = process.env.MP_OAUTH_STATE_SECRET || process.env.MP_APP_SECRET;
