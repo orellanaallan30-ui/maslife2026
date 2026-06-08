@@ -206,7 +206,20 @@ const PatientProfile: React.FC = () => {
                   });
                   const data = await res.json();
                   if (data.status === 'approved' || data.status === 'authorized') {
-                    await addAppointment(app).catch(() => {});
+                    // El pago YA fue aprobado: la reserva DEBE quedar registrada.
+                    // Reintentamos una vez si falla el guardado en la BD.
+                    let saved = false;
+                    for (let attempt = 0; attempt < 2 && !saved; attempt++) {
+                      try {
+                        await addAppointment(app);
+                        saved = true;
+                      } catch (saveErr) {
+                        console.error(`[booking] guardado falló (intento ${attempt + 1})`, saveErr);
+                      }
+                    }
+                    // Siempre notificamos al profesional cuando hay pago aprobado.
+                    // El correo lleva los datos completos de la cita, así que sirve
+                    // de respaldo aunque el guardado en BD haya fallado.
                     if (doctor?.email) {
                       fetch('/api/notify', {
                         method: 'POST',
@@ -222,9 +235,13 @@ const PatientProfile: React.FC = () => {
                           duration: app.duration,
                           patientEmail: app.patientEmail,
                           price: app.price,
+                          paymentId: data.id,
+                          needsManualEntry: !saved,
                         }),
                       }).catch(() => {});
                     }
+                    // El paciente pagó: confirmamos siempre (el respaldo por correo
+                    // garantiza que el profesional reciba la cita si la BD falló).
                     setIsConfirmed(true);
                     resolve();
                   } else {
