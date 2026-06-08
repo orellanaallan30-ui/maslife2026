@@ -38,7 +38,53 @@ async function handleDisconnect(req: VercelRequest, res: VercelResponse) {
   return res.status(200).json({ disconnected: true });
 }
 
-async function handleGenerateState(req: VercelRequest, res: VercelResponse) {
+async function handleFixPublicKey(req: VercelRequest, res: VercelResponse) {
+  const user = await requireSupabaseAuth(req, res);
+  if (!user) return;
+
+  // Obtener el access_token del profesional desde professional_secrets
+  const { data: secret } = await supabase
+    .from('professional_secrets')
+    .select('mp_access_token, mp_user_id')
+    .eq('professional_id', user.id)
+    .single();
+
+  if (!secret?.mp_access_token) {
+    return res.status(404).json({ error: 'No hay token MP guardado. Conecta tu cuenta primero.' });
+  }
+
+  // Intentar obtener la public_key desde la API de MP usando el access_token
+  let public_key: string | null = null;
+  try {
+    const mpRes = await fetch(`https://api.mercadopago.com/users/${secret.mp_user_id}`, {
+      headers: { Authorization: `Bearer ${secret.mp_access_token}` },
+    });
+    if (mpRes.ok) {
+      const mpData = await mpRes.json();
+      public_key = mpData.credentials?.public_key || mpData.public_key || null;
+      console.info('[mp-oauth/fix] public_key from /users/:id:', !!public_key, 'keys:', Object.keys(mpData).join(','));
+    } else {
+      console.warn('[mp-oauth/fix] MP API error:', mpRes.status);
+    }
+  } catch (err) {
+    console.error('[mp-oauth/fix] fetch error:', err);
+  }
+
+  if (!public_key) {
+    return res.status(422).json({ error: 'MercadoPago no devolvió la clave pública. Reconecta tu cuenta desde Configuración.' });
+  }
+
+  const { error: dbErr } = await supabase
+    .from('professionals')
+    .update({ mp_public_key: public_key })
+    .eq('id', user.id);
+
+  if (dbErr) return res.status(500).json({ error: 'Error al guardar la clave' });
+
+  return res.status(200).json({ fixed: true, key_length: public_key.length });
+}
+
+
   const user = await requireSupabaseAuth(req, res);
   if (!user) return;
   const secret = process.env.MP_OAUTH_STATE_SECRET || process.env.MP_APP_SECRET;
@@ -54,6 +100,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { action } = req.body || {};
     if (action === 'disconnect') return handleDisconnect(req, res);
     if (action === 'generate-state') return handleGenerateState(req, res);
+    if (action === 'fix-public-key') return handleFixPublicKey(req, res);
     return res.status(400).json({ error: 'Acción no soportada' });
   }
 
