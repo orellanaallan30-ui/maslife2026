@@ -115,7 +115,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.redirect(`/pro/settings?mp_error=token_exchange_failed&mp_detail=${encodeURIComponent(mpErr)}&mp_desc=${encodeURIComponent(mpDesc)}`);
     }
 
-    const { access_token, public_key, refresh_token, user_id } = tokenData;
+    const { access_token, refresh_token, user_id } = tokenData;
+    // public_key puede venir como 'public_key' o no venir en el token response
+    let public_key: string | null = tokenData.public_key || tokenData.publicKey || null;
+    console.info('[mp-oauth] token fields:', Object.keys(tokenData).join(','), '| public_key found:', !!public_key);
+
+    // Fallback: si MP no devolvió la public_key en el token, intentar obtenerla
+    // vía la API de credenciales del usuario usando su access_token
+    if (!public_key && user_id) {
+      try {
+        const credRes = await fetch(`https://api.mercadopago.com/users/${user_id}`, {
+          headers: { Authorization: `Bearer ${access_token}` },
+        });
+        if (credRes.ok) {
+          const credData = await credRes.json();
+          public_key = credData.credentials?.public_key || credData.public_key || null;
+          console.info('[mp-oauth] public_key from /users/:id:', !!public_key);
+        }
+      } catch (fetchErr) {
+        console.warn('[mp-oauth] Could not fetch public_key from /users:', fetchErr);
+      }
+    }
 
     // Guarda los tokens sensibles en la tabla aislada (solo service_role la lee)
     const { error: secretErr } = await supabase

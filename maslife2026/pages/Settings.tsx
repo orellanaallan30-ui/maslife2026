@@ -512,7 +512,7 @@ const Settings: React.FC = () => {
                               if (!initRes.ok) return;
                               const { state } = await initRes.json();
                               const redirectUri = encodeURIComponent('https://clinicamaslife.cl/api/mp-oauth');
-                              window.location.href = `https://auth.mercadopago.com/authorization?client_id=${appId}&response_type=code&platform_id=mp&redirect_uri=${redirectUri}&state=${encodeURIComponent(state)}`;
+                              window.location.href = `https://auth.mercadopago.com/authorization?client_id=${appId}&response_type=code&platform_id=mp&scope=offline_access+read+write&redirect_uri=${redirectUri}&state=${encodeURIComponent(state)}`;
                             }}
                             className="shrink-0 text-xs font-black text-white px-3 py-1.5 rounded-lg"
                             style={{ background: 'linear-gradient(135deg, #009ee3, #007eb5)' }}
