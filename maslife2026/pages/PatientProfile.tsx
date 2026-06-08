@@ -321,7 +321,8 @@ const PatientProfile: React.FC = () => {
         if (e.message === 'NO_PUBLIC_KEY') {
           setMpError('Pasarela de pago no configurada. Contacta al profesional.');
         } else {
-          setMpError('No se pudo inicializar el formulario de pago. Intenta recargar la página.');
+          // Mostrar el mensaje real del error para diagnóstico
+          setMpError(`DIAG: ${e?.name || 'Error'}: ${e?.message || String(e)}`);
         }
       }
     };
@@ -966,6 +967,9 @@ const PatientProfile: React.FC = () => {
                         <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
                           <span className="material-icons-round text-xl mb-1 block">payment</span>
                           El pago online no está disponible temporalmente.
+                          {mpError?.startsWith('DIAG:') && (
+                            <span className="block mt-2 text-[10px] font-mono font-normal text-rose-500 break-all">{mpError}</span>
+                          )}
                         </div>
                         {/* Fallback: reservar igual y pagar en consulta */}
                         <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
