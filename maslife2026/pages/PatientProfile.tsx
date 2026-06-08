@@ -257,6 +257,22 @@ const PatientProfile: React.FC = () => {
             },
             onError: (error: any) => {
               console.error('[MP Brick]', error);
+              // Registrar el error real en el servidor para diagnóstico
+              fetch('/api/log-client-error', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  context: 'mp-brick-onError',
+                  error: error?.type || error?.message || 'unknown',
+                  detail: {
+                    type: error?.type,
+                    message: error?.message,
+                    cause: error?.cause,
+                    publicKeyPrefix: (doctor?.mpPublicKey || '').slice(0, 12),
+                    amount: paymentAmount,
+                  },
+                }),
+              }).catch(() => {});
               // Solo marcar como error crítico si el Brick aún no terminó de cargar
               if (error?.type === 'critical' || error?.cause?.length) {
                 setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
@@ -282,6 +298,23 @@ const PatientProfile: React.FC = () => {
         brickControllerRef.current._timeoutId = timeoutId;
       } catch (e: any) {
         console.error('[MP Brick init]', e);
+        // Registrar el error real de inicialización en el servidor
+        fetch('/api/log-client-error', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            context: 'mp-brick-init-catch',
+            error: e?.message || 'unknown',
+            detail: {
+              message: e?.message,
+              name: e?.name,
+              stack: String(e?.stack || '').slice(0, 500),
+              publicKeyPrefix: (doctor?.mpPublicKey || '').slice(0, 12),
+              hasPublicKey: !!doctor?.mpPublicKey,
+              amount: paymentAmount,
+            },
+          }),
+        }).catch(() => {});
         setBrickStatus('error');
         if (e.message === 'NO_PUBLIC_KEY') {
           setMpError('Pasarela de pago no configurada. Contacta al profesional.');
