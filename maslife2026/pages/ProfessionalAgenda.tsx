@@ -5,7 +5,7 @@ import { useClinic } from '../ClinicContext';
 
 const ProfessionalAgenda: React.FC = () => {
    const navigate = useNavigate();
-   const { appointments: allAppointments, patients, addAppointment, updateAppointment, deleteAppointment: onRemoveApp, setPatients: setContextPatients, loggedPro, logout } = useClinic();
+   const { appointments: allAppointments, patients, addAppointment, batchAddAppointments, updateAppointment, deleteAppointment: onRemoveApp, deleteAppointmentsByRecurrence, setPatients: setContextPatients, loggedPro, logout } = useClinic();
 
    // Solo citas de este profesional
    const appointments = useMemo(
@@ -28,6 +28,14 @@ const ProfessionalAgenda: React.FC = () => {
    const [blockNote, setBlockNote] = useState('');
    const [blockDate, setBlockDate] = useState('');
    const [blockTimes, setBlockTimes] = useState<string[]>([]);
+   const [blockMode, setBlockMode] = useState<'blocked' | 'remote_only' | 'presential_only'>('blocked');
+   const [blockRecurrence, setBlockRecurrence] = useState<'none' | 'weekly' | 'monthly' | 'permanent'>('none');
+   const [blockDaysOfWeek, setBlockDaysOfWeek] = useState<number[]>([]);
+   const [blockDuration, setBlockDuration] = useState<number>(60);
+   const [blockEndsAt, setBlockEndsAt] = useState<string>('');
+   const [blockApplying, setBlockApplying] = useState(false);
+   const [deleteRecurrenceOpen, setDeleteRecurrenceOpen] = useState(false);
+   const [deleteRecurrenceMode, setDeleteRecurrenceMode] = useState<'single' | 'future' | 'all'>('single');
    const [selectedColor, setSelectedColor] = useState('bg-primary');
    const [selectedServiceId, setSelectedServiceId] = useState<string>('');
    const [appointmentNotes, setAppointmentNotes] = useState('');
@@ -112,33 +120,75 @@ const ProfessionalAgenda: React.FC = () => {
       return days;
    }, [loggedPro]);
 
-   // Apply multiple block slots at once
-   const handleApplyBlocks = () => {
-      if (!blockDate || blockTimes.length === 0) return;
-      blockTimes.forEach(time => {
-         addAppointment({
-            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
-            patientName: blockNote || 'Bloqueo Administrativo',
-            doctorName: loggedPro?.name || '',
-            specialty: loggedPro?.specialty || '',
-            serviceName: 'Bloqueo',
-            date: blockDate,
-            time,
-            duration: 60,
-            type: 'Personal',
-            status: 'Bloqueado',
-            price: 0,
-            paymentStatus: 'Pagado',
-            category: 'Personal',
-            color: 'bg-slate-800',
-            professionalId: loggedPro?.id,
-            bookingSource: 'presencial',
-         } as any);
-      });
+   const blockColor = (mode: 'blocked' | 'remote_only' | 'presential_only') =>
+      mode === 'blocked' ? 'bg-slate-800' : mode === 'remote_only' ? 'bg-blue-600' : 'bg-emerald-700';
+
+   const buildBlock = (date: string, time: string, recurrenceId?: string): Appointment => ({
+      id: crypto.randomUUID(),
+      patientName: blockNote || 'Bloqueo Administrativo',
+      doctorName: loggedPro?.name || '',
+      specialty: loggedPro?.specialty || '',
+      serviceName: 'Bloqueo',
+      date, time,
+      duration: blockDuration,
+      type: 'Personal',
+      status: 'Bloqueado',
+      price: 0,
+      paymentStatus: 'Pagado',
+      category: 'Personal',
+      color: blockColor(blockMode),
+      professionalId: loggedPro?.id,
+      bookingSource: 'presencial',
+      recurrenceId,
+      recurrenceType: blockRecurrence,
+      blockMode,
+   });
+
+   const handleApplySmartBlock = async () => {
+      if (blockTimes.length === 0) return;
+      setBlockApplying(true);
+      const recId = (blockRecurrence !== 'none') ? crypto.randomUUID() : undefined;
+      const blocks: Appointment[] = [];
+      const today = new Date(); today.setHours(0,0,0,0);
+      const endDate = blockEndsAt ? new Date(blockEndsAt) : null;
+
+      const addDayBlocks = (date: string) =>
+         blockTimes.forEach(t => blocks.push(buildBlock(date, t, recId)));
+
+      if (blockRecurrence === 'none') {
+         if (blockDate) addDayBlocks(blockDate);
+      } else if (blockRecurrence === 'weekly' || blockRecurrence === 'permanent') {
+         const weeks = blockRecurrence === 'permanent' ? 52 : 12;
+         const days = blockDaysOfWeek.length > 0 ? blockDaysOfWeek : (blockDate ? [new Date(blockDate).getDay()] : []);
+         for (let w = 0; w < weeks; w++) {
+            days.forEach(dayIdx => {
+               const d = new Date(today);
+               let diff = dayIdx - d.getDay(); if (diff < 0) diff += 7;
+               d.setDate(d.getDate() + diff + w * 7);
+               if (endDate && d > endDate) return;
+               addDayBlocks(d.toISOString().split('T')[0]);
+            });
+         }
+      } else if (blockRecurrence === 'monthly') {
+         if (blockDate) {
+            const base = new Date(blockDate);
+            for (let m = 0; m < 6; m++) {
+               const d = new Date(base); d.setMonth(d.getMonth() + m);
+               if (endDate && d > endDate) break;
+               addDayBlocks(d.toISOString().split('T')[0]);
+            }
+         }
+      }
+
+      try {
+         await batchAddAppointments(blocks);
+      } catch { /* silencioso */ }
+
+      setBlockApplying(false);
       setIsCreateModalOpen(false);
       setSelectedSlot(null);
-      setBlockNote('');
-      setBlockTimes([]);
+      setBlockNote(''); setBlockTimes([]); setBlockRecurrence('none');
+      setBlockDaysOfWeek([]); setBlockMode('blocked'); setBlockEndsAt('');
    };
 
    const handleSlotClick = (time: string, date: string) => {
@@ -204,15 +254,12 @@ const ProfessionalAgenda: React.FC = () => {
       setSelectedColor(newColor);
    };
 
-   const getStatusStyles = (status: Appointment['status'], appColor?: string) => {
+   const getStatusStyles = (status: Appointment['status'], appColor?: string, bMode?: Appointment['blockMode']) => {
       if (status === 'Bloqueado') {
-         return {
-            bg: 'bg-slate-800',
-            border: 'border-slate-900',
-            text: 'text-white',
-            iconBg: 'bg-white/20',
-            icon: 'block'
-         };
+         const bg = bMode === 'remote_only' ? 'bg-blue-600' : bMode === 'presential_only' ? 'bg-emerald-700' : 'bg-slate-800';
+         const border = bMode === 'remote_only' ? 'border-blue-800' : bMode === 'presential_only' ? 'border-emerald-900' : 'border-slate-900';
+         const icon = bMode === 'remote_only' ? 'videocam_off' : bMode === 'presential_only' ? 'location_off' : 'block';
+         return { bg, border, text: 'text-white', iconBg: 'bg-white/20', icon };
       }
 
       if (status === 'Cancelado') {
@@ -338,7 +385,7 @@ const ProfessionalAgenda: React.FC = () => {
                                   <div className="flex-1 p-2 flex flex-col gap-1.5">
                                     {appsInSlot.length > 0 ? (
                                        appsInSlot.map(app => {
-                                          const styles = getStatusStyles(app.status, app.color);
+                                          const styles = getStatusStyles(app.status, app.color, app.blockMode);
                                           return (
                                              <div key={app.id} onClick={() => handleAppClick(app)} className={`flex-1 rounded-2xl p-5 flex items-center justify-between cursor-pointer transition-all hover:scale-[1.01] shadow-sm border-2 ${styles.bg} ${styles.border} ${styles.text}`}>
                                                 <div className="flex items-center gap-3">
@@ -391,7 +438,7 @@ const ProfessionalAgenda: React.FC = () => {
                                         <div key={`${hour}-${idx}`} className={`flex-1 min-w-[150px] p-1 flex flex-col gap-1 border-r-2 border-slate-50 ${day.toDateString() === new Date().toDateString() ? 'bg-primary/5' : ''}`}>
                                            {appsInSlot.length > 0 ? (
                                               appsInSlot.map(app => {
-                                                const styles = getStatusStyles(app.status, app.color);
+                                                const styles = getStatusStyles(app.status, app.color, app.blockMode);
                                                 return (
                                                    <div key={app.id} onClick={() => handleAppClick(app)} className={`w-full rounded-xl p-2.5 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between border-2 ${styles.bg} ${styles.border} ${styles.text}`}>
                                                       <div className="flex items-center gap-2 mb-1">
@@ -613,73 +660,150 @@ const ProfessionalAgenda: React.FC = () => {
                         )}
 
                         {activeTab === 'block' && (
-                           <div className="space-y-6">
-                              {/* Date picker */}
-                              <div>
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 ml-1">Día</label>
-                                 <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                                    {blockableDays.map(d => (
-                                       <button
-                                          key={d.date}
-                                          onClick={() => { setBlockDate(d.date); setBlockTimes([]); }}
-                                          className={`flex-none px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${blockDate === d.date ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400'}`}
-                                       >{d.label}</button>
-                                    ))}
-                                 </div>
-                              </div>
+                           <div className="space-y-5">
 
-                              {/* Hour chips multi-select */}
+                              {/* ── 1. HORAS ── */}
                               <div>
                                  <div className="flex items-center justify-between mb-2">
                                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Horas a bloquear</label>
-                                    <button
-                                       onClick={() => {
-                                          const freeHours = hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h));
-                                          setBlockTimes(freeHours.length === blockTimes.length ? [] : freeHours);
-                                       }}
-                                       className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline"
-                                    >
-                                       {hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)).length === blockTimes.length ? 'Desmarcar todo' : 'Seleccionar todo'}
-                                    </button>
+                                    <div className="flex gap-2">
+                                       {[['08:00','13:00','Mañana'],['14:00','20:00','Tarde'],['08:00','20:00','Todo']].map(([s,e,lbl]) => (
+                                          <button key={lbl} onClick={() => setBlockTimes(hours.filter(h => h >= s && h <= e && !appointments.some(a => a.date === blockDate && a.time === h)))}
+                                             className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">{lbl}</button>
+                                       ))}
+                                       <button onClick={() => { const f = hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)); setBlockTimes(f.length === blockTimes.length ? [] : f); }}
+                                          className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:underline">
+                                          {hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)).length === blockTimes.length ? '✕' : 'Todo'}
+                                       </button>
+                                    </div>
                                  </div>
-                                 <div className="grid grid-cols-4 gap-2">
+                                 <div className="grid grid-cols-4 gap-1.5">
                                     {hours.map(h => {
-                                       const isOccupied = appointments.some(a => a.date === blockDate && a.time === h);
+                                       const isOccupied = appointments.some(a => a.date === blockDate && a.time === h && a.status !== 'Cancelado');
                                        const isSelected = blockTimes.includes(h);
                                        return (
-                                          <button
-                                             key={h}
-                                             disabled={isOccupied}
+                                          <button key={h} disabled={isOccupied}
                                              onClick={() => setBlockTimes(prev => isSelected ? prev.filter(t => t !== h) : [...prev, h])}
                                              className={`py-2.5 rounded-xl text-xs font-black transition-all border-2 ${
                                                 isOccupied ? 'bg-rose-50 border-rose-100 text-rose-300 cursor-not-allowed' :
                                                 isSelected ? 'bg-slate-900 border-slate-900 text-white shadow-md' :
                                                 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400'
-                                             }`}
-                                          >
+                                             }`}>
                                              {isOccupied ? <span className="material-icons-round text-xs">block</span> : h}
                                           </button>
                                        );
                                     })}
                                  </div>
                                  {blockTimes.length > 0 && (
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-2 ml-1">{blockTimes.length} hora{blockTimes.length > 1 ? 's' : ''} seleccionada{blockTimes.length > 1 ? 's' : ''}</p>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-2 ml-1">
+                                       {blockTimes.length} hora{blockTimes.length > 1 ? 's' : ''} seleccionada{blockTimes.length > 1 ? 's' : ''}
+                                    </p>
                                  )}
                               </div>
 
-                              {/* Motivo */}
+                              {/* ── 2. TIPO DE BLOQUE ── */}
                               <div>
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Motivo (opcional)</label>
-                                 <input value={blockNote} onChange={e => setBlockNote(e.target.value)} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 transition-all shadow-inner placeholder:text-slate-400" placeholder="Ej: Trámite personal, reunión..." />
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 ml-1">Tipo</label>
+                                 <div className="grid grid-cols-3 gap-2">
+                                    {([
+                                       { v: 'blocked', icon: 'block', label: 'Bloqueado', bg: 'bg-slate-800', sel: 'border-slate-900' },
+                                       { v: 'remote_only', icon: 'videocam_off', label: 'Solo Remoto', bg: 'bg-blue-600', sel: 'border-blue-700' },
+                                       { v: 'presential_only', icon: 'location_off', label: 'Solo Presencial', bg: 'bg-emerald-700', sel: 'border-emerald-800' },
+                                    ] as const).map(opt => (
+                                       <button key={opt.v} onClick={() => setBlockMode(opt.v)}
+                                          className={`py-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${blockMode === opt.v ? `${opt.bg} ${opt.sel} text-white scale-[1.02] shadow-md` : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                                          <span className="material-icons-round text-base">{opt.icon}</span>
+                                          <span className="text-[9px] font-black uppercase tracking-widest leading-tight text-center">{opt.label}</span>
+                                       </button>
+                                    ))}
+                                 </div>
                               </div>
 
-                              <button
-                                 onClick={handleApplyBlocks}
-                                 disabled={blockTimes.length === 0}
-                                 className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-b-4 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 ${blockTimes.length > 0 ? 'bg-slate-900 text-white border-slate-800 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}
-                              >
-                                 <span className="material-icons-round text-lg text-rose-400">block</span>
-                                 Bloquear {blockTimes.length > 0 ? `${blockTimes.length} hora${blockTimes.length > 1 ? 's' : ''}` : 'horarios'}
+                              {/* ── 3. RECURRENCIA ── */}
+                              <div>
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 ml-1">Repetir</label>
+                                 <div className="grid grid-cols-2 gap-2">
+                                    {([
+                                       { v: 'none', label: 'Una vez' },
+                                       { v: 'weekly', label: 'Semanal' },
+                                       { v: 'monthly', label: 'Mensual' },
+                                       { v: 'permanent', label: 'Permanente' },
+                                    ] as const).map(opt => (
+                                       <button key={opt.v} onClick={() => setBlockRecurrence(opt.v)}
+                                          className={`py-2.5 rounded-xl border-2 text-xs font-black uppercase tracking-widest transition-all ${blockRecurrence === opt.v ? 'bg-slate-900 border-slate-900 text-white shadow-md' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400'}`}>
+                                          {opt.label}
+                                       </button>
+                                    ))}
+                                 </div>
+
+                                 {/* Días de la semana (solo weekly/permanent) */}
+                                 {(blockRecurrence === 'weekly' || blockRecurrence === 'permanent') && (
+                                    <div className="mt-3">
+                                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Días</label>
+                                       <div className="flex gap-1.5">
+                                          {['D','L','M','X','J','V','S'].map((d, i) => (
+                                             <button key={i} onClick={() => setBlockDaysOfWeek(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i])}
+                                                className={`w-9 h-9 rounded-xl text-xs font-black border-2 transition-all ${blockDaysOfWeek.includes(i) ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400'}`}>
+                                                {d}
+                                             </button>
+                                          ))}
+                                       </div>
+                                    </div>
+                                 )}
+
+                                 {/* Fecha de fin (no en permanente) */}
+                                 {blockRecurrence !== 'none' && blockRecurrence !== 'permanent' && (
+                                    <div className="mt-3">
+                                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Hasta (opcional)</label>
+                                       <input type="date" value={blockEndsAt} onChange={e => setBlockEndsAt(e.target.value)}
+                                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 transition-all" />
+                                    </div>
+                                 )}
+                              </div>
+
+                              {/* ── 4. DETALLE ── */}
+                              <div className="grid grid-cols-2 gap-3">
+                                 <div>
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Duración</label>
+                                    <div className="flex gap-1.5">
+                                       {[30,45,60,90].map(d => (
+                                          <button key={d} onClick={() => setBlockDuration(d)}
+                                             className={`flex-1 py-2 rounded-xl text-xs font-black border-2 transition-all ${blockDuration === d ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-400'}`}>
+                                             {d}m
+                                          </button>
+                                       ))}
+                                    </div>
+                                 </div>
+                                 <div>
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Motivo</label>
+                                    <input value={blockNote} onChange={e => setBlockNote(e.target.value)}
+                                       className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 font-bold text-xs text-black focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 transition-all placeholder:text-slate-400"
+                                       placeholder="Ej: Reunión..." />
+                                 </div>
+                              </div>
+
+                              {/* Resumen dinámico */}
+                              {blockTimes.length > 0 && (
+                                 <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Resumen</p>
+                                    <p className="text-xs font-bold text-slate-800">
+                                       {blockTimes.length} hora{blockTimes.length > 1 ? 's' : ''}
+                                       {blockRecurrence === 'none' && blockDate ? ` el ${blockDate}` : ''}
+                                       {blockRecurrence === 'weekly' && ` cada ${blockDaysOfWeek.length > 0 ? blockDaysOfWeek.map(d => ['D','L','M','X','J','V','S'][d]).join('/') : 'día seleccionado'} por 12 semanas`}
+                                       {blockRecurrence === 'monthly' && ` el mismo día por 6 meses`}
+                                       {blockRecurrence === 'permanent' && ` cada semana durante 1 año`}
+                                       {blockMode === 'remote_only' ? ' · Solo Remoto' : blockMode === 'presential_only' ? ' · Solo Presencial' : ''}
+                                    </p>
+                                 </div>
+                              )}
+
+                              <button onClick={handleApplySmartBlock} disabled={blockTimes.length === 0 || blockApplying}
+                                 className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-b-4 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 ${blockTimes.length > 0 && !blockApplying ? 'bg-slate-900 text-white border-slate-800 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}>
+                                 {blockApplying
+                                    ? <><span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-white rounded-full animate-spin" /> Aplicando...</>
+                                    : <><span className="material-icons-round text-lg text-rose-400">block</span>
+                                       Bloquear {blockTimes.length > 0 ? `${blockTimes.length} hora${blockTimes.length > 1 ? 's' : ''}` : 'horarios'}</>
+                                 }
                               </button>
                            </div>
                         )}
@@ -800,7 +924,35 @@ const ProfessionalAgenda: React.FC = () => {
                            {editingApp.status !== 'Bloqueado' && editingApp.patientId && (
                               <button onClick={() => navigate(`/pro/record/${editingApp.patientId}`)} className="py-5 bg-slate-50 text-slate-600 border-b-[3px] border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-900 hover:border-slate-800 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">description</span> Ficha Médica</button>
                            )}
-                           <button onClick={deleteAppointment} className="py-5 bg-rose-50 text-rose-500 border-b-[3px] border-rose-200 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-rose-500 hover:border-rose-600 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">delete</span> Anular Evento</button>
+                           {editingApp.status === 'Bloqueado' && editingApp.recurrenceId ? (
+                              <div className="col-span-2 space-y-3">
+                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Eliminar bloqueo</label>
+                                 <div className="flex flex-col gap-2">
+                                    {([
+                                       { v: 'single', label: 'Solo este bloque', icon: 'event_busy' },
+                                       { v: 'future', label: 'Este y los siguientes', icon: 'date_range' },
+                                       { v: 'all', label: 'Toda la serie', icon: 'delete_sweep' },
+                                    ] as const).map(opt => (
+                                       <button key={opt.v} onClick={() => setDeleteRecurrenceMode(opt.v)}
+                                          className={`py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all flex items-center gap-2 ${deleteRecurrenceMode === opt.v ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-400'}`}>
+                                          <span className="material-icons-round text-sm">{opt.icon}</span>
+                                          {opt.label}
+                                       </button>
+                                    ))}
+                                 </div>
+                                 <button onClick={async () => {
+                                    if (!editingApp.recurrenceId) return;
+                                    if (!window.confirm('¿Confirmas eliminar el/los bloqueo(s) seleccionados?')) return;
+                                    await deleteAppointmentsByRecurrence(editingApp.recurrenceId, deleteRecurrenceMode, editingApp.id, editingApp.date);
+                                    setIsEditModalOpen(false); setEditingApp(null);
+                                 }} className="w-full py-4 bg-rose-500 text-white border-b-[3px] border-rose-700 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110 active:border-b-0 active:translate-y-[3px] shadow-sm">
+                                    <span className="material-icons-round text-lg">delete</span>
+                                    Eliminar bloqueo{deleteRecurrenceMode === 'all' ? 's' : ''}
+                                 </button>
+                              </div>
+                           ) : (
+                              <button onClick={deleteAppointment} className="py-5 bg-rose-50 text-rose-500 border-b-[3px] border-rose-200 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-rose-500 hover:border-rose-600 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">delete</span> Anular Evento</button>
+                           )}
                            {editingApp.patientPhone && editingApp.status !== 'Bloqueado' && (
                               <a
                                  href={`https://wa.me/${editingApp.patientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${editingApp.patientName}, te recordamos tu cita el ${editingApp.date} a las ${editingApp.time}. ¡Te esperamos!`)}`}
