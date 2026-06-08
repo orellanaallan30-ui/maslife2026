@@ -1,8 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual, randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
-import crypto from 'crypto';
 
 const ADMIN_COLUMNS = [
   'id', 'slug', 'name', 'email', 'specialty', 'city', 'bio', 'avatar',
@@ -43,10 +42,10 @@ function timingSafeEqualStr(a: string, b: string): boolean {
   const bufA = Buffer.from(a, 'utf8');
   const bufB = Buffer.from(b, 'utf8');
   if (bufA.length !== bufB.length) {
-    crypto.timingSafeEqual(bufA, bufA);
+    timingSafeEqual(bufA, bufA);
     return false;
   }
-  return crypto.timingSafeEqual(bufA, bufB);
+  return timingSafeEqual(bufA, bufB);
 }
 
 function getAdminSupabase() {
@@ -93,7 +92,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         (code as string).toUpperCase().trim(),
         CLINIC_CODE.toUpperCase().trim()
       );
-      return res.status(200).json({ valid });
+      if (valid) return res.status(200).json({ valid: true });
+
+      // Fallback: check if it's a professional referral code
+      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        return res.status(200).json({ valid: false });
+      }
+      const supabaseAdmin = getAdminSupabase();
+      const { data: referrer } = await supabaseAdmin
+        .from('professionals')
+        .select('id, name')
+        .ilike('referral_code', (code as string).trim())
+        .single();
+
+      if (referrer) {
+        return res.status(200).json({ valid: true, referrerId: referrer.id, referrerName: referrer.name });
+      }
+      return res.status(401).json({ valid: false, error: 'Código inválido' });
     }
 
     // Admin login

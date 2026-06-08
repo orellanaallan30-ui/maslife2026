@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 const TermsOfService: React.FC = () => {
   const navigate = useNavigate();
-  const updated = '5 de junio de 2026';
+  const updated = '8 de junio de 2026';
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-800">
@@ -133,6 +133,22 @@ const TermsOfService: React.FC = () => {
             <a href="mailto:contacto@clinicamaslife.cl" className="text-primary underline hover:opacity-80">
               contacto@clinicamaslife.cl
             </a>
+          </p>
+        </Section>
+
+        <Section title="11. Programa de Referidos">
+          <p>
+            Un profesional registrado puede invitar a otros profesionales de salud mediante un enlace
+            personalizado. Al registrarse usando dicho enlace:
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-slate-700 mt-2">
+            <li>El nuevo profesional referido obtiene <strong>su primer mes de suscripción completamente gratis</strong> (30 días adicionales al período de prueba estándar).</li>
+            <li>El profesional referidor recibe un <strong>descuento de CLP $1.000</strong> aplicable en su próxima renovación de suscripción, de forma automática al completarse el registro del referido.</li>
+          </ul>
+          <p className="mt-2">
+            Estos beneficios son personales e intransferibles y no son canjeables por dinero en efectivo.
+            Clínica Mas Life se reserva el derecho de modificar o cancelar el programa de referidos
+            con aviso previo de 15 días.
           </p>
         </Section>
       </main>

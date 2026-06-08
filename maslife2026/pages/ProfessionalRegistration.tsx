@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
 import { supabase } from '../supabaseClient';
 
@@ -41,11 +41,14 @@ function mapDBtoPro(d: Record<string, any>) {
 const ProfessionalRegistration: React.FC = () => {
   const navigate = useNavigate();
   const { setLoggedPro } = useClinic();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
-  const [authCode, setAuthCode] = useState('');
+  const [authCode, setAuthCode] = useState(searchParams.get('ref') ?? '');
   const [codeError, setCodeError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [referrerId, setReferrerId] = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirm: '',
     specialty: '', city: 'Ovalle', customCity: '',
@@ -79,6 +82,7 @@ const ProfessionalRegistration: React.FC = () => {
         setCodeError(data.error || 'Código incorrecto. Solicítalo a la administración.');
         return;
       }
+      if (data.referrerId) setReferrerId(data.referrerId);
       setStep(2);
     } catch {
       setCodeError('Error de conexión. Intenta de nuevo.');
@@ -194,6 +198,7 @@ const ProfessionalRegistration: React.FC = () => {
         trial_end_date: trialEnd.toISOString(),
         needs_password_reset: false, payment_enabled: false,
         created_at: new Date().toISOString(),
+        terms_accepted_at: new Date().toISOString(),
       });
       if (timedOut) return;
 
@@ -206,6 +211,16 @@ const ProfessionalRegistration: React.FC = () => {
           setError('Error al guardar el perfil: ' + saveErr.message);
         }
         return;
+      }
+
+      // Referral rewards: record referred_by and trigger server-side rewards
+      if (referrerId) {
+        await supabase.from('professionals').update({ referred_by: referrerId }).eq('id', realUid);
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reward-referral', referrer_id: referrerId, referred_id: realUid }),
+        }).catch(() => {});
       }
 
       // Paso 6: navegar con datos en memoria (sin query extra que puede colgar)
@@ -297,6 +312,11 @@ const ProfessionalRegistration: React.FC = () => {
                 <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 text-sm text-teal-800">
                   Ingresa el código que te entregó el administrador de Clínica Mas Life para acceder al registro.
                 </div>
+                {searchParams.get('ref') && (
+                  <p className="text-xs text-teal-600 font-bold text-center bg-teal-50 rounded-xl px-3 py-2">
+                    Ingresaste con un enlace de referido — ¡obtendrás tu primer mes gratis!
+                  </p>
+                )}
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Código de acceso</label>
                   <input value={authCode} onChange={e=>{setAuthCode(e.target.value.toUpperCase());setCodeError('');}}
@@ -420,9 +440,23 @@ const ProfessionalRegistration: React.FC = () => {
                 {error&&<div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2">
                   <span className="material-icons-round text-rose-500 text-base shrink-0 mt-0.5">error</span>
                   <p className="text-sm text-rose-700 font-medium">{error}</p></div>}
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={e => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 accent-teal-500 shrink-0 cursor-pointer"
+                  />
+                  <span className="text-xs text-slate-600 leading-relaxed">
+                    He leído y acepto los{' '}
+                    <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-teal-600 font-black hover:underline">Términos y Condiciones</a>
+                    {' '}y la{' '}
+                    <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-teal-600 font-black hover:underline">Política de Privacidad</a>.
+                  </span>
+                </label>
                 <div className="flex gap-3 pt-1">
                   <button type="button" onClick={()=>{setStep(2);setError('');}} className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Atrás</button>
-                  <button type="submit" disabled={loading}
+                  <button type="submit" disabled={loading || !acceptedTerms}
                     className="flex-[2] py-3.5 bg-teal-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25 disabled:opacity-60 flex items-center justify-center gap-2">
                     {loading?<><span className="material-icons-round text-base animate-spin">sync</span>Creando...</>:<><span className="material-icons-round text-base">how_to_reg</span>Crear mi cuenta</>}
                   </button>

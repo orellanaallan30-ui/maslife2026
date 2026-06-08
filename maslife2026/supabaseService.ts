@@ -320,6 +320,10 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     instagram: (d.instagram as string) || undefined,
     googleCalendarConnected: (d.google_calendar_connected as boolean) ?? false,
     reviewsEnabled: (d.reviews_enabled as boolean) ?? true,
+    referralCode:      (d.referral_code as string)      || undefined,
+    referredBy:        (d.referred_by as string)        || undefined,
+    referralCreditClp: (d.referral_credit_clp as number) ?? 0,
+    termsAcceptedAt:   (d.terms_accepted_at as string)  || undefined,
   } as ProfessionalProfile;
 }
 
@@ -341,6 +345,10 @@ function mapProToDB(pro: ProfessionalProfile): Record<string, unknown> {
     mp_public_key: (pro as any).mpPublicKey || null,
     instagram: pro.instagram || null,
     reviews_enabled: pro.reviewsEnabled ?? true,
+    referral_code:       (pro as any).referralCode      || null,
+    referred_by:         (pro as any).referredBy        || null,
+    referral_credit_clp: (pro as any).referralCreditClp ?? 0,
+    terms_accepted_at:   (pro as any).termsAcceptedAt   || null,
   };
 }
 
@@ -473,6 +481,14 @@ export async function getProfessionalRating(professionalId: string): Promise<{ a
   if (error || !data || data.length === 0) return { avg: 0, count: 0 };
   const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
   return { avg: Math.round(avg * 10) / 10, count: data.length };
+}
+
+export async function getReferralCount(professionalId: string): Promise<number> {
+  const { count } = await supabase
+    .from('professionals')
+    .select('id', { count: 'exact', head: true })
+    .eq('referred_by', professionalId);
+  return count ?? 0;
 }
 
 // ── Re-exporta supabase para componentes que lo necesiten ─────

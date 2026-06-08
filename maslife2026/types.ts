@@ -91,6 +91,10 @@ export interface ProfessionalProfile {
   instagram?: string;
   googleCalendarConnected?: boolean;
   reviewsEnabled?: boolean;
+  referralCode?:      string;
+  referredBy?:        string;
+  referralCreditClp?: number;
+  termsAcceptedAt?:   string;
 }
 
 export interface Appointment {

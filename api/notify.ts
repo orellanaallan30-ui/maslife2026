@@ -209,6 +209,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
+  // Reward referral: credit referrer $1,000 and give referred +30 days
+  if (req.body?.action === 'reward-referral') {
+    const { referrer_id, referred_id } = req.body || {};
+    if (!referrer_id || !referred_id) {
+      return res.status(400).json({ error: 'referrer_id y referred_id requeridos' });
+    }
+
+    // Validate both IDs exist
+    const { data: referrer } = await supabase.from('professionals').select('id').eq('id', referrer_id).single();
+    const { data: referred } = await supabase.from('professionals').select('id').eq('id', referred_id).single();
+    if (!referrer || !referred) return res.status(404).json({ error: 'Profesional no encontrado' });
+
+    // Give referrer $1,000 credit
+    await supabase.rpc('increment_referral_credit', { pro_id: referrer_id, amount: 1000 })
+      .then(async ({ error }) => {
+        if (error) {
+          // Fallback if RPC doesn't exist: manual increment
+          const { data: pro } = await supabase.from('professionals').select('referral_credit_clp').eq('id', referrer_id).single();
+          await supabase.from('professionals').update({ referral_credit_clp: ((pro as any)?.referral_credit_clp || 0) + 1000 }).eq('id', referrer_id);
+        }
+      });
+
+    // Give referred professional +30 extra days
+    const { data: refPro } = await supabase.from('professionals').select('trial_end_date').eq('id', referred_id).single();
+    const base = (refPro as any)?.trial_end_date ? new Date((refPro as any).trial_end_date) : new Date();
+    const extended = new Date(Math.max(base.getTime(), Date.now()) + 30 * 24 * 60 * 60 * 1000);
+    await supabase.from('professionals').update({ trial_end_date: extended.toISOString() }).eq('id', referred_id);
+
+    return res.status(200).json({ rewarded: true });
+  }
+
   // Submit review: server-side RUT verification against appointments
   if (req.body?.action === 'submit-review') {
     const { professional_id, patient_rut, patient_name, rating, comment } = req.body || {};
