@@ -992,11 +992,13 @@ const MainHome: React.FC = () => {
             <div>
               <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Legal</h4>
               <ul className="space-y-3">
-                {['Privacidad', 'Términos'].map(label => (
-                  <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
-                      style={{ color: 'rgba(255,255,255,.55)' }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ffffff'}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,.55)'}>{label}</li>
+                {[{ label: 'Privacidad', href: '/privacidad' }, { label: 'Términos', href: '/terminos' }].map(({ label, href }) => (
+                  <li key={label}>
+                    <a href={href} className="font-outfit text-sm font-light cursor-pointer transition-colors"
+                       style={{ color: 'rgba(255,255,255,.55)', textDecoration: 'none' }}
+                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ffffff'}
+                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,.55)'}>{label}</a>
+                  </li>
                 ))}
               </ul>
             </div>

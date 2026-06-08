@@ -16,6 +16,7 @@ import AdminLogin            from './pages/AdminLogin';
 import Finances              from './pages/Finances';
 import Settings              from './pages/Settings';
 import ProfessionalAgenda    from './pages/ProfessionalAgenda';
+import ReferralProgram       from './pages/ReferralProgram';
 import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
 import { ConsentAcceptPage } from './pages/ConsentAcceptPage';
@@ -440,6 +441,7 @@ const AppContent: React.FC = () => {
             <Route path="/pro/record/:id"  element={<ClinicalRecord />} />
             <Route path="/pro/finances"    element={<Finances />} />
             <Route path="/pro/settings"    element={<Settings />} />
+            <Route path="/pro/referral"    element={<ReferralProgram />} />
           </Route>
           {/* Protegidas admin */}
           <Route element={<AdminGuard><ProLayout /></AdminGuard>}>
