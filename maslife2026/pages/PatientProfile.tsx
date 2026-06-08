@@ -258,10 +258,11 @@ const PatientProfile: React.FC = () => {
             onError: (error: any) => {
               console.error('[MP Brick]', error);
               // Registrar el error real en el servidor para diagnóstico
-              fetch('/api/log-client-error', {
+              fetch('/api/notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                  clientError: true,
                   context: 'mp-brick-onError',
                   error: error?.type || error?.message || 'unknown',
                   detail: {
@@ -299,10 +300,11 @@ const PatientProfile: React.FC = () => {
       } catch (e: any) {
         console.error('[MP Brick init]', e);
         // Registrar el error real de inicialización en el servidor
-        fetch('/api/log-client-error', {
+        fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            clientError: true,
             context: 'mp-brick-init-catch',
             error: e?.message || 'unknown',
             detail: {

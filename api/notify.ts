@@ -199,8 +199,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Rama de diagnóstico: registrar errores del cliente (p. ej. fallos del Brick
+  // de MercadoPago) en los logs del servidor sin necesidad de un endpoint extra.
+  if (req.body?.clientError) {
+    try {
+      console.error('[client-error]', JSON.stringify(req.body).slice(0, 2000));
+    } catch {
+      console.error('[client-error] cuerpo no parseable');
+    }
+    return res.status(200).json({ logged: true });
+  }
 
   if (!checkRateLimit(req.headers, 20, 60 * 60 * 1000)) {
     return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en una hora.' });
