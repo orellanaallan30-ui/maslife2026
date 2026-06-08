@@ -466,13 +466,13 @@ const Settings: React.FC = () => {
                           <div className="flex-1">
                             <p className="font-black text-green-800 text-sm">Cuenta MercadoPago conectada</p>
                             <p className="text-xs text-green-600">
-                              {(localProfile.mpPublicKey?.length ?? 0) > 50
-                                ? 'Clave configurada correctamente ✓'
-                                : 'Clave de pago incompleta — haz clic en Reparar'}
+                              {/^(APP_USR-|TEST-)/.test(localProfile.mpPublicKey ?? '')
+                                ? 'Los pagos llegan directo a tu cuenta MP ✓'
+                                : 'Falta la clave pública — haz clic en Reparar'}
                             </p>
                           </div>
                           <div className="flex flex-col gap-1 items-end">
-                            {(localProfile.mpPublicKey?.length ?? 0) <= 50 && (
+                            {!/^(APP_USR-|TEST-)/.test(localProfile.mpPublicKey ?? '') && (
                               <button
                                 onClick={async () => {
                                   if (!localProfile) return;

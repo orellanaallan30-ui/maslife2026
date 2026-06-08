@@ -894,16 +894,19 @@ const PatientProfile: React.FC = () => {
                       <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Pago Seguro con MercadoPago</p>
                     </div>
 
-                    {/* Spinner mientras carga el Brick */}
-                    {brickStatus === 'loading' && (
-                      <div className="flex flex-col items-center justify-center py-10 gap-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="material-icons-round animate-spin text-3xl" style={{ color: '#009ee3' }}>sync</span>
-                        <p className="text-xs font-bold text-slate-500">Cargando formulario de pago...</p>
-                      </div>
-                    )}
-
-                    {/* Contenedor del Brick */}
-                    <div id="mp-brick-container" className={`w-full overflow-x-hidden ${brickStatus === 'ready' ? 'block' : 'hidden'}`} />
+                    {/* Contenedor del Brick — SIEMPRE visible en el DOM.
+                        MercadoPago Bricks no puede montarse en un display:none,
+                        así que mostramos el spinner como overlay encima en vez
+                        de ocultar el contenedor. */}
+                    <div className="relative w-full min-h-[60px]">
+                      {brickStatus === 'loading' && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center py-10 gap-3 bg-slate-50 rounded-2xl border border-slate-100">
+                          <span className="material-icons-round animate-spin text-3xl" style={{ color: '#009ee3' }}>sync</span>
+                          <p className="text-xs font-bold text-slate-500">Cargando formulario de pago...</p>
+                        </div>
+                      )}
+                      <div id="mp-brick-container" className="w-full overflow-x-hidden" />
+                    </div>
 
                     {/* Error crítico — con fallback para reservar de todas formas */}
                     {brickStatus === 'error' && (
