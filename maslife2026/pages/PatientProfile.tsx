@@ -767,6 +767,145 @@ const PatientProfile: React.FC = () => {
                 </div>
               </div>
 
+              {doctor.reviewsEnabled && (
+                <div className="px-1 pb-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(s => (
+                        <span key={s} className="material-icons-round text-lg" style={{ color: s <= Math.round(rating.avg) ? '#f59e0b' : '#e2e8f0' }}>star</span>
+                      ))}
+                    </div>
+                    <span className="text-xl font-black text-slate-900">{rating.avg > 0 ? rating.avg.toFixed(1) : '—'}</span>
+                    <span className="text-xs text-slate-400 font-bold">({rating.count} {rating.count === 1 ? 'reseña' : 'reseñas'})</span>
+                    <button
+                      onClick={() => setShowReviewForm(true)}
+                      className="ml-auto text-xs font-black text-primary hover:underline"
+                    >
+                      + Calificar
+                    </button>
+                  </div>
+
+                  {reviews.slice(0, 5).map(r => (
+                    <div key={r.id} className="mb-3 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-0.5">
+                          {[1,2,3,4,5].map(s => (
+                            <span key={s} className="material-icons-round text-sm" style={{ color: s <= r.rating ? '#f59e0b' : '#e2e8f0' }}>star</span>
+                          ))}
+                        </div>
+                        <span className="text-xs font-black text-slate-700">{r.patientName}</span>
+                        {r.isVerified && <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">✓ Paciente verificado</span>}
+                        <span className="text-[10px] text-slate-400 ml-auto">{new Date(r.createdAt).toLocaleDateString('es-CL', { month: 'short', year: 'numeric' })}</span>
+                      </div>
+                      {r.comment && <p className="text-xs text-slate-600 leading-relaxed">{r.comment}</p>}
+                    </div>
+                  ))}
+
+                  {showReviewForm && (
+                    <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center" onClick={e => { if (e.target === e.currentTarget) setShowReviewForm(false); }}>
+                      <div className="bg-white w-full max-w-lg rounded-t-3xl p-6 space-y-4 shadow-2xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-black text-slate-900">Calificar atención</h3>
+                          <button onClick={() => setShowReviewForm(false)} className="material-icons-round text-slate-400 text-2xl">close</button>
+                        </div>
+
+                        {reviewStatus === 'success' ? (
+                          <div className="text-center py-8 space-y-3">
+                            <span className="material-icons-round text-4xl text-emerald-500">check_circle</span>
+                            <p className="font-black text-slate-900">¡Gracias por tu reseña!</p>
+                            <button onClick={() => { setShowReviewForm(false); setReviewStatus('idle'); }} className="text-xs font-black text-primary hover:underline">Cerrar</button>
+                          </div>
+                        ) : (
+                          <>
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Tu calificación</label>
+                              <div className="flex gap-1">
+                                {[1,2,3,4,5].map(s => (
+                                  <button key={s} onClick={() => setReviewRating(s)} className="p-0.5">
+                                    <span className="material-icons-round text-3xl" style={{ color: s <= reviewRating ? '#f59e0b' : '#e2e8f0' }}>star</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu nombre</label>
+                              <input
+                                value={reviewName}
+                                onChange={e => setReviewName(e.target.value)}
+                                placeholder="Ej: María G."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold text-slate-800 outline-none focus:border-primary"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu RUT (para verificar que fuiste atendido/a)</label>
+                              <input
+                                value={reviewRut}
+                                onChange={e => setReviewRut(e.target.value)}
+                                placeholder="Ej: 12.345.678-9"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold text-slate-800 outline-none focus:border-primary"
+                              />
+                              <p className="text-[10px] text-slate-400 mt-1 ml-1">Tu RUT solo se usa para verificar que fuiste atendido/a. No se publica.</p>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Comentario (opcional)</label>
+                              <textarea
+                                value={reviewComment}
+                                onChange={e => setReviewComment(e.target.value)}
+                                placeholder="Cuéntanos tu experiencia..."
+                                rows={3}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold text-slate-800 outline-none focus:border-primary resize-none"
+                              />
+                            </div>
+
+                            {reviewError && <p className="text-xs text-rose-600 font-bold text-center">{reviewError}</p>}
+
+                            <button
+                              disabled={!reviewName.trim() || !reviewRut.trim() || reviewStatus === 'loading'}
+                              onClick={async () => {
+                                setReviewStatus('loading');
+                                setReviewError('');
+                                try {
+                                  const res = await fetch('/api/notify', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      action: 'submit-review',
+                                      professional_id: fetchedDoctor!.id,
+                                      patient_rut: reviewRut,
+                                      patient_name: reviewName,
+                                      rating: reviewRating,
+                                      comment: reviewComment || undefined,
+                                    }),
+                                  });
+                                  const data = await res.json();
+                                  if (!res.ok) {
+                                    setReviewError(data.error || 'No se pudo guardar la reseña.');
+                                    setReviewStatus('error');
+                                  } else {
+                                    setReviewStatus('success');
+                                    getProfessionalReviews(fetchedDoctor!.id).then(setReviews);
+                                    getProfessionalRating(fetchedDoctor!.id).then(setRating);
+                                  }
+                                } catch {
+                                  setReviewError('Error de conexión. Intenta de nuevo.');
+                                  setReviewStatus('error');
+                                }
+                              }}
+                              className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest border-b-4 border-primary/70 active:border-b-0"
+                            >
+                              {reviewStatus === 'loading' ? 'Enviando...' : 'Enviar calificación'}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Array.isArray(doctor.services) && doctor.services.length > 0 ? doctor.services.map((s) => (
                     <button

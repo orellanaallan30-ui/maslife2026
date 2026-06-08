@@ -617,6 +617,19 @@ const Settings: React.FC = () => {
                           </div>
                         </div>
                       )}
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                        <div>
+                          <p className="font-black text-black">Reseñas de pacientes</p>
+                          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Los pacientes atendidos pueden calificarte con estrellas</p>
+                        </div>
+                        <button
+                          onClick={() => handleUpdate({ reviewsEnabled: localProfile.reviewsEnabled !== false ? false : true })}
+                          className={`w-14 h-8 rounded-full relative transition-all shrink-0 ${localProfile.reviewsEnabled !== false ? 'bg-primary' : 'bg-slate-300'}`}
+                        >
+                          <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${localProfile.reviewsEnabled !== false ? 'left-7' : 'left-1'}`}></div>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
