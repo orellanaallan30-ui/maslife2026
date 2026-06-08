@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Appointment, Service } from '../types';
+import { Appointment, Service, Review } from '../types';
 import { useClinic } from '../ClinicContext';
-import { getProfessionalBySlugOrId, getAppointments } from '../supabaseService';
+import { getProfessionalBySlugOrId, getAppointments, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
 
 const PatientProfile: React.FC = () => {
   const { id } = useParams();
@@ -26,6 +26,16 @@ const PatientProfile: React.FC = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [rating, setRating] = useState<{ avg: number; count: number }>({ avg: 0, count: 0 });
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRut, setReviewRut] = useState('');
+  const [reviewName, setReviewName] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewStatus, setReviewStatus] = useState<'idle'|'loading'|'success'|'error'>('idle');
+  const [reviewError, setReviewError] = useState('');
 
   // MercadoPago Bricks
   const [mpError, setMpError]       = useState('');
@@ -110,6 +120,12 @@ const PatientProfile: React.FC = () => {
     getAppointments(proId).then(setProAppointments).catch(() => {});
   }, [fetchedDoctor?.id]);
 
+  useEffect(() => {
+    if (!fetchedDoctor?.id || !fetchedDoctor.reviewsEnabled) return;
+    getProfessionalReviews(fetchedDoctor.id).then(setReviews);
+    getProfessionalRating(fetchedDoctor.id).then(setRating);
+  }, [fetchedDoctor?.id, fetchedDoctor?.reviewsEnabled]);
+
   // MercadoPago Bricks — inicializar cuando se llega al paso 4
   useEffect(() => {
     if (step !== 4 || !MP_ENABLED || !doctor || !selectedService || !selectedSlot) {
@@ -144,6 +160,7 @@ const PatientProfile: React.FC = () => {
       professionalId: doctor.id,
       bookingSource: 'web',
       patientEmail: patientData.email || undefined,
+      patientRut: patientData.rut || undefined,
     };
     mpBookingRef.current = newApp;
 

@@ -1,4 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
+);
 
 const ipCounts = new Map<string, { count: number; windowStart: number }>();
 
@@ -202,6 +208,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // Submit review: server-side RUT verification against appointments
+  if (req.body?.action === 'submit-review') {
+    const { professional_id, patient_rut, patient_name, rating, comment } = req.body || {};
+
+    if (!professional_id || !patient_rut || !patient_name || !rating) {
+      return res.status(400).json({ error: 'Campos requeridos: professional_id, patient_rut, patient_name, rating' });
+    }
+    if (typeof rating !== 'number' || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Calificación inválida (1-5)' });
+    }
+
+    const { data: pro } = await supabase
+      .from('professionals')
+      .select('reviews_enabled')
+      .eq('id', professional_id)
+      .single();
+    if (!pro?.reviews_enabled) {
+      return res.status(403).json({ error: 'Este profesional no acepta calificaciones.' });
+    }
+
+    const normalizedRut = String(patient_rut).replace(/\./g, '').replace(/-/g, '').toLowerCase().trim();
+    const { data: appointments } = await supabase
+      .from('appointments')
+      .select('id')
+      .eq('professional_id', professional_id)
+      .or(`patient_rut.ilike.${normalizedRut},patient_rut.ilike.${String(patient_rut).trim()}`)
+      .in('status', ['Confirmado', 'Completado'])
+      .limit(1);
+
+    const isVerified = !!(appointments && appointments.length > 0);
+
+    if (!isVerified) {
+      return res.status(403).json({
+        error: 'Solo pueden calificar pacientes que fueron atendidos por este profesional.',
+        code: 'NOT_A_PATIENT'
+      });
+    }
+
+    const { error: insertErr } = await supabase
+      .from('professional_reviews')
+      .upsert({
+        professional_id,
+        patient_rut: normalizedRut,
+        patient_name: String(patient_name).trim().slice(0, 80),
+        rating: Math.round(rating),
+        comment: comment ? String(comment).trim().slice(0, 500) : null,
+        is_verified: true,
+      }, { onConflict: 'professional_id,patient_rut' });
+
+    if (insertErr) {
+      console.error('[submit-review]', insertErr.message);
+      return res.status(500).json({ error: 'No se pudo guardar la reseña.' });
+    }
+
+    return res.status(200).json({ submitted: true });
+  }
 
   // Rama de diagnóstico: registrar errores del cliente (p. ej. fallos del Brick
   // de MercadoPago) en los logs del servidor sin necesidad de un endpoint extra.

@@ -1,6 +1,6 @@
 // supabaseService.ts — v3: Supabase Auth + sin hardcodeos + rate-limiting
 import { supabase } from './supabaseClient';
-import { Patient, Appointment, Transaction, ProfessionalProfile } from './types';
+import { Patient, Appointment, Transaction, ProfessionalProfile, Review } from './types';
 
 // ── SHA-256 para verificación de integridad de documentos clínicos únicamente ──
 // NO usar para autenticar contraseñas de usuarios — SHA-256 sin salt es vulnerable
@@ -319,6 +319,7 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     mpPublicKey: (d.mp_public_key as string) || undefined,
     instagram: (d.instagram as string) || undefined,
     googleCalendarConnected: (d.google_calendar_connected as boolean) ?? false,
+    reviewsEnabled: (d.reviews_enabled as boolean) ?? true,
   } as ProfessionalProfile;
 }
 
@@ -339,6 +340,7 @@ function mapProToDB(pro: ProfessionalProfile): Record<string, unknown> {
     rut: (pro as any).rut || null, schedule: pro.schedule || null,
     mp_public_key: (pro as any).mpPublicKey || null,
     instagram: pro.instagram || null,
+    reviews_enabled: pro.reviewsEnabled ?? true,
   };
 }
 
@@ -397,6 +399,7 @@ function mapDBtoAppointment(a: Record<string, unknown>): Appointment {
     recurrenceId: a.recurrence_id as string | undefined,
     recurrenceType: a.recurrence_type as Appointment['recurrenceType'] | undefined,
     blockMode: a.block_mode as Appointment['blockMode'] | undefined,
+    patientRut: a.patient_rut as string | undefined,
   };
 }
 
@@ -412,6 +415,7 @@ function mapAppointmentToDB(a: Appointment): Record<string, unknown> {
     recurrence_id: a.recurrenceId ?? null,
     recurrence_type: a.recurrenceType ?? null,
     block_mode: a.blockMode ?? null,
+    patient_rut: a.patientRut || null,
   };
 }
 
@@ -439,6 +443,36 @@ export async function deleteBlocksByRecurrence(
       .eq('recurrence_id', recurrenceId);
     if (error) throw error;
   }
+}
+
+// ── Reseñas ───────────────────────────────────────────────────
+export async function getProfessionalReviews(professionalId: string): Promise<Review[]> {
+  const { data, error } = await supabase
+    .from('professional_reviews')
+    .select('id, professional_id, patient_name, rating, comment, created_at, is_verified')
+    .eq('professional_id', professionalId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error || !data) return [];
+  return data.map(r => ({
+    id: r.id,
+    professionalId: r.professional_id,
+    patientName: r.patient_name,
+    rating: r.rating,
+    comment: r.comment || undefined,
+    createdAt: r.created_at,
+    isVerified: r.is_verified,
+  }));
+}
+
+export async function getProfessionalRating(professionalId: string): Promise<{ avg: number; count: number }> {
+  const { data, error } = await supabase
+    .from('professional_reviews')
+    .select('rating')
+    .eq('professional_id', professionalId);
+  if (error || !data || data.length === 0) return { avg: 0, count: 0 };
+  const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
+  return { avg: Math.round(avg * 10) / 10, count: data.length };
 }
 
 // ── Re-exporta supabase para componentes que lo necesiten ─────
