@@ -115,6 +115,9 @@ export interface Appointment {
   paidAt?: string;
   paymentAmount?: number;
   patientEmail?: string;
+  recurrenceId?:   string;
+  recurrenceType?: 'none' | 'weekly' | 'monthly' | 'permanent';
+  blockMode?:      'blocked' | 'remote_only' | 'presential_only';
 }
 
 export interface Notification {

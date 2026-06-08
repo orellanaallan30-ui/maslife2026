@@ -394,6 +394,9 @@ function mapDBtoAppointment(a: Record<string, unknown>): Appointment {
     bookingSource: a.booking_source as Appointment['bookingSource'],
     paidAt: a.paid_at as string, paymentAmount: a.payment_amount as number,
     patientEmail: a.patient_email as string,
+    recurrenceId: a.recurrence_id as string | undefined,
+    recurrenceType: a.recurrence_type as Appointment['recurrenceType'] | undefined,
+    blockMode: a.block_mode as Appointment['blockMode'] | undefined,
   };
 }
 
@@ -406,7 +409,36 @@ function mapAppointmentToDB(a: Appointment): Record<string, unknown> {
     category: a.category, professional_id: a.professionalId,
     booking_source: a.bookingSource, paid_at: a.paidAt, payment_amount: a.paymentAmount,
     patient_email: a.patientEmail,
+    recurrence_id: a.recurrenceId ?? null,
+    recurrence_type: a.recurrenceType ?? null,
+    block_mode: a.blockMode ?? null,
   };
+}
+
+export async function batchInsertBlocks(blocks: Appointment[]): Promise<void> {
+  if (blocks.length === 0) return;
+  const { error } = await supabase.from('appointments').insert(blocks.map(mapAppointmentToDB));
+  if (error) throw error;
+}
+
+export async function deleteBlocksByRecurrence(
+  recurrenceId: string,
+  mode: 'single' | 'future' | 'all',
+  blockId: string,
+  blockDate: string
+): Promise<void> {
+  if (mode === 'single') {
+    const { error } = await supabase.from('appointments').delete().eq('id', blockId);
+    if (error) throw error;
+  } else if (mode === 'future') {
+    const { error } = await supabase.from('appointments').delete()
+      .eq('recurrence_id', recurrenceId).gte('date', blockDate);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('appointments').delete()
+      .eq('recurrence_id', recurrenceId);
+    if (error) throw error;
+  }
 }
 
 // ── Re-exporta supabase para componentes que lo necesiten ─────

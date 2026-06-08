@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate } from './types';
-import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, saveTransaction } from './supabaseService';
+import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, saveTransaction, batchInsertBlocks, deleteBlocksByRecurrence } from './supabaseService';
 
 interface ClinicContextType {
   // Estado de carga
@@ -24,8 +24,10 @@ interface ClinicContextType {
   appointments: Appointment[];
   setAppointments: (apps: Appointment[] | ((prev: Appointment[]) => Appointment[])) => void;
   addAppointment: (app: Appointment) => Promise<void>;
+  batchAddAppointments: (apps: Appointment[]) => Promise<void>;
   updateAppointment: (app: Appointment) => void;
   deleteAppointment: (id: string) => void;
+  deleteAppointmentsByRecurrence: (recurrenceId: string, mode: 'single' | 'future' | 'all', blockId: string, blockDate: string) => Promise<void>;
 
   // Pacientes
   patients: Patient[];
@@ -329,6 +331,11 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
+  const batchAddAppointments = async (apps: Appointment[]) => {
+    setAppointments(prev => [...prev, ...apps]);
+    await batchInsertBlocks(apps);
+  };
+
   const updateAppointment = (updated: Appointment) => {
     setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
     addNotification(`Cita actualizada: ${updated.patientName} (${updated.date} ${updated.time})`, 'appointment');
@@ -340,6 +347,17 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (appointmentToDelete) {
       addNotification(`Cita cancelada: ${appointmentToDelete.patientName}`, 'appointment');
     }
+  };
+
+  const deleteAppointmentsByRecurrence = async (recurrenceId: string, mode: 'single' | 'future' | 'all', blockId: string, blockDate: string) => {
+    if (mode === 'single') {
+      setAppointments(prev => prev.filter(a => a.id !== blockId));
+    } else if (mode === 'future') {
+      setAppointments(prev => prev.filter(a => !(a.recurrenceId === recurrenceId && a.date >= blockDate)));
+    } else {
+      setAppointments(prev => prev.filter(a => a.recurrenceId !== recurrenceId));
+    }
+    await deleteBlocksByRecurrence(recurrenceId, mode, blockId, blockDate);
   };
 
   const addNotification = (title: string, type: 'appointment' | 'payment' | 'system') => {
@@ -407,8 +425,10 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     appointments,
     setAppointments,
     addAppointment,
+    batchAddAppointments,
     updateAppointment,
     deleteAppointment,
+    deleteAppointmentsByRecurrence,
     patients,
     setPatients,
     addPatient,
