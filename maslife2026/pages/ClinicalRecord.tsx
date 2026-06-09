@@ -79,20 +79,41 @@ const ClinicalRecord: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const posturalInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Evaluación Kinesiológica Estructurada ──────────────────────────────────
-  const defaultKiAnthro = { weight: '', height: '', reach: '', legR: '', legL: '' };
-  const defaultKiPostural = { plomadaSag: '', plomadaFront: '', shoulders: '', scapulas: '', pelvis: '', knees: '', feet: '', observations: '' };
-  const [kiAnthro, setKiAnthro]       = useState(defaultKiAnthro);
-  const [kiPostural, setKiPostural]   = useState(defaultKiPostural);
-  const [kiRom, setKiRom]             = useState<Record<string, string>>({});
-  const [kiTests, setKiTests]         = useState<Record<string, 'pos'|'neg'|'ne'>>({});
+  // ── Evaluación Kinesiológica EV1 / EV2 ────────────────────────────────────
+  type KiAnthro   = { weight: string; height: string; reach: string; legR: string; legL: string };
+  type KiPostural = { plomadaSag: string; plomadaFront: string; shoulders: string; scapulas: string; pelvis: string; knees: string; feet: string; observations: string };
+  type KiEvalSet  = { anthro: KiAnthro; postural: KiPostural; rom: Record<string, string>; tests: Record<string, 'pos'|'neg'|'ne'>; images: string[] };
+  const mkKiSet = (): KiEvalSet => ({
+    anthro:   { weight: '', height: '', reach: '', legR: '', legL: '' },
+    postural: { plomadaSag: '', plomadaFront: '', shoulders: '', scapulas: '', pelvis: '', knees: '', feet: '', observations: '' },
+    rom: {}, tests: {}, images: [],
+  });
+  const [kiData, setKiData]       = useState<{ initial: KiEvalSet; final: KiEvalSet }>({ initial: mkKiSet(), final: mkKiSet() });
+  const [kiEvalTab, setKiEvalTab] = useState<'initial' | 'final' | 'compare'>('initial');
 
-  const kiImc = kiAnthro.weight && kiAnthro.height
-    ? (Number(kiAnthro.weight) / Math.pow(Number(kiAnthro.height) / 100, 2)).toFixed(1)
-    : '';
-  const kiDiscrep = kiAnthro.legR && kiAnthro.legL
-    ? Math.abs(Number(kiAnthro.legR) - Number(kiAnthro.legL)).toFixed(1)
-    : '';
+  // Aliases pointing to the active tab — form JSX stays unchanged
+  const _kiTab        = kiEvalTab === 'compare' ? 'initial' : kiEvalTab;
+  const kiActive      = kiData[_kiTab];
+  const kiAnthro      = kiActive.anthro;
+  const kiPostural    = kiActive.postural;
+  const kiRom         = kiActive.rom;
+  const kiTests       = kiActive.tests;
+  const analysisImages = kiActive.images;
+  const setKiAnthro   = (upd: (p: KiAnthro) => KiAnthro) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], anthro:   upd(prev[_kiTab].anthro)   } }));
+  const setKiPostural = (upd: (p: KiPostural) => KiPostural) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], postural: upd(prev[_kiTab].postural) } }));
+  const setKiRom      = (upd: (p: Record<string, string>) => Record<string, string>) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], rom:      upd(prev[_kiTab].rom)      } }));
+  const setKiTests    = (upd: (p: Record<string, 'pos'|'neg'|'ne'>) => Record<string, 'pos'|'neg'|'ne'>) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], tests:    upd(prev[_kiTab].tests)    } }));
+  const setAnalysisImages = (upd: ((p: string[]) => string[]) | string[]) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], images: typeof upd === 'function' ? upd(prev[_kiTab].images) : upd } }));
+
+  const calcKiImc    = (a: KiAnthro) => a.weight && a.height ? (Number(a.weight) / Math.pow(Number(a.height) / 100, 2)).toFixed(1) : '';
+  const calcKiDiscrep = (a: KiAnthro) => a.legR && a.legL ? Math.abs(Number(a.legR) - Number(a.legL)).toFixed(1) : '';
+  const kiImc    = calcKiImc(kiAnthro);
+  const kiDiscrep = calcKiDiscrep(kiAnthro);
 
   const initialPatient = patients.find(p => p.id === id);
   const safePatient = initialPatient || { name: '', age: 0, rut: '', birthDate: '', prevision: '', diagnoses: '', address: '', phone: '', email: '', emergencyContact: '', customFields: [], vitals: null, medicalHistory: '', sessionLogs: [], goals: [] } as any;
@@ -173,14 +194,28 @@ const ClinicalRecord: React.FC = () => {
   // ── Estado: datos especialidad guardados ───────────────────────────────────
   const savedSpec = (safePatient.specialtyData || {}) as Record<string, any>;
 
-  // Cargar datos kinesiológicos guardados
+  // Cargar datos kinesiológicos guardados (soporta formato legacy y nuevo EV1/EV2)
   React.useEffect(() => {
     const ki = savedSpec.kinesio as any;
     if (!ki) return;
-    if (ki.anthro)   setKiAnthro(ki.anthro);
-    if (ki.postural) setKiPostural(ki.postural);
-    if (ki.rom)      setKiRom(ki.rom);
-    if (ki.tests)    setKiTests(ki.tests);
+    if (ki.initial || ki.final) {
+      setKiData({
+        initial: { ...mkKiSet(), ...(ki.initial || {}) },
+        final:   { ...mkKiSet(), ...(ki.final   || {}) },
+      });
+    } else if (ki.anthro || ki.postural || ki.rom || ki.tests) {
+      // Migrar formato antiguo → EV1
+      setKiData(prev => ({
+        ...prev,
+        initial: {
+          anthro:   ki.anthro   || mkKiSet().anthro,
+          postural: ki.postural || mkKiSet().postural,
+          rom:      ki.rom      || {},
+          tests:    ki.tests    || {},
+          images:   ki.images   || [],
+        },
+      }));
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Estado nutrición
@@ -243,7 +278,6 @@ const ClinicalRecord: React.FC = () => {
   const [files, setFiles] = useState<ClinicalFile[]>(safePatient.attachments || []);
 
   const [analysisType, setAnalysisType] = useState<'Postural' | 'Marcha' | 'Musculoesquelético'>('Postural');
-  const [analysisImages, setAnalysisImages] = useState<string[]>([]);
   const [analysisResult, setAnalysisResult] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -712,7 +746,7 @@ Entrega el informe con estas secciones:
         // Psicología
         psychMood, psychPsychHistory, psychIntervention, psychNextObjective,
         // Kinesiología
-        kinesio: { anthro: kiAnthro, postural: kiPostural, rom: kiRom, tests: kiTests },
+        kinesio: { initial: kiData.initial, final: kiData.final },
       };
     })(),
   } as Patient);
@@ -940,12 +974,30 @@ Entrega el informe con estas secciones:
           </section>
 
           {specialtyKey === 'kinesiologia' && (<>
+
+          {/* ── Tabs EV1 / EV2 / Comparar ──────────────────────────────────── */}
+          <div className="flex flex-wrap gap-2 no-print">
+            {(['initial', 'final', 'compare'] as const).map(tab => (
+              <button key={tab} onClick={() => setKiEvalTab(tab)}
+                className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border ${
+                  kiEvalTab === tab
+                    ? tab === 'compare' ? 'bg-slate-800 text-white border-slate-800 shadow-md' : tab === 'initial' ? 'bg-primary text-white border-primary shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                    : 'bg-white text-slate-400 border-slate-200 hover:border-primary hover:text-primary'
+                }`}>
+                {tab === 'initial' ? 'EV1 — Inicial' : tab === 'final' ? 'EV2 — Final' : 'Comparar EV1 vs EV2'}
+              </button>
+            ))}
+          </div>
+
+          {kiEvalTab !== 'compare' && (<>
           {/* ── Evaluación Kinesiológica ──────────────────────────────────── */}
           <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
             {/* Header */}
             <div className="flex flex-wrap justify-between items-start gap-4">
               <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Evaluación Kinesiológica Integral</h2>
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">
+                  {kiEvalTab === 'initial' ? 'Evaluación Kinesiológica — EV1 Inicial' : 'Evaluación Kinesiológica — EV2 Final'}
+                </h2>
                 <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Análisis postural · ROM · Tests especiales · Visión IA real</p>
               </div>
             </div>
@@ -1161,6 +1213,203 @@ Entrega el informe con estas secciones:
               </div>
             </div>
           </section>
+          </>)}
+
+          {/* ── Vista Comparativa EV1 vs EV2 ─────────────────────────────── */}
+          {kiEvalTab === 'compare' && (
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-slate-800 pl-4">Comparación EV1 vs EV2</h2>
+              <p className="text-xs font-bold text-slate-500 uppercase mt-2 tracking-widest pl-5">Evolución kinesiológica del paciente</p>
+            </div>
+
+            {/* Fotos comparativas */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Fotografías Comparativas</h3>
+              <div className="grid gap-2" style={{ gridTemplateColumns: 'auto repeat(4, 1fr)' }}>
+                <div></div>
+                {(['Anterior','Posterior','Lat. Der.','Lat. Izq.'] as const).map(l => (
+                  <div key={l} className="text-[9px] font-black text-slate-400 uppercase text-center tracking-widest pb-1">{l}</div>
+                ))}
+                {(['initial','final'] as const).map(ev => (<React.Fragment key={ev}>
+                  <div className={`text-[9px] font-black uppercase tracking-widest flex items-center pr-2 ${ev === 'initial' ? 'text-primary' : 'text-emerald-600'}`}>{ev === 'initial' ? 'EV1' : 'EV2'}</div>
+                  {[0,1,2,3].map(idx => (
+                    <div key={idx}>
+                      {kiData[ev].images[idx] ? (
+                        <div className={`aspect-square rounded-2xl overflow-hidden border-2 shadow-sm ${ev === 'initial' ? 'border-primary/20' : 'border-emerald-200'}`}>
+                          <img src={kiData[ev].images[idx]} className="w-full h-full object-cover" alt="" />
+                        </div>
+                      ) : (
+                        <div className="aspect-square rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50 flex items-center justify-center text-slate-200">
+                          <span className="material-icons-round text-2xl">hide_image</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </React.Fragment>))}
+              </div>
+            </div>
+
+            {/* Datos Antropométricos comparativos */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Datos Antropométricos</h3>
+              <div className="overflow-auto rounded-2xl border border-slate-100">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Parámetro</th>
+                      <th className="px-4 py-3 font-black text-primary uppercase tracking-wider text-center">EV1</th>
+                      <th className="px-4 py-3 font-black text-slate-400 uppercase tracking-wider text-center">Δ</th>
+                      <th className="px-4 py-3 font-black text-emerald-600 uppercase tracking-wider text-center">EV2</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {[
+                      { label: 'Peso (kg)',            k: 'weight' as keyof KiAnthro },
+                      { label: 'Talla (cm)',            k: 'height' as keyof KiAnthro },
+                      { label: 'IMC (kg/m²)',           k: null },
+                      { label: 'Envergadura (cm)',      k: 'reach'  as keyof KiAnthro },
+                      { label: 'MMII Der. (cm)',        k: 'legR'   as keyof KiAnthro },
+                      { label: 'MMII Izq. (cm)',        k: 'legL'   as keyof KiAnthro },
+                      { label: 'Discrepancia MMII (cm)',k: null },
+                    ].map(({ label, k }) => {
+                      const isImc   = label.includes('IMC');
+                      const isDiscrep = label.includes('Discrepancia');
+                      const v1 = k ? kiData.initial.anthro[k] : isImc ? calcKiImc(kiData.initial.anthro) : calcKiDiscrep(kiData.initial.anthro);
+                      const v2 = k ? kiData.final.anthro[k]   : isImc ? calcKiImc(kiData.final.anthro)   : calcKiDiscrep(kiData.final.anthro);
+                      const delta = v1 && v2 ? (Number(v2) - Number(v1)).toFixed(1) : '';
+                      const deltaNum = Number(delta);
+                      return (
+                        <tr key={label} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
+                          <td className="px-4 py-3 text-center font-bold text-primary">{v1 || '—'}</td>
+                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-300' : deltaNum > 0 ? 'text-emerald-600' : deltaNum < 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                            {delta ? (deltaNum > 0 ? '+' : '') + delta : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-emerald-600">{v2 || '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Evaluación Postural comparativa */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Evaluación Postural</h3>
+              <div className="overflow-auto rounded-2xl border border-slate-100">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Segmento</th>
+                      <th className="px-4 py-3 font-black text-primary uppercase tracking-wider text-center">EV1</th>
+                      <th className="px-4 py-3 font-black text-emerald-600 uppercase tracking-wider text-center">EV2</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {([
+                      ['Plomada Sagital','plomadaSag'],['Plomada Frontal','plomadaFront'],
+                      ['Hombros','shoulders'],['Escápulas','scapulas'],
+                      ['Pelvis','pelvis'],['Rodillas','knees'],['Pies','feet'],
+                    ] as [string, keyof KiPostural][]).map(([label, key]) => {
+                      const p1 = kiData.initial.postural[key];
+                      const p2 = kiData.final.postural[key];
+                      const improved = p1 && p2 && p1 !== 'Normal' && p2 === 'Normal';
+                      const worsened = p1 && p2 && p1 === 'Normal' && p2 !== 'Normal';
+                      return (
+                        <tr key={label} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
+                          <td className="px-4 py-3 text-center font-bold text-primary">{p1 || '—'}</td>
+                          <td className={`px-4 py-3 text-center font-bold ${improved ? 'text-emerald-600' : worsened ? 'text-rose-500' : 'text-slate-600'}`}>{p2 || '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ROM comparativo */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Rango de Movimiento (ROM)</h3>
+              <div className="overflow-auto rounded-2xl border border-slate-100">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Movimiento</th>
+                      <th className="px-4 py-3 font-black text-primary uppercase tracking-wider text-center">EV1 (°)</th>
+                      <th className="px-4 py-3 font-black text-slate-400 uppercase tracking-wider text-center">Δ</th>
+                      <th className="px-4 py-3 font-black text-emerald-600 uppercase tracking-wider text-center">EV2 (°)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {([
+                      ['Cuello Flex.','CueFlex'],['Cuello Ext.','CueExt'],
+                      ['Cuello Rot.D','CueRotD'],['Cuello Rot.I','CueRotI'],
+                      ['Hombro Flex.','HomFlex'],['Hombro Abd.','HomAbd'],
+                      ['Col. Flex.','ColFlex'],['Col. Ext.','ColExt'],
+                      ['Cadera Flex.','CadFlex'],['Cadera Ext.','CadExt'],
+                      ['Rodilla Flex.','RodFlex'],['Rodilla Ext.','RodExt'],
+                      ['Tobillo Flex.','TobFlex'],['Tobillo Ext.','TobExt'],
+                    ] as [string,string][]).filter(([,k]) => kiData.initial.rom[k] || kiData.final.rom[k]).map(([label, key]) => {
+                      const r1 = kiData.initial.rom[key];
+                      const r2 = kiData.final.rom[key];
+                      const delta = r1 && r2 ? (Number(r2) - Number(r1)).toFixed(0) : '';
+                      const dn = Number(delta);
+                      return (
+                        <tr key={label} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
+                          <td className="px-4 py-3 text-center font-bold text-primary">{r1 || '—'}</td>
+                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-300' : dn > 0 ? 'text-emerald-600' : dn < 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                            {delta ? (dn > 0 ? '+' : '') + delta : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-emerald-600">{r2 || '—'}</td>
+                        </tr>
+                      );
+                    })}
+                    {!(['CueFlex','CueExt','CueRotD','CueRotI','HomFlex','HomAbd','ColFlex','ColExt','CadFlex','CadExt','RodFlex','RodExt','TobFlex','TobExt'].some(k => kiData.initial.rom[k] || kiData.final.rom[k])) && (
+                      <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-300 italic">Sin datos de ROM registrados en ninguna evaluación</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Tests Especiales comparativos */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Tests Especiales</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => {
+                  const t1 = kiData.initial.tests[test];
+                  const t2 = kiData.final.tests[test];
+                  const chip = (val: string | undefined) => {
+                    if (!val) return <span className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-slate-100 text-slate-300 uppercase">N/E</span>;
+                    const color = val === 'pos' ? 'bg-rose-100 text-rose-600' : val === 'neg' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500';
+                    return <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${color}`}>{val === 'ne' ? 'N/E' : val === 'pos' ? 'Pos' : 'Neg'}</span>;
+                  };
+                  return (
+                    <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{test}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-[8px] text-primary font-black uppercase">EV1</span>
+                          {chip(t1)}
+                        </div>
+                        <span className="material-icons-round text-slate-300 text-sm">arrow_forward</span>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-[8px] text-emerald-600 font-black uppercase">EV2</span>
+                          {chip(t2)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+          )}
+
           </>)}
 
           {/* ── Signos Vitales ─────────────────────────────────────────────── */}
