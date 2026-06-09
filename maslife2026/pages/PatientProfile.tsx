@@ -195,6 +195,11 @@ const PatientProfile: React.FC = () => {
         const mp = new (window as any).MercadoPago(pubKey, { locale: 'es-CL' });
         const bricksBuilder = mp.bricks();
 
+        // Limpiar el contenedor: si quedó un brick de un montaje previo,
+        // create() devuelve null. Reset garantiza un contenedor virgen.
+        const brickContainer = document.getElementById('mp-brick-container');
+        if (brickContainer) brickContainer.innerHTML = '';
+
         const controller = await bricksBuilder.create('payment', 'mp-brick-container', {
           initialization: { amount: paymentAmount },
           customization: {
@@ -309,7 +314,7 @@ const PatientProfile: React.FC = () => {
               setBrickStatus(prev => {
                 if (prev === 'loading') {
                   if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-                  setMpError('El formulario de pago no está disponible. Reserva y paga en la consulta, o coordina por WhatsApp.');
+                  setMpError(`DIAG onError: ${error?.type || ''} ${error?.message || error?.cause?.[0]?.description || ''}`.trim());
                   return 'error';
                 }
                 return prev;
@@ -340,7 +345,7 @@ const PatientProfile: React.FC = () => {
             }),
           }).catch(() => {});
           setBrickStatus('error');
-          setMpError('El formulario de pago no está disponible. Reserva y paga en la consulta, o coordina por WhatsApp.');
+          setMpError(`DIAG null-controller · key:${(pubKey || '').slice(0, 16)} · monto:${paymentAmount} · fallback:${!doctor?.mpPublicKey}`);
           return;
         }
 
@@ -1152,6 +1157,9 @@ const PatientProfile: React.FC = () => {
                         <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
                           <span className="material-icons-round text-xl mb-1 block">payment</span>
                           El pago online no está disponible temporalmente.
+                          {mpError?.startsWith('DIAG') && (
+                            <span className="block mt-2 text-[10px] font-mono font-normal text-rose-500 break-all">{mpError}</span>
+                          )}
                         </div>
                         {/* Fallback: reservar igual y pagar en consulta */}
                         <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
