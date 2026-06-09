@@ -4,6 +4,10 @@ import { Appointment, Service, Review } from '../types';
 import { useClinic } from '../ClinicContext';
 import { getProfessionalBySlugOrId, getAppointments, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
 
+// Clave de localStorage donde se guarda la reserva mientras el paciente paga en
+// la página de MercadoPago (Checkout Pro). Se lee al volver por back_urls.
+const PENDING_BOOKING_KEY = 'maslife_pending_booking';
+
 const PatientProfile: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -37,13 +41,9 @@ const PatientProfile: React.FC = () => {
   const [reviewStatus, setReviewStatus] = useState<'idle'|'loading'|'success'|'error'>('idle');
   const [reviewError, setReviewError] = useState('');
 
-  // MercadoPago Bricks
+  // MercadoPago — Checkout Pro
   const [mpError, setMpError]       = useState('');
   const [bookingError, setBookingError] = useState('');
-  const [brickStatus, setBrickStatus] = useState<'idle'|'loading'|'ready'|'error'>('idle');
-  const brickControllerRef = React.useRef<any>(null);
-  const brickTimeoutRef    = React.useRef<any>(null);
-  const mpBookingRef       = React.useRef<Appointment | null>(null);
   const MP_ENABLED = true;
 
   const doctor = fetchedDoctor;
@@ -126,245 +126,61 @@ const PatientProfile: React.FC = () => {
     getProfessionalRating(fetchedDoctor.id).then(setRating);
   }, [fetchedDoctor?.id, fetchedDoctor?.reviewsEnabled]);
 
-  // MercadoPago Bricks — inicializar cuando se llega al paso 4
+  // Retorno desde Checkout Pro de MercadoPago. Al volver de la página de pago,
+  // MP agrega ?mp_return=1&status=approved&external_reference=... a la back_url.
+  // Si el pago se aprobó, registramos la cita que guardamos en localStorage antes
+  // de redirigir. Funciona con cualquier cuenta MP conectada (no depende del brick).
   useEffect(() => {
-    if (step !== 4 || !MP_ENABLED || !doctor || !selectedService || !selectedSlot) {
-      if (brickControllerRef.current) {
-        brickControllerRef.current.unmount?.();
-        brickControllerRef.current = null;
-        setBrickStatus('idle');
-      }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mp_return') !== '1') return;
+
+    const status = params.get('status') || params.get('collection_status') || '';
+    const paymentId = params.get('payment_id') || params.get('collection_id') || undefined;
+
+    // Limpiar la URL para no reprocesar el retorno al recargar la página.
+    window.history.replaceState({}, '', window.location.origin + window.location.pathname);
+
+    const raw = localStorage.getItem(PENDING_BOOKING_KEY);
+    localStorage.removeItem(PENDING_BOOKING_KEY);
+
+    setStep(4);
+
+    if (status !== 'approved' && status !== 'authorized') {
+      setMpError(
+        status === 'pending' || status === 'in_process'
+          ? 'Tu pago quedó pendiente de confirmación. Te avisaremos cuando se acredite.'
+          : 'El pago no se completó. Puedes intentar nuevamente o reservar y pagar en la consulta.'
+      );
       return;
     }
-    if (brickStatus !== 'idle') return; // ya inicializado o cargando
 
-    // Preparar objeto de cita AHORA (tiene los valores correctos del estado)
-    const newApp: Appointment = {
-      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
-      patientId: `p-${Date.now()}`,
-      patientName: patientData.name,
-      patientPhone: patientData.phone,
-      doctorName: doctor.name,
-      specialty: doctor.specialty,
-      serviceName: selectedService.name,
-      notes: patientData.reason,
-      date: availableDays[selectedDay].date,
-      time: selectedSlot,
-      duration: selectedService.duration,
-      type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
-      status: 'Confirmado',
-      price: selectedService.price,
-      paymentStatus: 'Pagado',
-      paidAt: new Date().toISOString(),
-      category: 'Medical',
-      professionalId: doctor.id,
-      bookingSource: 'web',
-      patientEmail: patientData.email || undefined,
-      patientRut: patientData.rut || undefined,
-    };
-    mpBookingRef.current = newApp;
+    if (!raw) { setIsConfirmed(true); return; }
 
-    setBrickStatus('loading');
-    const externalRef = `mp-${Date.now()}`;
-
-    // Red de seguridad: se arma ANTES de create() para cubrir el caso en que
-    // el brick cuelgue o resuelva sin montar (onReady nunca dispara). Así el
-    // paciente nunca queda atrapado en un spinner infinito.
-    if (brickTimeoutRef.current) clearTimeout(brickTimeoutRef.current);
-    brickTimeoutRef.current = setTimeout(() => {
-      setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
-      setMpError(prev => prev || 'El formulario de pago no está disponible. Reserva y paga en la consulta, o coordina por WhatsApp.');
-    }, 20000);
-
-    const initBrick = async () => {
+    (async () => {
       try {
-        // Cargar SDK si no está disponible
-        if (!(window as any).MercadoPago) {
-          await new Promise<void>((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = 'https://sdk.mercadopago.com/js/v2';
-            s.onload = () => resolve();
-            s.onerror = () => reject(new Error('SDK_LOAD_FAILED'));
-            document.head.appendChild(s);
-          });
+        const pending = JSON.parse(raw) as { app: Appointment; doctorEmail?: string; notify?: any };
+        const app: Appointment = { ...pending.app, paymentStatus: 'Pagado', paidAt: new Date().toISOString() };
+        // El pago YA fue aprobado: la reserva DEBE quedar registrada (reintento 1 vez).
+        let saved = false;
+        for (let attempt = 0; attempt < 2 && !saved; attempt++) {
+          try { await addAppointment(app); saved = true; }
+          catch (e) { console.error('[checkout-pro] guardado falló', e); }
         }
-
-        const pubKey = (doctor?.mpPublicKey || import.meta.env.VITE_MP_PUBLIC_KEY) as string | undefined;
-        if (!pubKey) throw new Error('NO_PUBLIC_KEY');
-
-        const mp = new (window as any).MercadoPago(pubKey, { locale: 'es-CL' });
-        const bricksBuilder = mp.bricks();
-
-        const controller = await bricksBuilder.create('payment', 'mp-brick-container', {
-          initialization: { amount: paymentAmount },
-          customization: {
-            paymentMethods: {
-              creditCard: 'all',
-              debitCard: 'all',
-              ticket: 'none',
-              bankTransfer: 'none',
-              atm: 'none',
-              onlineBankTransfer: 'none',
-              wallet_purchase: 'none',
-            },
-            visual: {
-              style: { theme: 'default' },
-              hideFormTitle: true,
-              hidePaymentButton: false,
-            },
-          },
-          callbacks: {
-            onReady: () => {
-              if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-              setBrickStatus('ready');
-            },
-            onSubmit: ({ formData }: any) => {
-              return new Promise<void>(async (resolve, reject) => {
-                const app = mpBookingRef.current;
-                if (!app) return reject(new Error('no booking'));
-                try {
-                  const res = await fetch('/api/process-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      ...formData,
-                      amount: paymentAmount,
-                      external_reference: externalRef,
-                      description: `Reserva — ${app.serviceName} con ${app.doctorName}`,
-                      professional_id: doctor?.id,
-                    }),
-                  });
-                  const data = await res.json();
-                  if (data.status === 'approved' || data.status === 'authorized') {
-                    // El pago YA fue aprobado: la reserva DEBE quedar registrada.
-                    // Reintentamos una vez si falla el guardado en la BD.
-                    let saved = false;
-                    for (let attempt = 0; attempt < 2 && !saved; attempt++) {
-                      try {
-                        await addAppointment(app);
-                        saved = true;
-                      } catch (saveErr) {
-                        console.error(`[booking] guardado falló (intento ${attempt + 1})`, saveErr);
-                      }
-                    }
-                    // Siempre notificamos al profesional cuando hay pago aprobado.
-                    // El correo lleva los datos completos de la cita, así que sirve
-                    // de respaldo aunque el guardado en BD haya fallado.
-                    if (doctor?.email) {
-                      fetch('/api/notify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          to: doctor.email,
-                          professionalName: doctor.name,
-                          patientName: app.patientName,
-                          serviceName: app.serviceName,
-                          date: app.date,
-                          time: app.time,
-                          type: app.type,
-                          duration: app.duration,
-                          patientEmail: app.patientEmail,
-                          price: app.price,
-                          paymentId: data.id,
-                          needsManualEntry: !saved,
-                        }),
-                      }).catch(() => {});
-                    }
-                    // El paciente pagó: confirmamos siempre (el respaldo por correo
-                    // garantiza que el profesional reciba la cita si la BD falló).
-                    setIsConfirmed(true);
-                    resolve();
-                  } else {
-                    const detail = data.cause?.[0]?.description || data.error || data.statusDetail || data.status || 'rechazado';
-                    setMpError(`Pago rechazado: ${detail}. Verifica los datos e intenta de nuevo.`);
-                    reject(new Error(String(detail)));
-                  }
-                } catch (e) {
-                  setMpError('Error al procesar el pago. Intenta con otro método.');
-                  reject(e);
-                }
-              });
-            },
-            onError: (error: any) => {
-              console.error('[MP Brick]', error);
-              // Registrar el error real en el servidor para diagnóstico
-              fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  clientError: true,
-                  context: 'mp-brick-onError',
-                  error: error?.type || error?.message || 'unknown',
-                  detail: {
-                    type: error?.type,
-                    message: error?.message,
-                    cause: error?.cause,
-                    publicKeyPrefix: (doctor?.mpPublicKey || '').slice(0, 12),
-                    amount: paymentAmount,
-                  },
-                }),
-              }).catch(() => {});
-              // Solo los errores críticos (o con causa) dejan el brick inservible.
-              // onError también dispara por validaciones benignas de campos, que
-              // NO deben tumbar el formulario.
-              if (error?.type === 'critical' || error?.cause?.length) {
-                setBrickStatus(prev => {
-                  if (prev === 'loading') {
-                    if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-                    setMpError('No se pudo cargar el formulario de pago. Intenta recargar la página.');
-                    return 'error';
-                  }
-                  return prev;
-                });
-              }
-            },
-          },
-        });
-
-        // IMPORTANTE: en esta versión del SDK, create() puede resolver con
-        // undefined aunque el brick SÍ se renderice. La señal de éxito es el
-        // callback onReady, NO el valor de retorno. Por eso NO tratamos un
-        // controller nulo como error: solo guardamos lo que venga y dejamos que
-        // onReady marque 'ready' o que el timeout de respaldo dispare el fallback.
-        brickControllerRef.current = controller || null;
-      } catch (e: any) {
-        console.error('[MP Brick init]', e);
-        if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-        // Registrar el error real de inicialización en el servidor
-        fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientError: true,
-            context: 'mp-brick-init-catch',
-            error: e?.message || 'unknown',
-            detail: {
-              message: e?.message,
-              name: e?.name,
-              stack: String(e?.stack || '').slice(0, 500),
-              publicKeyPrefix: (doctor?.mpPublicKey || '').slice(0, 12),
-              hasPublicKey: !!doctor?.mpPublicKey,
-              amount: paymentAmount,
-            },
-          }),
-        }).catch(() => {});
-        setBrickStatus('error');
-        if (e.message === 'NO_PUBLIC_KEY') {
-          setMpError('Pasarela de pago no configurada. Contacta al profesional.');
-        } else {
-          setMpError('No se pudo inicializar el formulario de pago. Intenta recargar la página.');
+        // Notificamos al profesional siempre (respaldo si la BD falló).
+        if (pending.doctorEmail) {
+          fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...(pending.notify || {}), paymentId, needsManualEntry: !saved }),
+          }).catch(() => {});
         }
+        setIsConfirmed(true);
+      } catch (e) {
+        console.error('[checkout-pro] retorno', e);
+        setIsConfirmed(true);
       }
-    };
-
-    initBrick();
-
-    return () => {
-      if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-      brickControllerRef.current?.unmount?.();
-      brickControllerRef.current = null;
-    };
-  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loadingDoctor) {
     return (
@@ -441,6 +257,82 @@ const PatientProfile: React.FC = () => {
       console.error("Error booking appointment:", error);
       setIsProcessing(false);
       setBookingError('Ocurrió un error al confirmar tu cita. Por favor intenta de nuevo.');
+    }
+  };
+
+  // Inicia el pago con Checkout Pro: guarda la reserva en localStorage y redirige
+  // a la página segura de MercadoPago. La cita se registra al volver (mp_return).
+  const startCheckoutPro = async () => {
+    setIsProcessing(true);
+    setMpError('');
+    setBookingError('');
+
+    const externalRef = `mp-${Date.now()}`;
+    const newApp: Appointment = {
+      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
+      patientId: `p-${Date.now()}`,
+      patientName: patientData.name,
+      patientPhone: patientData.phone,
+      doctorName: doctor.name,
+      specialty: doctor.specialty,
+      serviceName: selectedService!.name,
+      notes: patientData.reason,
+      date: availableDays[selectedDay].date,
+      time: selectedSlot!,
+      duration: selectedService!.duration,
+      type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
+      status: 'Confirmado',
+      price: selectedService!.price,
+      paymentStatus: 'Pagado',
+      paidAt: new Date().toISOString(),
+      category: 'Medical',
+      professionalId: doctor.id,
+      bookingSource: 'web',
+      patientEmail: patientData.email || undefined,
+      patientRut: patientData.rut || undefined,
+    };
+    const notify = {
+      to: doctor.email,
+      professionalName: doctor.name,
+      patientName: newApp.patientName,
+      serviceName: newApp.serviceName,
+      date: newApp.date,
+      time: newApp.time,
+      type: newApp.type,
+      duration: newApp.duration,
+      patientEmail: newApp.patientEmail,
+      price: newApp.price,
+    };
+
+    try {
+      localStorage.setItem(
+        PENDING_BOOKING_KEY,
+        JSON.stringify({ app: newApp, doctorEmail: doctor.email, notify })
+      );
+      const res = await fetch('/api/process-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          createPreference: true,
+          amount: paymentAmount,
+          external_reference: externalRef,
+          description: `Reserva — ${newApp.serviceName} con ${newApp.doctorName}`,
+          professional_id: doctor.id,
+          payer: { email: patientData.email || undefined, name: patientData.name },
+          returnUrl: window.location.origin + window.location.pathname,
+        }),
+      });
+      const data = await res.json();
+      if (data?.init_point) {
+        window.location.href = data.init_point;
+        return; // se abandona la SPA; el retorno se maneja en mp_return
+      }
+      throw new Error(data?.error || 'sin init_point');
+    } catch (e) {
+      console.error('[checkout-pro] crear preferencia', e);
+      localStorage.removeItem(PENDING_BOOKING_KEY);
+      setIsProcessing(false);
+      setMpError('No se pudo iniciar el pago online. Puedes reservar y pagar en la consulta, o coordinar por WhatsApp.');
     }
   };
 
@@ -1114,57 +1006,58 @@ const PatientProfile: React.FC = () => {
                       <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Pago Seguro con MercadoPago</p>
                     </div>
 
-                    {/* Contenedor del Brick — SIEMPRE visible en el DOM.
-                        MercadoPago Bricks no puede montarse en un display:none,
-                        así que mostramos el spinner como overlay encima en vez
-                        de ocultar el contenedor. */}
-                    <div className="relative w-full min-h-[60px]">
-                      {brickStatus === 'loading' && (
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center py-10 gap-3 bg-slate-50 rounded-2xl border border-slate-100">
-                          <span className="material-icons-round animate-spin text-3xl" style={{ color: '#009ee3' }}>sync</span>
-                          <p className="text-xs font-bold text-slate-500">Cargando formulario de pago...</p>
-                        </div>
+                    {/* Botón principal: Checkout Pro (redirección a MercadoPago).
+                        Funciona con cualquier cuenta MP conectada — el paciente
+                        paga en la página segura de MP y vuelve por back_urls. */}
+                    <button
+                      onClick={startCheckoutPro}
+                      disabled={isProcessing}
+                      className="w-full py-5 text-white font-black rounded-2xl shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 transition-all uppercase text-xs tracking-widest flex items-center gap-2 justify-center border-b-4 active:border-b-0"
+                      style={{ backgroundColor: '#009ee3', borderBottomColor: '#0079b3' }}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <span className="material-icons-round animate-spin text-sm">sync</span>
+                          Redirigiendo a MercadoPago...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-icons-round text-sm">lock</span>
+                          Pagar ${bookingFee.toLocaleString('es-CL')} con MercadoPago
+                        </>
                       )}
-                      <div id="mp-brick-container" className="w-full overflow-x-hidden" />
-                    </div>
+                    </button>
+                    <p className="text-[11px] text-slate-400 text-center font-bold">
+                      Serás redirigido a la página segura de MercadoPago. Aceptamos tarjetas de crédito, débito y saldo MercadoPago.
+                    </p>
 
-                    {/* Error crítico — con fallback para reservar de todas formas */}
-                    {brickStatus === 'error' && (
-                      <div className="space-y-3">
-                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
-                          <span className="material-icons-round text-xl mb-1 block">payment</span>
-                          El pago online no está disponible temporalmente.
-                        </div>
-                        {/* Fallback: reservar igual y pagar en consulta */}
-                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
-                          <p className="text-xs font-black text-amber-800 uppercase tracking-widest">Opciones alternativas</p>
-                          <button
-                            onClick={finalizeBooking}
-                            disabled={isProcessing}
-                            className="w-full py-4 bg-amber-500 text-white font-black rounded-2xl shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest flex items-center gap-2 justify-center border-b-4 border-amber-700 active:border-b-0"
-                          >
-                            <span className="material-icons-round text-sm">event_available</span>
-                            {isProcessing ? 'Reservando...' : 'Reservar y pagar en consulta'}
-                          </button>
-                          {doctor.phone && (
-                            <a
-                              href={`https://wa.me/${doctor.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${doctor.name}, quiero agendar una cita.`)}`}
-                              target="_blank" rel="noreferrer"
-                              className="w-full py-4 bg-[#25D366] text-white font-black rounded-2xl flex items-center gap-2 justify-center uppercase text-xs tracking-widest border-b-4 border-green-700 active:border-b-0 transition-all"
-                            >
-                              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                              Coordinar por WhatsApp
-                            </a>
-                          )}
-                        </div>
-                        {bookingError && <p className="text-rose-600 text-xs font-bold text-center">{bookingError}</p>}
-                      </div>
-                    )}
-
-                    {/* Error de pago rechazado */}
-                    {mpError && brickStatus === 'ready' && (
+                    {mpError && (
                       <p className="text-rose-600 text-xs font-bold text-center bg-rose-50 rounded-xl p-3">{mpError}</p>
                     )}
+
+                    {/* Opciones alternativas — siempre disponibles */}
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
+                      <p className="text-xs font-black text-amber-800 uppercase tracking-widest">¿Prefieres pagar después?</p>
+                      <button
+                        onClick={finalizeBooking}
+                        disabled={isProcessing}
+                        className="w-full py-4 bg-amber-500 text-white font-black rounded-2xl shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest flex items-center gap-2 justify-center border-b-4 border-amber-700 active:border-b-0"
+                      >
+                        <span className="material-icons-round text-sm">event_available</span>
+                        {isProcessing ? 'Reservando...' : 'Reservar y pagar en consulta'}
+                      </button>
+                      {doctor.phone && (
+                        <a
+                          href={`https://wa.me/${doctor.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${doctor.name}, quiero agendar una cita.`)}`}
+                          target="_blank" rel="noreferrer"
+                          className="w-full py-4 bg-[#25D366] text-white font-black rounded-2xl flex items-center gap-2 justify-center uppercase text-xs tracking-widest border-b-4 border-green-700 active:border-b-0 transition-all"
+                        >
+                          <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                          Coordinar por WhatsApp
+                        </a>
+                      )}
+                    </div>
+                    {bookingError && <p className="text-rose-600 text-xs font-bold text-center">{bookingError}</p>}
                   </div>
                 ) : (
                   <div className="space-y-3">
