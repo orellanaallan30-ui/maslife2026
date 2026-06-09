@@ -1029,7 +1029,7 @@ const PatientProfile: React.FC = () => {
                       ) : (
                         <>
                           <span className="material-icons-round text-sm">lock</span>
-                          Pagar ${paymentAmount.toLocaleString('es-CL')} con MercadoPago
+                          Ir a Pagar ${paymentAmount.toLocaleString('es-CL')}
                         </>
                       )}
                     </button>
