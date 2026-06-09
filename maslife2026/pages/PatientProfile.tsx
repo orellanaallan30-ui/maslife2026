@@ -203,19 +203,16 @@ const PatientProfile: React.FC = () => {
         const controller = await bricksBuilder.create('payment', 'mp-brick-container', {
           initialization: { amount: paymentAmount },
           customization: {
+            // Solo claves válidas de MercadoPago Bricks. Una clave inválida
+            // (p. ej. wallet_purchase) hace que create() devuelva null.
             paymentMethods: {
               creditCard: 'all',
               debitCard: 'all',
-              ticket: 'none',
-              bankTransfer: 'none',
-              atm: 'none',
-              onlineBankTransfer: 'none',
-              wallet_purchase: 'none',
+              mercadoPago: 'all',
             },
             visual: {
               style: { theme: 'default' },
               hideFormTitle: true,
-              hidePaymentButton: false,
             },
           },
           callbacks: {
