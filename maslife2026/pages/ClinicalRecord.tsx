@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { askClaude } from '../lib/claudeHelper';
+import { askClaude, askClaudeWithImages } from '../lib/claudeHelper';
 import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField, ClinicalFile, MealPlanRow } from '../types';
 import { useClinic } from '../ClinicContext';
 import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
@@ -78,6 +78,21 @@ const ClinicalRecord: React.FC = () => {
   const [ordenIndicaciones, setOrdenIndicaciones] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const posturalInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Evaluación Kinesiológica Estructurada ──────────────────────────────────
+  const defaultKiAnthro = { weight: '', height: '', reach: '', legR: '', legL: '' };
+  const defaultKiPostural = { plomadaSag: '', plomadaFront: '', shoulders: '', scapulas: '', pelvis: '', knees: '', feet: '', observations: '' };
+  const [kiAnthro, setKiAnthro]       = useState(defaultKiAnthro);
+  const [kiPostural, setKiPostural]   = useState(defaultKiPostural);
+  const [kiRom, setKiRom]             = useState<Record<string, string>>({});
+  const [kiTests, setKiTests]         = useState<Record<string, 'pos'|'neg'|'ne'>>({});
+
+  const kiImc = kiAnthro.weight && kiAnthro.height
+    ? (Number(kiAnthro.weight) / Math.pow(Number(kiAnthro.height) / 100, 2)).toFixed(1)
+    : '';
+  const kiDiscrep = kiAnthro.legR && kiAnthro.legL
+    ? Math.abs(Number(kiAnthro.legR) - Number(kiAnthro.legL)).toFixed(1)
+    : '';
 
   const initialPatient = patients.find(p => p.id === id);
   const safePatient = initialPatient || { name: '', age: 0, rut: '', birthDate: '', prevision: '', diagnoses: '', address: '', phone: '', email: '', emergencyContact: '', customFields: [], vitals: null, medicalHistory: '', sessionLogs: [], goals: [] } as any;
@@ -157,6 +172,16 @@ const ClinicalRecord: React.FC = () => {
 
   // ── Estado: datos especialidad guardados ───────────────────────────────────
   const savedSpec = (safePatient.specialtyData || {}) as Record<string, any>;
+
+  // Cargar datos kinesiológicos guardados
+  React.useEffect(() => {
+    const ki = savedSpec.kinesio as any;
+    if (!ki) return;
+    if (ki.anthro)   setKiAnthro(ki.anthro);
+    if (ki.postural) setKiPostural(ki.postural);
+    if (ki.rom)      setKiRom(ki.rom);
+    if (ki.tests)    setKiTests(ki.tests);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Estado nutrición
   const DEFAULT_MEAL_PLAN: MealPlanRow[] = [
@@ -508,38 +533,67 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     setIsAnalyzing(true);
 
     try {
-      const prompt = `Como experto en biomecánica y fisioterapia avanzada, realiza un Análisis ${analysisType} para el paciente ${personalData.name}.
-               Evalúa según los criterios estándar: asimetrías, niveles de hombros, inclinación pélvica, alineación de plomada, valgo/varo de rodillas y marcadores de marcha.
-               Se han cargado ${analysisImages.length} imagen(es) para el análisis.
-               Entrega un informe técnico con: 1. Hallazgos Observados, 2. Impresión Biomecánica, 3. Sugerencias de Tratamiento.
-               Nota: Como las imágenes no pueden ser procesadas visualmente via API de texto, basa tu análisis en los datos clínicos disponibles y proporciona una plantilla de evaluación que el profesional pueda completar.`;
+      const posturalCtx = Object.entries(kiPostural)
+        .filter(([k, v]) => v && k !== 'observations')
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ');
 
-      const result = await askClaude(
+      const romCtx = Object.entries(kiRom)
+        .filter(([, v]) => v)
+        .map(([k, v]) => `${k}: ${v}°`)
+        .join(', ');
+
+      const prompt = `Analiza las ${analysisImages.length} fotografías clínicas del paciente ${personalData.name}.
+
+Tipo de análisis solicitado: ${analysisType}
+${kiAnthro.weight ? `Peso: ${kiAnthro.weight} kg` : ''}${kiAnthro.height ? `, Talla: ${kiAnthro.height} cm` : ''}${kiImc ? `, IMC: ${kiImc}` : ''}
+${posturalCtx ? `Hallazgos posturales registrados: ${posturalCtx}` : ''}
+${romCtx ? `ROM registrado: ${romCtx}` : ''}
+
+Evalúa en cada fotografía:
+— PLANO ANTERIOR: nivelación de hombros y pelvis, alineación de rodillas, postura global
+— PLANO POSTERIOR: asimetría escapular, escoliosis, alineación axial
+— PLANO LATERAL: hiperlordosis/cifosis, posición de cabeza, proyección abdominal
+
+Entrega el informe con estas secciones:
+1. HALLAZGOS OBSERVADOS POR VISTA
+2. IMPRESIÓN BIOMECÁNICA GLOBAL
+3. DIAGNÓSTICO POSTURAL KINESIOLÓGICO (con código CIE-10 sugerido)
+4. OBJETIVOS DE TRATAMIENTO PRIORIZADOS (máx. 5)
+5. PLAN KINESIOLÓGICO SUGERIDO`;
+
+      const result = await askClaudeWithImages(
+        analysisImages,
         prompt,
-        "Eres un experto en biomecánica, fisioterapia y análisis postural. Genera informes técnicos profesionales basados en los datos clínicos proporcionados."
+        "Eres un kinesiólogo clínico experto en análisis postural y biomecánico. Analiza las fotografías proporcionadas y genera un informe técnico profesional en español. Describe lo que observas visualmente en cada imagen con precisión clínica."
       );
       setAnalysisResult(result || 'El análisis no pudo ser completado.');
     } catch (error) {
       console.error(error);
-      setAnalysisResult('Error al procesar el análisis. Verifica que ANTHROPIC_API_KEY esté configurada.');
+      setAnalysisResult('Error al procesar el análisis. Verifica que ANTHROPIC_API_KEY esté configurada en Vercel.');
     } finally {
       setIsAnalyzing(false);
     }
   };
 
+  const uploadSlotRef = useRef<number>(-1); // -1 = append, 0-3 = slot específico
+
   const handlePosturalUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const fileList = Array.from(e.target.files) as File[];
-      fileList.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            setAnalysisImages(prev => [...prev, event.target!.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (!event.target?.result) return;
+      const dataUrl = event.target.result as string;
+      const slot = uploadSlotRef.current;
+      setAnalysisImages(prev => {
+        const next = [...prev];
+        if (slot >= 0) { next[slot] = dataUrl; return next; }
+        return [...next, dataUrl].slice(0, 4);
       });
-    }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // permitir re-cargar el mismo archivo
   };
 
   const removeAnalysisImage = (index: number) => {
@@ -657,6 +711,8 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         compositionHistory: newHistory,
         // Psicología
         psychMood, psychPsychHistory, psychIntervention, psychNextObjective,
+        // Kinesiología
+        kinesio: { anthro: kiAnthro, postural: kiPostural, rom: kiRom, tests: kiTests },
       };
     })(),
   } as Patient);
@@ -883,12 +939,157 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             </div>
           </section>
 
-          {specialtyKey === 'kinesiologia' && (
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
-            <div className="flex justify-between items-center mb-10">
+          {specialtyKey === 'kinesiologia' && (<>
+          {/* ── Evaluación Kinesiológica ──────────────────────────────────── */}
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
+            {/* Header */}
+            <div className="flex flex-wrap justify-between items-start gap-4">
               <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico Inteligente</h2>
-                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Soportado por Gemini 3 Pro AI</p>
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Evaluación Kinesiológica Integral</h2>
+                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Análisis postural · ROM · Tests especiales · Visión IA real</p>
+              </div>
+            </div>
+
+            {/* ── 1. Datos Antropométricos ─────────────────────── */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Datos Antropométricos</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Peso (kg)', key: 'weight', placeholder: '70' },
+                  { label: 'Talla (cm)', key: 'height', placeholder: '170' },
+                  { label: 'Envergadura (cm)', key: 'reach', placeholder: '172' },
+                  { label: 'Long. MMII Der. (cm)', key: 'legR', placeholder: '88' },
+                  { label: 'Long. MMII Izq. (cm)', key: 'legL', placeholder: '88' },
+                ].map(({ label, key, placeholder }) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
+                    <input
+                      type="number"
+                      value={(kiAnthro as any)[key]}
+                      onChange={e => { setKiAnthro(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
+                      placeholder={placeholder}
+                      className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                    />
+                  </div>
+                ))}
+                {/* IMC y discrepancia calculados */}
+                {kiImc && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">IMC</label>
+                    <div className="w-full bg-primary/5 border border-primary/20 rounded-2xl py-3 px-4 font-black text-primary text-sm">{kiImc} kg/m²</div>
+                  </div>
+                )}
+                {kiDiscrep && Number(kiDiscrep) > 0 && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Discrepancia MMII</label>
+                    <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl py-3 px-4 font-black text-amber-700 text-sm">{kiDiscrep} cm</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── 2. Evaluación Postural Estructurada ──────────── */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Evaluación Postural Estructurada</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {([
+                  { label: 'Plomada Sagital', key: 'plomadaSag', options: ['Normal','Hiperlordosis lumbar','Inversión lumbar','Hipercifosis dorsal','Rectificación lumbar','Cabeza adelantada'] },
+                  { label: 'Plomada Frontal', key: 'plomadaFront', options: ['Normal','Escoliosis dextro-convexa','Escoliosis levo-convexa','Inclinación lateral Der.','Inclinación lateral Izq.'] },
+                  { label: 'Hombros', key: 'shoulders', options: ['Normal','Elevado Der.','Elevado Izq.','Protracción bilateral','Protracción unilateral Der.','Protracción unilateral Izq.','Retroversión bilateral'] },
+                  { label: 'Escápulas', key: 'scapulas', options: ['Normal','Aladas bilaterales','Aladas Der.','Aladas Izq.','Abducidas (protruidas)','Aducidas (retruidas)'] },
+                  { label: 'Pelvis', key: 'pelvis', options: ['Normal','Anteversión','Retroversión','Oblicuidad Der. alta','Oblicuidad Izq. alta','Rotación anterior Der.','Rotación anterior Izq.'] },
+                  { label: 'Rodillas', key: 'knees', options: ['Normal','Valgo bilateral','Varo bilateral','Valgo Der.','Valgo Izq.','Hiperextensión bilateral','Flexo bilateral'] },
+                  { label: 'Pies', key: 'feet', options: ['Normal','Pronación bilateral','Supinación bilateral','Pie plano bilateral','Pie cavo bilateral','Pronación unilateral Der.','Pronación unilateral Izq.'] },
+                ] as { label: string; key: keyof typeof kiPostural; options: string[] }[]).map(({ label, key, options }) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
+                    <select
+                      value={(kiPostural as any)[key]}
+                      onChange={e => { setKiPostural(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
+                      className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 appearance-none"
+                    >
+                      <option value="">— Sin evaluar —</option>
+                      {options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 space-y-1">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Observaciones Posturales</label>
+                <textarea
+                  value={kiPostural.observations}
+                  onChange={e => { setKiPostural(p => ({ ...p, observations: e.target.value })); setIsDirtyTrue(); }}
+                  rows={2}
+                  placeholder="Observaciones adicionales del análisis postural..."
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* ── 3. ROM ─────────────────────────────────────────── */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Rango de Movimiento (ROM) en grados</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {([
+                  ['Cuello Flex.','CueFlex','45'],['Cuello Ext.','CueExt','45'],
+                  ['Cuello Rot.D','CueRotD','80'],['Cuello Rot.I','CueRotI','80'],
+                  ['Hombro Flex.','HomFlex','180'],['Hombro Abd.','HomAbd','180'],
+                  ['Col. Flex.','ColFlex','90'],['Col. Ext.','ColExt','30'],
+                  ['Cadera Flex.','CadFlex','120'],['Cadera Ext.','CadExt','30'],
+                  ['Rodilla Flex.','RodFlex','135'],['Rodilla Ext.','RodExt','0'],
+                  ['Tobillo Flex.','TobFlex','20'],['Tobillo Ext.','TobExt','50'],
+                ] as [string,string,string][]).map(([label, key, placeholder]) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label} <span className="text-slate-400">(N:{placeholder}°)</span></label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        value={kiRom[key] || ''}
+                        onChange={e => { setKiRom(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
+                        placeholder={placeholder}
+                        className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-3 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                      />
+                      <span className="text-xs font-black text-slate-400">°</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── 4. Tests Especiales ────────────────────────────── */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Tests Especiales</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => (
+                  <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-200">
+                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">{test}</p>
+                    <div className="flex gap-1">
+                      {(['pos','neg','ne'] as const).map(v => (
+                        <button
+                          key={v}
+                          onClick={() => { setKiTests(p => ({ ...p, [test]: v })); setIsDirtyTrue(); }}
+                          className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wide transition-all ${
+                            kiTests[test] === v
+                              ? v === 'pos' ? 'bg-rose-500 text-white shadow-sm'
+                                : v === 'neg' ? 'bg-emerald-500 text-white shadow-sm'
+                                : 'bg-slate-600 text-white shadow-sm'
+                              : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
+                          }`}
+                        >{v === 'ne' ? 'N/E' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── Análisis Biomecánico con IA (fotos + resultado) ── */}
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
+              <div>
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
+                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Claude Vision — procesa las fotografías reales del paciente</p>
               </div>
               <div className="flex bg-slate-50/80 shadow-inner border border-slate-200 p-2 rounded-2xl no-print">
                 {(['Postural', 'Marcha', 'Musculoesquelético'] as const).map(t => (
@@ -899,31 +1100,41 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="space-y-6">
+                {/* Slots etiquetados */}
                 <div className="grid grid-cols-2 gap-4">
-                  {analysisImages.map((img, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-[2rem] overflow-hidden border-4 border-slate-50 shadow-md group">
-                      <img src={img} className="w-full h-full object-cover" alt={`Vista ${idx}`} />
-                      <button onClick={() => removeAnalysisImage(idx)} className="absolute top-2 right-2 w-8 h-8 bg-rose-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center no-print shadow-xl">
-                        <span className="material-icons-round text-sm">close</span>
-                      </button>
+                  {(['Anterior','Posterior','Lateral Der.','Lateral Izq.'] as const).map((label, idx) => (
+                    <div key={label} className="space-y-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{label}</p>
+                      {analysisImages[idx] ? (
+                        <div className="relative aspect-square rounded-[2rem] overflow-hidden border-4 border-slate-50 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
+                          <img src={analysisImages[idx]} className="w-full h-full object-cover" alt={label} />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                            <button onClick={e => { e.stopPropagation(); uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="w-8 h-8 bg-white text-slate-700 rounded-lg flex items-center justify-center shadow-xl no-print" title="Reemplazar">
+                              <span className="material-icons-round text-sm">refresh</span>
+                            </button>
+                            <button onClick={e => { e.stopPropagation(); removeAnalysisImage(idx); }} className="w-8 h-8 bg-rose-500 text-white rounded-lg flex items-center justify-center shadow-xl no-print" title="Eliminar">
+                              <span className="material-icons-round text-sm">close</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="aspect-square w-full rounded-[2rem] border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-300 hover:border-primary hover:text-primary transition-all no-print group">
+                          <span className="material-icons-round text-3xl group-hover:scale-110 transition-transform">add_a_photo</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest">Cargar</span>
+                        </button>
+                      )}
                     </div>
                   ))}
-                  {analysisImages.length < 4 && (
-                    <button onClick={() => posturalInputRef.current?.click()} className="aspect-square rounded-[2rem] border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-3 text-slate-300 hover:border-primary hover:text-primary transition-all no-print group">
-                      <span className="material-icons-round text-4xl group-hover:scale-110 transition-transform">add_a_photo</span>
-                      <span className="text-xs font-black uppercase tracking-widest">Cargar Imagen Clínica</span>
-                    </button>
-                  )}
                 </div>
-                <input type="file" ref={posturalInputRef} onChange={handlePosturalUpload} className="hidden" multiple accept="image/*" />
+                <input type="file" ref={posturalInputRef} onChange={handlePosturalUpload} className="hidden" accept="image/*" />
 
                 <button
                   onClick={runAdvancedAnalysis}
-                  disabled={isAnalyzing || analysisImages.length === 0}
+                  disabled={isAnalyzing || analysisImages.filter(Boolean).length === 0}
                   className="w-full py-6 bg-slate-900 border-b-4 border-slate-800 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:border-b-4 no-print"
                 >
-                  <span className="material-icons-round">{isAnalyzing ? 'sync' : 'biotech'}</span>
-                  {isAnalyzing ? 'Analizando Marcadores...' : `Ejecutar Análisis ${analysisType}`}
+                  <span className={`material-icons-round ${isAnalyzing ? 'animate-spin' : ''}`}>{isAnalyzing ? 'sync' : 'biotech'}</span>
+                  {isAnalyzing ? 'Procesando imágenes con IA...' : `Ejecutar Análisis ${analysisType}`}
                 </button>
               </div>
 
@@ -944,13 +1155,13 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                       <p className="text-xs font-black text-primary uppercase tracking-[0.3em] animate-pulse">Procesando anatomía digital...</p>
                     </div>
                   ) : (
-                    analysisResult || <div className="text-center py-20 text-slate-300 italic">Cargue imágenes para iniciar el análisis biomecánico automático con IA.</div>
+                    analysisResult || <div className="text-center py-20 text-slate-300 italic">Cargue fotografías posturales y ejecute el análisis para que la IA evalúe lo que ve en las imágenes reales.</div>
                   )}
                 </div>
               </div>
             </div>
           </section>
-          )}
+          </>)}
 
           {/* ── Signos Vitales ─────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

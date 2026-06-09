@@ -36,6 +36,34 @@ export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
   return response.json();
 }
 
+// Envía imágenes (data URLs base64) + texto a Claude Vision para análisis real
+export async function askClaudeWithImages(
+  images: string[],
+  textPrompt: string,
+  systemPrompt?: string
+): Promise<string> {
+  const imageBlocks = images.map(dataUrl => {
+    const [meta, data] = dataUrl.split(',');
+    const mediaType = (meta.match(/data:(image\/[\w+]+);/) || [])[1] || 'image/jpeg';
+    return { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
+  });
+
+  const content: any[] = [...imageBlocks, { type: 'text', text: textPrompt }];
+
+  try {
+    const result = await callClaudeAPI({
+      messages: [{ role: 'user', content }],
+      system: systemPrompt || 'Eres un experto en biomecánica y fisioterapia avanzada.',
+      maxTokens: 2048,
+    });
+    const textBlocks = result.content?.filter((b: any) => b.type === 'text') || [];
+    return textBlocks.map((b: any) => b.text).join('\n') || 'Sin respuesta.';
+  } catch (error: any) {
+    console.error('Claude Vision error:', error);
+    throw error;
+  }
+}
+
 // Helper simplificado: envía un prompt y recibe texto
 export async function askClaude(prompt: string, systemPrompt?: string): Promise<string> {
   try {
