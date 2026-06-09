@@ -306,47 +306,29 @@ const PatientProfile: React.FC = () => {
                   },
                 }),
               }).catch(() => {});
-              // Si el brick aún no terminó de cargar, cualquier error lo deja
-              // inservible: mostramos el fallback en vez de un spinner eterno.
-              setBrickStatus(prev => {
-                if (prev === 'loading') {
-                  if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-                  setMpError(`DIAG onError: ${error?.type || ''} ${error?.message || error?.cause?.[0]?.description || ''}`.trim());
-                  return 'error';
-                }
-                return prev;
-              });
+              // Solo los errores críticos (o con causa) dejan el brick inservible.
+              // onError también dispara por validaciones benignas de campos, que
+              // NO deben tumbar el formulario.
+              if (error?.type === 'critical' || error?.cause?.length) {
+                setBrickStatus(prev => {
+                  if (prev === 'loading') {
+                    if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
+                    setMpError('No se pudo cargar el formulario de pago. Intenta recargar la página.');
+                    return 'error';
+                  }
+                  return prev;
+                });
+              }
             },
           },
         });
 
-        // create() puede resolver con null/undefined si el brick falló al montar
-        // (p. ej. clave pública inválida). En ese caso onReady nunca dispara, así
-        // que lo tratamos como error explícito en vez de esperar al timeout.
-        if (!controller) {
-          if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-          fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              clientError: true,
-              context: 'mp-brick-null-controller',
-              error: 'create() devolvió null',
-              detail: {
-                hasPublicKey: !!doctor?.mpPublicKey,
-                usedFallbackKey: !doctor?.mpPublicKey,
-                publicKeyPrefix: (doctor?.mpPublicKey || '').slice(0, 12),
-                amount: paymentAmount,
-                professionalId: doctor?.id,
-              },
-            }),
-          }).catch(() => {});
-          setBrickStatus('error');
-          setMpError(`DIAG null-controller · key:${(pubKey || '').slice(0, 16)} · monto:${paymentAmount} · fallback:${!doctor?.mpPublicKey}`);
-          return;
-        }
-
-        brickControllerRef.current = controller;
+        // IMPORTANTE: en esta versión del SDK, create() puede resolver con
+        // undefined aunque el brick SÍ se renderice. La señal de éxito es el
+        // callback onReady, NO el valor de retorno. Por eso NO tratamos un
+        // controller nulo como error: solo guardamos lo que venga y dejamos que
+        // onReady marque 'ready' o que el timeout de respaldo dispare el fallback.
+        brickControllerRef.current = controller || null;
       } catch (e: any) {
         console.error('[MP Brick init]', e);
         if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
@@ -1154,9 +1136,6 @@ const PatientProfile: React.FC = () => {
                         <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
                           <span className="material-icons-round text-xl mb-1 block">payment</span>
                           El pago online no está disponible temporalmente.
-                          {mpError?.startsWith('DIAG') && (
-                            <span className="block mt-2 text-[10px] font-mono font-normal text-rose-500 break-all">{mpError}</span>
-                          )}
                         </div>
                         {/* Fallback: reservar igual y pagar en consulta */}
                         <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
