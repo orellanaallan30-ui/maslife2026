@@ -174,7 +174,7 @@ const PatientProfile: React.FC = () => {
     brickTimeoutRef.current = setTimeout(() => {
       setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
       setMpError(prev => prev || 'El formulario de pago no está disponible. Reserva y paga en la consulta, o coordina por WhatsApp.');
-    }, 12000);
+    }, 20000);
 
     const initBrick = async () => {
       try {
@@ -195,24 +195,22 @@ const PatientProfile: React.FC = () => {
         const mp = new (window as any).MercadoPago(pubKey, { locale: 'es-CL' });
         const bricksBuilder = mp.bricks();
 
-        // Limpiar el contenedor: si quedó un brick de un montaje previo,
-        // create() devuelve null. Reset garantiza un contenedor virgen.
-        const brickContainer = document.getElementById('mp-brick-container');
-        if (brickContainer) brickContainer.innerHTML = '';
-
         const controller = await bricksBuilder.create('payment', 'mp-brick-container', {
           initialization: { amount: paymentAmount },
           customization: {
-            // Solo claves válidas de MercadoPago Bricks. Una clave inválida
-            // (p. ej. wallet_purchase) hace que create() devuelva null.
             paymentMethods: {
               creditCard: 'all',
               debitCard: 'all',
-              mercadoPago: 'all',
+              ticket: 'none',
+              bankTransfer: 'none',
+              atm: 'none',
+              onlineBankTransfer: 'none',
+              wallet_purchase: 'none',
             },
             visual: {
               style: { theme: 'default' },
               hideFormTitle: true,
+              hidePaymentButton: false,
             },
           },
           callbacks: {
