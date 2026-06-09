@@ -9,6 +9,11 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/kinesiologia-ovalle",           "destination": "/kinesiologia-ovalle/index.html" },
+    { "source": "/kinesiologo-ovalle",            "destination": "/kinesiologo-ovalle/index.html" },
+    { "source": "/kinesiologia-domicilio-ovalle", "destination": "/kinesiologia-domicilio-ovalle/index.html" },
+    { "source": "/kinesiologia-la-serena",        "destination": "/kinesiologia-la-serena/index.html" },
+    { "source": "/kinesiologia-coquimbo",         "destination": "/kinesiologia-coquimbo/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
