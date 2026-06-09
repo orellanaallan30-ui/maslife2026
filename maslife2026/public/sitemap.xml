@@ -1,27 +1,193 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- ── Página principal ──────────────────────────────── -->
   <url>
     <loc>https://clinicamaslife.cl/</loc>
-    <lastmod>2026-05-28</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- ── Kinesiología por ciudad (prioridad máxima) ────── -->
   <url>
     <loc>https://clinicamaslife.cl/kinesiologia-ovalle</loc>
-    <lastmod>2026-05-28</lastmod>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://clinicamaslife.cl/psicologia-ovalle</loc>
-    <lastmod>2026-05-28</lastmod>
+    <loc>https://clinicamaslife.cl/kinesiologo-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/kinesiologia-la-serena</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.92</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/kinesiologo-la-serena</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.92</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/kinesiologia-coquimbo</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/kinesiologo-coquimbo</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+
+  <!-- ── Kinesiología a domicilio ───────────────────────── -->
+  <url>
+    <loc>https://clinicamaslife.cl/kinesiologia-domicilio-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.93</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/kinesiologia-domicilio-la-serena</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/kinesiologia-domicilio-coquimbo</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.88</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/salud-domicilio-region-coquimbo</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.87</priority>
+  </url>
+
+  <!-- ── Nutrición por ciudad ───────────────────────────── -->
+  <url>
+    <loc>https://clinicamaslife.cl/nutricionista-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.88</priority>
   </url>
   <url>
     <loc>https://clinicamaslife.cl/nutricion-ovalle</loc>
-    <lastmod>2026-05-28</lastmod>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.87</priority>
   </url>
+  <url>
+    <loc>https://clinicamaslife.cl/nutricionista-la-serena</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/nutricionista-coquimbo</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.83</priority>
+  </url>
+
+  <!-- ── Psicología por ciudad ──────────────────────────── -->
+  <url>
+    <loc>https://clinicamaslife.cl/psicologo-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.87</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/psicologia-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.86</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/psicologo-la-serena</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/psicologo-online-region-coquimbo</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.84</priority>
+  </url>
+
+  <!-- ── Otras especialidades ───────────────────────────── -->
+  <url>
+    <loc>https://clinicamaslife.cl/quiropractico-coquimbo</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.82</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/fonoaudiologo-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.81</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/terapia-ocupacional-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/podologo-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.79</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/enfermeria-domicilio-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.79</priority>
+  </url>
+
+  <!-- ── Patologías específicas (long-tail) ─────────────── -->
+  <url>
+    <loc>https://clinicamaslife.cl/tratamiento-dolor-lumbar-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.78</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/rehabilitacion-post-operatoria-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.77</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/lesiones-deportivas-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.76</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/escoliosis-tratamiento-ovalle</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/tendinitis-tratamiento-coquimbo</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.74</priority>
+  </url>
+
 </urlset>
