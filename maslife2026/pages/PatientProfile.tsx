@@ -41,15 +41,10 @@ const PatientProfile: React.FC = () => {
   const [reviewStatus, setReviewStatus] = useState<'idle'|'loading'|'success'|'error'>('idle');
   const [reviewError, setReviewError] = useState('');
 
-  // MercadoPago — formulario de tarjeta en-página (CardPayment Brick) con
-  // Checkout Pro como respaldo si el formulario no logra montar.
+  // MercadoPago — pago vía Checkout Pro (página segura de MP). Funciona con
+  // cualquier cuenta conectada; el retorno se maneja en el handler mp_return.
   const [mpError, setMpError]       = useState('');
   const [bookingError, setBookingError] = useState('');
-  const [brickStatus, setBrickStatus] = useState<'idle'|'loading'|'ready'|'error'>('idle');
-  const brickControllerRef = React.useRef<any>(null);
-  const brickTimeoutRef    = React.useRef<any>(null);
-  const mpBookingRef       = React.useRef<Appointment | null>(null);
-  const MP_ENABLED = true;
 
   const doctor = fetchedDoctor;
   const bookingFee = doctor?.bookingFee || 5000;
@@ -187,178 +182,6 @@ const PatientProfile: React.FC = () => {
     })();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Formulario de tarjeta EN LA PÁGINA: CardPayment Brick. Solo renderiza el
-  // formulario de tarjeta (no el selector de todos los métodos), por lo que es
-  // mucho más confiable de montar que el Payment Brick combo. Si no monta en
-  // 12s, brickStatus pasa a 'error' y la UI ofrece el respaldo de Checkout Pro.
-  useEffect(() => {
-    if (step !== 4 || !MP_ENABLED || !doctor?.paymentEnabled || !selectedService || !selectedSlot) {
-      if (brickControllerRef.current) {
-        brickControllerRef.current.unmount?.();
-        brickControllerRef.current = null;
-      }
-      return;
-    }
-    if (brickStatus !== 'idle') return; // ya inicializado o cargando
-
-    const newApp: Appointment = {
-      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
-      patientId: `p-${Date.now()}`,
-      patientName: patientData.name,
-      patientPhone: patientData.phone,
-      doctorName: doctor.name,
-      specialty: doctor.specialty,
-      serviceName: selectedService.name,
-      notes: patientData.reason,
-      date: availableDays[selectedDay].date,
-      time: selectedSlot,
-      duration: selectedService.duration,
-      type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
-      status: 'Confirmado',
-      price: selectedService.price,
-      paymentStatus: 'Pagado',
-      paidAt: new Date().toISOString(),
-      category: 'Medical',
-      professionalId: doctor.id,
-      bookingSource: 'web',
-      patientEmail: patientData.email || undefined,
-      patientRut: patientData.rut || undefined,
-    };
-    mpBookingRef.current = newApp;
-
-    setBrickStatus('loading');
-    const externalRef = `mp-${Date.now()}`;
-
-    // Si el formulario no monta a tiempo, caemos al respaldo (Checkout Pro).
-    if (brickTimeoutRef.current) clearTimeout(brickTimeoutRef.current);
-    brickTimeoutRef.current = setTimeout(() => {
-      setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
-    }, 12000);
-
-    const initBrick = async () => {
-      try {
-        if (!(window as any).MercadoPago) {
-          await new Promise<void>((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = 'https://sdk.mercadopago.com/js/v2';
-            s.onload = () => resolve();
-            s.onerror = () => reject(new Error('SDK_LOAD_FAILED'));
-            document.head.appendChild(s);
-          });
-        }
-
-        const pubKey = (doctor?.mpPublicKey || import.meta.env.VITE_MP_PUBLIC_KEY) as string | undefined;
-        if (!pubKey) throw new Error('NO_PUBLIC_KEY');
-
-        const mp = new (window as any).MercadoPago(pubKey, { locale: 'es-CL' });
-        const bricksBuilder = mp.bricks();
-
-        const controller = await bricksBuilder.create('cardPayment', 'mp-brick-container', {
-          initialization: {
-            amount: paymentAmount,
-            payer: { email: patientData.email || undefined },
-          },
-          customization: { visual: { style: { theme: 'default' } } },
-          callbacks: {
-            onReady: () => {
-              if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-              setBrickStatus('ready');
-            },
-            onSubmit: (cardFormData: any) => {
-              return new Promise<void>(async (resolve, reject) => {
-                const app = mpBookingRef.current;
-                if (!app) return reject(new Error('no booking'));
-                try {
-                  const res = await fetch('/api/process-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      token: cardFormData.token,
-                      payment_method_id: cardFormData.payment_method_id,
-                      issuer_id: cardFormData.issuer_id,
-                      installments: cardFormData.installments,
-                      payer: cardFormData.payer,
-                      amount: paymentAmount,
-                      external_reference: externalRef,
-                      description: `Reserva — ${app.serviceName} con ${app.doctorName}`,
-                      professional_id: doctor?.id,
-                    }),
-                  });
-                  const data = await res.json();
-                  if (data.status === 'approved' || data.status === 'authorized') {
-                    // El pago YA fue aprobado: la reserva DEBE quedar registrada.
-                    let saved = false;
-                    for (let attempt = 0; attempt < 2 && !saved; attempt++) {
-                      try { await addAppointment(app); saved = true; }
-                      catch (saveErr) { console.error(`[booking] guardado falló (intento ${attempt + 1})`, saveErr); }
-                    }
-                    if (doctor?.email) {
-                      fetch('/api/notify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          to: doctor.email,
-                          professionalName: doctor.name,
-                          patientName: app.patientName,
-                          serviceName: app.serviceName,
-                          date: app.date,
-                          time: app.time,
-                          type: app.type,
-                          duration: app.duration,
-                          patientEmail: app.patientEmail,
-                          price: app.price,
-                          paymentId: data.id,
-                          needsManualEntry: !saved,
-                        }),
-                      }).catch(() => {});
-                    }
-                    setIsConfirmed(true);
-                    resolve();
-                  } else {
-                    const detail = data.cause?.[0]?.description || data.error || data.statusDetail || data.status || 'rechazado';
-                    setMpError(`Pago rechazado: ${detail}. Verifica los datos e intenta de nuevo.`);
-                    reject(new Error(String(detail)));
-                  }
-                } catch (e) {
-                  setMpError('Error al procesar el pago. Intenta con otro método.');
-                  reject(e);
-                }
-              });
-            },
-            onError: (error: any) => {
-              console.error('[MP CardBrick]', error);
-              // Solo un error crítico tumba el formulario hacia el respaldo.
-              if (error?.type === 'critical') {
-                setBrickStatus(prev => {
-                  if (prev === 'loading') {
-                    if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-                    return 'error';
-                  }
-                  return prev;
-                });
-              }
-            },
-          },
-        });
-        brickControllerRef.current = controller || null;
-      } catch (e: any) {
-        console.error('[MP CardBrick init]', e);
-        if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-        setBrickStatus('error');
-        if (e?.message === 'NO_PUBLIC_KEY') {
-          setMpError('Pasarela de pago no configurada. Contacta al profesional.');
-        }
-      }
-    };
-
-    initBrick();
-
-    return () => {
-      if (brickTimeoutRef.current) { clearTimeout(brickTimeoutRef.current); brickTimeoutRef.current = null; }
-      brickControllerRef.current?.unmount?.();
-      brickControllerRef.current = null;
-    };
-  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loadingDoctor) {
     return (
@@ -1158,10 +981,14 @@ const PatientProfile: React.FC = () => {
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">A pagar ahora</span>
-                        {doctor.paymentEnabled && <span className="text-xs font-bold text-slate-500">Bono de Reserva de Cupo</span>}
+                        {doctor.paymentEnabled && (
+                          <span className="text-xs font-bold text-slate-500">
+                            {doctor.chargeFullService ? 'Precio del servicio' : 'Bono de Reserva de Cupo'}
+                          </span>
+                        )}
                       </div>
                       <span className="text-4xl font-black text-primary tracking-tighter">
-                        {doctor.paymentEnabled ? `$${bookingFee.toLocaleString('es-CL')}` : 'Gratis'}
+                        {doctor.paymentEnabled ? `$${paymentAmount.toLocaleString('es-CL')}` : 'Gratis'}
                       </span>
                     </div>
                 </div>
@@ -1184,26 +1011,31 @@ const PatientProfile: React.FC = () => {
                       <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Pago Seguro con MercadoPago</p>
                     </div>
 
-                    {/* Formulario de tarjeta EN LA PÁGINA (CardPayment Brick).
-                        Siempre presente en el DOM (MP no monta en display:none);
-                        el spinner de carga va como overlay encima. */}
-                    <div className="relative w-full min-h-[60px]">
-                      {brickStatus === 'loading' && (
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center py-10 gap-3 bg-slate-50 rounded-2xl border border-slate-100">
-                          <span className="material-icons-round animate-spin text-3xl" style={{ color: '#009ee3' }}>sync</span>
-                          <p className="text-xs font-bold text-slate-500">Cargando formulario de pago...</p>
-                        </div>
+                    {/* Pago vía Checkout Pro: el paciente paga en la página segura
+                        de MercadoPago y vuelve por back_urls (mp_return=1). Funciona
+                        con CUALQUIER cuenta MP conectada, sin depender de la captura
+                        directa de tarjeta (Checkout API) del vendedor. */}
+                    <button
+                      onClick={startCheckoutPro}
+                      disabled={isProcessing}
+                      className="w-full py-5 text-white font-black rounded-2xl shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 transition-all uppercase text-xs tracking-widest flex items-center gap-2 justify-center border-b-4 active:border-b-0"
+                      style={{ backgroundColor: '#009ee3', borderBottomColor: '#0079b3' }}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <span className="material-icons-round animate-spin text-sm">sync</span>
+                          Redirigiendo a MercadoPago...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-icons-round text-sm">lock</span>
+                          Pagar ${paymentAmount.toLocaleString('es-CL')} con MercadoPago
+                        </>
                       )}
-                      <div id="mp-brick-container" className={`w-full overflow-x-hidden ${brickStatus === 'error' ? 'hidden' : ''}`} />
-                    </div>
-
-                    {/* Error crítico */}
-                    {brickStatus === 'error' && (
-                      <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
-                        <span className="material-icons-round text-xl mb-1 block">payment</span>
-                        El pago online no está disponible temporalmente. Por favor, recarga la página e intenta nuevamente.
-                      </div>
-                    )}
+                    </button>
+                    <p className="text-[11px] text-slate-500 text-center font-bold px-2">
+                      Pagas en la página segura de MercadoPago. No necesitas la app ni una cuenta.
+                    </p>
 
                     {mpError && (
                       <p className="text-rose-600 text-xs font-bold text-center bg-rose-50 rounded-xl p-3">{mpError}</p>
