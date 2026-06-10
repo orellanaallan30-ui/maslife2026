@@ -48,6 +48,7 @@ const ProfessionalRegistration: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [referrerId, setReferrerId] = useState<string | null>(null);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirm: '',
@@ -82,7 +83,10 @@ const ProfessionalRegistration: React.FC = () => {
         setCodeError(data.error || 'Código incorrecto. Solicítalo a la administración.');
         return;
       }
-      if (data.referrerId) setReferrerId(data.referrerId);
+      if (data.referrerId) {
+        setReferrerId(data.referrerId);
+        setReferrerName(data.referrerName || null);
+      }
       setStep(2);
     } catch {
       setCodeError('Error de conexión. Intenta de nuevo.');
@@ -336,6 +340,7 @@ const ProfessionalRegistration: React.FC = () => {
                       font-mono text-xl tracking-[0.3em] text-white text-center uppercase
                       focus:border-teal-500 outline-none placeholder:text-slate-700"/>
                   {codeError&&<p className="text-rose-500 text-xs font-bold mt-2 flex items-center gap-1"><span className="material-icons-round text-xs">error</span>{codeError}</p>}
+                  {referrerName&&<p className="text-emerald-600 text-xs font-bold mt-2 flex items-center gap-1"><span className="material-icons-round text-xs">check_circle</span>Código de <strong className="ml-0.5">{referrerName}</strong> — ¡ambos recibirán beneficios!</p>}
                 </div>
                 <button onClick={handleCodeNext} disabled={authCode.length<4 || loading}
                   className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest

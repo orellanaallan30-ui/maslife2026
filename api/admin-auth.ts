@@ -103,12 +103,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .from('professionals')
         .select('id, name')
         .ilike('referral_code', (code as string).trim())
-        .single();
+        .maybeSingle();
 
       if (referrer) {
         return res.status(200).json({ valid: true, referrerId: referrer.id, referrerName: referrer.name });
       }
-      return res.status(401).json({ valid: false, error: 'Código inválido' });
+      return res.status(200).json({ valid: false, error: 'Código incorrecto. Solicítalo a la administración o a un colega de la plataforma.' });
     }
 
     // Admin login
