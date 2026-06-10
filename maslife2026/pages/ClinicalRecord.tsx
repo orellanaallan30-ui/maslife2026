@@ -790,7 +790,7 @@ Entrega el informe con estas secciones:
 
   if (!initialPatient) {
     return (
-      <div className="flex w-full h-screen items-center justify-center bg-[#f8fafc]">
+      <div className="flex w-full h-screen items-center justify-center bg-slate-100">
         <div className="text-center">
           <span className="material-icons-round text-6xl text-slate-200 mb-4 block">person_off</span>
           <p className="text-slate-500 font-black text-sm uppercase tracking-widest">Paciente no encontrado</p>
@@ -959,7 +959,7 @@ Entrega el informe con estas secciones:
                       value={cf.label}
                       onChange={e => { updateCustomField(idx, 'label', e.target.value); setIsDirtyTrue(); }}
                       placeholder="Etiqueta (ej: Deporte)..."
-                      className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
+                      className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
                     />
                     <button onClick={() => { removeCustomField(idx); setIsDirtyTrue(); }} className="opacity-0 group-hover:opacity-100 text-rose-500 no-print transition-all">
                       <span className="material-icons-round text-xs">delete</span>
@@ -1163,7 +1163,7 @@ Entrega el informe con estas secciones:
                 <div className="grid grid-cols-2 gap-4">
                   {(['Anterior','Posterior','Lateral Der.','Lateral Izq.'] as const).map((label, idx) => (
                     <div key={label} className="space-y-1">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{label}</p>
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">{label}</p>
                       {analysisImages[idx] ? (
                         <div className="relative aspect-square rounded-[2rem] overflow-hidden border-4 border-slate-50 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
                           <img src={analysisImages[idx]} className="w-full h-full object-cover" alt={label} />
@@ -1428,8 +1428,8 @@ Entrega el informe con estas secciones:
               { l: 'Sat O2 (%)', k: 'oxygenSaturation', c: 'text-teal-500' },
               { l: 'Temp (°C)', k: 'temperature', c: 'text-amber-500' }
             ].map(v => (
-              <div key={v.k} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] text-center group hover:-translate-y-1 hover:shadow-xl transition-all">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{v.l}</p>
+              <div key={v.k} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] text-center group hover:-translate-y-1 hover:shadow-xl transition-all">
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">{v.l}</p>
                 <input type="number" value={(vitals as any)[v.k]} onChange={e => { setVitals({ ...vitals, [v.k]: Number(e.target.value) }); setIsDirtyTrue(); }} className={`w-full bg-transparent border-none p-0 text-4xl font-black ${v.c} text-center focus:ring-0`} />
               </div>
             ))}
@@ -1448,7 +1448,7 @@ Entrega el informe con estas secciones:
                 { l: 'Circ. Cadera (cm)', v: nutCadera,  set: (n: number) => { setNutCadera(n);  setIsDirtyTrue(); } },
               ].map(f => (
                 <div key={f.l} className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</label>
+                  <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                   <input type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
                     className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                 </div>
@@ -1458,7 +1458,7 @@ Entrega el informe con estas secciones:
             {/* Género y nivel de actividad */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Género Biológico</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Género Biológico</label>
                 <div className="flex gap-3">
                   {(['Femenino', 'Masculino'] as Gender[]).map(g => (
                     <button key={g} onClick={() => { setNutGender(g); setIsDirtyTrue(); }}
@@ -1469,7 +1469,7 @@ Entrega el informe con estas secciones:
                 </div>
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel de Actividad Física</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Nivel de Actividad Física</label>
                 <select value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
                   {(Object.entries(ACTIVITY_FACTORS) as [ActivityLevel, { label: string; factor: number }][]).map(([k, v]) => (
@@ -1489,7 +1489,7 @@ Entrega el informe con estas secciones:
                   { l: 'Rel. C/C',        val: nutMetrics.whr || '—',     unit: '',      sub: nutMetrics.whrClassification.label, col: nutMetrics.whrClassification.color },
                 ].map(card => (
                   <div key={card.l} className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 text-center shadow-inner">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{card.l}</p>
+                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3">{card.l}</p>
                     <p className={`text-3xl font-black ${card.col}`}>{card.val}</p>
                     {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
                     <p className={`text-xs font-black mt-2 ${card.col}`}>{card.sub}</p>
@@ -1518,7 +1518,7 @@ Entrega el informe con estas secciones:
                   { l: 'Sum. 8 Pliegues (mm)', v: nutSum8Pliegues, set: (n: number) => { setNutSum8Pliegues(n); setIsDirtyTrue(); } },
                 ].map(f => (
                   <div key={f.l} className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</label>
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                     <input type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
                       className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                   </div>
@@ -1535,7 +1535,7 @@ Entrega el informe con estas secciones:
                     { l: 'Índ. Musc. Óseo',val: nutIndiceMuscularOseo, unit: '',  col: 'text-blue-600' },
                   ].map(card => (
                     <div key={card.l} className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 text-center shadow-inner">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{card.l}</p>
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">{card.l}</p>
                       <p className={`text-2xl font-black ${card.col}`}>{card.val || '—'}</p>
                       {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
                     </div>
@@ -1618,13 +1618,13 @@ Entrega el informe con estas secciones:
             {/* Objetivos nutricionales */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objetivos Nutricionales</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
                 <textarea value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Reducir peso corporal 5 kg en 3 meses, normalizar glicemia..."
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suplementación Indicada</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Suplementación Indicada</label>
                 <textarea value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Vitamina D 2000 UI/día, Omega-3 1g/día..."
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
@@ -1695,13 +1695,13 @@ Entrega el informe con estas secciones:
             {/* Escala de ánimo */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
                 <span className={`text-3xl font-black ${psychMood <= 3 ? 'text-rose-500' : psychMood <= 6 ? 'text-amber-500' : 'text-emerald-500'}`}>{psychMood}/10</span>
               </div>
               <input type="range" min={0} max={10} step={1} value={psychMood}
                 onChange={e => { setPsychMood(Number(e.target.value)); setIsDirtyTrue(); }}
                 className="w-full accent-violet-500 h-3 rounded-full" />
-              <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <div className="flex justify-between text-[10px] font-black text-slate-600 uppercase tracking-widest">
                 <span>😔 Muy bajo</span><span>😐 Neutro</span><span>😊 Muy alto</span>
               </div>
             </div>
@@ -1709,13 +1709,13 @@ Entrega el informe con estas secciones:
             {/* Antecedentes psiquiátricos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
                 <textarea value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Diagnósticos previos, hospitalizaciones, intentos de autolesión, medicación psiquiátrica..."
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
                 <textarea value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Ej: TCC — reestructuración cognitiva de pensamientos automáticos negativos. EMDR fase 3..."
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
@@ -1724,7 +1724,7 @@ Entrega el informe con estas secciones:
 
             {/* Objetivo próxima sesión */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objetivo Próxima Sesión</label>
+              <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivo Próxima Sesión</label>
               <textarea value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
                 className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
@@ -1809,7 +1809,7 @@ Entrega el informe con estas secciones:
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-sm text-slate-800 truncate">{file.name}</p>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-1">
                         {file.date} • {file.size}
                       </p>
                     </div>
@@ -1861,7 +1861,7 @@ Entrega el informe con estas secciones:
           <div className="px-6 md:px-10 pb-6 no-print">
             <button
               onClick={() => setShowVersions(v => !v)}
-              className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-700 transition-colors"
+              className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-slate-700 transition-colors"
             >
               <span className="material-icons-round text-sm">{showVersions ? 'expand_less' : 'history'}</span>
               {showVersions ? 'Ocultar historial' : `Historial SOAP (${soapVersions.length} versiones guardadas)`}
