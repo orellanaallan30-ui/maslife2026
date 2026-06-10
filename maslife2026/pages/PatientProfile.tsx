@@ -8,6 +8,29 @@ import { getProfessionalBySlugOrId, getAppointments, getProfessionalReviews, get
 // la página de MercadoPago (Checkout Pro). Se lee al volver por back_urls.
 const PENDING_BOOKING_KEY = 'maslife_pending_booking';
 
+const validateRut = (rut: string): boolean => {
+  const clean = rut.replace(/[.\- ]/g, '').toUpperCase();
+  if (!/^\d{7,8}[0-9K]$/.test(clean)) return false;
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  let sum = 0, mul = 2;
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i]) * mul;
+    mul = mul === 7 ? 2 : mul + 1;
+  }
+  const rem = 11 - (sum % 11);
+  const expected = rem === 11 ? '0' : rem === 10 ? 'K' : String(rem);
+  return expected === dv;
+};
+
+const validateEmail = (email: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+
+const validatePhone = (phone: string): boolean => {
+  const clean = phone.replace(/[\s\-()]/g, '');
+  return /^(\+?56)?9\d{8}$/.test(clean);
+};
+
 const PatientProfile: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -52,10 +75,16 @@ const PatientProfile: React.FC = () => {
     ? selectedService.price
     : bookingFee;
 
+  const formErrors = {
+    name: patientData.name.trim() === '' ? 'Nombre requerido' : '',
+    rut: patientData.rut.trim() !== '' && !validateRut(patientData.rut) ? 'RUT inválido (ej: 12.345.678-9)' : '',
+    phone: patientData.phone.trim() !== '' && !validatePhone(patientData.phone) ? 'Celular inválido (ej: +56 9 1234 5678)' : '',
+    email: patientData.email.trim() !== '' && !validateEmail(patientData.email) ? 'Correo inválido' : '',
+  };
   const isFormValid = patientData.name.trim() !== '' &&
-                      patientData.rut.trim() !== '' &&
-                      patientData.phone.trim() !== '' &&
-                      patientData.email.trim() !== '' &&
+                      patientData.rut.trim() !== '' && validateRut(patientData.rut) &&
+                      patientData.phone.trim() !== '' && validatePhone(patientData.phone) &&
+                      patientData.email.trim() !== '' && validateEmail(patientData.email) &&
                       patientData.city.trim() !== '' &&
                       patientData.reason.trim() !== '' &&
                       (selectedModality !== 'home' || (patientData.address.trim() !== '' && patientData.houseNumber.trim() !== ''));
@@ -908,7 +937,8 @@ const PatientProfile: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">RUT *</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: 12.345.678-9" value={patientData.rut} onChange={e => setPatientData({ ...patientData, rut: e.target.value })} />
+                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.rut ? 'border-rose-400' : 'border-slate-200'}`} placeholder="Ej: 12.345.678-9" value={patientData.rut} onChange={e => setPatientData({ ...patientData, rut: e.target.value })} />
+                    {formErrors.rut && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.rut}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Motivo de consulta / Diagnóstico *</label>
@@ -916,11 +946,13 @@ const PatientProfile: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Celular *</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="+56 9 1234 5678" value={patientData.phone} onChange={e => setPatientData({ ...patientData, phone: e.target.value })} />
+                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.phone ? 'border-rose-400' : 'border-slate-200'}`} placeholder="+56 9 1234 5678" value={patientData.phone} onChange={e => setPatientData({ ...patientData, phone: e.target.value })} />
+                    {formErrors.phone && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.phone}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Correo Electrónico *</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="email" placeholder="correo@ejemplo.com" value={patientData.email} onChange={e => setPatientData({ ...patientData, email: e.target.value })} />
+                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.email ? 'border-rose-400' : 'border-slate-200'}`} type="email" placeholder="correo@ejemplo.com" value={patientData.email} onChange={e => setPatientData({ ...patientData, email: e.target.value })} />
+                    {formErrors.email && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.email}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Ciudad *</label>

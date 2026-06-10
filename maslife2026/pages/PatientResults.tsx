@@ -15,6 +15,7 @@ const PatientResults: React.FC = () => {
   const [selectedArea, setSelectedArea] = useState('');
   const [selectedModality, setSelectedModality] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(12);
 
   useEffect(() => {
     setLoading(true);
@@ -61,7 +62,10 @@ const PatientResults: React.FC = () => {
     setCitySearch('');
     setSelectedArea('');
     setSelectedModality([]);
+    setVisibleCount(12);
   };
+
+  const pagedDoctors = visibleDoctors.slice(0, visibleCount);
 
   const hasActiveFilters = citySearch || selectedArea || selectedModality.length > 0;
 
@@ -238,7 +242,7 @@ const PatientResults: React.FC = () => {
 
             {/* Cards de profesionales */}
             <div className="grid grid-cols-1 gap-4">
-              {visibleDoctors.length > 0 ? visibleDoctors.map((doc) => (
+              {visibleDoctors.length > 0 ? pagedDoctors.map((doc) => (
                 <div
                   key={doc.id}
                   onClick={() => navigate(`/patient/profile/${doc.id}`)}
@@ -293,6 +297,18 @@ const PatientResults: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Mostrar más */}
+            {visibleCount < visibleDoctors.length && (
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => setVisibleCount(c => c + 12)}
+                  className="px-8 py-3 bg-white border border-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all"
+                >
+                  Mostrar más ({visibleDoctors.length - visibleCount} restantes)
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

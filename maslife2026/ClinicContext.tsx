@@ -230,18 +230,17 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
 
     const loadProData = async () => {
+      setIsLoading(true);
       try {
         const [supaPatients, supaApps, supaTransactions] = await Promise.all([
           getPatients(loggedPro.id),
           getAppointments(loggedPro.id),
           getTransactions(loggedPro.id),
         ]);
-        // Reemplazar con datos de Supabase si hay resultados
         setPatients(supaPatients);
         setAppointments(supaApps);
         if (supaTransactions.length > 0) setManualTransactions(supaTransactions);
       } catch {
-        // Sin conexión: filtrar localStorage por este profesional
         setAppointments(prev =>
           prev.filter(a => !a.professionalId || a.professionalId === loggedPro.id)
         );
@@ -251,6 +250,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         setManualTransactions(prev =>
           prev.filter(t => !t.professionalId || t.professionalId === loggedPro.id)
         );
+      } finally {
+        setIsLoading(false);
       }
     };
 
