@@ -172,10 +172,10 @@ export async function releaseBooking(id: string): Promise<void> {
 
 /**
  * Elimina "holds" de pago vencidos: citas Pendiente/Pendiente de origen web con
- * más de 30 minutos. Libera cupos de pacientes que abandonaron el checkout.
+ * más de 5 minutos. Libera cupos de pacientes que abandonaron el checkout.
  */
 export async function releaseStaleHolds(professionalId: string): Promise<void> {
-  const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
   const { error } = await supabase
     .from('appointments')
     .delete()
