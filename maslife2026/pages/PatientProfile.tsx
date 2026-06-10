@@ -68,6 +68,8 @@ const PatientProfile: React.FC = () => {
   // cualquier cuenta conectada; el retorno se maneja en el handler mp_return.
   const [mpError, setMpError]       = useState('');
   const [bookingError, setBookingError] = useState('');
+  const confirmedDateLabelRef = React.useRef<string>('');
+  const confirmedDateRef      = React.useRef<string>('');
 
   const doctor = fetchedDoctor;
   const bookingFee = doctor?.bookingFee || 5000;
@@ -187,8 +189,31 @@ const PatientProfile: React.FC = () => {
 
     (async () => {
       try {
-        const pending = JSON.parse(raw) as { app: Appointment; doctorEmail?: string; notify?: any };
+        const pending = JSON.parse(raw) as {
+          app: Appointment; doctorEmail?: string; notify?: any;
+          patientRut?: string; dateLabel?: string; paymentAmount?: number;
+        };
         const app: Appointment = { ...pending.app, paymentStatus: 'Pagado', paidAt: new Date().toISOString() };
+
+        // Restaurar estado de pantalla para el comprobante
+        setPatientData(prev => ({
+          ...prev,
+          name: app.patientName || '',
+          rut: pending.patientRut || '',
+          email: app.patientEmail || '',
+          phone: app.patientPhone || '',
+        }));
+        setSelectedSlot(app.time || null);
+        setSelectedService({
+          id: 'restored',
+          name: app.serviceName || '',
+          price: app.price || 0,
+          duration: app.duration || 60,
+          description: '',
+        });
+        if (pending.dateLabel) confirmedDateLabelRef.current = pending.dateLabel;
+        if (app.date) confirmedDateRef.current = app.date;
+
         // El pago YA fue aprobado: la reserva DEBE quedar registrada (reintento 1 vez).
         let saved = false;
         for (let attempt = 0; attempt < 2 && !saved; attempt++) {
@@ -337,7 +362,14 @@ const PatientProfile: React.FC = () => {
     try {
       localStorage.setItem(
         PENDING_BOOKING_KEY,
-        JSON.stringify({ app: newApp, doctorEmail: doctor.email, notify })
+        JSON.stringify({
+          app: newApp,
+          doctorEmail: doctor.email,
+          notify,
+          patientRut: patientData.rut,
+          dateLabel: availableDays[selectedDay].label,
+          paymentAmount,
+        })
       );
       const res = await fetch('/api/process-payment', {
         method: 'POST',
@@ -369,7 +401,7 @@ const PatientProfile: React.FC = () => {
 
   const generateGoogleCalendarLink = () => {
     if (!selectedService || !selectedSlot) return '#';
-    const startDate = availableDays[selectedDay].date; 
+    const startDate = availableDays[selectedDay]?.date || confirmedDateRef.current;
     const [hh, mm] = selectedSlot.split(':');
     
     // Crear objeto Date considerando el inicio
@@ -462,7 +494,7 @@ const PatientProfile: React.FC = () => {
                     <div className="grid grid-cols-2 gap-5">
                       <div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fecha y Hora</span>
-                        <p className="text-sm font-black text-slate-900">{availableDays[selectedDay]?.label}</p>
+                        <p className="text-sm font-black text-slate-900">{confirmedDateLabelRef.current || availableDays[selectedDay]?.label}</p>
                         <p className="text-xl font-black text-primary">{selectedSlot}</p>
                       </div>
                       <div>
