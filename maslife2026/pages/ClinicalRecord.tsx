@@ -141,10 +141,12 @@ const ClinicalRecord: React.FC = () => {
   // Ref que apunta siempre al paciente actualizado con los valores más recientes
   const buildPatientRef = useRef<() => Patient>(() => safePatient as Patient);
 
+  const isSavingRef = useRef(false);
   const setIsDirtyTrue = () => {
     setIsDirty(true);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(() => {
+      if (isSavingRef.current) return;
       setAutoSaveStatus('saving');
       buildPatientRef.current && onUpdatePatient(buildPatientRef.current());
       setIsDirty(false);
@@ -173,13 +175,13 @@ const ClinicalRecord: React.FC = () => {
     { id: 'm2', label: 'Diabetes Mellitus II', checked: false },
   ]);
   const [quirurgicos, setQuirurgicos] = useState<Antecedent[]>([
-    { id: 'q1', label: 'Apendicectomía', checked: true },
+    { id: 'q1', label: 'Apendicectomía', checked: false },
   ]);
   const [anamnesis, setAnamnesis] = useState(safePatient.medicalHistory || '');
 
   const [vitals, setVitals] = useState<Vitals>(safePatient.vitals || {
-    heartRate: 72, systolic: 120, diastolic: 80, temperature: 36.5,
-    oxygenSaturation: 98, respiratoryRate: 16, weight: 64.2, height: 1.70, bmi: 24.2, glucose: 95
+    heartRate: 0, systolic: 0, diastolic: 0, temperature: 0,
+    oxygenSaturation: 0, respiratoryRate: 0, weight: 0, height: 0, bmi: 0, glucose: 0
   });
 
   // ── Detección de especialidad ──────────────────────────────────────────────
@@ -267,9 +269,7 @@ const ClinicalRecord: React.FC = () => {
 
   const [soap, setSoap] = useState({ subjective: '', objective: '', assessment: '', plan: '', ...((safePatient.soap as any) || {}) });
 
-  const [goals, setGoals] = useState<TherapeuticGoal[]>([
-    { id: 'g1', name: 'Rango de Movimiento', description: 'Recuperar 160° de flexión', progress: 75, status: 'En Proceso', color: 'bg-primary' },
-  ]);
+  const [goals, setGoals] = useState<TherapeuticGoal[]>([]);
 
   const [sessionLogs, setSessionLogs] = useState<SessionLog[]>(safePatient.sessionLogs || [
     { id: 'sl1', date: '2024-05-10', note: 'Sesión de evaluación inicial.' }
@@ -755,6 +755,7 @@ Entrega el informe con estas secciones:
   buildPatientRef.current = buildUpdatedPatient;
 
   const handleSaveAttention = async () => {
+    isSavingRef.current = true;
     setIsSaving(true);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     onUpdatePatient(buildUpdatedPatient());
@@ -776,6 +777,7 @@ Entrega el informe con estas secciones:
 
     setIsDirty(false);
     setAutoSaveStatus('idle');
+    isSavingRef.current = false;
     setIsSaving(false);
     toast.success(`Ficha de ${personalData.name} guardada correctamente`);
     navigate('/pro/patients');
