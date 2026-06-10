@@ -199,19 +199,15 @@ const ProfessionalDashboard: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           {/* ── Header saludo + fecha + reloj ── */}
           <div className="mb-4 flex items-start justify-between gap-3">
-            {/* Izquierda: saludo y fecha */}
+            {/* Izquierda: especialidad + saludo + fecha */}
             <div className="min-w-0">
-              {specialtyTitle && (
+              {loggedPro.specialty && (
                 <p className="text-[10px] font-black text-primary uppercase tracking-[0.35em] mb-0.5 opacity-80">
-                  {specialtyTitle}
+                  {loggedPro.specialty}
                 </p>
               )}
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-950 leading-tight">
-                Hola,&nbsp;
-                {specialtyTitle
-                  ? <><span className="text-primary">{specialtyTitle}</span> {firstName}</>
-                  : firstName
-                }
+                Hola, {firstName}
               </h1>
               <div className="flex items-center gap-1.5 mt-1.5">
                 <span className="material-icons-round text-slate-400 text-xs">calendar_today</span>
@@ -228,6 +224,21 @@ const ProfessionalDashboard: React.FC = () => {
                 :{timeSec}
               </p>
             </div>
+          </div>
+
+          {/* ── Invita y Gana ── */}
+          <div
+            onClick={() => navigate('/pro/referral')}
+            className="mb-4 bg-gradient-to-r from-primary/8 to-violet-50 border border-primary/15 rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:from-primary/12 active:scale-[0.99] transition-all group"
+          >
+            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
+              <span className="material-icons-round text-white text-lg">card_giftcard</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-black text-primary uppercase tracking-widest">Programa de Referidos</p>
+              <p className="text-sm font-black text-slate-900 leading-tight">Invita y Gana</p>
+            </div>
+            <span className="material-icons-round text-primary/40 text-lg group-hover:translate-x-0.5 transition-transform">chevron_right</span>
           </div>
 
           {/* ── Tu Link de Reservas ── */}
