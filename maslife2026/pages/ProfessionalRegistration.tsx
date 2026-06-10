@@ -103,10 +103,10 @@ const ProfessionalRegistration: React.FC = () => {
 
   const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptedTerms) { setError('Debes aceptar los Términos y Condiciones para continuar.'); return; }
     setLoading(true); setError('');
     const finalCity = form.city === 'Otra ciudad' ? form.customCity.trim() : form.city;
 
-    // Timeout de seguridad: 25 segundos
     let timedOut = false;
     const timeoutId = setTimeout(() => {
       timedOut = true;
@@ -115,7 +115,6 @@ const ProfessionalRegistration: React.FC = () => {
     }, 25000);
 
     try {
-      // Paso 1: crear cuenta en Supabase Auth
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: form.email.trim().toLowerCase(),
         password: form.password,
@@ -125,19 +124,14 @@ const ProfessionalRegistration: React.FC = () => {
         },
       });
       if (timedOut) return;
-
       if (authErr) {
-        if (authErr.message.includes('already registered') || authErr.message.includes('already been registered')) {
-          setError('Este email ya está registrado. Intenta iniciar sesión.');
-        } else {
-          setError(authErr.message);
-        }
+        setError(authErr.message.includes('already registered') || authErr.message.includes('already been registered')
+          ? 'Este email ya está registrado. Intenta iniciar sesión.'
+          : authErr.message);
         return;
       }
 
-      // Paso 2: obtener sesión/UUID real
       let realUid: string;
-
       if (authData?.session) {
         realUid = authData.session.user.id;
       } else {
@@ -146,26 +140,42 @@ const ProfessionalRegistration: React.FC = () => {
           await new Promise(r => setTimeout(r, 700));
         }
         if (timedOut) return;
-
         const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
           email: form.email.trim().toLowerCase(),
           password: form.password,
         });
         if (timedOut) return;
-
         if (signInErr || !signInData?.session) {
-          const msg = signInErr?.message?.toLowerCase() ?? '';
-          if (msg.includes('email not confirmed')) {
-            setError('Cuenta creada. Revisa tu email y confirma tu cuenta para ingresar. Luego vuelve al login.');
-          } else {
-            setError('Cuenta creada. Ingresa desde la pantalla de login con tu email y contraseña.');
-          }
+          setError(signInErr?.message?.toLowerCase().includes('email not confirmed')
+            ? 'Cuenta creada. Revisa tu email y confirma tu cuenta para ingresar. Luego vuelve al login.'
+            : 'Cuenta creada. Ingresa desde la pantalla de login con tu email y contraseña.');
           return;
         }
         realUid = signInData.session.user.id;
       }
-
       if (timedOut) return;
+
+      // Generar código de referido único (4 letras del nombre + 4 del UUID)
+      const namePrefix = form.name.trim()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(4, 'X');
+      const referralCode = namePrefix + realUid.replace(/-/g, '').slice(0, 4).toUpperCase();
+
+      // Subir foto de perfil a Storage (evita base64 en DB)
+      let avatarUrl = '';
+      if (form.avatar?.startsWith('data:')) {
+        try {
+          const blob = await fetch(form.avatar).then(r => r.blob());
+          const ext = blob.type.split('/')[1] || 'jpg';
+          const { data: uploaded, error: upErr } = await supabase.storage
+            .from('patients-images')
+            .upload(`avatars/${realUid}.${ext}`, blob, { upsert: true, contentType: blob.type });
+          if (!upErr && uploaded) {
+            avatarUrl = supabase.storage.from('patients-images').getPublicUrl(uploaded.path).data.publicUrl;
+          }
+        } catch { /* foto opcional */ }
+      }
+
       const trialEnd = new Date();
       trialEnd.setDate(trialEnd.getDate() + 30);
       const services = [{ id: 's1', name: form.serviceName,
@@ -175,7 +185,6 @@ const ProfessionalRegistration: React.FC = () => {
         .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, '-')
         + '-' + realUid.slice(0, 6);
 
-      // Paso 4: verificar si ya existe perfil
       const { data: existingPro } = await supabase
         .from('professionals').select('*').eq('id', realUid).maybeSingle();
       if (timedOut) return;
@@ -185,12 +194,11 @@ const ProfessionalRegistration: React.FC = () => {
         return;
       }
 
-      // Paso 5: insertar perfil
       const { error: saveErr } = await supabase.from('professionals').insert({
         id: realUid, slug, name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         specialty: form.specialty.trim(), city: finalCity,
-        bio: '', avatar: form.avatar || '',
+        bio: '', avatar: avatarUrl,
         working_hours: { start: '09:00', end: '18:00' },
         modalities: form.modalities, services,
         is_public: true, is_verified: true, is_approved: true,
@@ -199,6 +207,8 @@ const ProfessionalRegistration: React.FC = () => {
         needs_password_reset: false, payment_enabled: false,
         created_at: new Date().toISOString(),
         terms_accepted_at: new Date().toISOString(),
+        referral_code: referralCode,
+        referred_by: referrerId || null,
       });
       if (timedOut) return;
 
@@ -213,9 +223,8 @@ const ProfessionalRegistration: React.FC = () => {
         return;
       }
 
-      // Referral rewards: record referred_by and trigger server-side rewards
+      // Activar recompensas del referido (fire-and-forget)
       if (referrerId) {
-        await supabase.from('professionals').update({ referred_by: referrerId }).eq('id', realUid);
         fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -223,13 +232,12 @@ const ProfessionalRegistration: React.FC = () => {
         }).catch(() => {});
       }
 
-      // Paso 6: navegar con datos en memoria (sin query extra que puede colgar)
       clearTimeout(timeoutId);
       setLoggedPro({
         id: realUid, slug, name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         specialty: form.specialty.trim(), city: finalCity,
-        bio: '', avatar: form.avatar || '',
+        bio: '', avatar: avatarUrl,
         workingHours: { start: '09:00', end: '18:00' },
         modalities: form.modalities, services,
         isPublic: true, isVerified: true, isApproved: true,
@@ -237,6 +245,8 @@ const ProfessionalRegistration: React.FC = () => {
         trialEndDate: trialEnd.toISOString(),
         needsPasswordReset: false, paymentEnabled: false,
         subscriptionLink: '', createdAt: new Date().toISOString(),
+        referralCode,
+        referralCreditClp: 0,
       } as any);
       navigate('/pro/dashboard');
 
@@ -327,10 +337,13 @@ const ProfessionalRegistration: React.FC = () => {
                       focus:border-teal-500 outline-none placeholder:text-slate-700"/>
                   {codeError&&<p className="text-rose-500 text-xs font-bold mt-2 flex items-center gap-1"><span className="material-icons-round text-xs">error</span>{codeError}</p>}
                 </div>
-                <button onClick={handleCodeNext} disabled={authCode.length<4}
+                <button onClick={handleCodeNext} disabled={authCode.length<4 || loading}
                   className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest
                     disabled:opacity-40 hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
-                  Validar y Continuar <span className="material-icons-round text-base">arrow_forward</span>
+                  {loading
+                    ? <><span className="material-icons-round text-base animate-spin">sync</span>Validando...</>
+                    : <>Validar y Continuar <span className="material-icons-round text-base">arrow_forward</span></>
+                  }
                 </button>
                 <p className="text-center text-sm text-slate-500">
                   ¿Ya tienes cuenta? <Link to="/pro/login" className="text-teal-600 font-bold hover:text-teal-800">Inicia sesión</Link>
