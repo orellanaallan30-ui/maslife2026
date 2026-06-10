@@ -33,6 +33,12 @@ const ProfessionalDashboard: React.FC = () => {
   const isPaused = (serverSubStatus ?? loggedPro.subscriptionStatus) === 'paused';
 
   const [linkCopied, setLinkCopied] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const bookingLink = `${window.location.origin}/p/${loggedPro.slug || loggedPro.id}`;
 
@@ -63,6 +69,45 @@ const ProfessionalDashboard: React.FC = () => {
   const profileComplete = !!(loggedPro.slug && loggedPro.specialty && loggedPro.services?.length > 0);
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
   const mpLinkWithBack = MP_SUBSCRIPTION_LINK;
+
+  const SPECIALTY_TITLES: Record<string, string> = {
+    'Kinesiología': 'Kinesiólogo',
+    'Psicología': 'Psicólogo',
+    'Nutrición': 'Nutricionista',
+    'Nutrición y Dietética': 'Nutricionista',
+    'Medicina General': 'Médico',
+    'Medicina Familiar': 'Médico',
+    'Cardiología': 'Cardiólogo',
+    'Dermatología': 'Dermatólogo',
+    'Pediatría': 'Pediatra',
+    'Traumatología': 'Traumatólogo',
+    'Fonoaudiología': 'Fonoaudiólogo',
+    'Terapia Ocupacional': 'Terapeuta Ocupacional',
+    'Enfermería': 'Enfermero',
+    'Matrona': 'Matrona',
+    'Odontología': 'Odontólogo',
+    'Oftalmología': 'Oftalmólogo',
+    'Neurología': 'Neurólogo',
+    'Gastroenterología': 'Gastroenterólogo',
+    'Reumatología': 'Reumatólogo',
+    'Endocrinología': 'Endocrinólogo',
+    'Psiquiatría': 'Psiquiatra',
+    'Urología': 'Urólogo',
+    'Ginecología': 'Ginecólogo',
+    'Fisioterapia': 'Fisioterapeuta',
+  };
+
+  const specialtyTitle = loggedPro.specialty
+    ? (SPECIALTY_TITLES[loggedPro.specialty] ?? loggedPro.specialty)
+    : null;
+
+  const firstName = loggedPro.name.split(' ')[0];
+
+  const dayLabel = currentTime.toLocaleDateString('es-CL', { weekday: 'long' });
+  const dayCapitalized = dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1);
+  const dateLabel = currentTime.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+  const timeHM = currentTime.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const timeSec = currentTime.toLocaleTimeString('es-CL', { second: '2-digit', hour12: false }).slice(-2);
 
   const today = new Date().toISOString().split('T')[0];
   const myTodayApps = React.useMemo(() =>
@@ -152,10 +197,36 @@ const ProfessionalDashboard: React.FC = () => {
 
       <main className="flex-1 min-h-0 overflow-y-auto p-4 md:p-10 pb-24 md:pb-10 bg-slate-50/50 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-xl sm:text-3xl font-extrabold tracking-tight text-slate-950 leading-tight">Hola, {loggedPro.name.split(' ')[0]}</h1>
-              <p className="text-primary font-black text-[10px] uppercase tracking-[0.4em] mt-0.5 opacity-80">Panel de Control Clínico</p>
+          {/* ── Header saludo + fecha + reloj ── */}
+          <div className="mb-4 flex items-start justify-between gap-3">
+            {/* Izquierda: saludo y fecha */}
+            <div className="min-w-0">
+              {specialtyTitle && (
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.35em] mb-0.5 opacity-80">
+                  {specialtyTitle}
+                </p>
+              )}
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-950 leading-tight">
+                Hola,&nbsp;
+                {specialtyTitle
+                  ? <><span className="text-primary">{specialtyTitle}</span> {firstName}</>
+                  : firstName
+                }
+              </h1>
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <span className="material-icons-round text-slate-400 text-xs">calendar_today</span>
+                <p className="text-[11px] font-bold text-slate-500 capitalize">{dayCapitalized}, {dateLabel}</p>
+              </div>
+            </div>
+
+            {/* Derecha: reloj */}
+            <div className="bg-white border border-slate-100 shadow-sm rounded-2xl px-3 py-2.5 text-center shrink-0 min-w-[72px]">
+              <p className="text-xl font-black text-slate-900 tabular-nums leading-none tracking-tight">
+                {timeHM}
+              </p>
+              <p className="text-[10px] font-black text-primary/60 tabular-nums tracking-widest mt-0.5">
+                :{timeSec}
+              </p>
             </div>
           </div>
 
