@@ -1,8 +1,35 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Appointment, Service } from '../types';
+import { Appointment, Service, Review } from '../types';
 import { useClinic } from '../ClinicContext';
-import { getProfessionalBySlugOrId, getAppointments } from '../supabaseService';
+import { getProfessionalBySlugOrId, getAppointments, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
+
+// Clave de localStorage donde se guarda la reserva mientras el paciente paga en
+// la página de MercadoPago (Checkout Pro). Se lee al volver por back_urls.
+const PENDING_BOOKING_KEY = 'maslife_pending_booking';
+
+const validateRut = (rut: string): boolean => {
+  const clean = rut.replace(/[.\- ]/g, '').toUpperCase();
+  if (!/^\d{7,8}[0-9K]$/.test(clean)) return false;
+  const body = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  let sum = 0, mul = 2;
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i]) * mul;
+    mul = mul === 7 ? 2 : mul + 1;
+  }
+  const rem = 11 - (sum % 11);
+  const expected = rem === 11 ? '0' : rem === 10 ? 'K' : String(rem);
+  return expected === dv;
+};
+
+const validateEmail = (email: string): boolean =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+
+const validatePhone = (phone: string): boolean => {
+  const clean = phone.replace(/[\s\-()]/g, '');
+  return /^(\+?56)?9\d{8}$/.test(clean);
+};
 
 const PatientProfile: React.FC = () => {
   const { id } = useParams();
@@ -27,13 +54,20 @@ const PatientProfile: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  // MercadoPago Bricks
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [rating, setRating] = useState<{ avg: number; count: number }>({ avg: 0, count: 0 });
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRut, setReviewRut] = useState('');
+  const [reviewName, setReviewName] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewStatus, setReviewStatus] = useState<'idle'|'loading'|'success'|'error'>('idle');
+  const [reviewError, setReviewError] = useState('');
+
+  // MercadoPago — pago vía Checkout Pro (página segura de MP). Funciona con
+  // cualquier cuenta conectada; el retorno se maneja en el handler mp_return.
   const [mpError, setMpError]       = useState('');
   const [bookingError, setBookingError] = useState('');
-  const [brickStatus, setBrickStatus] = useState<'idle'|'loading'|'ready'|'error'>('idle');
-  const brickControllerRef = React.useRef<any>(null);
-  const mpBookingRef       = React.useRef<Appointment | null>(null);
-  const MP_ENABLED = true;
 
   const doctor = fetchedDoctor;
   const bookingFee = doctor?.bookingFee || 5000;
@@ -41,10 +75,16 @@ const PatientProfile: React.FC = () => {
     ? selectedService.price
     : bookingFee;
 
+  const formErrors = {
+    name: patientData.name.trim() === '' ? 'Nombre requerido' : '',
+    rut: patientData.rut.trim() !== '' && !validateRut(patientData.rut) ? 'RUT inválido (ej: 12.345.678-9)' : '',
+    phone: patientData.phone.trim() !== '' && !validatePhone(patientData.phone) ? 'Celular inválido (ej: +56 9 1234 5678)' : '',
+    email: patientData.email.trim() !== '' && !validateEmail(patientData.email) ? 'Correo inválido' : '',
+  };
   const isFormValid = patientData.name.trim() !== '' &&
-                      patientData.rut.trim() !== '' &&
-                      patientData.phone.trim() !== '' &&
-                      patientData.email.trim() !== '' &&
+                      patientData.rut.trim() !== '' && validateRut(patientData.rut) &&
+                      patientData.phone.trim() !== '' && validatePhone(patientData.phone) &&
+                      patientData.email.trim() !== '' && validateEmail(patientData.email) &&
                       patientData.city.trim() !== '' &&
                       patientData.reason.trim() !== '' &&
                       (selectedModality !== 'home' || (patientData.address.trim() !== '' && patientData.houseNumber.trim() !== ''));
@@ -109,239 +149,68 @@ const PatientProfile: React.FC = () => {
     getAppointments(proId).then(setProAppointments).catch(() => {});
   }, [fetchedDoctor?.id]);
 
-  // MercadoPago Bricks — inicializar cuando se llega al paso 4
   useEffect(() => {
-    if (step !== 4 || !MP_ENABLED || !doctor || !selectedService || !selectedSlot) {
-      if (brickControllerRef.current) {
-        brickControllerRef.current.unmount?.();
-        brickControllerRef.current = null;
-        setBrickStatus('idle');
-      }
+    if (!fetchedDoctor?.id || !fetchedDoctor.reviewsEnabled) return;
+    getProfessionalReviews(fetchedDoctor.id).then(setReviews);
+    getProfessionalRating(fetchedDoctor.id).then(setRating);
+  }, [fetchedDoctor?.id, fetchedDoctor?.reviewsEnabled]);
+
+  // Retorno desde Checkout Pro de MercadoPago. Al volver de la página de pago,
+  // MP agrega ?mp_return=1&status=approved&external_reference=... a la back_url.
+  // Si el pago se aprobó, registramos la cita que guardamos en localStorage antes
+  // de redirigir. Funciona con cualquier cuenta MP conectada (no depende del brick).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mp_return') !== '1') return;
+
+    const status = params.get('status') || params.get('collection_status') || '';
+    const paymentId = params.get('payment_id') || params.get('collection_id') || undefined;
+
+    // Limpiar la URL para no reprocesar el retorno al recargar la página.
+    window.history.replaceState({}, '', window.location.origin + window.location.pathname);
+
+    const raw = localStorage.getItem(PENDING_BOOKING_KEY);
+    localStorage.removeItem(PENDING_BOOKING_KEY);
+
+    setStep(4);
+
+    if (status !== 'approved' && status !== 'authorized') {
+      setMpError(
+        status === 'pending' || status === 'in_process'
+          ? 'Tu pago quedó pendiente de confirmación. Te avisaremos cuando se acredite.'
+          : 'El pago no se completó. Puedes intentar nuevamente o reservar y pagar en la consulta.'
+      );
       return;
     }
-    if (brickStatus !== 'idle') return; // ya inicializado o cargando
 
-    // Preparar objeto de cita AHORA (tiene los valores correctos del estado)
-    const newApp: Appointment = {
-      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
-      patientId: `p-${Date.now()}`,
-      patientName: patientData.name,
-      patientPhone: patientData.phone,
-      doctorName: doctor.name,
-      specialty: doctor.specialty,
-      serviceName: selectedService.name,
-      notes: patientData.reason,
-      date: availableDays[selectedDay].date,
-      time: selectedSlot,
-      duration: selectedService.duration,
-      type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
-      status: 'Confirmado',
-      price: selectedService.price,
-      paymentStatus: 'Pagado',
-      paidAt: new Date().toISOString(),
-      category: 'Medical',
-      professionalId: doctor.id,
-      bookingSource: 'web',
-      patientEmail: patientData.email || undefined,
-    };
-    mpBookingRef.current = newApp;
+    if (!raw) { setIsConfirmed(true); return; }
 
-    setBrickStatus('loading');
-    const externalRef = `mp-${Date.now()}`;
-
-    const initBrick = async () => {
+    (async () => {
       try {
-        // Cargar SDK si no está disponible
-        if (!(window as any).MercadoPago) {
-          await new Promise<void>((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = 'https://sdk.mercadopago.com/js/v2';
-            s.onload = () => resolve();
-            s.onerror = () => reject(new Error('SDK_LOAD_FAILED'));
-            document.head.appendChild(s);
-          });
+        const pending = JSON.parse(raw) as { app: Appointment; doctorEmail?: string; notify?: any };
+        const app: Appointment = { ...pending.app, paymentStatus: 'Pagado', paidAt: new Date().toISOString() };
+        // El pago YA fue aprobado: la reserva DEBE quedar registrada (reintento 1 vez).
+        let saved = false;
+        for (let attempt = 0; attempt < 2 && !saved; attempt++) {
+          try { await addAppointment(app); saved = true; }
+          catch (e) { console.error('[checkout-pro] guardado falló', e); }
         }
-
-        const pubKey = (doctor?.mpPublicKey || import.meta.env.VITE_MP_PUBLIC_KEY) as string | undefined;
-        if (!pubKey) throw new Error('NO_PUBLIC_KEY');
-
-        const mp = new (window as any).MercadoPago(pubKey, { locale: 'es-CL' });
-        const bricksBuilder = mp.bricks();
-
-        const controller = await bricksBuilder.create('payment', 'mp-brick-container', {
-          initialization: { amount: paymentAmount },
-          customization: {
-            paymentMethods: {
-              creditCard: 'all',
-              debitCard: 'all',
-              ticket: 'none',
-              bankTransfer: 'none',
-              atm: 'none',
-              onlineBankTransfer: 'none',
-              wallet_purchase: 'none',
-            },
-            visual: {
-              style: { theme: 'default' },
-              hideFormTitle: true,
-              hidePaymentButton: false,
-            },
-          },
-          callbacks: {
-            onReady: () => setBrickStatus('ready'),
-            onSubmit: ({ formData }: any) => {
-              return new Promise<void>(async (resolve, reject) => {
-                const app = mpBookingRef.current;
-                if (!app) return reject(new Error('no booking'));
-                try {
-                  const res = await fetch('/api/process-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      ...formData,
-                      amount: paymentAmount,
-                      external_reference: externalRef,
-                      description: `Reserva — ${app.serviceName} con ${app.doctorName}`,
-                      professional_id: doctor?.id,
-                    }),
-                  });
-                  const data = await res.json();
-                  if (data.status === 'approved' || data.status === 'authorized') {
-                    // El pago YA fue aprobado: la reserva DEBE quedar registrada.
-                    // Reintentamos una vez si falla el guardado en la BD.
-                    let saved = false;
-                    for (let attempt = 0; attempt < 2 && !saved; attempt++) {
-                      try {
-                        await addAppointment(app);
-                        saved = true;
-                      } catch (saveErr) {
-                        console.error(`[booking] guardado falló (intento ${attempt + 1})`, saveErr);
-                      }
-                    }
-                    // Siempre notificamos al profesional cuando hay pago aprobado.
-                    // El correo lleva los datos completos de la cita, así que sirve
-                    // de respaldo aunque el guardado en BD haya fallado.
-                    if (doctor?.email) {
-                      fetch('/api/notify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          to: doctor.email,
-                          professionalName: doctor.name,
-                          patientName: app.patientName,
-                          serviceName: app.serviceName,
-                          date: app.date,
-                          time: app.time,
-                          type: app.type,
-                          duration: app.duration,
-                          patientEmail: app.patientEmail,
-                          price: app.price,
-                          paymentId: data.id,
-                          needsManualEntry: !saved,
-                        }),
-                      }).catch(() => {});
-                    }
-                    // El paciente pagó: confirmamos siempre (el respaldo por correo
-                    // garantiza que el profesional reciba la cita si la BD falló).
-                    setIsConfirmed(true);
-                    resolve();
-                  } else {
-                    const detail = data.cause?.[0]?.description || data.error || data.statusDetail || data.status || 'rechazado';
-                    setMpError(`Pago rechazado: ${detail}. Verifica los datos e intenta de nuevo.`);
-                    reject(new Error(String(detail)));
-                  }
-                } catch (e) {
-                  setMpError('Error al procesar el pago. Intenta con otro método.');
-                  reject(e);
-                }
-              });
-            },
-            onError: (error: any) => {
-              console.error('[MP Brick]', error);
-              // Registrar el error real en el servidor para diagnóstico
-              fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  clientError: true,
-                  context: 'mp-brick-onError',
-                  error: error?.type || error?.message || 'unknown',
-                  detail: {
-                    type: error?.type,
-                    message: error?.message,
-                    cause: error?.cause,
-                    publicKeyPrefix: (doctor?.mpPublicKey || '').slice(0, 12),
-                    amount: paymentAmount,
-                  },
-                }),
-              }).catch(() => {});
-              // Solo marcar como error crítico si el Brick aún no terminó de cargar
-              if (error?.type === 'critical' || error?.cause?.length) {
-                setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
-                setMpError(
-                  error?.cause?.[0]?.description ||
-                  error?.message ||
-                  'No se pudo cargar el formulario de pago. Intenta recargar la página.'
-                );
-              }
-            },
-          },
-        });
-
-        brickControllerRef.current = controller;
-
-        // Timeout de respaldo: si en 15s no cargó, mostrar error
-        const timeoutId = setTimeout(() => {
-          if (brickControllerRef.current) {
-            setBrickStatus(prev => prev === 'loading' ? 'error' : prev);
-            setMpError('El formulario de pago tardó demasiado. Intenta recargar la página.');
-          }
-        }, 15000);
-        // Null-check antes de asignar: cleanup puede haber anulado el ref entre
-        // la asignación del controller y esta línea (race condition).
-        if (brickControllerRef.current) {
-          brickControllerRef.current._timeoutId = timeoutId;
-        } else {
-          clearTimeout(timeoutId);
+        // Notificamos al profesional siempre (respaldo si la BD falló).
+        if (pending.doctorEmail) {
+          fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...(pending.notify || {}), paymentId, needsManualEntry: !saved }),
+          }).catch(() => {});
         }
-      } catch (e: any) {
-        console.error('[MP Brick init]', e);
-        // Registrar el error real de inicialización en el servidor
-        fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            clientError: true,
-            context: 'mp-brick-init-catch',
-            error: e?.message || 'unknown',
-            detail: {
-              message: e?.message,
-              name: e?.name,
-              stack: String(e?.stack || '').slice(0, 500),
-              publicKeyPrefix: (doctor?.mpPublicKey || '').slice(0, 12),
-              hasPublicKey: !!doctor?.mpPublicKey,
-              amount: paymentAmount,
-            },
-          }),
-        }).catch(() => {});
-        setBrickStatus('error');
-        if (e.message === 'NO_PUBLIC_KEY') {
-          setMpError('Pasarela de pago no configurada. Contacta al profesional.');
-        } else {
-          setMpError('No se pudo inicializar el formulario de pago. Intenta recargar la página.');
-        }
+        setIsConfirmed(true);
+      } catch (e) {
+        console.error('[checkout-pro] retorno', e);
+        setIsConfirmed(true);
       }
-    };
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    initBrick();
-
-    return () => {
-      if (brickControllerRef.current?._timeoutId) {
-        clearTimeout(brickControllerRef.current._timeoutId);
-      }
-      brickControllerRef.current?.unmount?.();
-      brickControllerRef.current = null;
-    };
-  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loadingDoctor) {
     return (
@@ -418,6 +287,82 @@ const PatientProfile: React.FC = () => {
       console.error("Error booking appointment:", error);
       setIsProcessing(false);
       setBookingError('Ocurrió un error al confirmar tu cita. Por favor intenta de nuevo.');
+    }
+  };
+
+  // Inicia el pago con Checkout Pro: guarda la reserva en localStorage y redirige
+  // a la página segura de MercadoPago. La cita se registra al volver (mp_return).
+  const startCheckoutPro = async () => {
+    setIsProcessing(true);
+    setMpError('');
+    setBookingError('');
+
+    const externalRef = `mp-${Date.now()}`;
+    const newApp: Appointment = {
+      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
+      patientId: `p-${Date.now()}`,
+      patientName: patientData.name,
+      patientPhone: patientData.phone,
+      doctorName: doctor.name,
+      specialty: doctor.specialty,
+      serviceName: selectedService!.name,
+      notes: patientData.reason,
+      date: availableDays[selectedDay].date,
+      time: selectedSlot!,
+      duration: selectedService!.duration,
+      type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
+      status: 'Confirmado',
+      price: selectedService!.price,
+      paymentStatus: 'Pagado',
+      paidAt: new Date().toISOString(),
+      category: 'Medical',
+      professionalId: doctor.id,
+      bookingSource: 'web',
+      patientEmail: patientData.email || undefined,
+      patientRut: patientData.rut || undefined,
+    };
+    const notify = {
+      to: doctor.email,
+      professionalName: doctor.name,
+      patientName: newApp.patientName,
+      serviceName: newApp.serviceName,
+      date: newApp.date,
+      time: newApp.time,
+      type: newApp.type,
+      duration: newApp.duration,
+      patientEmail: newApp.patientEmail,
+      price: newApp.price,
+    };
+
+    try {
+      localStorage.setItem(
+        PENDING_BOOKING_KEY,
+        JSON.stringify({ app: newApp, doctorEmail: doctor.email, notify })
+      );
+      const res = await fetch('/api/process-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          createPreference: true,
+          amount: paymentAmount,
+          external_reference: externalRef,
+          description: `Reserva — ${newApp.serviceName} con ${newApp.doctorName}`,
+          professional_id: doctor.id,
+          payer: { email: patientData.email || undefined, name: patientData.name },
+          returnUrl: window.location.origin + window.location.pathname,
+        }),
+      });
+      const data = await res.json();
+      if (data?.init_point) {
+        window.location.href = data.init_point;
+        return; // se abandona la SPA; el retorno se maneja en mp_return
+      }
+      throw new Error(data?.error || 'sin init_point');
+    } catch (e) {
+      console.error('[checkout-pro] crear preferencia', e);
+      localStorage.removeItem(PENDING_BOOKING_KEY);
+      setIsProcessing(false);
+      setMpError('No se pudo iniciar el pago online. Puedes reservar y pagar en la consulta, o coordinar por WhatsApp.');
     }
   };
 
@@ -726,6 +671,145 @@ const PatientProfile: React.FC = () => {
                 </div>
               </div>
 
+              {doctor.reviewsEnabled && (
+                <div className="px-1 pb-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-1">
+                      {[1,2,3,4,5].map(s => (
+                        <span key={s} className="material-icons-round text-lg" style={{ color: s <= Math.round(rating.avg) ? '#f59e0b' : '#e2e8f0' }}>star</span>
+                      ))}
+                    </div>
+                    <span className="text-xl font-black text-slate-900">{rating.avg > 0 ? rating.avg.toFixed(1) : '—'}</span>
+                    <span className="text-xs text-slate-400 font-bold">({rating.count} {rating.count === 1 ? 'reseña' : 'reseñas'})</span>
+                    <button
+                      onClick={() => setShowReviewForm(true)}
+                      className="ml-auto text-xs font-black text-primary hover:underline"
+                    >
+                      + Calificar
+                    </button>
+                  </div>
+
+                  {reviews.slice(0, 5).map(r => (
+                    <div key={r.id} className="mb-3 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-0.5">
+                          {[1,2,3,4,5].map(s => (
+                            <span key={s} className="material-icons-round text-sm" style={{ color: s <= r.rating ? '#f59e0b' : '#e2e8f0' }}>star</span>
+                          ))}
+                        </div>
+                        <span className="text-xs font-black text-slate-700">{r.patientName}</span>
+                        {r.isVerified && <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">✓ Paciente verificado</span>}
+                        <span className="text-[10px] text-slate-400 ml-auto">{new Date(r.createdAt).toLocaleDateString('es-CL', { month: 'short', year: 'numeric' })}</span>
+                      </div>
+                      {r.comment && <p className="text-xs text-slate-600 leading-relaxed">{r.comment}</p>}
+                    </div>
+                  ))}
+
+                  {showReviewForm && (
+                    <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center" onClick={e => { if (e.target === e.currentTarget) setShowReviewForm(false); }}>
+                      <div className="bg-white w-full max-w-lg rounded-t-3xl p-6 space-y-4 shadow-2xl">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-black text-slate-900">Calificar atención</h3>
+                          <button onClick={() => setShowReviewForm(false)} className="material-icons-round text-slate-400 text-2xl">close</button>
+                        </div>
+
+                        {reviewStatus === 'success' ? (
+                          <div className="text-center py-8 space-y-3">
+                            <span className="material-icons-round text-4xl text-emerald-500">check_circle</span>
+                            <p className="font-black text-slate-900">¡Gracias por tu reseña!</p>
+                            <button onClick={() => { setShowReviewForm(false); setReviewStatus('idle'); }} className="text-xs font-black text-primary hover:underline">Cerrar</button>
+                          </div>
+                        ) : (
+                          <>
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Tu calificación</label>
+                              <div className="flex gap-1">
+                                {[1,2,3,4,5].map(s => (
+                                  <button key={s} onClick={() => setReviewRating(s)} className="p-0.5">
+                                    <span className="material-icons-round text-3xl" style={{ color: s <= reviewRating ? '#f59e0b' : '#e2e8f0' }}>star</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu nombre</label>
+                              <input
+                                value={reviewName}
+                                onChange={e => setReviewName(e.target.value)}
+                                placeholder="Ej: María G."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold text-slate-800 outline-none focus:border-primary"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu RUT (para verificar que fuiste atendido/a)</label>
+                              <input
+                                value={reviewRut}
+                                onChange={e => setReviewRut(e.target.value)}
+                                placeholder="Ej: 12.345.678-9"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold text-slate-800 outline-none focus:border-primary"
+                              />
+                              <p className="text-[10px] text-slate-400 mt-1 ml-1">Tu RUT solo se usa para verificar que fuiste atendido/a. No se publica.</p>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Comentario (opcional)</label>
+                              <textarea
+                                value={reviewComment}
+                                onChange={e => setReviewComment(e.target.value)}
+                                placeholder="Cuéntanos tu experiencia..."
+                                rows={3}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold text-slate-800 outline-none focus:border-primary resize-none"
+                              />
+                            </div>
+
+                            {reviewError && <p className="text-xs text-rose-600 font-bold text-center">{reviewError}</p>}
+
+                            <button
+                              disabled={!reviewName.trim() || !reviewRut.trim() || reviewStatus === 'loading'}
+                              onClick={async () => {
+                                setReviewStatus('loading');
+                                setReviewError('');
+                                try {
+                                  const res = await fetch('/api/notify', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      action: 'submit-review',
+                                      professional_id: fetchedDoctor!.id,
+                                      patient_rut: reviewRut,
+                                      patient_name: reviewName,
+                                      rating: reviewRating,
+                                      comment: reviewComment || undefined,
+                                    }),
+                                  });
+                                  const data = await res.json();
+                                  if (!res.ok) {
+                                    setReviewError(data.error || 'No se pudo guardar la reseña.');
+                                    setReviewStatus('error');
+                                  } else {
+                                    setReviewStatus('success');
+                                    getProfessionalReviews(fetchedDoctor!.id).then(setReviews);
+                                    getProfessionalRating(fetchedDoctor!.id).then(setRating);
+                                  }
+                                } catch {
+                                  setReviewError('Error de conexión. Intenta de nuevo.');
+                                  setReviewStatus('error');
+                                }
+                              }}
+                              className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest border-b-4 border-primary/70 active:border-b-0"
+                            >
+                              {reviewStatus === 'loading' ? 'Enviando...' : 'Enviar calificación'}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Array.isArray(doctor.services) && doctor.services.length > 0 ? doctor.services.map((s) => (
                     <button
@@ -853,7 +937,8 @@ const PatientProfile: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">RUT *</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: 12.345.678-9" value={patientData.rut} onChange={e => setPatientData({ ...patientData, rut: e.target.value })} />
+                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.rut ? 'border-rose-400' : 'border-slate-200'}`} placeholder="Ej: 12.345.678-9" value={patientData.rut} onChange={e => setPatientData({ ...patientData, rut: e.target.value })} />
+                    {formErrors.rut && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.rut}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Motivo de consulta / Diagnóstico *</label>
@@ -861,11 +946,13 @@ const PatientProfile: React.FC = () => {
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Celular *</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="+56 9 1234 5678" value={patientData.phone} onChange={e => setPatientData({ ...patientData, phone: e.target.value })} />
+                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.phone ? 'border-rose-400' : 'border-slate-200'}`} placeholder="+56 9 1234 5678" value={patientData.phone} onChange={e => setPatientData({ ...patientData, phone: e.target.value })} />
+                    {formErrors.phone && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.phone}</p>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Correo Electrónico *</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="email" placeholder="correo@ejemplo.com" value={patientData.email} onChange={e => setPatientData({ ...patientData, email: e.target.value })} />
+                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.email ? 'border-rose-400' : 'border-slate-200'}`} type="email" placeholder="correo@ejemplo.com" value={patientData.email} onChange={e => setPatientData({ ...patientData, email: e.target.value })} />
+                    {formErrors.email && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.email}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Ciudad *</label>
@@ -926,10 +1013,14 @@ const PatientProfile: React.FC = () => {
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">A pagar ahora</span>
-                        {doctor.paymentEnabled && <span className="text-xs font-bold text-slate-500">Bono de Reserva de Cupo</span>}
+                        {doctor.paymentEnabled && (
+                          <span className="text-xs font-bold text-slate-500">
+                            {doctor.chargeFullService ? 'Precio del servicio' : 'Bono de Reserva de Cupo'}
+                          </span>
+                        )}
                       </div>
                       <span className="text-4xl font-black text-primary tracking-tighter">
-                        {doctor.paymentEnabled ? `$${bookingFee.toLocaleString('es-CL')}` : 'Gratis'}
+                        {doctor.paymentEnabled ? `$${paymentAmount.toLocaleString('es-CL')}` : 'Gratis'}
                       </span>
                     </div>
                 </div>
@@ -952,57 +1043,36 @@ const PatientProfile: React.FC = () => {
                       <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Pago Seguro con MercadoPago</p>
                     </div>
 
-                    {/* Contenedor del Brick — SIEMPRE visible en el DOM.
-                        MercadoPago Bricks no puede montarse en un display:none,
-                        así que mostramos el spinner como overlay encima en vez
-                        de ocultar el contenedor. */}
-                    <div className="relative w-full min-h-[60px]">
-                      {brickStatus === 'loading' && (
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center py-10 gap-3 bg-slate-50 rounded-2xl border border-slate-100">
-                          <span className="material-icons-round animate-spin text-3xl" style={{ color: '#009ee3' }}>sync</span>
-                          <p className="text-xs font-bold text-slate-500">Cargando formulario de pago...</p>
-                        </div>
+                    {/* Pago vía Checkout Pro: el paciente paga en la página segura
+                        de MercadoPago y vuelve por back_urls (mp_return=1). Funciona
+                        con CUALQUIER cuenta MP conectada, sin depender de la captura
+                        directa de tarjeta (Checkout API) del vendedor. */}
+                    <button
+                      onClick={startCheckoutPro}
+                      disabled={isProcessing}
+                      className="w-full py-5 text-white font-black rounded-2xl shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 transition-all uppercase text-xs tracking-widest flex items-center gap-2 justify-center border-b-4 active:border-b-0"
+                      style={{ backgroundColor: '#009ee3', borderBottomColor: '#0079b3' }}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <span className="material-icons-round animate-spin text-sm">sync</span>
+                          Redirigiendo a MercadoPago...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-icons-round text-sm">lock</span>
+                          Ir a Pagar ${paymentAmount.toLocaleString('es-CL')}
+                        </>
                       )}
-                      <div id="mp-brick-container" className="w-full overflow-x-hidden" />
-                    </div>
+                    </button>
+                    <p className="text-[11px] text-slate-500 text-center font-bold px-2">
+                      Pagas en la página segura de MercadoPago. No necesitas la app ni una cuenta.
+                    </p>
 
-                    {/* Error crítico — con fallback para reservar de todas formas */}
-                    {brickStatus === 'error' && (
-                      <div className="space-y-3">
-                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-sm font-bold text-center">
-                          <span className="material-icons-round text-xl mb-1 block">payment</span>
-                          El pago online no está disponible temporalmente.
-                        </div>
-                        {/* Fallback: reservar igual y pagar en consulta */}
-                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
-                          <p className="text-xs font-black text-amber-800 uppercase tracking-widest">Opciones alternativas</p>
-                          <button
-                            onClick={finalizeBooking}
-                            disabled={isProcessing}
-                            className="w-full py-4 bg-amber-500 text-white font-black rounded-2xl shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 transition-all uppercase text-xs tracking-widest flex items-center gap-2 justify-center border-b-4 border-amber-700 active:border-b-0"
-                          >
-                            <span className="material-icons-round text-sm">event_available</span>
-                            {isProcessing ? 'Reservando...' : 'Reservar y pagar en consulta'}
-                          </button>
-                          {doctor.phone && (
-                            <a
-                              href={`https://wa.me/${doctor.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${doctor.name}, quiero agendar una cita.`)}`}
-                              target="_blank" rel="noreferrer"
-                              className="w-full py-4 bg-[#25D366] text-white font-black rounded-2xl flex items-center gap-2 justify-center uppercase text-xs tracking-widest border-b-4 border-green-700 active:border-b-0 transition-all"
-                            >
-                              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                              Coordinar por WhatsApp
-                            </a>
-                          )}
-                        </div>
-                        {bookingError && <p className="text-rose-600 text-xs font-bold text-center">{bookingError}</p>}
-                      </div>
-                    )}
-
-                    {/* Error de pago rechazado */}
-                    {mpError && brickStatus === 'ready' && (
+                    {mpError && (
                       <p className="text-rose-600 text-xs font-bold text-center bg-rose-50 rounded-xl p-3">{mpError}</p>
                     )}
+                    {bookingError && <p className="text-rose-600 text-xs font-bold text-center">{bookingError}</p>}
                   </div>
                 ) : (
                   <div className="space-y-3">

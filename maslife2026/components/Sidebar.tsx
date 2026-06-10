@@ -18,6 +18,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
     { icon: 'group',          label: 'Pacientes', path: '/pro/patients' },
     { icon: 'bar_chart',      label: 'Finanzas',  path: '/pro/finances' },
     { icon: 'settings',       label: 'Ajustes',   path: '/pro/settings' },
+    { icon: 'card_giftcard',  label: 'Invita y Gana', path: '/pro/referral' },
   ];
 
   return (

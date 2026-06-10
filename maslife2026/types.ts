@@ -90,6 +90,11 @@ export interface ProfessionalProfile {
   mpPublicKey?: string;
   instagram?: string;
   googleCalendarConnected?: boolean;
+  reviewsEnabled?: boolean;
+  referralCode?:      string;
+  referredBy?:        string;
+  referralCreditClp?: number;
+  termsAcceptedAt?:   string;
 }
 
 export interface Appointment {
@@ -118,6 +123,7 @@ export interface Appointment {
   recurrenceId?:   string;
   recurrenceType?: 'none' | 'weekly' | 'monthly' | 'permanent';
   blockMode?:      'blocked' | 'remote_only' | 'presential_only';
+  patientRut?:     string;
 }
 
 export interface Notification {
@@ -180,6 +186,16 @@ export interface ClinicalFile {
 }
 
 // Fila de plan alimentario (ficha nutricional)
+export interface Review {
+  id: string;
+  professionalId: string;
+  patientName: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  isVerified: boolean;
+}
+
 export interface MealPlanRow {
   id: string;
   meal: string;       // Desayuno, Almuerzo, etc.

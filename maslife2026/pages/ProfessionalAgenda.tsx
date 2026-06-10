@@ -5,7 +5,7 @@ import { useClinic } from '../ClinicContext';
 
 const ProfessionalAgenda: React.FC = () => {
    const navigate = useNavigate();
-   const { appointments: allAppointments, patients, addAppointment, batchAddAppointments, updateAppointment, deleteAppointment: onRemoveApp, deleteAppointmentsByRecurrence, setPatients: setContextPatients, loggedPro, logout } = useClinic();
+   const { appointments: allAppointments, patients, addAppointment, batchAddAppointments, updateAppointment, deleteAppointment: onRemoveApp, deleteAppointmentsByRecurrence, setPatients: setContextPatients, loggedPro, logout, isLoading } = useClinic();
 
    // Solo citas de este profesional
    const appointments = useMemo(
@@ -308,6 +308,15 @@ const ProfessionalAgenda: React.FC = () => {
 
    const monthName = currentDate.toLocaleDateString('es-ES', { month: 'long' });
    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+   if (isLoading) {
+     return (
+       <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-[#f8fafc]">
+         <span className="material-icons-round animate-spin text-primary text-5xl">sync</span>
+         <p className="text-slate-500 font-bold text-sm">Cargando agenda...</p>
+       </div>
+     );
+   }
 
    return (
       <div className="flex-1 flex flex-col min-h-0 w-full bg-[#f8fafc]">

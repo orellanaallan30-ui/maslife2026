@@ -61,6 +61,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
         const payment = await mpRes.json();
         console.log('[mp-webhook] payment status:', payment.status, payment.status_detail, payment.external_reference);
+
+        // Confirmar appointment que estaba en pending_payment
+        if (payment.status === 'approved' && payment.external_reference) {
+          const { error } = await supabase
+            .from('appointments')
+            .update({
+              status: 'Confirmado',
+              payment_status: 'Pagado',
+              paid_at: new Date().toISOString(),
+            })
+            .eq('external_reference', payment.external_reference)
+            .in('status', ['pending_payment', 'Pendiente']);
+
+          if (error) console.error('[mp-webhook] appointment update error:', error.message);
+          else console.log('[mp-webhook] appointment confirmed for ref:', payment.external_reference);
+        }
       } catch (e) {
         console.error('[mp-webhook] Error consultando pago:', e);
       }

@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { askClaude } from '../lib/claudeHelper';
+import { askClaude, askClaudeWithImages } from '../lib/claudeHelper';
 import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField, ClinicalFile, MealPlanRow } from '../types';
 import { useClinic } from '../ClinicContext';
 import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
@@ -79,6 +79,42 @@ const ClinicalRecord: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const posturalInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Evaluación Kinesiológica EV1 / EV2 ────────────────────────────────────
+  type KiAnthro   = { weight: string; height: string; reach: string; legR: string; legL: string };
+  type KiPostural = { plomadaSag: string; plomadaFront: string; shoulders: string; scapulas: string; pelvis: string; knees: string; feet: string; observations: string };
+  type KiEvalSet  = { anthro: KiAnthro; postural: KiPostural; rom: Record<string, string>; tests: Record<string, 'pos'|'neg'|'ne'>; images: string[] };
+  const mkKiSet = (): KiEvalSet => ({
+    anthro:   { weight: '', height: '', reach: '', legR: '', legL: '' },
+    postural: { plomadaSag: '', plomadaFront: '', shoulders: '', scapulas: '', pelvis: '', knees: '', feet: '', observations: '' },
+    rom: {}, tests: {}, images: [],
+  });
+  const [kiData, setKiData]       = useState<{ initial: KiEvalSet; final: KiEvalSet }>({ initial: mkKiSet(), final: mkKiSet() });
+  const [kiEvalTab, setKiEvalTab] = useState<'initial' | 'final' | 'compare'>('initial');
+
+  // Aliases pointing to the active tab — form JSX stays unchanged
+  const _kiTab        = kiEvalTab === 'compare' ? 'initial' : kiEvalTab;
+  const kiActive      = kiData[_kiTab];
+  const kiAnthro      = kiActive.anthro;
+  const kiPostural    = kiActive.postural;
+  const kiRom         = kiActive.rom;
+  const kiTests       = kiActive.tests;
+  const analysisImages = kiActive.images;
+  const setKiAnthro   = (upd: (p: KiAnthro) => KiAnthro) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], anthro:   upd(prev[_kiTab].anthro)   } }));
+  const setKiPostural = (upd: (p: KiPostural) => KiPostural) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], postural: upd(prev[_kiTab].postural) } }));
+  const setKiRom      = (upd: (p: Record<string, string>) => Record<string, string>) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], rom:      upd(prev[_kiTab].rom)      } }));
+  const setKiTests    = (upd: (p: Record<string, 'pos'|'neg'|'ne'>) => Record<string, 'pos'|'neg'|'ne'>) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], tests:    upd(prev[_kiTab].tests)    } }));
+  const setAnalysisImages = (upd: ((p: string[]) => string[]) | string[]) =>
+    setKiData(prev => ({ ...prev, [_kiTab]: { ...prev[_kiTab], images: typeof upd === 'function' ? upd(prev[_kiTab].images) : upd } }));
+
+  const calcKiImc    = (a: KiAnthro) => a.weight && a.height ? (Number(a.weight) / Math.pow(Number(a.height) / 100, 2)).toFixed(1) : '';
+  const calcKiDiscrep = (a: KiAnthro) => a.legR && a.legL ? Math.abs(Number(a.legR) - Number(a.legL)).toFixed(1) : '';
+  const kiImc    = calcKiImc(kiAnthro);
+  const kiDiscrep = calcKiDiscrep(kiAnthro);
+
   const initialPatient = patients.find(p => p.id === id);
   const safePatient = initialPatient || { name: '', age: 0, rut: '', birthDate: '', prevision: '', diagnoses: '', address: '', phone: '', email: '', emergencyContact: '', customFields: [], vitals: null, medicalHistory: '', sessionLogs: [], goals: [] } as any;
 
@@ -105,10 +141,12 @@ const ClinicalRecord: React.FC = () => {
   // Ref que apunta siempre al paciente actualizado con los valores más recientes
   const buildPatientRef = useRef<() => Patient>(() => safePatient as Patient);
 
+  const isSavingRef = useRef(false);
   const setIsDirtyTrue = () => {
     setIsDirty(true);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(() => {
+      if (isSavingRef.current) return;
       setAutoSaveStatus('saving');
       buildPatientRef.current && onUpdatePatient(buildPatientRef.current());
       setIsDirty(false);
@@ -137,13 +175,13 @@ const ClinicalRecord: React.FC = () => {
     { id: 'm2', label: 'Diabetes Mellitus II', checked: false },
   ]);
   const [quirurgicos, setQuirurgicos] = useState<Antecedent[]>([
-    { id: 'q1', label: 'Apendicectomía', checked: true },
+    { id: 'q1', label: 'Apendicectomía', checked: false },
   ]);
   const [anamnesis, setAnamnesis] = useState(safePatient.medicalHistory || '');
 
   const [vitals, setVitals] = useState<Vitals>(safePatient.vitals || {
-    heartRate: 72, systolic: 120, diastolic: 80, temperature: 36.5,
-    oxygenSaturation: 98, respiratoryRate: 16, weight: 64.2, height: 1.70, bmi: 24.2, glucose: 95
+    heartRate: 0, systolic: 0, diastolic: 0, temperature: 0,
+    oxygenSaturation: 0, respiratoryRate: 0, weight: 0, height: 0, bmi: 0, glucose: 0
   });
 
   // ── Detección de especialidad ──────────────────────────────────────────────
@@ -157,6 +195,30 @@ const ClinicalRecord: React.FC = () => {
 
   // ── Estado: datos especialidad guardados ───────────────────────────────────
   const savedSpec = (safePatient.specialtyData || {}) as Record<string, any>;
+
+  // Cargar datos kinesiológicos guardados (soporta formato legacy y nuevo EV1/EV2)
+  React.useEffect(() => {
+    const ki = savedSpec.kinesio as any;
+    if (!ki) return;
+    if (ki.initial || ki.final) {
+      setKiData({
+        initial: { ...mkKiSet(), ...(ki.initial || {}) },
+        final:   { ...mkKiSet(), ...(ki.final   || {}) },
+      });
+    } else if (ki.anthro || ki.postural || ki.rom || ki.tests) {
+      // Migrar formato antiguo → EV1
+      setKiData(prev => ({
+        ...prev,
+        initial: {
+          anthro:   ki.anthro   || mkKiSet().anthro,
+          postural: ki.postural || mkKiSet().postural,
+          rom:      ki.rom      || {},
+          tests:    ki.tests    || {},
+          images:   ki.images   || [],
+        },
+      }));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Estado nutrición
   const DEFAULT_MEAL_PLAN: MealPlanRow[] = [
@@ -207,9 +269,7 @@ const ClinicalRecord: React.FC = () => {
 
   const [soap, setSoap] = useState({ subjective: '', objective: '', assessment: '', plan: '', ...((safePatient.soap as any) || {}) });
 
-  const [goals, setGoals] = useState<TherapeuticGoal[]>([
-    { id: 'g1', name: 'Rango de Movimiento', description: 'Recuperar 160° de flexión', progress: 75, status: 'En Proceso', color: 'bg-primary' },
-  ]);
+  const [goals, setGoals] = useState<TherapeuticGoal[]>([]);
 
   const [sessionLogs, setSessionLogs] = useState<SessionLog[]>(safePatient.sessionLogs || [
     { id: 'sl1', date: '2024-05-10', note: 'Sesión de evaluación inicial.' }
@@ -218,7 +278,6 @@ const ClinicalRecord: React.FC = () => {
   const [files, setFiles] = useState<ClinicalFile[]>(safePatient.attachments || []);
 
   const [analysisType, setAnalysisType] = useState<'Postural' | 'Marcha' | 'Musculoesquelético'>('Postural');
-  const [analysisImages, setAnalysisImages] = useState<string[]>([]);
   const [analysisResult, setAnalysisResult] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -508,38 +567,72 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     setIsAnalyzing(true);
 
     try {
-      const prompt = `Como experto en biomecánica y fisioterapia avanzada, realiza un Análisis ${analysisType} para el paciente ${personalData.name}.
-               Evalúa según los criterios estándar: asimetrías, niveles de hombros, inclinación pélvica, alineación de plomada, valgo/varo de rodillas y marcadores de marcha.
-               Se han cargado ${analysisImages.length} imagen(es) para el análisis.
-               Entrega un informe técnico con: 1. Hallazgos Observados, 2. Impresión Biomecánica, 3. Sugerencias de Tratamiento.
-               Nota: Como las imágenes no pueden ser procesadas visualmente via API de texto, basa tu análisis en los datos clínicos disponibles y proporciona una plantilla de evaluación que el profesional pueda completar.`;
+      const posturalCtx = Object.entries(kiPostural)
+        .filter(([k, v]) => v && k !== 'observations')
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ');
 
-      const result = await askClaude(
+      const romCtx = Object.entries(kiRom)
+        .filter(([, v]) => v)
+        .map(([k, v]) => `${k}: ${v}°`)
+        .join(', ');
+
+      const prompt = `Analiza las ${analysisImages.length} fotografías clínicas del paciente ${personalData.name}.
+
+Tipo de análisis solicitado: ${analysisType}
+${kiAnthro.weight ? `Peso: ${kiAnthro.weight} kg` : ''}${kiAnthro.height ? `, Talla: ${kiAnthro.height} cm` : ''}${kiImc ? `, IMC: ${kiImc}` : ''}
+${posturalCtx ? `Hallazgos posturales registrados: ${posturalCtx}` : ''}
+${romCtx ? `ROM registrado: ${romCtx}` : ''}
+
+Evalúa en cada fotografía:
+— PLANO ANTERIOR: nivelación de hombros y pelvis, alineación de rodillas, postura global
+— PLANO POSTERIOR: asimetría escapular, escoliosis, alineación axial
+— PLANO LATERAL: hiperlordosis/cifosis, posición de cabeza, proyección abdominal
+
+Entrega el informe con estas secciones:
+1. HALLAZGOS OBSERVADOS POR VISTA
+2. IMPRESIÓN BIOMECÁNICA GLOBAL
+3. DIAGNÓSTICO POSTURAL KINESIOLÓGICO (con código CIE-10 sugerido)
+4. OBJETIVOS DE TRATAMIENTO PRIORIZADOS (máx. 5)
+5. PLAN KINESIOLÓGICO SUGERIDO`;
+
+      const result = await askClaudeWithImages(
+        analysisImages,
         prompt,
-        "Eres un experto en biomecánica, fisioterapia y análisis postural. Genera informes técnicos profesionales basados en los datos clínicos proporcionados."
+        "Eres un kinesiólogo clínico experto en análisis postural y biomecánico. Analiza las fotografías proporcionadas y genera un informe técnico profesional en español. Describe lo que observas visualmente en cada imagen con precisión clínica."
       );
       setAnalysisResult(result || 'El análisis no pudo ser completado.');
     } catch (error) {
       console.error(error);
-      setAnalysisResult('Error al procesar el análisis. Verifica que ANTHROPIC_API_KEY esté configurada.');
+      setAnalysisResult('Error al procesar el análisis. Verifica que ANTHROPIC_API_KEY esté configurada en Vercel.');
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handlePosturalUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const fileList = Array.from(e.target.files) as File[];
-      fileList.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          if (event.target?.result) {
-            setAnalysisImages(prev => [...prev, event.target!.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+  const uploadSlotRef = useRef<number>(-1); // -1 = append, 0-3 = slot específico
+
+  const handlePosturalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const path = `${loggedPro?.id || 'unknown'}/${Date.now()}.${ext}`;
+    const { data: uploaded, error } = await supabase.storage
+      .from('patients-images')
+      .upload(path, file, { upsert: true });
+    if (error || !uploaded) {
+      toast.error('No se pudo subir la imagen. Intenta de nuevo.');
+      return;
     }
+    const { data: { publicUrl } } = supabase.storage.from('patients-images').getPublicUrl(uploaded.path);
+    const slot = uploadSlotRef.current;
+    setAnalysisImages(prev => {
+      const next = [...prev];
+      if (slot >= 0) { next[slot] = publicUrl; return next; }
+      return [...next, publicUrl].slice(0, 4);
+    });
+    setIsDirtyTrue();
   };
 
   const removeAnalysisImage = (index: number) => {
@@ -657,6 +750,8 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         compositionHistory: newHistory,
         // Psicología
         psychMood, psychPsychHistory, psychIntervention, psychNextObjective,
+        // Kinesiología
+        kinesio: { initial: kiData.initial, final: kiData.final },
       };
     })(),
   } as Patient);
@@ -665,6 +760,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
   buildPatientRef.current = buildUpdatedPatient;
 
   const handleSaveAttention = async () => {
+    isSavingRef.current = true;
     setIsSaving(true);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     onUpdatePatient(buildUpdatedPatient());
@@ -686,6 +782,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
     setIsDirty(false);
     setAutoSaveStatus('idle');
+    isSavingRef.current = false;
     setIsSaving(false);
     toast.success(`Ficha de ${personalData.name} guardada correctamente`);
     navigate('/pro/patients');
@@ -693,7 +790,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
   if (!initialPatient) {
     return (
-      <div className="flex w-full h-screen items-center justify-center bg-[#f8fafc]">
+      <div className="flex w-full h-screen items-center justify-center bg-slate-100">
         <div className="text-center">
           <span className="material-icons-round text-6xl text-slate-200 mb-4 block">person_off</span>
           <p className="text-slate-500 font-black text-sm uppercase tracking-widest">Paciente no encontrado</p>
@@ -862,7 +959,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                       value={cf.label}
                       onChange={e => { updateCustomField(idx, 'label', e.target.value); setIsDirtyTrue(); }}
                       placeholder="Etiqueta (ej: Deporte)..."
-                      className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
+                      className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
                     />
                     <button onClick={() => { removeCustomField(idx); setIsDirtyTrue(); }} className="opacity-0 group-hover:opacity-100 text-rose-500 no-print transition-all">
                       <span className="material-icons-round text-xs">delete</span>
@@ -883,12 +980,175 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             </div>
           </section>
 
-          {specialtyKey === 'kinesiologia' && (
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
-            <div className="flex justify-between items-center mb-10">
+          {specialtyKey === 'kinesiologia' && (<>
+
+          {/* ── Tabs EV1 / EV2 / Comparar ──────────────────────────────────── */}
+          <div className="flex flex-wrap gap-2 no-print">
+            {(['initial', 'final', 'compare'] as const).map(tab => (
+              <button key={tab} onClick={() => setKiEvalTab(tab)}
+                className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border ${
+                  kiEvalTab === tab
+                    ? tab === 'compare' ? 'bg-slate-800 text-white border-slate-800 shadow-md' : tab === 'initial' ? 'bg-primary text-white border-primary shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                    : 'bg-white text-slate-400 border-slate-200 hover:border-primary hover:text-primary'
+                }`}>
+                {tab === 'initial' ? 'EV1 — Inicial' : tab === 'final' ? 'EV2 — Final' : 'Comparar EV1 vs EV2'}
+              </button>
+            ))}
+          </div>
+
+          {kiEvalTab !== 'compare' && (<>
+          {/* ── Evaluación Kinesiológica ──────────────────────────────────── */}
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
+            {/* Header */}
+            <div className="flex flex-wrap justify-between items-start gap-4">
               <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico Inteligente</h2>
-                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Soportado por Gemini 3 Pro AI</p>
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">
+                  {kiEvalTab === 'initial' ? 'Evaluación Kinesiológica — EV1 Inicial' : 'Evaluación Kinesiológica — EV2 Final'}
+                </h2>
+                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Análisis postural · ROM · Tests especiales · Visión IA real</p>
+              </div>
+            </div>
+
+            {/* ── 1. Datos Antropométricos ─────────────────────── */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Datos Antropométricos</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Peso (kg)', key: 'weight', placeholder: '70' },
+                  { label: 'Talla (cm)', key: 'height', placeholder: '170' },
+                  { label: 'Envergadura (cm)', key: 'reach', placeholder: '172' },
+                  { label: 'Long. MMII Der. (cm)', key: 'legR', placeholder: '88' },
+                  { label: 'Long. MMII Izq. (cm)', key: 'legL', placeholder: '88' },
+                ].map(({ label, key, placeholder }) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
+                    <input
+                      type="number"
+                      value={(kiAnthro as any)[key]}
+                      onChange={e => { setKiAnthro(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
+                      placeholder={placeholder}
+                      className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                    />
+                  </div>
+                ))}
+                {/* IMC y discrepancia calculados */}
+                {kiImc && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">IMC</label>
+                    <div className="w-full bg-primary/5 border border-primary/20 rounded-2xl py-3 px-4 font-black text-primary text-sm">{kiImc} kg/m²</div>
+                  </div>
+                )}
+                {kiDiscrep && Number(kiDiscrep) > 0 && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Discrepancia MMII</label>
+                    <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl py-3 px-4 font-black text-amber-700 text-sm">{kiDiscrep} cm</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── 2. Evaluación Postural Estructurada ──────────── */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Evaluación Postural Estructurada</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {([
+                  { label: 'Plomada Sagital', key: 'plomadaSag', options: ['Normal','Hiperlordosis lumbar','Inversión lumbar','Hipercifosis dorsal','Rectificación lumbar','Cabeza adelantada'] },
+                  { label: 'Plomada Frontal', key: 'plomadaFront', options: ['Normal','Escoliosis dextro-convexa','Escoliosis levo-convexa','Inclinación lateral Der.','Inclinación lateral Izq.'] },
+                  { label: 'Hombros', key: 'shoulders', options: ['Normal','Elevado Der.','Elevado Izq.','Protracción bilateral','Protracción unilateral Der.','Protracción unilateral Izq.','Retroversión bilateral'] },
+                  { label: 'Escápulas', key: 'scapulas', options: ['Normal','Aladas bilaterales','Aladas Der.','Aladas Izq.','Abducidas (protruidas)','Aducidas (retruidas)'] },
+                  { label: 'Pelvis', key: 'pelvis', options: ['Normal','Anteversión','Retroversión','Oblicuidad Der. alta','Oblicuidad Izq. alta','Rotación anterior Der.','Rotación anterior Izq.'] },
+                  { label: 'Rodillas', key: 'knees', options: ['Normal','Valgo bilateral','Varo bilateral','Valgo Der.','Valgo Izq.','Hiperextensión bilateral','Flexo bilateral'] },
+                  { label: 'Pies', key: 'feet', options: ['Normal','Pronación bilateral','Supinación bilateral','Pie plano bilateral','Pie cavo bilateral','Pronación unilateral Der.','Pronación unilateral Izq.'] },
+                ] as { label: string; key: keyof typeof kiPostural; options: string[] }[]).map(({ label, key, options }) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
+                    <select
+                      value={(kiPostural as any)[key]}
+                      onChange={e => { setKiPostural(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
+                      className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 appearance-none"
+                    >
+                      <option value="">— Sin evaluar —</option>
+                      {options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 space-y-1">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Observaciones Posturales</label>
+                <textarea
+                  value={kiPostural.observations}
+                  onChange={e => { setKiPostural(p => ({ ...p, observations: e.target.value })); setIsDirtyTrue(); }}
+                  rows={2}
+                  placeholder="Observaciones adicionales del análisis postural..."
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 resize-none"
+                />
+              </div>
+            </div>
+
+            {/* ── 3. ROM ─────────────────────────────────────────── */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Rango de Movimiento (ROM) en grados</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {([
+                  ['Cuello Flex.','CueFlex','45'],['Cuello Ext.','CueExt','45'],
+                  ['Cuello Rot.D','CueRotD','80'],['Cuello Rot.I','CueRotI','80'],
+                  ['Hombro Flex.','HomFlex','180'],['Hombro Abd.','HomAbd','180'],
+                  ['Col. Flex.','ColFlex','90'],['Col. Ext.','ColExt','30'],
+                  ['Cadera Flex.','CadFlex','120'],['Cadera Ext.','CadExt','30'],
+                  ['Rodilla Flex.','RodFlex','135'],['Rodilla Ext.','RodExt','0'],
+                  ['Tobillo Flex.','TobFlex','20'],['Tobillo Ext.','TobExt','50'],
+                ] as [string,string,string][]).map(([label, key, placeholder]) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label} <span className="text-slate-400">(N:{placeholder}°)</span></label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        value={kiRom[key] || ''}
+                        onChange={e => { setKiRom(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
+                        placeholder={placeholder}
+                        className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-3 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                      />
+                      <span className="text-xs font-black text-slate-400">°</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── 4. Tests Especiales ────────────────────────────── */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Tests Especiales</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => (
+                  <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-200">
+                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">{test}</p>
+                    <div className="flex gap-1">
+                      {(['pos','neg','ne'] as const).map(v => (
+                        <button
+                          key={v}
+                          onClick={() => { setKiTests(p => ({ ...p, [test]: v })); setIsDirtyTrue(); }}
+                          className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wide transition-all ${
+                            kiTests[test] === v
+                              ? v === 'pos' ? 'bg-rose-500 text-white shadow-sm'
+                                : v === 'neg' ? 'bg-emerald-500 text-white shadow-sm'
+                                : 'bg-slate-600 text-white shadow-sm'
+                              : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
+                          }`}
+                        >{v === 'ne' ? 'N/E' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* ── Análisis Biomecánico con IA (fotos + resultado) ── */}
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
+              <div>
+                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
+                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Claude Vision — procesa las fotografías reales del paciente</p>
               </div>
               <div className="flex bg-slate-50/80 shadow-inner border border-slate-200 p-2 rounded-2xl no-print">
                 {(['Postural', 'Marcha', 'Musculoesquelético'] as const).map(t => (
@@ -899,31 +1159,41 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="space-y-6">
+                {/* Slots etiquetados */}
                 <div className="grid grid-cols-2 gap-4">
-                  {analysisImages.map((img, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-[2rem] overflow-hidden border-4 border-slate-50 shadow-md group">
-                      <img src={img} className="w-full h-full object-cover" alt={`Vista ${idx}`} />
-                      <button onClick={() => removeAnalysisImage(idx)} className="absolute top-2 right-2 w-8 h-8 bg-rose-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center no-print shadow-xl">
-                        <span className="material-icons-round text-sm">close</span>
-                      </button>
+                  {(['Anterior','Posterior','Lateral Der.','Lateral Izq.'] as const).map((label, idx) => (
+                    <div key={label} className="space-y-1">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">{label}</p>
+                      {analysisImages[idx] ? (
+                        <div className="relative aspect-square rounded-[2rem] overflow-hidden border-4 border-slate-50 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
+                          <img src={analysisImages[idx]} className="w-full h-full object-cover" alt={label} />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                            <button onClick={e => { e.stopPropagation(); uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="w-8 h-8 bg-white text-slate-700 rounded-lg flex items-center justify-center shadow-xl no-print" title="Reemplazar">
+                              <span className="material-icons-round text-sm">refresh</span>
+                            </button>
+                            <button onClick={e => { e.stopPropagation(); removeAnalysisImage(idx); }} className="w-8 h-8 bg-rose-500 text-white rounded-lg flex items-center justify-center shadow-xl no-print" title="Eliminar">
+                              <span className="material-icons-round text-sm">close</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="aspect-square w-full rounded-[2rem] border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-300 hover:border-primary hover:text-primary transition-all no-print group">
+                          <span className="material-icons-round text-3xl group-hover:scale-110 transition-transform">add_a_photo</span>
+                          <span className="text-[9px] font-black uppercase tracking-widest">Cargar</span>
+                        </button>
+                      )}
                     </div>
                   ))}
-                  {analysisImages.length < 4 && (
-                    <button onClick={() => posturalInputRef.current?.click()} className="aspect-square rounded-[2rem] border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-3 text-slate-300 hover:border-primary hover:text-primary transition-all no-print group">
-                      <span className="material-icons-round text-4xl group-hover:scale-110 transition-transform">add_a_photo</span>
-                      <span className="text-xs font-black uppercase tracking-widest">Cargar Imagen Clínica</span>
-                    </button>
-                  )}
                 </div>
-                <input type="file" ref={posturalInputRef} onChange={handlePosturalUpload} className="hidden" multiple accept="image/*" />
+                <input type="file" ref={posturalInputRef} onChange={handlePosturalUpload} className="hidden" accept="image/*" />
 
                 <button
                   onClick={runAdvancedAnalysis}
-                  disabled={isAnalyzing || analysisImages.length === 0}
+                  disabled={isAnalyzing || analysisImages.filter(Boolean).length === 0}
                   className="w-full py-6 bg-slate-900 border-b-4 border-slate-800 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:border-b-4 no-print"
                 >
-                  <span className="material-icons-round">{isAnalyzing ? 'sync' : 'biotech'}</span>
-                  {isAnalyzing ? 'Analizando Marcadores...' : `Ejecutar Análisis ${analysisType}`}
+                  <span className={`material-icons-round ${isAnalyzing ? 'animate-spin' : ''}`}>{isAnalyzing ? 'sync' : 'biotech'}</span>
+                  {isAnalyzing ? 'Procesando imágenes con IA...' : `Ejecutar Análisis ${analysisType}`}
                 </button>
               </div>
 
@@ -944,13 +1214,210 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                       <p className="text-xs font-black text-primary uppercase tracking-[0.3em] animate-pulse">Procesando anatomía digital...</p>
                     </div>
                   ) : (
-                    analysisResult || <div className="text-center py-20 text-slate-300 italic">Cargue imágenes para iniciar el análisis biomecánico automático con IA.</div>
+                    analysisResult || <div className="text-center py-20 text-slate-300 italic">Cargue fotografías posturales y ejecute el análisis para que la IA evalúe lo que ve en las imágenes reales.</div>
                   )}
                 </div>
               </div>
             </div>
           </section>
+          </>)}
+
+          {/* ── Vista Comparativa EV1 vs EV2 ─────────────────────────────── */}
+          {kiEvalTab === 'compare' && (
+          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-slate-800 pl-4">Comparación EV1 vs EV2</h2>
+              <p className="text-xs font-bold text-slate-500 uppercase mt-2 tracking-widest pl-5">Evolución kinesiológica del paciente</p>
+            </div>
+
+            {/* Fotos comparativas */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Fotografías Comparativas</h3>
+              <div className="grid gap-2" style={{ gridTemplateColumns: 'auto repeat(4, 1fr)' }}>
+                <div></div>
+                {(['Anterior','Posterior','Lat. Der.','Lat. Izq.'] as const).map(l => (
+                  <div key={l} className="text-[9px] font-black text-slate-400 uppercase text-center tracking-widest pb-1">{l}</div>
+                ))}
+                {(['initial','final'] as const).map(ev => (<React.Fragment key={ev}>
+                  <div className={`text-[9px] font-black uppercase tracking-widest flex items-center pr-2 ${ev === 'initial' ? 'text-primary' : 'text-emerald-600'}`}>{ev === 'initial' ? 'EV1' : 'EV2'}</div>
+                  {[0,1,2,3].map(idx => (
+                    <div key={idx}>
+                      {kiData[ev].images[idx] ? (
+                        <div className={`aspect-square rounded-2xl overflow-hidden border-2 shadow-sm ${ev === 'initial' ? 'border-primary/20' : 'border-emerald-200'}`}>
+                          <img src={kiData[ev].images[idx]} className="w-full h-full object-cover" alt="" />
+                        </div>
+                      ) : (
+                        <div className="aspect-square rounded-2xl border-2 border-dashed border-slate-100 bg-slate-50 flex items-center justify-center text-slate-200">
+                          <span className="material-icons-round text-2xl">hide_image</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </React.Fragment>))}
+              </div>
+            </div>
+
+            {/* Datos Antropométricos comparativos */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Datos Antropométricos</h3>
+              <div className="overflow-auto rounded-2xl border border-slate-100">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Parámetro</th>
+                      <th className="px-4 py-3 font-black text-primary uppercase tracking-wider text-center">EV1</th>
+                      <th className="px-4 py-3 font-black text-slate-400 uppercase tracking-wider text-center">Δ</th>
+                      <th className="px-4 py-3 font-black text-emerald-600 uppercase tracking-wider text-center">EV2</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {[
+                      { label: 'Peso (kg)',            k: 'weight' as keyof KiAnthro },
+                      { label: 'Talla (cm)',            k: 'height' as keyof KiAnthro },
+                      { label: 'IMC (kg/m²)',           k: null },
+                      { label: 'Envergadura (cm)',      k: 'reach'  as keyof KiAnthro },
+                      { label: 'MMII Der. (cm)',        k: 'legR'   as keyof KiAnthro },
+                      { label: 'MMII Izq. (cm)',        k: 'legL'   as keyof KiAnthro },
+                      { label: 'Discrepancia MMII (cm)',k: null },
+                    ].map(({ label, k }) => {
+                      const isImc   = label.includes('IMC');
+                      const isDiscrep = label.includes('Discrepancia');
+                      const v1 = k ? kiData.initial.anthro[k] : isImc ? calcKiImc(kiData.initial.anthro) : calcKiDiscrep(kiData.initial.anthro);
+                      const v2 = k ? kiData.final.anthro[k]   : isImc ? calcKiImc(kiData.final.anthro)   : calcKiDiscrep(kiData.final.anthro);
+                      const delta = v1 && v2 ? (Number(v2) - Number(v1)).toFixed(1) : '';
+                      const deltaNum = Number(delta);
+                      return (
+                        <tr key={label} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
+                          <td className="px-4 py-3 text-center font-bold text-primary">{v1 || '—'}</td>
+                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-300' : deltaNum > 0 ? 'text-emerald-600' : deltaNum < 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                            {delta ? (deltaNum > 0 ? '+' : '') + delta : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-emerald-600">{v2 || '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Evaluación Postural comparativa */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Evaluación Postural</h3>
+              <div className="overflow-auto rounded-2xl border border-slate-100">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Segmento</th>
+                      <th className="px-4 py-3 font-black text-primary uppercase tracking-wider text-center">EV1</th>
+                      <th className="px-4 py-3 font-black text-emerald-600 uppercase tracking-wider text-center">EV2</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {([
+                      ['Plomada Sagital','plomadaSag'],['Plomada Frontal','plomadaFront'],
+                      ['Hombros','shoulders'],['Escápulas','scapulas'],
+                      ['Pelvis','pelvis'],['Rodillas','knees'],['Pies','feet'],
+                    ] as [string, keyof KiPostural][]).map(([label, key]) => {
+                      const p1 = kiData.initial.postural[key];
+                      const p2 = kiData.final.postural[key];
+                      const improved = p1 && p2 && p1 !== 'Normal' && p2 === 'Normal';
+                      const worsened = p1 && p2 && p1 === 'Normal' && p2 !== 'Normal';
+                      return (
+                        <tr key={label} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
+                          <td className="px-4 py-3 text-center font-bold text-primary">{p1 || '—'}</td>
+                          <td className={`px-4 py-3 text-center font-bold ${improved ? 'text-emerald-600' : worsened ? 'text-rose-500' : 'text-slate-600'}`}>{p2 || '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ROM comparativo */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Rango de Movimiento (ROM)</h3>
+              <div className="overflow-auto rounded-2xl border border-slate-100">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Movimiento</th>
+                      <th className="px-4 py-3 font-black text-primary uppercase tracking-wider text-center">EV1 (°)</th>
+                      <th className="px-4 py-3 font-black text-slate-400 uppercase tracking-wider text-center">Δ</th>
+                      <th className="px-4 py-3 font-black text-emerald-600 uppercase tracking-wider text-center">EV2 (°)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {([
+                      ['Cuello Flex.','CueFlex'],['Cuello Ext.','CueExt'],
+                      ['Cuello Rot.D','CueRotD'],['Cuello Rot.I','CueRotI'],
+                      ['Hombro Flex.','HomFlex'],['Hombro Abd.','HomAbd'],
+                      ['Col. Flex.','ColFlex'],['Col. Ext.','ColExt'],
+                      ['Cadera Flex.','CadFlex'],['Cadera Ext.','CadExt'],
+                      ['Rodilla Flex.','RodFlex'],['Rodilla Ext.','RodExt'],
+                      ['Tobillo Flex.','TobFlex'],['Tobillo Ext.','TobExt'],
+                    ] as [string,string][]).filter(([,k]) => kiData.initial.rom[k] || kiData.final.rom[k]).map(([label, key]) => {
+                      const r1 = kiData.initial.rom[key];
+                      const r2 = kiData.final.rom[key];
+                      const delta = r1 && r2 ? (Number(r2) - Number(r1)).toFixed(0) : '';
+                      const dn = Number(delta);
+                      return (
+                        <tr key={label} className="hover:bg-slate-50/50">
+                          <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
+                          <td className="px-4 py-3 text-center font-bold text-primary">{r1 || '—'}</td>
+                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-300' : dn > 0 ? 'text-emerald-600' : dn < 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                            {delta ? (dn > 0 ? '+' : '') + delta : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-emerald-600">{r2 || '—'}</td>
+                        </tr>
+                      );
+                    })}
+                    {!(['CueFlex','CueExt','CueRotD','CueRotI','HomFlex','HomAbd','ColFlex','ColExt','CadFlex','CadExt','RodFlex','RodExt','TobFlex','TobExt'].some(k => kiData.initial.rom[k] || kiData.final.rom[k])) && (
+                      <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-300 italic">Sin datos de ROM registrados en ninguna evaluación</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Tests Especiales comparativos */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Tests Especiales</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => {
+                  const t1 = kiData.initial.tests[test];
+                  const t2 = kiData.final.tests[test];
+                  const chip = (val: string | undefined) => {
+                    if (!val) return <span className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-slate-100 text-slate-300 uppercase">N/E</span>;
+                    const color = val === 'pos' ? 'bg-rose-100 text-rose-600' : val === 'neg' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500';
+                    return <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${color}`}>{val === 'ne' ? 'N/E' : val === 'pos' ? 'Pos' : 'Neg'}</span>;
+                  };
+                  return (
+                    <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{test}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-[8px] text-primary font-black uppercase">EV1</span>
+                          {chip(t1)}
+                        </div>
+                        <span className="material-icons-round text-slate-300 text-sm">arrow_forward</span>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-[8px] text-emerald-600 font-black uppercase">EV2</span>
+                          {chip(t2)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
           )}
+
+          </>)}
 
           {/* ── Signos Vitales ─────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -961,8 +1428,8 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
               { l: 'Sat O2 (%)', k: 'oxygenSaturation', c: 'text-teal-500' },
               { l: 'Temp (°C)', k: 'temperature', c: 'text-amber-500' }
             ].map(v => (
-              <div key={v.k} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_20px_40px_-15px_rgba(19,91,236,0.05)] text-center group hover:-translate-y-1 hover:shadow-xl transition-all">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{v.l}</p>
+              <div key={v.k} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] text-center group hover:-translate-y-1 hover:shadow-xl transition-all">
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">{v.l}</p>
                 <input type="number" value={(vitals as any)[v.k]} onChange={e => { setVitals({ ...vitals, [v.k]: Number(e.target.value) }); setIsDirtyTrue(); }} className={`w-full bg-transparent border-none p-0 text-4xl font-black ${v.c} text-center focus:ring-0`} />
               </div>
             ))}
@@ -981,7 +1448,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 { l: 'Circ. Cadera (cm)', v: nutCadera,  set: (n: number) => { setNutCadera(n);  setIsDirtyTrue(); } },
               ].map(f => (
                 <div key={f.l} className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</label>
+                  <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                   <input type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
                     className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                 </div>
@@ -991,7 +1458,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             {/* Género y nivel de actividad */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Género Biológico</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Género Biológico</label>
                 <div className="flex gap-3">
                   {(['Femenino', 'Masculino'] as Gender[]).map(g => (
                     <button key={g} onClick={() => { setNutGender(g); setIsDirtyTrue(); }}
@@ -1002,7 +1469,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                 </div>
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel de Actividad Física</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Nivel de Actividad Física</label>
                 <select value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
                   {(Object.entries(ACTIVITY_FACTORS) as [ActivityLevel, { label: string; factor: number }][]).map(([k, v]) => (
@@ -1022,7 +1489,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                   { l: 'Rel. C/C',        val: nutMetrics.whr || '—',     unit: '',      sub: nutMetrics.whrClassification.label, col: nutMetrics.whrClassification.color },
                 ].map(card => (
                   <div key={card.l} className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 text-center shadow-inner">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">{card.l}</p>
+                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3">{card.l}</p>
                     <p className={`text-3xl font-black ${card.col}`}>{card.val}</p>
                     {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
                     <p className={`text-xs font-black mt-2 ${card.col}`}>{card.sub}</p>
@@ -1051,7 +1518,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                   { l: 'Sum. 8 Pliegues (mm)', v: nutSum8Pliegues, set: (n: number) => { setNutSum8Pliegues(n); setIsDirtyTrue(); } },
                 ].map(f => (
                   <div key={f.l} className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{f.l}</label>
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                     <input type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
                       className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                   </div>
@@ -1068,7 +1535,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                     { l: 'Índ. Musc. Óseo',val: nutIndiceMuscularOseo, unit: '',  col: 'text-blue-600' },
                   ].map(card => (
                     <div key={card.l} className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 text-center shadow-inner">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{card.l}</p>
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">{card.l}</p>
                       <p className={`text-2xl font-black ${card.col}`}>{card.val || '—'}</p>
                       {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
                     </div>
@@ -1151,13 +1618,13 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             {/* Objetivos nutricionales */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objetivos Nutricionales</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
                 <textarea value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Reducir peso corporal 5 kg en 3 meses, normalizar glicemia..."
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Suplementación Indicada</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Suplementación Indicada</label>
                 <textarea value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Vitamina D 2000 UI/día, Omega-3 1g/día..."
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
@@ -1228,13 +1695,13 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             {/* Escala de ánimo */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
                 <span className={`text-3xl font-black ${psychMood <= 3 ? 'text-rose-500' : psychMood <= 6 ? 'text-amber-500' : 'text-emerald-500'}`}>{psychMood}/10</span>
               </div>
               <input type="range" min={0} max={10} step={1} value={psychMood}
                 onChange={e => { setPsychMood(Number(e.target.value)); setIsDirtyTrue(); }}
                 className="w-full accent-violet-500 h-3 rounded-full" />
-              <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <div className="flex justify-between text-[10px] font-black text-slate-600 uppercase tracking-widest">
                 <span>😔 Muy bajo</span><span>😐 Neutro</span><span>😊 Muy alto</span>
               </div>
             </div>
@@ -1242,13 +1709,13 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
             {/* Antecedentes psiquiátricos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
                 <textarea value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Diagnósticos previos, hospitalizaciones, intentos de autolesión, medicación psiquiátrica..."
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
                 <textarea value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Ej: TCC — reestructuración cognitiva de pensamientos automáticos negativos. EMDR fase 3..."
                   className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
@@ -1257,7 +1724,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
             {/* Objetivo próxima sesión */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Objetivo Próxima Sesión</label>
+              <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivo Próxima Sesión</label>
               <textarea value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
                 className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
@@ -1342,7 +1809,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-sm text-slate-800 truncate">{file.name}</p>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-1">
                         {file.date} • {file.size}
                       </p>
                     </div>
@@ -1394,7 +1861,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
           <div className="px-6 md:px-10 pb-6 no-print">
             <button
               onClick={() => setShowVersions(v => !v)}
-              className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-700 transition-colors"
+              className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-slate-700 transition-colors"
             >
               <span className="material-icons-round text-sm">{showVersions ? 'expand_less' : 'history'}</span>
               {showVersions ? 'Ocultar historial' : `Historial SOAP (${soapVersions.length} versiones guardadas)`}

@@ -167,6 +167,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let public_key: string | null = tokenData.public_key || tokenData.publicKey || null;
     console.info('[mp-oauth] token fields:', Object.keys(tokenData).join(','), '| public_key found:', !!public_key);
 
+    // Diagnóstico legible vía SQL: qué devolvió MP (sin exponer secretos)
+    const debug: Record<string, unknown> = {
+      at: new Date().toISOString(),
+      token_fields: Object.keys(tokenData),
+      public_key_in_token: !!(tokenData.public_key || tokenData.publicKey),
+      scope: tokenData.scope || null,
+      live_mode: tokenData.live_mode ?? null,
+      user_id: user_id ?? null,
+    };
+
     // Fallback: si MP no devolvió la public_key en el token, intentar obtenerla
     // vía la API de credenciales del usuario usando su access_token
     if (!public_key && user_id) {
@@ -174,15 +184,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const credRes = await fetch(`https://api.mercadopago.com/users/${user_id}`, {
           headers: { Authorization: `Bearer ${access_token}` },
         });
+        debug.users_status = credRes.status;
         if (credRes.ok) {
           const credData = await credRes.json();
           public_key = credData.credentials?.public_key || credData.public_key || null;
+          debug.users_fields = Object.keys(credData);
+          debug.users_has_credentials = !!credData.credentials;
           console.info('[mp-oauth] public_key from /users/:id:', !!public_key);
         }
       } catch (fetchErr) {
+        debug.users_error = String(fetchErr);
         console.warn('[mp-oauth] Could not fetch public_key from /users:', fetchErr);
       }
     }
+    debug.public_key_resolved = !!public_key;
 
     // Guarda los tokens sensibles en la tabla aislada (solo service_role la lee)
     const { error: secretErr } = await supabase
@@ -207,6 +222,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .update({
         mp_connected: true,
         mp_public_key: public_key || null,
+        mp_oauth_debug: debug,
       })
       .eq('id', professionalId);
 

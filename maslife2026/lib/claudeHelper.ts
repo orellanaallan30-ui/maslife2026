@@ -25,6 +25,7 @@ export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
       messages: request.messages,
       system: request.system || '',
       tools: request.tools || [],
+      max_tokens: request.maxTokens,
     })
   });
 
@@ -34,6 +35,37 @@ export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
   }
 
   return response.json();
+}
+
+// Envía imágenes (base64 dataURL o URL pública de Storage) + texto a Claude Vision
+export async function askClaudeWithImages(
+  images: string[],
+  textPrompt: string,
+  systemPrompt?: string
+): Promise<string> {
+  const imageBlocks = images.map(img => {
+    if (img.startsWith('http')) {
+      return { type: 'image', source: { type: 'url', url: img } };
+    }
+    const [meta, data] = img.split(',');
+    const mediaType = (meta.match(/data:(image\/[\w+]+);/) || [])[1] || 'image/jpeg';
+    return { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
+  });
+
+  const content: any[] = [...imageBlocks, { type: 'text', text: textPrompt }];
+
+  try {
+    const result = await callClaudeAPI({
+      messages: [{ role: 'user', content }],
+      system: systemPrompt || 'Eres un experto en biomecánica y fisioterapia avanzada.',
+      maxTokens: 2048,
+    });
+    const textBlocks = result.content?.filter((b: any) => b.type === 'text') || [];
+    return textBlocks.map((b: any) => b.text).join('\n') || 'Sin respuesta.';
+  } catch (error: any) {
+    console.error('Claude Vision error:', error);
+    throw error;
+  }
 }
 
 // Helper simplificado: envía un prompt y recibe texto
