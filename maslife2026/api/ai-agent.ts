@@ -29,7 +29,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada en Vercel' });
   }
 
-  const { messages, system, tools } = req.body;
+  const { messages, system, tools, max_tokens } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages requerido' });
@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
+        max_tokens: Math.min(Number(max_tokens) || 1024, 4096),
         system: system || '',
         messages,
         tools: tools || [],

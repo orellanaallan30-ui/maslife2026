@@ -612,22 +612,27 @@ Entrega el informe con estas secciones:
 
   const uploadSlotRef = useRef<number>(-1); // -1 = append, 0-3 = slot específico
 
-  const handlePosturalUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePosturalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (!event.target?.result) return;
-      const dataUrl = event.target.result as string;
-      const slot = uploadSlotRef.current;
-      setAnalysisImages(prev => {
-        const next = [...prev];
-        if (slot >= 0) { next[slot] = dataUrl; return next; }
-        return [...next, dataUrl].slice(0, 4);
-      });
-    };
-    reader.readAsDataURL(file);
-    e.target.value = ''; // permitir re-cargar el mismo archivo
+    e.target.value = '';
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const path = `${loggedPro?.id || 'unknown'}/${Date.now()}.${ext}`;
+    const { data: uploaded, error } = await supabase.storage
+      .from('patients-images')
+      .upload(path, file, { upsert: true });
+    if (error || !uploaded) {
+      toast.error('No se pudo subir la imagen. Intenta de nuevo.');
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage.from('patients-images').getPublicUrl(uploaded.path);
+    const slot = uploadSlotRef.current;
+    setAnalysisImages(prev => {
+      const next = [...prev];
+      if (slot >= 0) { next[slot] = publicUrl; return next; }
+      return [...next, publicUrl].slice(0, 4);
+    });
+    setIsDirtyTrue();
   };
 
   const removeAnalysisImage = (index: number) => {

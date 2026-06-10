@@ -25,6 +25,7 @@ export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
       messages: request.messages,
       system: request.system || '',
       tools: request.tools || [],
+      max_tokens: request.maxTokens,
     })
   });
 
@@ -36,14 +37,17 @@ export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
   return response.json();
 }
 
-// Envía imágenes (data URLs base64) + texto a Claude Vision para análisis real
+// Envía imágenes (base64 dataURL o URL pública de Storage) + texto a Claude Vision
 export async function askClaudeWithImages(
   images: string[],
   textPrompt: string,
   systemPrompt?: string
 ): Promise<string> {
-  const imageBlocks = images.map(dataUrl => {
-    const [meta, data] = dataUrl.split(',');
+  const imageBlocks = images.map(img => {
+    if (img.startsWith('http')) {
+      return { type: 'image', source: { type: 'url', url: img } };
+    }
+    const [meta, data] = img.split(',');
     const mediaType = (meta.match(/data:(image\/[\w+]+);/) || [])[1] || 'image/jpeg';
     return { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
   });
