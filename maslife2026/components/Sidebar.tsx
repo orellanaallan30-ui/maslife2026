@@ -18,7 +18,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
     { icon: 'group',          label: 'Pacientes', path: '/pro/patients' },
     { icon: 'bar_chart',      label: 'Finanzas',  path: '/pro/finances' },
     { icon: 'settings',       label: 'Ajustes',   path: '/pro/settings' },
-    { icon: 'card_giftcard',  label: 'Invita y Gana', path: '/pro/referral' },
   ];
 
   return (
@@ -60,6 +59,28 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
               )}
             </NavLink>
           ))}
+
+          {/* Invita y Gana — solo desktop */}
+          <NavLink
+            to="/pro/referral"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${isActive
+                ? 'bg-primary shadow-lg shadow-primary/20'
+                : 'hover:bg-primary/5'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span className={`material-icons-round text-2xl flex-shrink-0 ${isActive ? 'text-white' : 'text-primary'}`}>
+                  card_giftcard
+                </span>
+                <span className={`font-semibold text-base hidden lg:inline ${isActive ? 'text-white' : 'text-slate-800'}`}>
+                  Invita y Gana
+                </span>
+              </>
+            )}
+          </NavLink>
 
           {/* Asistente IA */}
           <button

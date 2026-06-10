@@ -253,7 +253,7 @@ const ProfessionalDashboard: React.FC = () => {
               {proximasCitas.length > 0 ? proximasCitas.map((p, i) => {
                 const styles = getStatusStyles(p.status, p.color);
                 return (
-                  <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/session/${p.patientId}`) : navigate('/pro/agenda')}>
+                  <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/record/${p.patientId}`) : navigate('/pro/agenda')}>
                     <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shrink-0">{p.patientName.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-slate-900 text-sm truncate">{p.patientName}</p>
@@ -282,7 +282,7 @@ const ProfessionalDashboard: React.FC = () => {
               {myTodayApps.length > 0 ? myTodayApps.map((p, i) => {
                 const styles = getStatusStyles(p.status, p.color);
                 return (
-                  <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/session/${p.patientId}`) : alert('Cita sin paciente asociado')}>
+                  <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/record/${p.patientId}`) : alert('Cita sin paciente asociado')}>
                     <div className="w-9 h-9 rounded-xl bg-slate-800 text-white flex items-center justify-center font-black text-sm shrink-0">{p.patientName.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-slate-900 text-sm truncate">{p.patientName}</p>
