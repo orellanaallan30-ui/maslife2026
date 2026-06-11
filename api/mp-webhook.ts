@@ -62,20 +62,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const payment = await mpRes.json();
         console.log('[mp-webhook] payment status:', payment.status, payment.status_detail, payment.external_reference);
 
-        // Confirmar appointment que estaba en pending_payment
-        if (payment.status === 'approved' && payment.external_reference) {
-          const { error } = await supabase
+        // Conciliación: external_reference = id (UUID) de la cita. La tabla NO
+        // tiene columna external_reference — el match correcto es por id.
+        // Respaldo para cuando el paciente paga pero nunca vuelve del checkout.
+        const ref = payment.external_reference as string | undefined;
+        const REF_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (payment.status === 'approved' && ref && REF_UUID.test(ref)) {
+          const { data: updated, error } = await supabase
             .from('appointments')
             .update({
               status: 'Confirmado',
               payment_status: 'Pagado',
-              paid_at: new Date().toISOString(),
+              payment_amount: Math.round(Number(payment.transaction_amount) || 0),
+              paid_at: payment.date_approved || new Date().toISOString(),
             })
-            .eq('external_reference', payment.external_reference)
-            .in('status', ['pending_payment', 'Pendiente']);
+            .eq('id', ref)
+            .eq('payment_status', 'Pendiente')
+            .select('id');
 
-          if (error) console.error('[mp-webhook] appointment update error:', error.message);
-          else console.log('[mp-webhook] appointment confirmed for ref:', payment.external_reference);
+          if (error) console.error('[mp-webhook] reconcile error:', error.message);
+          else if (updated?.length) console.log('[mp-webhook] cita conciliada:', ref);
         }
       } catch (e) {
         console.error('[mp-webhook] Error consultando pago:', e);
@@ -110,7 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 is_subscribed: newStatus === 'active',
                 is_public: newStatus === 'active',
               })
-              .eq('email', email);
+              .ilike('email', email);
 
             if (error) console.error('[mp-webhook] supabase update error:', error.message);
             else console.log('[mp-webhook] subscription updated for', masked, '->', newStatus);

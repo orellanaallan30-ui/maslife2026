@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Appointment, Service, Review } from '../types';
 import { useClinic } from '../ClinicContext';
-import { getProfessionalBySlugOrId, getAppointments, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
+import { getProfessionalBySlugOrId, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
 
 // Clave de localStorage donde se guarda la reserva mientras el paciente paga en
 // la página de MercadoPago (Checkout Pro). Se lee al volver por back_urls.
@@ -34,7 +34,7 @@ const validatePhone = (phone: string): boolean => {
 const PatientProfile: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { professionals, appointments, addAppointment } = useClinic();
+  const { professionals, appointments } = useClinic();
 
   const localDoctor = professionals.find(p => p.id === id || p.slug === id);
   const [fetchedDoctor, setFetchedDoctor] = useState(localDoctor ?? null);
@@ -144,11 +144,26 @@ const PatientProfile: React.FC = () => {
       .finally(() => setLoadingDoctor(false));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cargar citas del profesional desde Supabase para bloquear cupos correctamente
+  // Cargar cupos ocupados desde el endpoint público. La consulta directa a
+  // Supabase NO funciona aquí: el paciente es anónimo y RLS la bloquea, por lo
+  // que el grid mostraba todos los horarios libres aunque estuvieran tomados.
   useEffect(() => {
     const proId = fetchedDoctor?.id;
     if (!proId) return;
-    getAppointments(proId).then(setProAppointments).catch(() => {});
+    fetch(`/api/book-appointment?availability=${encodeURIComponent(proId)}`)
+      .then(r => r.json())
+      .then(d => {
+        const slots = (d?.slots || []) as Array<{ date: string; time: string; duration: number }>;
+        setProAppointments(slots.map(s => ({
+          id: `slot-${s.date}-${s.time}`,
+          professionalId: proId,
+          date: s.date,
+          time: s.time,
+          duration: s.duration,
+          status: 'Confirmado',
+        } as unknown as Appointment)));
+      })
+      .catch(() => {});
   }, [fetchedDoctor?.id]);
 
   useEffect(() => {
@@ -190,42 +205,57 @@ const PatientProfile: React.FC = () => {
     (async () => {
       try {
         const pending = JSON.parse(raw) as {
-          app: Appointment; doctorEmail?: string; notify?: any;
-          patientRut?: string; dateLabel?: string; paymentAmount?: number;
+          appointmentId?: string; doctorEmail?: string; notify?: any;
+          receipt?: {
+            patientName?: string; patientRut?: string; patientEmail?: string; patientPhone?: string;
+            serviceName?: string; price?: number; duration?: number;
+            date?: string; dateLabel?: string; time?: string;
+          };
         };
-        const app: Appointment = { ...pending.app, paymentStatus: 'Pagado', paidAt: new Date().toISOString() };
 
-        // Restaurar estado de pantalla para el comprobante
-        setPatientData(prev => ({
-          ...prev,
-          name: app.patientName || '',
-          rut: pending.patientRut || '',
-          email: app.patientEmail || '',
-          phone: app.patientPhone || '',
-        }));
-        setSelectedSlot(app.time || null);
-        setSelectedService({
-          id: 'restored',
-          name: app.serviceName || '',
-          price: app.price || 0,
-          duration: app.duration || 60,
-          description: '',
-        });
-        if (pending.dateLabel) confirmedDateLabelRef.current = pending.dateLabel;
-        if (app.date) confirmedDateRef.current = app.date;
-
-        // El pago YA fue aprobado: la reserva DEBE quedar registrada (reintento 1 vez).
-        let saved = false;
-        for (let attempt = 0; attempt < 2 && !saved; attempt++) {
-          try { await addAppointment(app); saved = true; }
-          catch (e) { console.error('[checkout-pro] guardado falló', e); }
+        // Restaurar estado de pantalla para el comprobante — el redirect a MP
+        // recargó la SPA y borró todo el state del wizard.
+        const rcpt = pending.receipt;
+        if (rcpt) {
+          setPatientData(prev => ({
+            ...prev,
+            name: rcpt.patientName || '',
+            rut: rcpt.patientRut || '',
+            email: rcpt.patientEmail || '',
+            phone: rcpt.patientPhone || '',
+          }));
+          setSelectedSlot(rcpt.time || null);
+          setSelectedService({
+            id: 'restored',
+            name: rcpt.serviceName || '',
+            price: rcpt.price || 0,
+            duration: rcpt.duration || 60,
+            description: '',
+          });
+          if (rcpt.dateLabel) confirmedDateLabelRef.current = rcpt.dateLabel;
+          if (rcpt.date) confirmedDateRef.current = rcpt.date;
         }
-        // Notificamos al profesional siempre (respaldo si la BD falló).
+
+        // La cita YA existe en la BD (el servidor la insertó como Pendiente antes
+        // de redirigir). Aquí solo verificamos el pago contra MercadoPago en el
+        // servidor — los parámetros de la URL son falsificables, el pago real no.
+        let confirmed = false;
+        if (pending.appointmentId && paymentId) {
+          try {
+            const resp = await fetch('/api/book-appointment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'confirm', appointmentId: pending.appointmentId, paymentId }),
+            });
+            confirmed = (await resp.json())?.confirmed === true;
+          } catch (e) { console.error('[checkout-pro] confirmación', e); }
+        }
+        // Notificamos al profesional siempre (el webhook concilia si esto falló).
         if (pending.doctorEmail) {
           fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...(pending.notify || {}), paymentId, needsManualEntry: !saved }),
+            body: JSON.stringify({ ...(pending.notify || {}), paymentId, needsManualEntry: !confirmed }),
           }).catch(() => {});
         }
         setIsConfirmed(true);
@@ -284,7 +314,30 @@ const PatientProfile: React.FC = () => {
     };
 
     try {
-      await addAppointment(newApp);
+      // Reserva server-side: el cliente anónimo no puede escribir en appointments
+      const bookRes = await fetch('/api/book-appointment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'book',
+          professionalId: doctor.id,
+          patientName: newApp.patientName,
+          patientPhone: newApp.patientPhone,
+          patientEmail: newApp.patientEmail,
+          serviceName: newApp.serviceName,
+          date: newApp.date,
+          time: newApp.time,
+          notes: newApp.notes,
+          modality: newApp.type,
+        }),
+      });
+      const bookData = await bookRes.json();
+      if (!bookRes.ok || !bookData.saved) {
+        if (bookData.error === 'SLOT_TAKEN') {
+          throw new Error('Ese horario acaba de ser tomado por otro paciente. Elige otro horario.');
+        }
+        throw new Error(bookData.error || 'No se pudo registrar la cita');
+      }
 
       // Siempre enviar confirmación al profesional (y al paciente si dio email)
       if (doctor.email) {
@@ -308,10 +361,10 @@ const PatientProfile: React.FC = () => {
 
       setIsProcessing(false);
       setIsConfirmed(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error booking appointment:", error);
       setIsProcessing(false);
-      setBookingError('Ocurrió un error al confirmar tu cita. Por favor intenta de nuevo.');
+      setBookingError(error?.message || 'Ocurrió un error al confirmar tu cita. Por favor intenta de nuevo.');
     }
   };
 
@@ -322,70 +375,71 @@ const PatientProfile: React.FC = () => {
     setMpError('');
     setBookingError('');
 
-    const externalRef = `mp-${Date.now()}`;
-    const newApp: Appointment = {
-      id: Math.random().toString(36).substr(2, 9).toUpperCase(),
-      patientId: `p-${Date.now()}`,
-      patientName: patientData.name,
-      patientPhone: patientData.phone,
-      doctorName: doctor.name,
-      specialty: doctor.specialty,
-      serviceName: selectedService!.name,
-      notes: patientData.reason,
-      date: availableDays[selectedDay].date,
-      time: selectedSlot!,
-      duration: selectedService!.duration,
-      type: selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial',
-      status: 'Confirmado',
-      price: selectedService!.price,
-      paymentStatus: 'Pagado',
-      paidAt: new Date().toISOString(),
-      category: 'Medical',
-      professionalId: doctor.id,
-      bookingSource: 'web',
-      patientEmail: patientData.email || undefined,
-      patientRut: patientData.rut || undefined,
-    };
+    const modality = selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial';
     const notify = {
       to: doctor.email,
       professionalName: doctor.name,
-      patientName: newApp.patientName,
-      serviceName: newApp.serviceName,
-      date: newApp.date,
-      time: newApp.time,
-      type: newApp.type,
-      duration: newApp.duration,
-      patientEmail: newApp.patientEmail,
-      price: newApp.price,
+      patientName: patientData.name,
+      serviceName: selectedService!.name,
+      date: availableDays[selectedDay].date,
+      time: selectedSlot!,
+      type: modality,
+      duration: selectedService!.duration,
+      patientEmail: patientData.email || undefined,
+      price: selectedService!.price,
     };
 
     try {
-      localStorage.setItem(
-        PENDING_BOOKING_KEY,
-        JSON.stringify({
-          app: newApp,
-          doctorEmail: doctor.email,
-          notify,
-          patientRut: patientData.rut,
-          dateLabel: availableDays[selectedDay].label,
-          paymentAmount,
-        })
-      );
+      // El servidor valida el servicio, calcula el monto REAL, bloquea el cupo
+      // insertando la cita como Pendiente y devuelve el link de pago. El monto
+      // ya no viaja desde el cliente.
       const res = await fetch('/api/process-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          createPreference: true,
-          amount: paymentAmount,
-          external_reference: externalRef,
-          description: `Reserva — ${newApp.serviceName} con ${newApp.doctorName}`,
-          professional_id: doctor.id,
           payer: { email: patientData.email || undefined, name: patientData.name },
           returnUrl: window.location.origin + window.location.pathname,
+          booking: {
+            professionalId: doctor.id,
+            patientName: patientData.name,
+            patientPhone: patientData.phone,
+            patientEmail: patientData.email || undefined,
+            serviceName: selectedService!.name,
+            date: availableDays[selectedDay].date,
+            time: selectedSlot!,
+            notes: patientData.reason,
+            modality,
+          },
         }),
       });
       const data = await res.json();
-      if (data?.init_point) {
+      if (data?.error === 'SLOT_TAKEN') {
+        setIsProcessing(false);
+        setMpError('Ese horario acaba de ser tomado por otro paciente. No se cobró nada — elige otro horario.');
+        return;
+      }
+      if (data?.init_point && data?.appointmentId) {
+        localStorage.setItem(
+          PENDING_BOOKING_KEY,
+          JSON.stringify({
+            appointmentId: data.appointmentId,
+            doctorEmail: doctor.email,
+            notify,
+            // Datos para reconstruir el comprobante al volver del redirect de MP
+            receipt: {
+              patientName: patientData.name,
+              patientRut: patientData.rut,
+              patientEmail: patientData.email,
+              patientPhone: patientData.phone,
+              serviceName: selectedService!.name,
+              price: selectedService!.price,
+              duration: selectedService!.duration,
+              date: availableDays[selectedDay].date,
+              dateLabel: availableDays[selectedDay].label,
+              time: selectedSlot!,
+            },
+          })
+        );
         window.location.href = data.init_point;
         return; // se abandona la SPA; el retorno se maneja en mp_return
       }

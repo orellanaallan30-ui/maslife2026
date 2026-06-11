@@ -297,8 +297,11 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addAppointment = async (app: Appointment) => {
     setAppointments(prev => [...prev, app]);
     addNotification(`Nueva cita: ${app.patientName} - ${app.serviceName} (${app.date} ${app.time})`, 'appointment');
-    // Persistir en Supabase
-    saveAppointment(app).catch(() => {});
+    // Persistir en Supabase — si falla, avisar en vez de ocultar el error
+    saveAppointment(app).catch(err => {
+      console.error('[addAppointment] No se pudo guardar la cita en Supabase:', err?.message || err);
+      addNotification(`⚠️ La cita de ${app.patientName} NO se guardó en el servidor. Revisa tu conexión y créala de nuevo.`, 'appointment');
+    });
 
     // Notificación por email — solo citas reales con paciente, nunca bloqueos de horario
     if (app.status !== 'Bloqueado') {

@@ -164,6 +164,22 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           <div className="mt-0.5 w-1 h-1 rounded-full bg-primary animate-pulse" />
         </button>
 
+        {/* Invita y Gana */}
+        <NavLink
+          to="/pro/referral"
+          className={({ isActive }) =>
+            `flex flex-col items-center justify-center flex-1 h-full transition-all ${isActive ? 'text-primary' : 'text-slate-400'}`
+          }
+        >
+          {({ isActive }) => (
+            <>
+              <span className={`material-icons-round text-[22px] ${isActive ? 'text-primary' : 'text-slate-400'}`}>card_giftcard</span>
+              <span className="text-[9px] font-bold mt-0.5 leading-none">Invita</span>
+              {isActive && <div className="mt-0.5 w-1 h-1 rounded-full bg-primary" />}
+            </>
+          )}
+        </NavLink>
+
         {/* Admin */}
         {isAdmin && (
           <button
