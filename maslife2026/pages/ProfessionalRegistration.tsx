@@ -47,6 +47,7 @@ const ProfessionalRegistration: React.FC = () => {
   const [codeError, setCodeError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registrationDone, setRegistrationDone] = useState(false);
   const [referrerId, setReferrerId] = useState<string | null>(null);
   const [referrerName, setReferrerName] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -252,7 +253,7 @@ const ProfessionalRegistration: React.FC = () => {
         referralCode,
         referralCreditClp: 0,
       } as any);
-      navigate('/pro/dashboard');
+      setRegistrationDone(true);
 
     } catch (err: any) {
       if (!timedOut) setError('Error inesperado: ' + err.message);
@@ -264,6 +265,9 @@ const ProfessionalRegistration: React.FC = () => {
 
   const tog = (k: keyof typeof form.modalities) =>
     setForm(f => ({...f, modalities: {...f.modalities, [k]: !f.modalities[k]}}));
+
+  const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK ||
+    'https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34';
 
   return (
     <div className="flex-1 overflow-y-auto w-full bg-slate-50">
@@ -429,7 +433,7 @@ const ProfessionalRegistration: React.FC = () => {
             )}
 
             {/* PASO 3 */}
-            {step===3&&(
+            {step===3 && !registrationDone && (
               <form onSubmit={handleFinish} className="space-y-5">
                 <h3 className="text-lg font-black text-slate-900">Modalidades y primer servicio</h3>
                 <div>
@@ -481,6 +485,56 @@ const ProfessionalRegistration: React.FC = () => {
                   </button>
                 </div>
               </form>
+            )}
+
+            {/* PASO 4 — Configurar método de pago */}
+            {step===3 && registrationDone && (
+              <div className="space-y-6 text-center">
+                <div className="flex justify-center">
+                  <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <span className="material-icons-round text-emerald-500" style={{fontSize:'3rem'}}>check_circle</span>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">¡Cuenta creada con éxito!</h3>
+                  <p className="text-sm text-slate-500 mt-1">Tu período de prueba de 30 días ya comenzó.</p>
+                </div>
+                <div className="bg-primary rounded-2xl p-5 text-white text-left">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="material-icons-round text-2xl">workspace_premium</span>
+                    <div>
+                      <p className="font-black text-base">Plan Pro</p>
+                      <p className="text-white/80 text-xs">Activa tu suscripción ahora</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-1.5 text-sm text-white/90 mb-4">
+                    <li className="flex items-center gap-2"><span className="material-icons-round text-sm">check</span>Agenda online 24/7 para tus pacientes</li>
+                    <li className="flex items-center gap-2"><span className="material-icons-round text-sm">check</span>Pagos con MercadoPago integrados</li>
+                    <li className="flex items-center gap-2"><span className="material-icons-round text-sm">check</span>Fichas clínicas digitales</li>
+                    <li className="flex items-center gap-2"><span className="material-icons-round text-sm">check</span>Primeros 30 días gratis — cancela cuando quieras</li>
+                  </ul>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black">$24.990</span>
+                    <span className="text-white/70 text-sm">/mes</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <a
+                    href={MP_SUBSCRIPTION_LINK}
+                    className="w-full py-4 bg-teal-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25 flex items-center justify-center gap-2"
+                  >
+                    <span className="material-icons-round text-base">payment</span>
+                    Configurar método de pago
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/pro/dashboard')}
+                    className="w-full py-3 text-slate-500 text-xs font-bold hover:text-slate-700 transition-colors"
+                  >
+                    Ahora no — continuar con período de prueba
+                  </button>
+                </div>
+              </div>
             )}
 
           </div>
