@@ -237,8 +237,19 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           getAppointments(loggedPro.id),
           getTransactions(loggedPro.id),
         ]);
-        setPatients(supaPatients);
-        setAppointments(supaApps);
+        // Merge: Supabase es la fuente de verdad, pero si hay registros locales
+        // con IDs que no están en Supabase (guardado fallido), los conservamos
+        // en lugar de perderlos silenciosamente.
+        setPatients(prev => {
+          const supaIds = new Set(supaPatients.map(p => p.id));
+          const localOnly = prev.filter(p => p.professionalId === loggedPro.id && !supaIds.has(p.id));
+          return [...supaPatients, ...localOnly];
+        });
+        setAppointments(prev => {
+          const supaIds = new Set(supaApps.map(a => a.id));
+          const localOnly = prev.filter(a => a.professionalId === loggedPro.id && !supaIds.has(a.id));
+          return [...supaApps, ...localOnly];
+        });
         if (supaTransactions.length > 0) setManualTransactions(supaTransactions);
       } catch {
         setAppointments(prev =>
@@ -388,12 +399,22 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addPatient = (patient: Patient) => {
     const withPro = loggedPro ? { ...patient, professionalId: loggedPro.id } : patient;
     setPatients(prev => [...prev, withPro]);
-    if (loggedPro) savePatient(withPro, loggedPro.id).catch(() => {});
+    if (loggedPro) {
+      savePatient(withPro, loggedPro.id).catch(err => {
+        console.error('[addPatient] No se pudo guardar en Supabase:', err?.message || err);
+        addNotification(`⚠️ El paciente ${patient.name} NO se guardó en el servidor. Revisa tu conexión y vuelve a crearlo.`, 'appointment');
+      });
+    }
   };
 
   const updatePatient = (patient: Patient) => {
     setPatients(prev => prev.map(old => old.id === patient.id ? patient : old));
-    if (loggedPro) savePatient(patient, loggedPro.id).catch(() => {});
+    if (loggedPro) {
+      savePatient(patient, loggedPro.id).catch(err => {
+        console.error('[updatePatient] No se pudo guardar en Supabase:', err?.message || err);
+        addNotification(`⚠️ Los cambios de ${patient.name} NO se guardaron en el servidor. Intenta de nuevo.`, 'appointment');
+      });
+    }
   };
 
   const addManualTransaction = (transaction: Transaction) => {
