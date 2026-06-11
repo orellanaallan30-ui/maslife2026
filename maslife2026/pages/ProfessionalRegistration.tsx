@@ -262,39 +262,40 @@ const ProfessionalRegistration: React.FC = () => {
     setForm(f => ({...f, modalities: {...f.modalities, [k]: !f.modalities[k]}}));
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start py-12 px-4">
+    <div className="flex-1 overflow-y-auto w-full bg-slate-50">
+    <div className="flex flex-col items-center justify-start min-h-full py-6 lg:py-12 px-4 pb-10">
       <div className="w-full max-w-xl relative z-10">
 
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-3 cursor-pointer mb-3" onClick={() => navigate('/')}>
-            <div className="bg-teal-500 w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl shadow-teal-500/30">
-              <span className="material-icons-round text-white text-2xl">medical_services</span>
+        <div className="text-center mb-5 lg:mb-8">
+          <div className="inline-flex items-center gap-3 cursor-pointer mb-2" onClick={() => navigate('/')}>
+            <div className="bg-teal-500 w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center shadow-xl shadow-teal-500/30">
+              <span className="material-icons-round text-white text-xl lg:text-2xl">medical_services</span>
             </div>
             <div className="text-left">
               <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest">PLATAFORMA</p>
-              <p className="text-xl font-black text-slate-900">Mas Life 🧡</p>
+              <p className="text-lg lg:text-xl font-black text-slate-900">Mas Life 🧡</p>
             </div>
           </div>
-          <h1 className="text-2xl font-black text-slate-900">Registro de Especialista</h1>
-          <p className="text-slate-500 text-sm mt-1">clinicamaslife.cl</p>
+          <h1 className="text-xl lg:text-2xl font-black text-slate-900">Registro de Especialista</h1>
+          <p className="text-slate-500 text-xs mt-1">clinicamaslife.cl</p>
         </div>
 
         {/* Stepper */}
-        <div className="flex items-center justify-center gap-0 mb-8">
+        <div className="flex items-center justify-center gap-0 mb-5 lg:mb-8">
           {STEPS.map((s,i) => {
             const n=i+1, active=step===n, done=step>n;
             return (
               <React.Fragment key={s.label}>
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-9 h-9 lg:w-10 lg:h-10 rounded-xl flex items-center justify-center transition-all
                     ${done?'bg-emerald-500 text-white':active?'bg-teal-500 text-white scale-110':'bg-white text-slate-400 border-2 border-slate-200'}`}>
                     {done?<span className="material-icons-round text-sm">check</span>:<span className="material-icons-round text-sm">{s.icon}</span>}
                   </div>
-                  <span className={`text-[9px] font-black uppercase tracking-widest hidden sm:block
+                  <span className={`text-[9px] font-black uppercase tracking-widest
                     ${active?'text-teal-600':done?'text-emerald-500':'text-slate-400'}`}>{s.label}</span>
                 </div>
-                {i<STEPS.length-1&&<div className={`h-0.5 w-16 mx-1 transition-all ${step>i+1?'bg-emerald-400':'bg-slate-200'}`}/>}
+                {i<STEPS.length-1&&<div className={`h-0.5 w-12 lg:w-16 mx-1 mb-4 transition-all ${step>i+1?'bg-emerald-400':'bg-slate-200'}`}/>}
               </React.Fragment>
             );
           })}
@@ -305,7 +306,7 @@ const ProfessionalRegistration: React.FC = () => {
           <div className="h-1.5 bg-slate-100">
             <div className="h-full bg-teal-500 transition-all duration-700 rounded-full" style={{width:`${(step/3)*100}%`}}/>
           </div>
-          <div className="p-8">
+          <div className="p-5 sm:p-8">
 
             {/* PASO 1 */}
             {step===1&&(
@@ -372,11 +373,11 @@ const ProfessionalRegistration: React.FC = () => {
                   <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className={inp} placeholder="Ej: María González"/></div>
                 <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Email *</label>
                   <input type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} className={inp} placeholder="correo@ejemplo.com" autoComplete="username"/></div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                   <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Contraseña *</label>
-                    <input type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} className={inp} placeholder="Mín. 8 car." autoComplete="new-password"/></div>
-                  <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Confirmar *</label>
-                    <input type="password" value={form.confirm} onChange={e=>setForm(f=>({...f,confirm:e.target.value}))} className={inp} placeholder="Repite" autoComplete="new-password"/></div>
+                    <input type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} className={inp} placeholder="Mín. 8 caracteres" autoComplete="new-password"/></div>
+                  <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Confirmar contraseña *</label>
+                    <input type="password" value={form.confirm} onChange={e=>setForm(f=>({...f,confirm:e.target.value}))} className={inp} placeholder="Repite la contraseña" autoComplete="new-password"/></div>
                 </div>
                 {form.password&&(
                   <div className="grid grid-cols-2 gap-1.5">
@@ -428,13 +429,13 @@ const ProfessionalRegistration: React.FC = () => {
                 <h3 className="text-lg font-black text-slate-900">Modalidades y primer servicio</h3>
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Tipo de atención</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {[{k:'online',l:'Online',i:'videocam'},{k:'inPerson',l:'Presencial',i:'location_on'},{k:'home',l:'Domicilio',i:'home'}].map(m=>(
                        <button key={m.k} type="button" onClick={()=>tog(m.k as any)}
-                        className={`p-4 rounded-2xl border-2 flex sm:flex-col items-center justify-center gap-3 transition-all
+                        className={`py-3 px-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all
                           ${form.modalities[m.k as keyof typeof form.modalities]?'border-teal-500 bg-teal-50 text-teal-700':'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300'}`}>
                         <span className="material-icons-round text-xl">{m.i}</span>
-                        <span className="text-xs font-black uppercase tracking-widest">{m.l}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">{m.l}</span>
                       </button>
                     ))}
                   </div>
@@ -480,6 +481,7 @@ const ProfessionalRegistration: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
