@@ -930,7 +930,7 @@ const Settings: React.FC = () => {
                   </div>
                   <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
                     <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Mensual</h4>
-                    <p className="text-xl font-black tracking-tight">$35.000</p>
+                    <p className="text-xl font-black tracking-tight">$24.990</p>
                   </div>
                 </div>
 
