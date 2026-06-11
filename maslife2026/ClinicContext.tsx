@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate } from './types';
-import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, saveTransaction, batchInsertBlocks, deleteBlocksByRecurrence } from './supabaseService';
+import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, deleteAppointment as deleteAppointmentDB, saveTransaction, batchInsertBlocks, deleteBlocksByRecurrence } from './supabaseService';
 
 interface ClinicContextType {
   // Estado de carga
@@ -340,6 +340,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const updateAppointment = (updated: Appointment) => {
     setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
     addNotification(`Cita actualizada: ${updated.patientName} (${updated.date} ${updated.time})`, 'appointment');
+    saveAppointment(updated).catch(() => {});
   };
 
   const deleteAppointment = (id: string) => {
@@ -348,6 +349,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (appointmentToDelete) {
       addNotification(`Cita cancelada: ${appointmentToDelete.patientName}`, 'appointment');
     }
+    deleteAppointmentDB(id).catch(() => {});
   };
 
   const deleteAppointmentsByRecurrence = async (recurrenceId: string, mode: 'single' | 'future' | 'all', blockId: string, blockDate: string) => {
