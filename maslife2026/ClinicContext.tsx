@@ -354,7 +354,10 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const updateAppointment = (updated: Appointment) => {
     setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
     addNotification(`Cita actualizada: ${updated.patientName} (${updated.date} ${updated.time})`, 'appointment');
-    saveAppointment(updated).catch(() => {});
+    saveAppointment(updated).catch(err => {
+      console.error('[updateAppointment] No se pudo guardar en Supabase:', err?.message || err);
+      addNotification(`⚠️ Los cambios de la cita de ${updated.patientName} NO se guardaron. Intenta de nuevo.`, 'appointment');
+    });
   };
 
   const deleteAppointment = (id: string) => {
@@ -363,7 +366,10 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (appointmentToDelete) {
       addNotification(`Cita cancelada: ${appointmentToDelete.patientName}`, 'appointment');
     }
-    deleteAppointmentDB(id).catch(() => {});
+    deleteAppointmentDB(id).catch(err => {
+      console.error('[deleteAppointment] No se pudo eliminar en Supabase:', err?.message || err);
+      addNotification(`⚠️ La cita NO se eliminó en el servidor. Recarga la página para verificar.`, 'appointment');
+    });
   };
 
   const deleteAppointmentsByRecurrence = async (recurrenceId: string, mode: 'single' | 'future' | 'all', blockId: string, blockDate: string) => {
@@ -420,7 +426,10 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addManualTransaction = (transaction: Transaction) => {
     const withPro = loggedPro ? { ...transaction, professionalId: loggedPro.id } : transaction;
     setManualTransactions(prev => [...prev, withPro]);
-    if (loggedPro) saveTransaction(withPro, loggedPro.id).catch(() => {});
+    if (loggedPro) saveTransaction(withPro, loggedPro.id).catch(err => {
+      console.error('[addManualTransaction] No se pudo guardar en Supabase:', err?.message || err);
+      addNotification(`⚠️ La transacción NO se guardó en el servidor. Intenta de nuevo.`, 'payment');
+    });
   };
 
   const logout = (navigate: any, view: string) => {

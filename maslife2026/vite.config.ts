@@ -11,7 +11,9 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.VITE_GEMINI_API_KEY),
+      // VITE_AI_ENABLED=true en Vercel activa el indicador de IA en el cliente.
+      // La API key real (ANTHROPIC_API_KEY / GEMINI_API_KEY) solo vive en el servidor.
+      'process.env.AI_ENABLED': JSON.stringify(env.VITE_AI_ENABLED || ''),
     },
     resolve: {
       alias: {

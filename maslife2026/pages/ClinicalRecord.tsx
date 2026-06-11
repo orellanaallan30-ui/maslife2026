@@ -282,7 +282,7 @@ const ClinicalRecord: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const [chatMessages, setChatMessages] = useState<Message[]>([
-    { role: 'model', text: (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY) ? `AgenteMasLife conectado. Analizando la ficha de ${personalData.name}. ¿Deseas un análisis de evolución o biomecánico?` : "Error: No se detectó API Key en el servidor. El AgenteMasLife está offline." }
+    { role: 'model', text: (import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? `AgenteMasLife conectado. Analizando la ficha de ${personalData.name}. ¿Deseas un análisis de evolución o biomecánico?` : "Error: IA AgenteMasLife no habilitada en este entorno. Contacta al administrador." }
   ]);
   const [userInput, setUserInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -1895,9 +1895,9 @@ Entrega el informe con estas secciones:
 
         <div className="fixed bottom-10 right-10 z-50 no-print flex flex-col items-end gap-4 animate-in slide-in-from-bottom-10 duration-700">
           <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full border border-slate-200 shadow-2xl flex items-center gap-4">
-            <div className={`w-3 h-3 ${(import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY) ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.7)]' : 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.7)]'} rounded-full animate-pulse`}></div>
+            <div className={`w-3 h-3 ${(import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.7)]' : 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.7)]'} rounded-full animate-pulse`}></div>
             <p className="text-xs font-black text-slate-500 uppercase tracking-[0.25em]">
-              {(import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY) ? 'IA AgenteMasLife Conectada' : 'IA AgenteMasLife Offline'}
+              {(import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? 'IA AgenteMasLife Conectada' : 'IA AgenteMasLife Offline'}
             </p>
           </div>
         </div>
