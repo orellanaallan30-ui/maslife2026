@@ -83,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .maybeSingle();
   if (secret?.mp_access_token) {
     ACCESS_TOKEN = secret.mp_access_token.trim();
-    const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 10);
+    const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 5);
     const fee = Math.round(amountDue * pct / 100);
     if (fee > 0 && fee < amountDue) marketplaceFee = fee;
   }
