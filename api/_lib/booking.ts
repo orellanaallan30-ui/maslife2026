@@ -160,8 +160,26 @@ export async function confirmBookingPaid(id: string, paymentAmount: number): Pro
       paid_at: new Date().toISOString(),
     })
     .eq('id', id);
-  if (error) console.error('[booking] confirm error:', error.message);
-  return !error;
+  if (error) { console.error('[booking] confirm error:', error.message); return false; }
+
+  // Registrar ingreso en tabla transactions para que aparezca en el panel de finanzas
+  const { data: apt } = await supabase
+    .from('appointments')
+    .select('professional_id, patient_name, service_name')
+    .eq('id', id)
+    .single();
+  if (apt) {
+    const { error: txErr } = await supabase.from('transactions').insert({
+      id: randomUUID(),
+      professional_id: apt.professional_id,
+      amount: paymentAmount,
+      description: `Cita: ${apt.patient_name} - ${apt.service_name}`,
+      date: new Date().toISOString().split('T')[0],
+      type: 'Ingreso',
+    });
+    if (txErr) console.error('[booking] transaction insert error:', txErr.message);
+  }
+  return true;
 }
 
 /** Libera el cupo si el pago fue rechazado o falló. */

@@ -68,20 +68,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const ref = payment.external_reference as string | undefined;
         const REF_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (payment.status === 'approved' && ref && REF_UUID.test(ref)) {
+          const amount = Math.round(Number(payment.transaction_amount) || 0);
           const { data: updated, error } = await supabase
             .from('appointments')
             .update({
               status: 'Confirmado',
               payment_status: 'Pagado',
-              payment_amount: Math.round(Number(payment.transaction_amount) || 0),
+              payment_amount: amount,
               paid_at: payment.date_approved || new Date().toISOString(),
             })
             .eq('id', ref)
             .eq('payment_status', 'Pendiente')
-            .select('id');
+            .select('id, professional_id, patient_name, service_name');
 
-          if (error) console.error('[mp-webhook] reconcile error:', error.message);
-          else if (updated?.length) console.log('[mp-webhook] cita conciliada:', ref);
+          if (error) {
+            console.error('[mp-webhook] reconcile error:', error.message);
+          } else if (updated?.length) {
+            console.log('[mp-webhook] cita conciliada:', ref);
+            // Registrar ingreso en transactions para el panel de finanzas
+            const apt = updated[0];
+            const { error: txErr } = await supabase.from('transactions').insert({
+              id: crypto.randomUUID(),
+              professional_id: apt.professional_id,
+              amount,
+              description: `Cita: ${apt.patient_name} - ${apt.service_name}`,
+              date: new Date().toISOString().split('T')[0],
+              type: 'Ingreso',
+            });
+            if (txErr) console.error('[mp-webhook] transaction insert error:', txErr.message);
+          }
         }
       } catch (e) {
         console.error('[mp-webhook] Error consultando pago:', e);
