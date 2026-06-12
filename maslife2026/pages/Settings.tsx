@@ -866,92 +866,86 @@ const Settings: React.FC = () => {
               )}
 
               {/* Hero card */}
-              <div className={`rounded-2xl p-5 md:p-8 relative overflow-hidden text-white
+              <div className={`rounded-2xl p-4 relative overflow-hidden text-white
                 ${localProfile.subscriptionStatus === 'paused'
-                  ? 'bg-rose-600 shadow-[0_48px_100px_-20px_rgba(220,38,38,0.4)]'
+                  ? 'bg-rose-600 shadow-[0_24px_60px_-12px_rgba(220,38,38,0.4)]'
                   : localProfile.subscriptionStatus === 'trial' && daysLeft !== null && daysLeft <= 7
-                  ? 'bg-amber-500 shadow-[0_48px_100px_-20px_rgba(245,158,11,0.4)]'
-                  : 'bg-primary shadow-[0_48px_100px_-20px_rgba(19,91,236,0.4)]'}`}>
+                  ? 'bg-amber-500 shadow-[0_24px_60px_-12px_rgba(245,158,11,0.4)]'
+                  : 'bg-primary shadow-[0_24px_60px_-12px_rgba(19,91,236,0.4)]'}`}>
 
-                <div className="flex flex-col md:flex-row gap-5 items-center relative z-10">
-                  <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-xl border border-white/30">
-                    <span className="material-icons-round text-4xl text-white">
+                <div className="flex flex-row gap-3 items-center relative z-10">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/30">
+                    <span className="material-icons-round text-xl text-white">
                       {localProfile.subscriptionStatus === 'paused' ? 'pause_circle' : localProfile.subscriptionStatus === 'trial' ? 'hourglass_top' : 'verified'}
                     </span>
                   </div>
-                  <div className="flex-1 text-center md:text-left space-y-3">
-                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                      <h3 className="text-xl md:text-2xl font-black tracking-tight">Estatus de Agenda Maslife</h3>
-                      <span className="px-5 py-2 rounded-full bg-white/20 border border-white/30 text-white text-xs font-black uppercase tracking-[0.2em]">
+                  <div className="flex-1 space-y-0.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-black tracking-tight">Estatus de Agenda Maslife</h3>
+                      <span className="px-2.5 py-0.5 rounded-full bg-white/20 border border-white/30 text-white text-[10px] font-black uppercase tracking-[0.15em]">
                         {localProfile.subscriptionStatus === 'trial' ? 'Prueba Gratis'
                           : localProfile.subscriptionStatus === 'active' ? 'Activo'
                           : 'Pausado'}
                       </span>
                     </div>
-                    <p className="text-white/90 font-semibold text-lg max-w-2xl leading-relaxed">
+                    <p className="text-white/80 text-xs leading-snug">
                       {localProfile.subscriptionStatus === 'trial'
-                        ? `Tu acceso premium está activo hasta el ${localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : '---'}.`
+                        ? `Acceso hasta el ${localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' }) : '---'}.`
                         : localProfile.subscriptionStatus === 'paused'
-                          ? 'Tu perfil está pausado y no eres visible para nuevos pacientes. Regulariza tu pago para reactivarlo.'
-                          : 'Tu suscripción está activa. Tu agenda es visible en toda la red MasLife.'}
+                          ? 'Tu perfil está pausado. Regulariza tu pago para reactivarlo.'
+                          : 'Tu suscripción está activa. Agenda visible en MasLife.'}
                     </p>
                     {/* Countdown urgency banner */}
-                    {localProfile.subscriptionStatus === 'trial' && daysLeft !== null && (
-                      <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-black
-                        ${daysLeft <= 3 ? 'bg-white text-red-600' : daysLeft <= 7 ? 'bg-white/20 text-white border border-white/30' : 'bg-white/10 text-white/80 border border-white/20'}`}>
-                        <span className="material-icons-round text-base">timer</span>
-                        {daysLeft === 0
-                          ? '¡Tu período de prueba termina hoy!'
-                          : daysLeft === 1
-                          ? '¡Queda 1 día de prueba!'
-                          : `Quedan ${daysLeft} días de prueba`}
+                    {localProfile.subscriptionStatus === 'trial' && daysLeft !== null && daysLeft <= 7 && (
+                      <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black mt-1
+                        ${daysLeft <= 3 ? 'bg-white text-red-600' : 'bg-white/20 text-white border border-white/30'}`}>
+                        <span className="material-icons-round text-sm">timer</span>
+                        {daysLeft === 0 ? '¡Termina hoy!' : daysLeft === 1 ? '¡Queda 1 día!' : `Quedan ${daysLeft} días`}
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Stats grid */}
-                <div className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Próximo Cobro</h4>
-                    <p className="text-xl font-black tracking-tight">
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
+                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Próximo Cobro</h4>
+                    <p className="text-sm font-black tracking-tight">
                       {localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '---'}
                     </p>
                   </div>
-                  <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Días Restantes</h4>
-                    <p className={`text-xl font-black tracking-tight ${daysLeft !== null && daysLeft <= 3 ? 'text-yellow-300' : ''}`}>
-                      {daysLeft !== null ? `${daysLeft} días` : '---'}
+                  <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
+                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Días Rest.</h4>
+                    <p className={`text-sm font-black tracking-tight ${daysLeft !== null && daysLeft <= 3 ? 'text-yellow-300' : ''}`}>
+                      {daysLeft !== null ? `${daysLeft}d` : '---'}
                     </p>
                   </div>
-                  <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Plan</h4>
-                    <p className="text-xl font-black tracking-tight">Pro</p>
+                  <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
+                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Plan</h4>
+                    <p className="text-sm font-black tracking-tight">Pro</p>
                   </div>
-                  <div className="p-5 rounded-[1.5rem] bg-white/10 border border-white/20 backdrop-blur-md text-center">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Mensual</h4>
-                    <p className="text-xl font-black tracking-tight">$24.990</p>
+                  <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
+                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Mensual</h4>
+                    <p className="text-sm font-black tracking-tight">$24.990</p>
                   </div>
                 </div>
 
                 {/* CTA footer */}
-                <div className="mt-5 pt-5 border-t border-white/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-                      <span className="material-icons-round text-white text-base">security</span>
-                    </div>
-                    <p className="text-xs font-bold text-white/60 leading-relaxed uppercase">Pago Seguro vía<br/>Mercado Pago Chile</p>
+                <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="material-icons-round text-white/50 text-base">security</span>
+                    <p className="text-[10px] font-bold text-white/50 uppercase">Pago Seguro · MercadoPago</p>
                   </div>
                   <a
                     href={mpLinkWithBack}
-                    className="w-full sm:w-auto px-8 py-3 bg-white text-primary border-b-4 border-slate-200 rounded-2xl font-black text-[12px] uppercase tracking-[0.3em] shadow-2xl active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
+                    className="shrink-0 px-4 py-2 bg-white text-primary border-b-2 border-slate-200 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg active:border-b-0 active:translate-y-0.5 transition-all flex items-center gap-2"
                   >
-                    <span className="material-icons-round">payment</span>
-                    {localProfile.subscriptionStatus === 'paused' ? 'REACTIVAR SUSCRIPCIÓN' : 'PAGAR SUSCRIPCIÓN'}
+                    <span className="material-icons-round text-base">payment</span>
+                    {localProfile.subscriptionStatus === 'paused' ? 'Reactivar' : 'Pagar Suscripción'}
                   </a>
                 </div>
 
-                <span className="material-icons absolute -bottom-12 -right-12 text-[250px] opacity-[0.07] rotate-12">card_membership</span>
+                <span className="material-icons absolute -bottom-8 -right-8 text-[160px] opacity-[0.07] rotate-12">card_membership</span>
               </div>
 
               {/* Incluido en tu plan */}
