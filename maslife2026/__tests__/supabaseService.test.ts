@@ -9,6 +9,7 @@ vi.mock('../supabaseClient', () => ({
       signUp: vi.fn(),
       signOut: vi.fn(),
       getSession: vi.fn(),
+      refreshSession: vi.fn().mockResolvedValue({ data: {}, error: null }),
       resetPasswordForEmail: vi.fn(),
       updateUser: vi.fn(),
       admin: {
@@ -425,9 +426,12 @@ describe('savePatient', () => {
     );
   });
 
-  it('lanza el error de Supabase si upsert falla', async () => {
+  it('lanza el error de Supabase si upsert falla (tras reintentos)', async () => {
     const dbError = { message: 'Upsert failed' };
-    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: dbError }));
+    vi.mocked(supabase.from)
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }));
 
     await expect(savePatient(samplePatient, 'pro-1')).rejects.toEqual(dbError);
   });
@@ -519,9 +523,12 @@ describe('saveAppointment', () => {
     );
   });
 
-  it('lanza el error de Supabase si upsert falla', async () => {
+  it('lanza el error de Supabase si upsert falla (tras reintentos)', async () => {
     const dbError = { message: 'Upsert failed' };
-    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: dbError }));
+    vi.mocked(supabase.from)
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }));
 
     await expect(saveAppointment(sampleAppointment)).rejects.toEqual(dbError);
   });
@@ -541,9 +548,12 @@ describe('deleteAppointment', () => {
     expect(builder.eq).toHaveBeenCalledWith('id', 'apt-1');
   });
 
-  it('lanza el error de Supabase si delete falla', async () => {
+  it('lanza el error de Supabase si delete falla (tras reintentos)', async () => {
     const dbError = { message: 'Delete failed' };
-    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: dbError }));
+    vi.mocked(supabase.from)
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }));
 
     await expect(deleteAppointment('apt-1')).rejects.toEqual(dbError);
   });

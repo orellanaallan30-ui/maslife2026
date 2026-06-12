@@ -2,6 +2,24 @@
 import { supabase } from './supabaseClient';
 import { Patient, Appointment, Transaction, ProfessionalProfile, Review } from './types';
 
+// Reintenta operaciones de escritura refrescando la sesión entre intentos.
+// Cubre JWT expirado (común en móvil tras background) y cortes breves de red.
+async function withRetry<T>(operation: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      if (attempt > 1) {
+        await supabase.auth.refreshSession();
+        await new Promise(r => setTimeout(r, attempt * 600));
+      }
+      return await operation();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
+}
+
 // ── SHA-256 para verificación de integridad de documentos clínicos únicamente ──
 // NO usar para autenticar contraseñas de usuarios — SHA-256 sin salt es vulnerable
 // a rainbow tables. La autenticación real usa Supabase Auth (bcrypt server-side).
@@ -180,8 +198,10 @@ export async function getProfessionalBySlugOrId(slugOrId: string): Promise<Profe
 }
 
 export async function saveProfessional(pro: ProfessionalProfile): Promise<void> {
-  const { error } = await supabase.from('professionals').upsert(mapProToDB(pro));
-  if (error) throw error;
+  await withRetry(async () => {
+    const { error } = await supabase.from('professionals').upsert(mapProToDB(pro));
+    if (error) throw error;
+  });
 }
 
 export async function getAllPublicProfessionals(): Promise<ProfessionalProfile[]> {
@@ -215,8 +235,10 @@ export async function softDeletePatient(id: string): Promise<void> {
 }
 
 export async function savePatient(patient: Patient, proId: string): Promise<void> {
-  const { error } = await supabase.from('patients').upsert({ ...mapPatientToDB(patient), professional_id: proId });
-  if (error) throw error;
+  await withRetry(async () => {
+    const { error } = await supabase.from('patients').upsert({ ...mapPatientToDB(patient), professional_id: proId });
+    if (error) throw error;
+  });
 }
 
 export async function deletePatient(id: string): Promise<void> {
@@ -233,15 +255,19 @@ export async function getAppointments(proId: string): Promise<Appointment[]> {
 
 export async function saveAppointment(app: Appointment): Promise<void> {
   if (!app.professionalId) throw new Error('Appointment sin professionalId');
-  const { error } = await supabase.from('appointments').upsert(mapAppointmentToDB(app));
-  if (error) throw error;
+  await withRetry(async () => {
+    const { error } = await supabase.from('appointments').upsert(mapAppointmentToDB(app));
+    if (error) throw error;
+  });
   // Sync to Google Calendar (fire-and-forget, non-blocking)
   syncToGoogleCalendar('upsert', app).catch(() => null);
 }
 
 export async function deleteAppointment(id: string, googleEventId?: string): Promise<void> {
-  const { error } = await supabase.from('appointments').delete().eq('id', id);
-  if (error) throw error;
+  await withRetry(async () => {
+    const { error } = await supabase.from('appointments').delete().eq('id', id);
+    if (error) throw error;
+  });
   // Sync deletion to Google Calendar (fire-and-forget)
   syncToGoogleCalendar('delete', { id, googleEventId } as any).catch(() => null);
 }
