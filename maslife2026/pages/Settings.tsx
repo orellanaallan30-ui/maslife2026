@@ -911,13 +911,26 @@ const Settings: React.FC = () => {
                   <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
                     <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Próximo Cobro</h4>
                     <p className="text-sm font-black tracking-tight">
-                      {localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '---'}
+                      {localProfile.subscriptionStatus === 'active' && localProfile.trialEndDate
+                        ? (() => {
+                            const d = new Date(localProfile.trialEndDate);
+                            const now = new Date();
+                            while (d <= now) d.setMonth(d.getMonth() + 1);
+                            return d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+                          })()
+                        : localProfile.trialEndDate
+                          ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+                          : '---'}
                     </p>
                   </div>
                   <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
-                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Días Rest.</h4>
-                    <p className={`text-sm font-black tracking-tight ${daysLeft !== null && daysLeft <= 3 ? 'text-yellow-300' : ''}`}>
-                      {daysLeft !== null ? `${daysLeft}d` : '---'}
+                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">
+                      {localProfile.subscriptionStatus === 'active' ? 'Estado' : 'Días Rest.'}
+                    </h4>
+                    <p className={`text-sm font-black tracking-tight ${daysLeft !== null && daysLeft <= 3 && localProfile.subscriptionStatus === 'trial' ? 'text-yellow-300' : ''}`}>
+                      {localProfile.subscriptionStatus === 'active'
+                        ? <span className="material-icons-round text-base">autorenew</span>
+                        : daysLeft !== null ? `${daysLeft}d` : '---'}
                     </p>
                   </div>
                   <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
@@ -940,8 +953,14 @@ const Settings: React.FC = () => {
                     href={mpLinkWithBack}
                     className="shrink-0 px-4 py-2 bg-white text-primary border-b-2 border-slate-200 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg active:border-b-0 active:translate-y-0.5 transition-all flex items-center gap-2"
                   >
-                    <span className="material-icons-round text-base">payment</span>
-                    {localProfile.subscriptionStatus === 'paused' ? 'Reactivar' : 'Pagar Suscripción'}
+                    <span className="material-icons-round text-base">
+                      {localProfile.subscriptionStatus === 'active' ? 'manage_accounts' : 'credit_card'}
+                    </span>
+                    {localProfile.subscriptionStatus === 'active'
+                      ? 'Gestionar suscripción'
+                      : localProfile.subscriptionStatus === 'paused'
+                        ? 'Reactivar'
+                        : 'Vincular tarjeta'}
                   </a>
                 </div>
 
