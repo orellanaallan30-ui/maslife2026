@@ -116,7 +116,9 @@ const ProfessionalDashboard: React.FC = () => {
   );
 
   const totalIncomeToday = React.useMemo(() => {
-    const appsIncome = myTodayApps.reduce((acc, curr) => acc + (curr.price || 0), 0);
+    const appsIncome = myTodayApps
+      .filter(a => a.paymentStatus === 'Pagado')
+      .reduce((acc, curr) => acc + (curr.price || 0), 0);
     const manualIncome = manualTransactions
       .filter(t => t.date === today && t.type === 'Ingreso')
       .reduce((acc, curr) => acc + curr.amount, 0);
