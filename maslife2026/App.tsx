@@ -334,7 +334,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                                 </div>
                                 <div className="flex gap-2 mt-2.5 ml-12">
                                   <button
-                                    onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); navigate('/pro/dashboard'); }}
+                                    onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); navigate('/pro/agenda', { state: { date: citaMatch[3] } }); }}
                                     className="flex-1 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
                                   >
                                     <span className="material-icons-round text-xs">calendar_today</span>

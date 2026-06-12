@@ -329,7 +329,7 @@ const ProfessionalDashboard: React.FC = () => {
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 Próximas Citas
               </h2>
-              <button onClick={() => navigate('/pro/agenda')} className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-widest hover:opacity-70 transition-opacity">
+              <button onClick={() => navigate('/pro/agenda', { state: { date: today } })} className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-widest hover:opacity-70 transition-opacity">
                 Ver agenda <span className="material-icons-round text-sm">arrow_forward</span>
               </button>
             </div>

@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Appointment, Patient } from '../types';
 import { useClinic } from '../ClinicContext';
 
 const ProfessionalAgenda: React.FC = () => {
    const navigate = useNavigate();
+   const location = useLocation();
    const { appointments: allAppointments, patients, addAppointment, batchAddAppointments, updateAppointment, deleteAppointment: onRemoveApp, deleteAppointmentsByRecurrence, setPatients: setContextPatients, loggedPro, logout, isLoading } = useClinic();
 
    // Solo citas de este profesional
@@ -17,7 +18,10 @@ const ProfessionalAgenda: React.FC = () => {
    const onLogout = () => logout(navigate, 'PROFESSIONAL');
 
    const [viewMode, setViewMode] = useState<'day' | 'week' | 'year'>('day');
-   const [currentDate, setCurrentDate] = useState(new Date());
+   const [currentDate, setCurrentDate] = useState(() => {
+     const d = (location.state as { date?: string } | null)?.date;
+     return d ? new Date(d + 'T12:00:00') : new Date();
+   });
    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
    const [activeTab, setActiveTab] = useState<'existing' | 'new' | 'block'>('existing');
