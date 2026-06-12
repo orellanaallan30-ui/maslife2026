@@ -267,7 +267,7 @@ const ProfessionalRegistration: React.FC = () => {
     setForm(f => ({...f, modalities: {...f.modalities, [k]: !f.modalities[k]}}));
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK ||
-    'https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34';
+    'https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=e7c9a9a7adc24dee8c1f7fb78bdbdc67';
 
   return (
     <div className="flex-1 overflow-y-auto w-full bg-slate-50">
