@@ -48,6 +48,7 @@ interface ClinicContextType {
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   addNotification: (title: string, type: 'appointment' | 'payment' | 'system') => void;
   markNotificationRead: (id: string) => void;
+  removeNotification: (id: string) => void;
   clearNotifications: () => void;
 
   // Métodos
@@ -398,6 +399,10 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
   const clearNotifications = () => {
     setNotifications([]);
   };
@@ -477,6 +482,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setNotifications,
     addNotification,
     markNotificationRead,
+    removeNotification,
     clearNotifications,
     logout
   };

@@ -170,9 +170,31 @@ const ProLayout: React.FC = () => {
 const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ view, setView }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loggedPro, notifications, markNotificationRead, clearNotifications } = useClinic();
+  const { loggedPro, notifications, markNotificationRead, removeNotification, clearNotifications } = useClinic();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const prevCountRef = React.useRef(notifications.length);
+
+  // Play soft chime when a new notification arrives
+  React.useEffect(() => {
+    if (notifications.length > prevCountRef.current) {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+      } catch { /* AudioContext not available */ }
+    }
+    prevCountRef.current = notifications.length;
+  }, [notifications.length]);
 
   const publicPaths = ['/pro/login','/pro/register','/pro/recover','/pro/reset-password','/verify/','/consent/','/admin/login', '/patient'];
   const isFullPublic = location.pathname === '/' || publicPaths.some(p => location.pathname.startsWith(p));
@@ -406,7 +428,10 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                                       {new Date(citaMatch[3] + 'T00:00').toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })} · {citaMatch[4]}
                                     </p>
                                   </div>
-                                  {!n.read && <div className="w-2 h-2 bg-teal-500 rounded-full shrink-0 mt-2" />}
+                                  <button onClick={(e) => { e.stopPropagation(); removeNotification(n.id); }}
+                                    className="w-6 h-6 rounded-lg hover:bg-slate-200 flex items-center justify-center shrink-0 transition-all">
+                                    <span className="material-icons-round text-xs text-slate-400">close</span>
+                                  </button>
                                 </div>
                                 <div className="flex gap-2 mt-2.5 ml-12">
                                   <button
@@ -427,18 +452,24 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                               </div>
                             ) : (
                               // Notificación genérica
-                              <div
-                                onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); }}
-                                className="flex items-start gap-3 cursor-pointer"
-                              >
-                                <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
-                                  <span className="material-icons-round text-base">info</span>
+                              <div className="flex items-start gap-3">
+                                <div
+                                  onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); }}
+                                  className="flex items-start gap-3 cursor-pointer flex-1 min-w-0"
+                                >
+                                  <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                                    <span className="material-icons-round text-base">info</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm leading-snug ${!n.read ? 'font-black text-slate-900' : 'font-medium text-slate-600'}`}>{n.title}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
+                                  </div>
+                                  {!n.read && <div className="w-2 h-2 bg-slate-400 rounded-full shrink-0 mt-1.5" />}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className={`text-sm leading-snug ${!n.read ? 'font-black text-slate-900' : 'font-medium text-slate-600'}`}>{n.title}</p>
-                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
-                                </div>
-                                {!n.read && <div className="w-2 h-2 bg-slate-400 rounded-full shrink-0 mt-1.5" />}
+                                <button onClick={(e) => { e.stopPropagation(); removeNotification(n.id); }}
+                                  className="w-6 h-6 rounded-lg hover:bg-slate-200 flex items-center justify-center shrink-0 transition-all ml-1">
+                                  <span className="material-icons-round text-xs text-slate-400">close</span>
+                                </button>
                               </div>
                             )}
                           </div>
