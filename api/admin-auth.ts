@@ -85,13 +85,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const authHeader = req.headers.authorization as string | undefined;
     if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Token requerido' });
     const supabaseJwt = authHeader.slice(7);
-    const adminSupabase = getAdminSupabase();
-    const { data: { user }, error } = await adminSupabase.auth.getUser(supabaseJwt);
-    if (error || !user?.email) return res.status(401).json({ error: 'Sesión inválida' });
-    if (user.email.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim()) {
-      return res.status(403).json({ error: 'Sin permisos de administrador' });
+    try {
+      const adminSupabase = getAdminSupabase();
+      const { data: { user }, error } = await adminSupabase.auth.getUser(supabaseJwt);
+      if (error || !user?.email) return res.status(401).json({ error: 'Sesión inválida', detail: error?.message });
+      if (user.email.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim()) {
+        return res.status(403).json({ error: 'Sin permisos de administrador', email: user.email });
+      }
+      return res.status(200).json({ token: createAdminToken(ADMIN_JWT_SECRET) });
+    } catch (e: any) {
+      console.error('[SSO]', e?.message, e?.stack?.slice(0, 300));
+      return res.status(500).json({ error: 'Error SSO', detail: e?.message });
     }
-    return res.status(200).json({ token: createAdminToken(ADMIN_JWT_SECRET) });
   }
 
   // POST without auth header = login or validate-clinic-code

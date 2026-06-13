@@ -41,6 +41,8 @@ const Settings: React.FC = () => {
       sessionStorage.setItem('maslife_admin_token', token);
       navigate('/admin/management');
     } else {
+      const body = await res.json().catch(() => ({}));
+      alert(`SSO error ${res.status}: ${body.error || '?'} — ${body.detail || body.email || ''}`);
       navigate('/admin/login');
     }
   };
