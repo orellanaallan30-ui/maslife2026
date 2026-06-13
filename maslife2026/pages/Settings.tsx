@@ -856,121 +856,126 @@ const Settings: React.FC = () => {
           )}
 
           {activeTab === 'suscripcion' && (
-            <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="space-y-5 animate-in fade-in duration-500" style={{ fontFamily: "'Inter','Manrope',sans-serif" }}>
 
               {subscribedMsg && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">
-                  <span className="material-icons-round text-emerald-500 text-xl shrink-0">check_circle</span>
-                  <p className="text-sm text-emerald-800 font-semibold">¡Pago recibido! Tu suscripción se activará en los próximos minutos.</p>
+                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl border"
+                  style={{ background: 'rgba(34,197,94,0.08)', borderColor: 'rgba(34,197,94,0.25)' }}>
+                  <span className="material-icons-round text-lg shrink-0" style={{ color: '#22C55E' }}>check_circle</span>
+                  <p className="text-sm font-semibold" style={{ color: '#15803D' }}>¡Pago recibido! Tu suscripción se activará en los próximos minutos.</p>
                 </div>
               )}
 
-              {/* Hero card */}
-              <div className={`rounded-2xl p-4 relative overflow-hidden text-white
-                ${localProfile.subscriptionStatus === 'paused'
-                  ? 'bg-rose-600 shadow-[0_24px_60px_-12px_rgba(220,38,38,0.4)]'
-                  : localProfile.subscriptionStatus === 'trial' && daysLeft !== null && daysLeft <= 7
-                  ? 'bg-amber-500 shadow-[0_24px_60px_-12px_rgba(245,158,11,0.4)]'
-                  : 'bg-primary shadow-[0_24px_60px_-12px_rgba(19,91,236,0.4)]'}`}>
+              {/* Hero card — gradiente igual que el dashboard */}
+              <div className="rounded-2xl p-5 relative overflow-hidden text-white"
+                style={
+                  localProfile.subscriptionStatus === 'paused'
+                    ? { background: 'linear-gradient(135deg,#E11D48 0%,#9F1239 100%)', boxShadow: '0 10px 30px rgba(225,29,72,0.30)' }
+                    : localProfile.subscriptionStatus === 'trial' && daysLeft !== null && daysLeft <= 7
+                    ? { background: 'linear-gradient(135deg,#F59E0B 0%,#D97706 100%)', boxShadow: '0 10px 30px rgba(245,158,11,0.30)' }
+                    : { background: 'linear-gradient(135deg,#00B3A4 0%,#0F5EF7 100%)', boxShadow: '0 10px 30px rgba(0,179,164,0.30)' }
+                }>
 
-                <div className="flex flex-row gap-3 items-center relative z-10">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/30">
+                {/* Orbe decorativo */}
+                <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none"
+                  style={{ background: 'rgba(255,255,255,0.08)', filter: 'blur(30px)' }} />
+
+                {/* Header */}
+                <div className="flex items-center gap-3 relative z-10">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.30)' }}>
                     <span className="material-icons-round text-xl text-white">
                       {localProfile.subscriptionStatus === 'paused' ? 'pause_circle' : localProfile.subscriptionStatus === 'trial' ? 'hourglass_top' : 'verified'}
                     </span>
                   </div>
-                  <div className="flex-1 space-y-0.5">
+                  <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-black tracking-tight">Estatus de Agenda Maslife</h3>
-                      <span className="px-2.5 py-0.5 rounded-full bg-white/20 border border-white/30 text-white text-[10px] font-black uppercase tracking-[0.15em]">
+                      <h3 className="text-sm font-black tracking-tight">Agenda MasLife</h3>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-[0.12em]"
+                        style={{ background: 'rgba(255,255,255,0.20)', border: '1px solid rgba(255,255,255,0.30)' }}>
                         {localProfile.subscriptionStatus === 'trial' ? 'Prueba Gratis'
-                          : localProfile.subscriptionStatus === 'active' ? 'Activo'
+                          : localProfile.subscriptionStatus === 'active' ? 'Pro · Activo'
                           : 'Pausado'}
                       </span>
                     </div>
-                    <p className="text-white/80 text-xs leading-snug">
+                    <p className="text-xs mt-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.80)' }}>
                       {localProfile.subscriptionStatus === 'trial'
-                        ? `Acceso hasta el ${localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' }) : '---'}.`
+                        ? `Trial hasta el ${localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' }) : '---'}.`
                         : localProfile.subscriptionStatus === 'paused'
                           ? 'Tu perfil está pausado. Regulariza tu pago para reactivarlo.'
-                          : 'Tu suscripción está activa. Agenda visible en MasLife.'}
+                          : 'Tu suscripción está activa y tu agenda es visible en MasLife.'}
                     </p>
-                    {/* Countdown urgency banner */}
-                    {localProfile.subscriptionStatus === 'trial' && daysLeft !== null && daysLeft <= 7 && (
-                      <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black mt-1
-                        ${daysLeft <= 3 ? 'bg-white text-red-600' : 'bg-white/20 text-white border border-white/30'}`}>
-                        <span className="material-icons-round text-sm">timer</span>
-                        {daysLeft === 0 ? '¡Termina hoy!' : daysLeft === 1 ? '¡Queda 1 día!' : `Quedan ${daysLeft} días`}
-                      </div>
-                    )}
                   </div>
                 </div>
 
-                {/* Stats grid */}
-                <div className="mt-3 grid grid-cols-4 gap-2">
-                  <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
-                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Próximo Cobro</h4>
-                    <p className="text-sm font-black tracking-tight">
-                      {localProfile.subscriptionStatus === 'active' && localProfile.trialEndDate
-                        ? (() => {
-                            const d = new Date(localProfile.trialEndDate);
-                            const now = new Date();
-                            while (d <= now) d.setMonth(d.getMonth() + 1);
-                            return d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
-                          })()
+                {/* Countdown */}
+                {localProfile.subscriptionStatus === 'trial' && daysLeft !== null && daysLeft <= 7 && (
+                  <div className="mt-3 relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black"
+                    style={daysLeft <= 3
+                      ? { background: 'white', color: '#DC2626' }
+                      : { background: 'rgba(255,255,255,0.18)', color: 'white', border: '1px solid rgba(255,255,255,0.30)' }}>
+                    <span className="material-icons-round text-sm">timer</span>
+                    {daysLeft === 0 ? '¡Termina hoy!' : daysLeft === 1 ? '¡Queda 1 día!' : `Quedan ${daysLeft} días`}
+                  </div>
+                )}
+
+                {/* Stats grid — glassmorphism */}
+                <div className="mt-4 grid grid-cols-4 gap-2 relative z-10">
+                  {[
+                    {
+                      label: 'Próx. Cobro',
+                      value: localProfile.subscriptionStatus === 'active' && localProfile.trialEndDate
+                        ? (() => { const d = new Date(localProfile.trialEndDate); const now = new Date(); while (d <= now) d.setMonth(d.getMonth() + 1); return d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }); })()
                         : localProfile.trialEndDate
                           ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
-                          : '---'}
-                    </p>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
-                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">
-                      {localProfile.subscriptionStatus === 'active' ? 'Estado' : 'Días Rest.'}
-                    </h4>
-                    <p className={`text-sm font-black tracking-tight ${daysLeft !== null && daysLeft <= 3 && localProfile.subscriptionStatus === 'trial' ? 'text-yellow-300' : ''}`}>
-                      {localProfile.subscriptionStatus === 'active'
-                        ? <span className="material-icons-round text-base">autorenew</span>
-                        : daysLeft !== null ? `${daysLeft}d` : '---'}
-                    </p>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
-                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Plan</h4>
-                    <p className="text-sm font-black tracking-tight">Pro</p>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-white/10 border border-white/20 text-center">
-                    <h4 className="text-[9px] font-black uppercase tracking-widest mb-1 opacity-60">Mensual</h4>
-                    <p className="text-sm font-black tracking-tight">$24.990</p>
-                  </div>
+                          : '---',
+                    },
+                    {
+                      label: localProfile.subscriptionStatus === 'active' ? 'Renovación' : 'Días Rest.',
+                      value: localProfile.subscriptionStatus === 'active'
+                        ? '✦'
+                        : daysLeft !== null ? `${daysLeft}d` : '---',
+                      warn: daysLeft !== null && daysLeft <= 3 && localProfile.subscriptionStatus === 'trial',
+                    },
+                    { label: 'Plan', value: 'Pro' },
+                    { label: 'Mensual', value: '$24.990' },
+                  ].map(s => (
+                    <div key={s.label} className="rounded-xl p-2.5 text-center"
+                      style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.20)' }}>
+                      <p className="text-[8px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.60)' }}>{s.label}</p>
+                      <p className={`text-sm font-black tracking-tight ${s.warn ? 'text-yellow-300' : 'text-white'}`}>{s.value}</p>
+                    </div>
+                  ))}
                 </div>
 
-                {/* CTA footer */}
-                <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="material-icons-round text-white/50 text-base">security</span>
-                    <p className="text-[10px] font-bold text-white/50 uppercase">Pago Seguro · MercadoPago</p>
+                {/* CTA */}
+                <div className="mt-4 pt-4 relative z-10 flex items-center justify-between gap-3"
+                  style={{ borderTop: '1px solid rgba(255,255,255,0.18)' }}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-icons-round text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>security</span>
+                    <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>Pago Seguro · MercadoPago</p>
                   </div>
-                  <a
-                    href={mpLinkWithBack}
-                    className="shrink-0 px-4 py-2 bg-white text-primary border-b-2 border-slate-200 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg active:border-b-0 active:translate-y-0.5 transition-all flex items-center gap-2"
-                  >
-                    <span className="material-icons-round text-base">
+                  <a href={mpLinkWithBack}
+                    className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-95"
+                    style={{ background: 'white', color: '#0F5EF7', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+                    <span className="material-icons-round text-sm">
                       {localProfile.subscriptionStatus === 'active' ? 'manage_accounts' : 'credit_card'}
                     </span>
                     {localProfile.subscriptionStatus === 'active'
-                      ? 'Gestionar suscripción'
+                      ? 'Gestionar'
                       : localProfile.subscriptionStatus === 'paused'
                         ? 'Reactivar'
                         : 'Vincular tarjeta'}
                   </a>
                 </div>
 
-                <span className="material-icons absolute -bottom-8 -right-8 text-[160px] opacity-[0.07] rotate-12">card_membership</span>
+                <span className="material-icons absolute -bottom-8 -right-6 text-[140px] pointer-events-none" style={{ color: 'rgba(255,255,255,0.06)', transform: 'rotate(12deg)' }}>card_membership</span>
               </div>
 
               {/* Incluido en tu plan */}
-              <div className="bg-white rounded-[2rem] border border-slate-100 p-7 shadow-sm">
-                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-5">Incluido en tu plan Pro</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="rounded-2xl p-5" style={{ background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid rgba(15,23,42,0.06)' }}>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: '#7A859F' }}>Incluido en tu Plan Pro</p>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                   {[
                     { icon: 'calendar_month', label: 'Agenda inteligente ilimitada' },
                     { icon: 'group', label: 'Gestión de pacientes completa' },
@@ -979,38 +984,42 @@ const Settings: React.FC = () => {
                     { icon: 'public', label: 'Perfil público en la red MasLife' },
                     { icon: 'support_agent', label: 'Soporte prioritario 24/7' },
                   ].map(f => (
-                    <div key={f.icon} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50">
-                      <span className="material-icons-round text-primary text-lg">{f.icon}</span>
-                      <span className="text-sm font-semibold text-slate-700">{f.label}</span>
+                    <div key={f.icon} className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                      style={{ background: '#F5F8FC' }}>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: 'linear-gradient(135deg,rgba(0,179,164,0.12) 0%,rgba(15,94,247,0.12) 100%)' }}>
+                        <span className="material-icons-round text-base" style={{ color: '#00B3A4' }}>{f.icon}</span>
+                      </div>
+                      <span className="text-sm font-semibold" style={{ color: '#0B1736' }}>{f.label}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Soporte */}
-              <div className="bg-white rounded-[2rem] border border-slate-100 p-7 shadow-sm">
-                <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-5">Soporte y Ayuda</h4>
-                <div className="flex flex-col sm:flex-row gap-4">
+              <div className="rounded-2xl p-5" style={{ background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid rgba(15,23,42,0.06)' }}>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: '#7A859F' }}>Soporte y Ayuda</p>
+                <div className="flex flex-col lg:flex-row gap-3">
                   <a
                     href={`https://wa.me/${SUPPORT_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola MasLife! Soy ${localProfile.name} y necesito ayuda con mi cuenta.`)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-1 flex items-center justify-center gap-3 p-5 rounded-[1.5rem] bg-[#25D366] text-white font-black text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-green-200"
-                  >
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current shrink-0">
+                    className="flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-black text-sm text-white transition-all active:scale-95"
+                    style={{ background: '#25D366', boxShadow: '0 4px 14px rgba(37,211,102,0.30)' }}>
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
                       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                     </svg>
                     Chatear con Soporte
                   </a>
                   <a
                     href={`mailto:soporte@maslife.cl?subject=Ayuda con mi cuenta - ${localProfile.name}`}
-                    className="flex-1 flex items-center justify-center gap-3 p-5 rounded-[1.5rem] bg-slate-100 text-slate-700 font-black text-sm hover:bg-slate-200 active:scale-95 transition-all"
-                  >
-                    <span className="material-icons-round text-slate-500">mail</span>
+                    className="flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-black text-sm transition-all active:scale-95"
+                    style={{ background: '#F5F8FC', color: '#0B1736', border: '1px solid rgba(15,23,42,0.08)' }}>
+                    <span className="material-icons-round text-base" style={{ color: '#7A859F' }}>mail</span>
                     Enviar Email
                   </a>
                 </div>
-                <p className="text-xs text-slate-400 text-center mt-4">Tiempo de respuesta: menos de 2 horas en horario hábil</p>
+                <p className="text-[11px] text-center mt-3" style={{ color: '#7A859F' }}>Tiempo de respuesta: menos de 2 horas en horario hábil</p>
               </div>
 
             </div>
