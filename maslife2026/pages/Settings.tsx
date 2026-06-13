@@ -229,8 +229,7 @@ const Settings: React.FC = () => {
   };
 
   const getShareableLink = () => {
-    const base = window.location.origin + window.location.pathname;
-    return `${base}/patient/profile/${localProfile.slug || localProfile.id}`;
+    return `${window.location.origin}/p/${localProfile.slug || localProfile.id}`;
   };
 
   const handleCopyLink = () => {

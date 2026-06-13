@@ -245,7 +245,7 @@ const PatientResults: React.FC = () => {
               {visibleDoctors.length > 0 ? pagedDoctors.map((doc) => (
                 <div
                   key={doc.id}
-                  onClick={() => navigate(`/patient/profile/${doc.id}`)}
+                  onClick={() => navigate(`/p/${doc.slug || doc.id}`)}
                   className="bg-white p-4 lg:p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex flex-col lg:flex-row gap-4 lg:gap-6 items-center cursor-pointer"
                 >
                   {/* Avatar */}
@@ -280,7 +280,7 @@ const PatientResults: React.FC = () => {
                   {/* CTA */}
                   <div className="w-full lg:w-auto shrink-0">
                     <button
-                      onClick={e => { e.stopPropagation(); navigate(`/patient/profile/${doc.id}`); }}
+                      onClick={e => { e.stopPropagation(); navigate(`/p/${doc.slug || doc.id}`); }}
                       className="w-full lg:w-auto px-6 py-3 bg-blue-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95">
                       Agendar Ahora
                     </button>
