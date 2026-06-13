@@ -38,6 +38,7 @@ const MainHome: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', condition: '' });
   const [contactData, setContactData] = useState({ name: '', phone: '', email: '', message: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [charlaFormOpen, setCharlaFormOpen] = useState(false);
   const [charlaForm, setCharlaForm] = useState({ nombre: '', email: '', celular: '' });
   const [charlaSubmitting, setCharlaSubmitting] = useState(false);
   const [charlaSuccess, setCharlaSuccess] = useState(false);
@@ -769,50 +770,60 @@ const MainHome: React.FC = () => {
                     <p className="text-slate-500 text-sm">Te avisaremos por email cada vez que haya una nueva charla gratuita.</p>
                   </div>
                 ) : (
-                  <form onSubmit={handleCharlaSubscribe} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-4">
                     <div>
                       <p className="text-xs font-black text-teal-600 uppercase tracking-widest mb-1">Únete a la comunidad</p>
                       <h3 className="text-xl font-black text-slate-900 leading-snug">Recibe notificaciones de próximas charlas</h3>
                     </div>
 
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Nombre *</label>
-                      <input value={charlaForm.nombre} onChange={e => setCharlaForm(f => ({ ...f, nombre: e.target.value }))}
-                        placeholder="Tu nombre"
-                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Email *</label>
-                      <input type="email" value={charlaForm.email} onChange={e => setCharlaForm(f => ({ ...f, email: e.target.value }))}
-                        placeholder="tu@email.com"
-                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Celular <span className="text-slate-400 font-medium normal-case tracking-normal">(opcional)</span></label>
-                      <input value={charlaForm.celular} onChange={e => setCharlaForm(f => ({ ...f, celular: e.target.value }))}
-                        placeholder="+56 9 ..."
-                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
-                    </div>
-
-                    {charlaError && (
-                      <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2">
-                        <span className="material-icons-round text-rose-500 text-base shrink-0 mt-0.5">error</span>
-                        <p className="text-sm text-rose-700 font-medium">{charlaError}</p>
-                      </div>
+                    {/* Campos — se revelan al hacer click en "Quiero enterarme" */}
+                    {charlaFormOpen && (
+                      <form onSubmit={handleCharlaSubscribe} className="flex flex-col gap-3">
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Nombre *</label>
+                          <input value={charlaForm.nombre} onChange={e => setCharlaForm(f => ({ ...f, nombre: e.target.value }))}
+                            placeholder="Tu nombre" autoFocus
+                            className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Email *</label>
+                          <input type="email" value={charlaForm.email} onChange={e => setCharlaForm(f => ({ ...f, email: e.target.value }))}
+                            placeholder="tu@email.com"
+                            className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Celular <span className="text-slate-400 font-medium normal-case tracking-normal">(opcional)</span></label>
+                          <input value={charlaForm.celular} onChange={e => setCharlaForm(f => ({ ...f, celular: e.target.value }))}
+                            placeholder="+56 9 ..."
+                            className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
+                        </div>
+                        {charlaError && (
+                          <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2">
+                            <span className="material-icons-round text-rose-500 text-base shrink-0 mt-0.5">error</span>
+                            <p className="text-sm text-rose-700 font-medium">{charlaError}</p>
+                          </div>
+                        )}
+                        <button type="submit" disabled={charlaSubmitting}
+                          className="w-full py-3.5 bg-teal-500 text-white rounded-2xl font-black text-sm hover:bg-teal-600 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
+                          {charlaSubmitting ? (
+                            <><span className="material-icons-round text-base animate-spin">sync</span>Enviando...</>
+                          ) : (
+                            <><span className="material-icons-round text-base">send</span>Enviar</>
+                          )}
+                        </button>
+                      </form>
                     )}
 
-                    <button type="submit" disabled={charlaSubmitting}
-                      className="w-full py-3.5 bg-teal-500 text-white rounded-2xl font-black text-sm hover:bg-teal-600 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
-                      {charlaSubmitting ? (
-                        <><span className="material-icons-round text-base animate-spin">sync</span>Registrando...</>
-                      ) : (
-                        <><span className="material-icons-round text-base">notifications</span>Quiero enterarme</>
-                      )}
-                    </button>
+                    {!charlaFormOpen && (
+                      <button onClick={() => setCharlaFormOpen(true)}
+                        className="w-full py-3.5 bg-teal-500 text-white rounded-2xl font-black text-sm hover:bg-teal-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
+                        <span className="material-icons-round text-base">notifications</span>
+                        Quiero enterarme
+                      </button>
+                    )}
+
                     <p className="text-[10px] text-slate-400 text-center">Sin spam · Solo charlas de salud · Puedes darte de baja cuando quieras</p>
-                  </form>
+                  </div>
                 )}
               </div>
             </div>
