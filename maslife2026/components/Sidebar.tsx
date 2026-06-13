@@ -9,8 +9,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
   const navigate = useNavigate();
-  const { loggedPro } = useClinic();
-  const isAdmin = loggedPro?.email === import.meta.env.VITE_ADMIN_EMAIL;
+  const { loggedPro, isAdmin } = useClinic();
 
   const menuItems = [
     { icon: 'home',           label: 'Inicio',    path: '/pro/dashboard' },

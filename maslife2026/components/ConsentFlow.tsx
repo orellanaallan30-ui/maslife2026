@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { InformedConsent, ProfessionalProfile, Patient } from '../types_clinical';
+import { InformedConsent } from '../types_clinical';
+import { ProfessionalProfile, Patient } from '../types';
 import { supabase } from '../supabaseClient';
 import { auditService } from '../auditService';
 

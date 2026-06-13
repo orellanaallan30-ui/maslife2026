@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { requireSupabaseAuth } from './_lib/auth';
+import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -13,6 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).end();
+  if (!checkIpRateLimit(req.headers, 60, 60 * 1000)) return res.status(429).json({ error: 'Demasiadas solicitudes.' });
 
   // Verificar que el profesional autenticado solo acceda a sus propios pagos
   const user = await requireSupabaseAuth(req, res);

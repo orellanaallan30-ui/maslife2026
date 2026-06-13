@@ -8,7 +8,7 @@ import { supabase } from '../supabaseClient';
 const Settings: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { loggedPro: profile, updatePro: onSave, logout } = useClinic();
+  const { loggedPro: profile, updatePro: onSave, logout, addNotification } = useClinic();
 
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
   const [activeTab, setActiveTab] = useState<'perfil' | 'suscripcion' | 'seguridad'>('perfil');
@@ -180,7 +180,10 @@ const Settings: React.FC = () => {
       }
       setLocalProfile(profileToSave);
       onSave(profileToSave);
-      saveProfessional(profileToSave).catch(() => {}); // persiste a Supabase
+      saveProfessional(profileToSave).catch(err => {
+        console.error('[Settings] No se pudo guardar perfil en Supabase:', err?.message);
+        addNotification('⚠️ Los cambios de perfil NO se guardaron en el servidor. Intenta de nuevo.', 'appointment');
+      });
       setHasChanges(false);
       setShowSavedMsg(true);
       setTimeout(() => setShowSavedMsg(false), 3000);
