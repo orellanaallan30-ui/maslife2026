@@ -328,13 +328,18 @@ const ProfessionalRegistration: React.FC = () => {
                     <p className="text-xs text-slate-500">Proporcionado por la administración de la clínica</p>
                   </div>
                 </div>
-                <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 text-sm text-teal-800">
-                  Ingresa el código que te entregó el administrador de Clínica Mas Life para acceder al registro.
-                </div>
-                {searchParams.get('ref') && (
-                  <p className="text-xs text-teal-600 font-bold text-center bg-teal-50 rounded-xl px-3 py-2">
-                    Ingresaste con un enlace de referido — ¡obtendrás tu primer mes gratis!
-                  </p>
+                {searchParams.get('ref') ? (
+                  <div className="bg-teal-50 border-2 border-teal-300 rounded-2xl p-4 flex items-start gap-3">
+                    <span className="material-icons-round text-teal-500 text-2xl shrink-0">card_giftcard</span>
+                    <div>
+                      <p className="font-black text-teal-800 text-sm">¡Un colega te invitó a Clínica Mas Life!</p>
+                      <p className="text-teal-700 text-xs mt-1 leading-relaxed">Tu código de referido ya está listo. Solo haz clic en <strong>"Validar y Continuar"</strong> para unirte y obtener tu primer mes gratis.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 text-sm text-teal-800">
+                    Ingresa el código que te entregó el administrador de Clínica Mas Life para acceder al registro.
+                  </div>
                 )}
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Código de acceso</label>

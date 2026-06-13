@@ -10,7 +10,7 @@ const ReferralProgram: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const referralCode = loggedPro?.referralCode || '';
-  const referralLink = referralCode ? `https://clinicamaslife.cl/registro?ref=${referralCode}` : '';
+  const referralLink = referralCode ? `https://clinicamaslife.cl/pro/register?ref=${referralCode}` : '';
   const creditClp = loggedPro?.referralCreditClp ?? 0;
 
   useEffect(() => {

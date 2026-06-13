@@ -39,6 +39,11 @@ const ProGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return loggedPro ? <>{children}</> : <Navigate to="/pro/login" replace />;
 };
 
+const RegistroRedirect: React.FC = () => {
+  const location = useLocation();
+  return <Navigate to={`/pro/register${location.search}`} replace />;
+};
+
 const AdminGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { setIsAdmin } = useClinic();
   const [verified, setVerified] = useState<boolean | null>(null);
@@ -424,6 +429,7 @@ const AppContent: React.FC = () => {
           <Route path="/p/:id"               element={<PatientProfile />} />
           <Route path="/verify/:code"        element={<DocumentVerifier />} />
           <Route path="/consent/:id"         element={<ConsentAcceptPage />} />
+          <Route path="/registro"            element={<RegistroRedirect />} />
           <Route path="/charlas"             element={<Charlas />} />
           <Route path="/privacidad"          element={<PrivacyPolicy />} />
           <Route path="/terminos"            element={<TermsOfService />} />
