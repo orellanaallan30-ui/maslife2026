@@ -67,7 +67,7 @@ const ProfessionalDashboard: React.FC = () => {
   }, [bookingLink, loggedPro.name]);
 
   const profileComplete = !!(loggedPro.slug && loggedPro.specialty && loggedPro.services?.length > 0);
-  const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
+  const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=e7c9a9a7adc24dee8c1f7fb78bdbdc67";
   const mpLinkWithBack = MP_SUBSCRIPTION_LINK;
 
   const SPECIALTY_TITLES: Record<string, string> = {
@@ -161,7 +161,6 @@ const ProfessionalDashboard: React.FC = () => {
 
     const baseStyles = colorMap[baseColor] || colorMap['bg-primary'];
 
-    // Specific icons based on status (overrides mapping if needed)
     const statusIcons: any = {
       'Confirmado': 'check_circle',
       'Llegado': 'hail',
@@ -180,211 +179,258 @@ const ProfessionalDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 w-full bg-white relative">
+    <div className="flex-1 flex flex-col min-h-0 w-full relative" style={{background:'#F5F8FC', fontFamily:"'Inter','Manrope',sans-serif"}}>
 
+      {/* Modal suscripción pausada */}
       {isPaused && (
-        <div className="absolute inset-0 z-[200] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 transition-all">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl text-center">
-            <div className="w-20 h-20 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-              <span className="material-icons-round text-5xl">lock_person</span>
+        <div className="absolute inset-0 z-[200] bg-[#0B1736]/70 backdrop-blur-md flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-7 shadow-2xl text-center">
+            <div className="w-16 h-16 bg-rose-100 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <span className="material-icons-round text-4xl">lock_person</span>
             </div>
-            <h2 className="text-4xl font-black text-black tracking-tight mb-4">Agenda Suspendida</h2>
-            <p className="text-slate-800 font-bold mb-8 text-lg leading-relaxed">Por favor regulariza tu suscripción para recibir pacientes.</p>
-            <a href={mpLinkWithBack} className="w-full py-6 bg-primary text-white rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl shadow-primary/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02]">
-              PAGAR SUSCRIPCIÓN <span className="material-icons-round">payment</span>
+            <h2 className="text-xl font-bold text-[#0B1736] tracking-tight mb-2">Agenda Suspendida</h2>
+            <p className="text-[#7A859F] text-sm mb-6 leading-relaxed">Regulariza tu suscripción para recibir pacientes.</p>
+            <a href={mpLinkWithBack} className="w-full py-3.5 bg-[#00B3A4] text-white rounded-2xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-[#00B3A4]/30 flex items-center justify-center gap-2 transition-all hover:bg-[#00a093]">
+              Pagar Suscripción <span className="material-icons-round text-base">payment</span>
             </a>
           </div>
         </div>
       )}
 
-      <main className="flex-1 min-h-0 overflow-y-auto p-4 md:p-10 pb-24 md:pb-10 bg-slate-50/50 custom-scrollbar">
+      <main className="flex-1 min-h-0 overflow-y-auto px-4 pt-5 pb-24 md:px-10 md:pt-10 md:pb-10 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
-          {/* ── Header saludo + fecha + reloj ── */}
-          <div className="mb-4 flex items-start justify-between gap-3">
-            {/* Izquierda: especialidad + saludo + fecha */}
+
+          {/* ── Header ── */}
+          <div className="mb-5 flex items-start justify-between gap-3">
             <div className="min-w-0">
               {loggedPro.specialty && (
-                <p className="text-[10px] font-black text-primary uppercase tracking-[0.35em] mb-0.5 opacity-80">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] mb-1" style={{color:'#00B3A4'}}>
                   {loggedPro.specialty}
                 </p>
               )}
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-950 leading-tight">
-                Hola, {firstName}
+              <h1 className="text-[1.6rem] font-bold leading-tight" style={{color:'#0B1736'}}>
+                Hola, {firstName} 👋
               </h1>
-              <div className="flex items-center gap-1.5 mt-1.5">
-                <span className="material-icons-round text-slate-400 text-xs">calendar_today</span>
-                <p className="text-[11px] font-bold text-slate-500 capitalize">{dayCapitalized}, {dateLabel}</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="material-icons-round text-xs" style={{color:'#7A859F'}}>calendar_today</span>
+                <p className="text-xs font-medium capitalize" style={{color:'#7A859F'}}>{dayCapitalized}, {dateLabel}</p>
               </div>
             </div>
 
-            {/* Derecha: reloj */}
-            <div className="bg-white border border-slate-100 shadow-sm rounded-2xl px-3 py-2.5 text-center shrink-0 min-w-[72px]">
-              <p className="text-xl font-black text-slate-900 tabular-nums leading-none tracking-tight">
-                {timeHM}
-              </p>
-              <p className="text-[10px] font-black text-primary/60 tabular-nums tracking-widest mt-0.5">
-                :{timeSec}
-              </p>
+            {/* Reloj flotante glassmorphism */}
+            <div className="text-center shrink-0 min-w-[78px] px-3.5 py-2.5 rounded-2xl"
+              style={{
+                background:'rgba(255,255,255,0.85)',
+                backdropFilter:'blur(16px)',
+                WebkitBackdropFilter:'blur(16px)',
+                border:'1px solid rgba(255,255,255,0.9)',
+                boxShadow:'0 10px 30px rgba(15,94,247,0.10), 0 4px 12px rgba(0,0,0,0.05)'
+              }}>
+              <p className="text-[22px] font-bold tabular-nums leading-none tracking-tight" style={{color:'#0B1736'}}>{timeHM}</p>
+              <p className="text-[10px] font-semibold tabular-nums mt-0.5 tracking-widest" style={{color:'#00B3A4'}}>:{timeSec}</p>
             </div>
           </div>
 
           {/* ── Invita y Gana ── */}
           <div
             onClick={() => navigate('/pro/referral')}
-            className="mb-4 bg-gradient-to-r from-primary/8 to-violet-50 border border-primary/15 rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer hover:from-primary/12 active:scale-[0.99] transition-all group"
+            className="mb-3 rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer active:scale-[0.99] transition-all group"
+            style={{
+              background:'white',
+              border:'1px solid rgba(229,231,235,0.8)',
+              boxShadow:'0 4px 12px rgba(0,0,0,0.05)'
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow='0 10px 30px rgba(0,179,164,0.12)')}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow='0 4px 12px rgba(0,0,0,0.05)')}
           >
-            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0 shadow-md shadow-primary/20 group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
+              style={{background:'linear-gradient(135deg,#00B3A4,#0F5EF7)',boxShadow:'0 4px 12px rgba(0,179,164,0.30)'}}>
               <span className="material-icons-round text-white text-lg">card_giftcard</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[9px] font-black text-primary uppercase tracking-widest">Programa de Referidos</p>
-              <p className="text-sm font-black text-slate-900 leading-tight">Invita y Gana</p>
+              <p className="text-[9px] font-semibold uppercase tracking-widest" style={{color:'#7A859F'}}>Programa de Referidos</p>
+              <p className="text-sm font-bold leading-tight" style={{color:'#0B1736'}}>Invita y Gana</p>
             </div>
-            <span className="material-icons-round text-primary/40 text-lg group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+            <span className="material-icons-round text-lg group-hover:translate-x-0.5 transition-transform" style={{color:'#7A859F'}}>chevron_right</span>
           </div>
 
-          {/* ── Tu Link de Reservas ── */}
-          <div className={`mb-4 rounded-2xl border p-4 md:p-7 flex items-center gap-3 overflow-hidden transition-all ${
-            profileComplete ? 'bg-white border-slate-100 shadow-sm' : 'bg-amber-50 border-amber-200'
-          }`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${profileComplete ? 'bg-blue-50' : 'bg-amber-100'}`}>
-              <span className={`material-icons-round text-xl ${profileComplete ? 'text-blue-600' : 'text-amber-600'}`}>
+          {/* ── Link de Reservas ── */}
+          <div className={`mb-3 rounded-2xl p-3.5 flex items-center gap-3 overflow-hidden transition-all ${
+            profileComplete ? '' : 'bg-amber-50 border border-amber-200'
+          }`}
+            style={profileComplete ? {
+              background:'white',
+              border:'1px solid rgba(229,231,235,0.8)',
+              boxShadow:'0 4px 12px rgba(0,0,0,0.05)'
+            } : {}}>
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${profileComplete ? '' : 'bg-amber-100'}`}
+              style={profileComplete ? {background:'rgba(15,94,247,0.10)'} : {}}>
+              <span className="material-icons-round text-lg" style={profileComplete ? {color:'#0F5EF7'} : {color:'#d97706'}}>
                 {profileComplete ? 'link' : 'warning'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Link de Reservas</p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{color:'#7A859F'}}>Link de Reservas</p>
                 {profileComplete
-                  ? <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black rounded-md uppercase tracking-widest">✓ Activo</span>
-                  : <span className="px-1.5 py-0.5 bg-amber-200 text-amber-800 text-[9px] font-black rounded-md uppercase">Incompleto</span>}
+                  ? <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest" style={{background:'rgba(34,197,94,0.12)',color:'#16a34a'}}>✓ Activo</span>
+                  : <span className="px-1.5 py-0.5 bg-amber-200 text-amber-800 text-[9px] font-bold rounded-md uppercase">Incompleto</span>}
               </div>
-              <p className="text-xs font-bold text-blue-600 truncate">{bookingLink}</p>
+              <p className="text-xs font-semibold truncate" style={{color:'#0F5EF7'}}>{bookingLink}</p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <button onClick={() => window.open(bookingLink, '_blank')} className="hidden md:flex px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all items-center gap-1.5">
+              <button onClick={() => window.open(bookingLink, '_blank')} className="hidden md:flex px-3 py-1.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:opacity-80 transition-all items-center gap-1" style={{background:'#F5F8FC',color:'#7A859F'}}>
                 <span className="material-icons-round text-sm">visibility</span>Ver
               </button>
-              <button onClick={handleCopyBookingLink} className={`px-3 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-1.5 ${linkCopied ? 'bg-emerald-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+              <button onClick={handleCopyBookingLink} className="px-3 py-1.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all flex items-center gap-1"
+                style={linkCopied ? {background:'#22C55E',color:'white'} : {background:'#0F5EF7',color:'white'}}>
                 <span className="material-icons-round text-sm">{linkCopied ? 'check_circle' : 'content_copy'}</span>
                 <span className="hidden sm:inline">{linkCopied ? '¡Copiado!' : 'Copiar'}</span>
               </button>
-              <button onClick={handleShareBookingLink} className="w-9 h-9 rounded-xl bg-[#25D366] text-white hover:bg-[#1ebe5d] transition-all flex items-center justify-center shrink-0" title="Compartir por WhatsApp">
+              <button onClick={handleShareBookingLink} className="w-8 h-8 rounded-xl bg-[#25D366] text-white hover:bg-[#1ebe5d] transition-all flex items-center justify-center shrink-0">
                 <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.767 5.767 0 1.267.408 2.438 1.103 3.394l-.717 2.63 2.7-.708c.846.541 1.847.851 2.923.851 3.181 0 5.767-2.586 5.767-5.767 0-3.181-2.586-5.767-5.767-5.767zm3.344 8.205c-.145.409-.838.74-1.164.786-.324.045-.72.079-2.315-.572-1.911-.781-3.142-2.723-3.238-2.85-.095-.126-.777-.963-.777-1.838s.454-1.306.616-1.467c.163-.162.355-.202.474-.202s.237.001.341.006c.108.005.253-.041.396.304.145.352.497 1.21.541 1.298.045.089.074.192.015.309-.059.117-.089.192-.178.297-.089.105-.187.234-.267.314s-.17.169-.074.335c.095.166.424.699.91 1.132.626.557 1.152.73 1.316.812.163.081.258.067.354-.044.095-.112.408-.48.517-.643.11-.163.22-.136.371-.081s.956.45 1.12.532c.164.081.274.121.314.192s.041.527-.104.935z"/><path d="M19.057 4.298c-1.883-1.884-4.386-2.922-7.051-2.922-5.485 0-9.946 4.461-9.946 9.946 0 1.753.458 3.465 1.328 4.972l-1.41 5.148 5.268-1.381c1.458.794 3.097 1.213 4.76 1.213h.004c5.484 0 9.946-4.461 9.946-9.946 0-2.657-1.034-5.164-2.919-7.049l-.04-.04zm-7.051 15.352c-1.487 0-2.945-.399-4.216-1.155l-.302-.18-3.132.821.835-3.053-.198-.314c-.832-1.321-1.272-2.857-1.272-4.43 0-4.542 3.696-8.237 8.241-8.237 2.201 0 4.271.857 5.827 2.414s2.414 3.626 2.414 5.827c.001 4.542-3.695 8.237-8.238 8.237l-.059-.03z"/></svg>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-            <div className="bg-white p-4 md:p-7 rounded-2xl border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md group flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-3 md:mb-6 text-slate-400 group-hover:text-primary transition-colors">
-                <span className="font-black text-[9px] uppercase tracking-[0.2em]">Pacientes Hoy</span>
-                <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                  <span className="material-icons-round text-xl">groups</span>
+          {/* ── Stats Grid ── */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+
+            {/* Pacientes Hoy */}
+            <div className="rounded-2xl p-4 flex flex-col justify-between transition-all hover:-translate-y-0.5 group cursor-default"
+              style={{background:'white',border:'1px solid rgba(229,231,235,0.8)',boxShadow:'0 4px 12px rgba(0,0,0,0.05)'}}
+              onMouseEnter={e => (e.currentTarget.style.boxShadow='0 10px 30px rgba(15,94,247,0.08)')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow='0 4px 12px rgba(0,0,0,0.05)')}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{color:'#7A859F'}}>Pacientes Hoy</span>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors group-hover:bg-[rgba(0,179,164,0.10)]" style={{background:'#F5F8FC'}}>
+                  <span className="material-icons-round text-lg transition-colors group-hover:text-[#00B3A4]" style={{color:'#7A859F'}}>groups</span>
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tighter">{myTodayApps.length}</span>
-                <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase tracking-widest border border-emerald-100">En cola</span>
+                <span className="text-4xl font-bold tracking-tight" style={{color:'#0B1736'}}>{myTodayApps.length}</span>
+                <span className="text-[9px] font-semibold px-2 py-0.5 rounded-lg" style={{background:'rgba(34,197,94,0.12)',color:'#16a34a'}}>En cola</span>
               </div>
             </div>
 
-            <div className="bg-white p-4 md:p-7 rounded-2xl border border-slate-100 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md group flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-3 md:mb-6 text-slate-400 group-hover:text-primary transition-colors">
-                <span className="font-black text-[9px] uppercase tracking-[0.2em]">Ingresos Hoy</span>
-                <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                  <span className="material-icons-round text-xl">payments</span>
+            {/* Ingresos Hoy */}
+            <div className="rounded-2xl p-4 flex flex-col justify-between transition-all hover:-translate-y-0.5 group cursor-default"
+              style={{background:'white',border:'1px solid rgba(229,231,235,0.8)',boxShadow:'0 4px 12px rgba(0,0,0,0.05)'}}
+              onMouseEnter={e => (e.currentTarget.style.boxShadow='0 10px 30px rgba(15,94,247,0.08)')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow='0 4px 12px rgba(0,0,0,0.05)')}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{color:'#7A859F'}}>Ingresos Hoy</span>
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors group-hover:bg-[rgba(15,94,247,0.10)]" style={{background:'#F5F8FC'}}>
+                  <span className="material-icons-round text-lg transition-colors group-hover:text-[#0F5EF7]" style={{color:'#7A859F'}}>payments</span>
                 </div>
               </div>
               <div>
-                <h3 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tighter">${totalIncomeToday.toLocaleString('es-CL')}</h3>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total parcial</p>
+                <h3 className="text-2xl font-bold tracking-tight" style={{color:'#0B1736'}}>${totalIncomeToday.toLocaleString('es-CL')}</h3>
+                <p className="text-[9px] font-medium uppercase tracking-widest mt-1" style={{color:'#7A859F'}}>Total parcial</p>
               </div>
             </div>
 
+            {/* Agenda MasLife */}
             <div
-              className="bg-gradient-to-br from-teal-500 to-teal-600 p-4 md:p-7 rounded-2xl border-b-4 border-teal-700 text-white cursor-pointer group relative overflow-hidden transform transition-all hover:-translate-y-1 active:border-b-0 active:translate-y-1 col-span-2 md:col-span-1"
+              className="rounded-2xl p-4 text-white cursor-pointer group relative overflow-hidden transition-all hover:-translate-y-0.5 col-span-2 md:col-span-1"
+              style={{
+                background:'linear-gradient(135deg,#00B3A4 0%,#0F5EF7 100%)',
+                boxShadow:'0 10px 30px rgba(0,179,164,0.30)'
+              }}
+              onMouseEnter={e => (e.currentTarget.style.boxShadow='0 16px 40px rgba(0,179,164,0.40)')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow='0 10px 30px rgba(0,179,164,0.30)')}
               onClick={() => navigate('/pro/settings')}
             >
               <div className="relative z-10 flex items-center justify-between h-full">
                 <div>
-                  <span className="text-white/80 font-black text-[9px] uppercase tracking-[0.3em] block mb-1">Sistema de Agenda</span>
-                  <h3 className="text-lg sm:text-2xl font-black tracking-tight uppercase drop-shadow mb-1.5">AGENDA MASLIFE</h3>
-                  <div className="inline-flex items-center gap-1.5 bg-white/20 px-2.5 py-1 rounded-lg border border-white/30">
-                    <div className="w-1.5 h-1.5 bg-emerald-300 rounded-full animate-pulse"></div>
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">ACTIVE</span>
+                  <span className="block text-[9px] font-medium uppercase tracking-[0.25em] mb-1" style={{color:'rgba(255,255,255,0.70)'}}>Sistema de Agenda</span>
+                  <h3 className="text-lg font-bold tracking-tight uppercase mb-2">AGENDA MASLIFE</h3>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(255,255,255,0.20)',border:'1px solid rgba(255,255,255,0.25)'}}>
+                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:'#22C55E'}}></div>
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.2em]">ACTIVO</span>
                   </div>
                 </div>
-                <div className="bg-white/20 p-2.5 rounded-xl border border-white/30 group-hover:bg-white group-hover:text-teal-600 transition-colors shrink-0">
-                  <span className="material-icons-round text-xl">settings</span>
+                <div className="p-2.5 rounded-xl transition-all group-hover:bg-white shrink-0" style={{background:'rgba(255,255,255,0.20)',border:'1px solid rgba(255,255,255,0.25)'}}>
+                  <span className="material-icons-round text-xl group-hover:text-[#00B3A4] transition-colors">settings</span>
                 </div>
               </div>
+              {/* Orbe decorativo */}
+              <div className="absolute -bottom-8 -right-8 w-28 h-28 rounded-full" style={{background:'rgba(255,255,255,0.10)',filter:'blur(16px)'}} />
             </div>
           </div>
 
           {/* ── Próximas Citas ── */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
-            <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between bg-slate-50/40">
-              <h2 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <div className="rounded-2xl overflow-hidden mb-3"
+            style={{background:'white',border:'1px solid rgba(229,231,235,0.8)',boxShadow:'0 4px 12px rgba(0,0,0,0.05)'}}>
+            <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(229,231,235,0.6)'}}>
+              <h2 className="font-bold text-sm flex items-center gap-2" style={{color:'#0B1736'}}>
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{background:'#22C55E'}}></span>
                 Próximas Citas
               </h2>
-              <button onClick={() => navigate('/pro/agenda', { state: { date: today } })} className="flex items-center gap-1 text-[10px] font-black text-primary uppercase tracking-widest hover:opacity-70 transition-opacity">
+              <button onClick={() => navigate('/pro/agenda', { state: { date: today } })} className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest hover:opacity-70 transition-opacity" style={{color:'#0F5EF7'}}>
                 Ver agenda <span className="material-icons-round text-sm">arrow_forward</span>
               </button>
             </div>
-            <div className="divide-y divide-slate-50">
+            <div className="divide-y" style={{borderColor:'rgba(229,231,235,0.4)'}}>
               {proximasCitas.length > 0 ? proximasCitas.map((p, i) => {
                 const styles = getStatusStyles(p.status, p.color);
                 return (
-                  <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/record/${p.patientId}`) : navigate('/pro/agenda')}>
-                    <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shrink-0">{p.patientName.charAt(0)}</div>
+                  <div key={i} className="px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer group hover:bg-[#F5F8FC]"
+                    onClick={() => p.patientId ? navigate(`/pro/record/${p.patientId}`) : navigate('/pro/agenda')}>
+                    <div className="w-9 h-9 rounded-xl text-white flex items-center justify-center font-bold text-sm shrink-0" style={{background:'#0B1736'}}>{p.patientName.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-black text-slate-900 text-sm truncate">{p.patientName}</p>
-                      <p className="text-[10px] font-bold text-slate-400">{formatAppDate(p.date)} · {p.time} · {p.type}</p>
+                      <p className="font-semibold text-sm truncate" style={{color:'#0B1736'}}>{p.patientName}</p>
+                      <p className="text-[10px] font-medium" style={{color:'#7A859F'}}>{formatAppDate(p.date)} · {p.time} · {p.type}</p>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
-                    <div className="w-8 h-8 bg-primary text-white rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform"><span className="material-icons-round text-base">play_arrow</span></div>
+                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-semibold uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
+                    <div className="w-8 h-8 text-white rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
+                      style={{background:'#00B3A4',boxShadow:'0 4px 8px rgba(0,179,164,0.30)'}}>
+                      <span className="material-icons-round text-base">play_arrow</span>
+                    </div>
                   </div>
                 );
               }) : (
                 <div className="px-4 py-8 text-center">
-                  <span className="material-icons-round text-slate-200 text-4xl block mb-2">event_available</span>
-                  <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">No hay citas próximas agendadas</p>
+                  <span className="material-icons-round text-4xl block mb-2" style={{color:'#e2e8f0'}}>event_available</span>
+                  <p className="text-[10px] font-medium uppercase tracking-widest" style={{color:'#7A859F'}}>No hay citas próximas agendadas</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* ── Citas de Hoy ── */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4">
-            <div className="px-4 py-3 border-b border-slate-50 flex items-center justify-between bg-slate-50/40">
-              <h2 className="font-black text-sm text-slate-900">Citas de Hoy</h2>
-              <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded-lg">{myTodayApps.length}</span>
+          <div className="rounded-2xl overflow-hidden mb-4"
+            style={{background:'white',border:'1px solid rgba(229,231,235,0.8)',boxShadow:'0 4px 12px rgba(0,0,0,0.05)'}}>
+            <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(229,231,235,0.6)'}}>
+              <h2 className="font-bold text-sm" style={{color:'#0B1736'}}>Citas de Hoy</h2>
+              <span className="px-2 py-0.5 text-[10px] font-semibold rounded-lg" style={{background:'rgba(0,179,164,0.10)',color:'#00B3A4'}}>{myTodayApps.length}</span>
             </div>
-            <div className="divide-y divide-slate-50">
+            <div className="divide-y" style={{borderColor:'rgba(229,231,235,0.4)'}}>
               {myTodayApps.length > 0 ? myTodayApps.map((p, i) => {
                 const styles = getStatusStyles(p.status, p.color);
                 return (
-                  <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors cursor-pointer group" onClick={() => p.patientId ? navigate(`/pro/record/${p.patientId}`) : alert('Cita sin paciente asociado')}>
-                    <div className="w-9 h-9 rounded-xl bg-slate-800 text-white flex items-center justify-center font-black text-sm shrink-0">{p.patientName.charAt(0)}</div>
+                  <div key={i} className="px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer group hover:bg-[#F5F8FC]"
+                    onClick={() => p.patientId ? navigate(`/pro/record/${p.patientId}`) : alert('Cita sin paciente asociado')}>
+                    <div className="w-9 h-9 rounded-xl text-white flex items-center justify-center font-bold text-sm shrink-0" style={{background:'#0B1736'}}>{p.patientName.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-black text-slate-900 text-sm truncate">{p.patientName}</p>
-                      <p className="text-[10px] font-bold text-slate-400">{p.time} · {p.type}</p>
+                      <p className="font-semibold text-sm truncate" style={{color:'#0B1736'}}>{p.patientName}</p>
+                      <p className="text-[10px] font-medium" style={{color:'#7A859F'}}>{p.time} · {p.type}</p>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
-                    <div className="w-8 h-8 bg-primary text-white rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform"><span className="material-icons-round text-base">play_arrow</span></div>
+                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-semibold uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
+                    <div className="w-8 h-8 text-white rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
+                      style={{background:'#00B3A4',boxShadow:'0 4px 8px rgba(0,179,164,0.30)'}}>
+                      <span className="material-icons-round text-base">play_arrow</span>
+                    </div>
                   </div>
                 );
               }) : (
                 <div className="px-4 py-8 text-center">
-                  <span className="material-icons-round text-slate-200 text-4xl block mb-2">event_busy</span>
-                  <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Sin citas para hoy</p>
+                  <span className="material-icons-round text-4xl block mb-2" style={{color:'#e2e8f0'}}>event_busy</span>
+                  <p className="text-[10px] font-medium uppercase tracking-widest" style={{color:'#7A859F'}}>Sin citas para hoy</p>
                 </div>
               )}
             </div>
           </div>
-
 
         </div>
       </main>
