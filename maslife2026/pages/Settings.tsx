@@ -284,19 +284,21 @@ const Settings: React.FC = () => {
     <div className="flex-1 flex flex-col min-h-0 w-full bg-slate-50">
       <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 md:p-6">
         <div className="max-w-5xl mx-auto space-y-5 pb-24 md:pb-10">
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <p className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Configuración Maslife</p>
               <h1 className="text-2xl font-black tracking-tight text-black">Ajustes de Cuenta</h1>
               <div className="flex bg-slate-50 p-1.5 rounded-xl mt-4 max-w-fit border border-slate-200 shadow-inner gap-1.5">
-                <button onClick={() => setActiveTab('perfil')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'perfil' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Mi Perfil</button>
-                <button onClick={() => setActiveTab('suscripcion')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'suscripcion' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Suscripción</button>
-                <button onClick={() => setActiveTab('seguridad')} className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'seguridad' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Seguridad</button>
+                <button onClick={() => setActiveTab('perfil')} className={`px-4 lg:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'perfil' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Mi Perfil</button>
+                <button onClick={() => setActiveTab('suscripcion')} className={`px-4 lg:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'suscripcion' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Suscripción</button>
+                <button onClick={() => setActiveTab('seguridad')} className={`px-4 lg:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'seguridad' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Seguridad</button>
               </div>
             </div>
-            {activeTab === 'perfil' && (
-              <div className="flex items-center gap-4">
-                {showSavedMsg && <span className="text-xs font-black text-emerald-500 uppercase tracking-widest animate-in fade-in slide-in-from-right-4">✓ Cambios guardados</span>}
+            <div className="flex items-center gap-3 flex-wrap">
+              {activeTab === 'perfil' && showSavedMsg && (
+                <span className="text-xs font-black text-emerald-500 uppercase tracking-widest animate-in fade-in slide-in-from-right-4">✓ Cambios guardados</span>
+              )}
+              {activeTab === 'perfil' && (
                 <button
                   disabled={!hasChanges}
                   onClick={handleSave}
@@ -304,8 +306,16 @@ const Settings: React.FC = () => {
                 >
                   Guardar Cambios
                 </button>
-              </div>
-            )}
+              )}
+              {/* Cerrar Sesión — visible en todos los tabs, especialmente útil en mobile */}
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-rose-500 border border-rose-200 bg-white hover:bg-rose-50 active:scale-95 transition-all"
+              >
+                <span className="material-icons-round text-sm">logout</span>
+                Cerrar Sesión
+              </button>
+            </div>
           </header>
 
           {activeTab === 'perfil' && (
