@@ -25,6 +25,25 @@ const Settings: React.FC = () => {
 
   // ── Delete Account State ───────────────────────────────────────────────────
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  const handleAdminSSO = async () => {
+    setAdminLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) { setAdminLoading(false); navigate('/admin/login'); return; }
+    const res = await fetch('/api/admin-auth?action=sso', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    setAdminLoading(false);
+    if (res.ok) {
+      const { token } = await res.json();
+      sessionStorage.setItem('maslife_admin_token', token);
+      navigate('/admin/management');
+    } else {
+      navigate('/admin/login');
+    }
+  };
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -306,6 +325,18 @@ const Settings: React.FC = () => {
                   Guardar Cambios
                 </button>
               )}
+              {/* Acceso admin directo — SSO silencioso si el email coincide con ADMIN_EMAIL */}
+              <button
+                onClick={handleAdminSSO}
+                disabled={adminLoading}
+                className="flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-violet-600 border border-violet-200 bg-white hover:bg-violet-50 active:scale-95 transition-all disabled:opacity-60"
+              >
+                {adminLoading
+                  ? <span className="material-icons-round text-sm animate-spin">sync</span>
+                  : <span className="material-icons-round text-sm">admin_panel_settings</span>
+                }
+                Admin
+              </button>
               {/* Cerrar Sesión — visible en todos los tabs, especialmente útil en mobile */}
               <button
                 onClick={onLogout}

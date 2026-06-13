@@ -73,6 +73,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  // ── SSO: sesión Supabase del profesional → token admin ──────────────────
+  // Permite que el admin acceda sin re-ingresar credenciales si ya está logueado
+  if (req.method === 'POST' && req.query.action === 'sso') {
+    if (!checkIpRateLimit(req.headers, 10, 60 * 60 * 1000)) {
+      return res.status(429).json({ error: 'Demasiados intentos.' });
+    }
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+    if (!ADMIN_EMAIL || !ADMIN_JWT_SECRET) return res.status(500).json({ error: 'No configurado' });
+    const authHeader = req.headers.authorization as string | undefined;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Token requerido' });
+    const supabaseJwt = authHeader.slice(7);
+    const adminSupabase = getAdminSupabase();
+    const { data: { user }, error } = await adminSupabase.auth.getUser(supabaseJwt);
+    if (error || !user?.email) return res.status(401).json({ error: 'Sesión inválida' });
+    if (user.email.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim()) {
+      return res.status(403).json({ error: 'Sin permisos de administrador' });
+    }
+    return res.status(200).json({ token: createAdminToken(ADMIN_JWT_SECRET) });
+  }
+
   const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET;
 
   // POST without auth header = login or validate-clinic-code
