@@ -1,5 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { createHmac, timingSafeEqual } from 'crypto';
+
+function verifyAdminJwt(token: string, secret: string): boolean {
+  try {
+    const [payload, sig] = token.split('.');
+    if (!payload || !sig) return false;
+    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString());
+    if (Date.now() > decoded.exp) return false;
+    const expected = createHmac('sha256', secret).update(payload).digest('base64url');
+    const a = Buffer.from(sig); const b = Buffer.from(expected);
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+  } catch { return false; }
+}
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -201,6 +215,23 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
   return data;
 }
 
+function charlaBlastHtml(nombre: string, asunto: string, mensaje: string): string {
+  return `<div style="${BASE_STYLE}">
+    <div style="background:linear-gradient(135deg,#0d9488,#0369a1);border-radius:16px 16px 0 0;padding:32px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:8px;">📢</div>
+      <h1 style="color:white;font-size:22px;margin:0;">${escapeHtml(asunto)}</h1>
+      <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:13px;">Clínica Mas Life · Charlas de salud</p>
+    </div>
+    <div style="${CARD_STYLE}">
+      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(nombre)}</strong>,</p>
+      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(mensaje)}</div>
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
+      <p style="${FOOTER}">Recibiste este mensaje porque te inscribiste a las charlas gratuitas de Clínica Mas Life.<br>
+      Para no recibir más comunicaciones, responde este email solicitando darte de baja.</p>
+    </div>
+  </div>`;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -295,6 +326,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({ submitted: true });
+  }
+
+  // ── Envío masivo a inscritos en charlas (solo admin) ──────────────────────
+  if (req.body?.action === 'charla-blast') {
+    const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET;
+    if (!ADMIN_JWT_SECRET) return res.status(500).json({ error: 'Configuración incompleta' });
+    const authHeader = (req.headers.authorization as string | undefined) || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (!verifyAdminJwt(token, ADMIN_JWT_SECRET)) return res.status(401).json({ error: 'No autorizado' });
+
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
+
+    const { charlaId, asunto, mensaje } = req.body;
+    if (!asunto?.trim() || !mensaje?.trim()) return res.status(400).json({ error: 'asunto y mensaje son requeridos' });
+
+    // Fetch registrations (charla específica o todas)
+    let query = supabase.from('charla_registrations').select('nombre, email').neq('email', '');
+    if (charlaId) query = query.eq('charla_id', charlaId);
+    const { data: regs, error: fetchErr } = await query;
+    if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+    if (!regs || regs.length === 0) return res.status(200).json({ sent: 0, message: 'Sin destinatarios' });
+
+    // Eliminar duplicados por email
+    const seen = new Set<string>();
+    const unique = (regs as { nombre: string; email: string }[]).filter(r => {
+      if (!EMAIL_RE.test(r.email) || seen.has(r.email.toLowerCase())) return false;
+      seen.add(r.email.toLowerCase()); return true;
+    });
+
+    const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+    const cleanAsunto = cleanLine(asunto);
+
+    // Resend batch: máx 100 por request
+    let sent = 0;
+    const chunk = 100;
+    for (let i = 0; i < unique.length; i += chunk) {
+      const batch = unique.slice(i, i + chunk).map(r => ({
+        from: FROM,
+        to: [r.email],
+        subject: cleanAsunto,
+        html: charlaBlastHtml(r.nombre, cleanAsunto, mensaje),
+      }));
+      const batchRes = await fetch('https://api.resend.com/emails/batch', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(batch),
+      });
+      if (batchRes.ok) sent += batch.length;
+    }
+
+    return res.status(200).json({ sent, total: unique.length });
   }
 
   // Rama de diagnóstico: registrar errores del cliente (p. ej. fallos del Brick

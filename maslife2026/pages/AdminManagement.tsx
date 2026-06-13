@@ -44,6 +44,10 @@ const AdminManagement: React.FC = () => {
   const [charlasSaving, setCharlasSaving]   = useState(false);
   const [selectedCharlaRegs, setSelectedCharlaRegs] = useState<{ charla: AdminCharla; regs: AdminReg[] } | null>(null);
   const [regsLoading, setRegsLoading]       = useState(false);
+  const [blastModal, setBlastModal]         = useState<{ charla: AdminCharla | null; totalRegs: number } | null>(null);
+  const [blastForm, setBlastForm]           = useState({ asunto: '', mensaje: '' });
+  const [blastSending, setBlastSending]     = useState(false);
+  const [blastResult, setBlastResult]       = useState<{ sent: number } | null>(null);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || 'https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34';
 
@@ -267,6 +271,37 @@ const AdminManagement: React.FC = () => {
       .order('created_at', { ascending: false });
     setSelectedCharlaRegs({ charla: c, regs: (data || []) as AdminReg[] });
     setRegsLoading(false);
+  };
+
+  const openBlastModal = async (charla: AdminCharla | null) => {
+    // Count recipients
+    let query = supabase.from('charla_registrations').select('id', { count: 'exact', head: true });
+    if (charla) query = query.eq('charla_id', charla.id);
+    const { count } = await query;
+    setBlastForm({ asunto: charla ? `Recordatorio: ${charla.titulo}` : 'Mensaje de Clínica Mas Life', mensaje: '' });
+    setBlastResult(null);
+    setBlastModal({ charla, totalRegs: count || 0 });
+  };
+
+  const handleSendBlast = async () => {
+    if (!blastForm.asunto.trim() || !blastForm.mensaje.trim()) return;
+    setBlastSending(true);
+    const token = sessionStorage.getItem('maslife_admin_token') || '';
+    const body: Record<string, unknown> = {
+      action: 'charla-blast',
+      asunto: blastForm.asunto,
+      mensaje: blastForm.mensaje,
+    };
+    if (blastModal?.charla) body.charlaId = blastModal.charla.id;
+    const res = await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    setBlastSending(false);
+    if (res.ok) { setBlastResult({ sent: json.sent }); }
+    else { showToast(`❌ Error al enviar: ${json.error}`); }
   };
 
   const exportCSV = (regs: AdminReg[], titulo: string) => {
@@ -600,11 +635,18 @@ const AdminManagement: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between mb-5 gap-4 flex-wrap">
               <p className="text-slate-400 text-sm font-bold">{charlasList.length} charla{charlasList.length !== 1 ? 's' : ''} registrada{charlasList.length !== 1 ? 's' : ''}</p>
-              <button onClick={() => openCharlaForm()}
-                className="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
-                <span className="material-icons-round text-base">add</span>
-                Nueva charla
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => openBlastModal(null)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                  <span className="material-icons-round text-base">send</span>
+                  Enviar a todos
+                </button>
+                <button onClick={() => openCharlaForm()}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                  <span className="material-icons-round text-base">add</span>
+                  Nueva charla
+                </button>
+              </div>
             </div>
 
             {charlasLoading ? (
@@ -632,7 +674,12 @@ const AdminManagement: React.FC = () => {
                         {c.ponente && <p className="text-slate-500 text-xs mt-0.5">{c.ponente}</p>}
                         {c.meet_link && <p className="text-teal-500 text-xs mt-0.5 truncate">{c.meet_link}</p>}
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex gap-2 shrink-0 flex-wrap">
+                        <button onClick={() => openBlastModal(c)}
+                          title="Enviar notificación a inscritos"
+                          className="p-2 bg-violet-600/20 hover:bg-violet-600 text-violet-400 hover:text-white rounded-lg transition-all">
+                          <span className="material-icons-round text-base">send</span>
+                        </button>
                         <button onClick={() => loadRegs(c)}
                           title="Ver inscritos"
                           className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-teal-400 rounded-lg transition-all">
@@ -858,6 +905,96 @@ const AdminManagement: React.FC = () => {
                 Guardar link
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Envío masivo (blast) ── */}
+      {blastModal && (
+        <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6">
+          <div className="absolute inset-0 bg-black/60" onClick={() => !blastSending && setBlastModal(null)} />
+          <div className="relative bg-slate-900 border border-white/10 w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
+            <div className="flex items-start justify-between mb-5 gap-3">
+              <div>
+                <p className="text-[10px] font-black text-violet-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                  <span className="material-icons-round text-sm">send</span>
+                  Notificación masiva
+                </p>
+                <h3 className="text-white font-black text-base leading-snug">
+                  {blastModal.charla ? blastModal.charla.titulo : 'Todos los inscritos'}
+                </h3>
+                <p className="text-slate-400 text-xs mt-1">
+                  {blastModal.totalRegs > 0
+                    ? `Se enviará a ${blastModal.totalRegs} persona${blastModal.totalRegs !== 1 ? 's' : ''}`
+                    : 'Sin destinatarios registrados aún'}
+                </p>
+              </div>
+              {!blastSending && (
+                <button onClick={() => setBlastModal(null)} className="p-1.5 hover:bg-slate-800 rounded-xl shrink-0">
+                  <span className="material-icons-round text-slate-400">close</span>
+                </button>
+              )}
+            </div>
+
+            {blastResult ? (
+              <div className="text-center py-10">
+                <div className="w-16 h-16 bg-violet-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="material-icons-round text-violet-400 text-3xl">check_circle</span>
+                </div>
+                <h4 className="text-white font-black text-xl mb-1">¡Enviado!</h4>
+                <p className="text-slate-400 text-sm">Emails enviados a <strong className="text-white">{blastResult.sent}</strong> personas.</p>
+                <button onClick={() => setBlastModal(null)}
+                  className="mt-6 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                  Cerrar
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Asunto *</label>
+                  <input
+                    value={blastForm.asunto}
+                    onChange={e => setBlastForm(f => ({ ...f, asunto: e.target.value }))}
+                    placeholder="Ej: Recordatorio: charla de mañana 20:00 hrs"
+                    disabled={blastSending}
+                    className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500 transition-all disabled:opacity-50" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Mensaje *</label>
+                  <textarea
+                    value={blastForm.mensaje}
+                    onChange={e => setBlastForm(f => ({ ...f, mensaje: e.target.value }))}
+                    rows={7}
+                    placeholder="Hola, te recordamos que mañana jueves tenemos nuestra charla gratuita sobre dolor lumbar a las 20:00 hrs.&#10;&#10;El link de Google Meet es: https://meet.google.com/...&#10;&#10;¡Te esperamos!"
+                    disabled={blastSending}
+                    className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500 transition-all resize-none disabled:opacity-50" />
+                  <p className="text-slate-600 text-[10px] mt-1">El saludo "Hola, [nombre]" se agrega automáticamente.</p>
+                </div>
+
+                {blastModal.totalRegs === 0 && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 flex items-center gap-2">
+                    <span className="material-icons-round text-amber-400 text-base">warning</span>
+                    <p className="text-amber-400 text-xs font-bold">No hay inscritos para esta charla aún.</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-1">
+                  <button onClick={() => setBlastModal(null)} disabled={blastSending}
+                    className="flex-1 py-3 bg-slate-800 text-slate-300 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-700 transition-all disabled:opacity-50">
+                    Cancelar
+                  </button>
+                  <button onClick={handleSendBlast}
+                    disabled={blastSending || !blastForm.asunto.trim() || !blastForm.mensaje.trim() || blastModal.totalRegs === 0}
+                    className="flex-1 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+                    {blastSending ? (
+                      <><span className="material-icons-round text-sm animate-spin">sync</span>Enviando...</>
+                    ) : (
+                      <><span className="material-icons-round text-sm">send</span>Enviar ahora</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
