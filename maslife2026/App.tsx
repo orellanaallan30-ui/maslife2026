@@ -40,16 +40,33 @@ const ProGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   if (!loggedPro) return <Navigate to="/pro/login" replace />;
 
+  // Free-pass: admin-exempted professionals always have access
+  if (loggedPro.subscriptionExempt) return <>{children}</>;
+
+  const GRACE_MS = 5 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  // Check trial expiry (with 5-day grace)
   const trialExpired =
     loggedPro.subscriptionStatus === 'trial' &&
     !loggedPro.isSubscribed &&
     loggedPro.trialEndDate &&
-    new Date(loggedPro.trialEndDate) < new Date();
+    now > new Date(loggedPro.trialEndDate).getTime() + GRACE_MS;
 
-  if (trialExpired) {
+  // Check paused subscription (with 5-day grace)
+  const pausedExpired =
+    loggedPro.subscriptionStatus === 'paused' &&
+    !loggedPro.isSubscribed &&
+    loggedPro.pausedAt &&
+    now > new Date(loggedPro.pausedAt).getTime() + GRACE_MS;
+
+  const isBlocked = trialExpired || pausedExpired;
+  const blockDate = trialExpired ? loggedPro.trialEndDate! : loggedPro.pausedAt!;
+
+  if (isBlocked) {
     const subLink = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK ||
       'https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=e7c9a9a7adc24dee8c1f7fb78bdbdc67';
-    const daysAgo = Math.floor((Date.now() - new Date(loggedPro.trialEndDate!).getTime()) / 86400000);
+    const daysAgo = Math.floor((Date.now() - new Date(blockDate).getTime()) / 86400000);
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
         <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">

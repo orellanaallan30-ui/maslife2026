@@ -158,6 +158,17 @@ const AdminManagement: React.FC = () => {
     }
   };
 
+  const handleToggleExempt = async (pro: ProfessionalProfile) => {
+    const next = !pro.subscriptionExempt;
+    const res = await adminFetch('PATCH', { id: pro.id, subscription_exempt: next });
+    if (res.ok) {
+      setAllPros(prev => prev.map(p => p.id === pro.id ? { ...p, subscriptionExempt: next } : p));
+      showToast(next ? `🎁 Free pass activado: ${pro.name}` : `🔒 Free pass removido: ${pro.name}`);
+    } else {
+      showToast('❌ Error al actualizar free pass');
+    }
+  };
+
   const handleSaveSubLink = async () => {
     if (!subLinkModal) return;
     const res = await adminFetch('PATCH', { id: subLinkModal.pro.id, subscription_link: subLinkModal.link.trim() });
@@ -606,6 +617,16 @@ const AdminManagement: React.FC = () => {
                               <button onClick={() => handleReject(pro)} title="Desactivar aprobación"
                                 className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:bg-amber-600 hover:text-white transition-all border border-white/5">
                                 <span className="material-icons-round text-sm">block</span>
+                              </button>
+                              {/* Free pass / Exento */}
+                              <button onClick={() => handleToggleExempt(pro)}
+                                title={pro.subscriptionExempt ? 'Quitar free pass' : 'Dar free pass (exento de pago)'}
+                                className={`p-2 rounded-xl border transition-all ${
+                                  pro.subscriptionExempt
+                                    ? 'bg-teal-500 text-white border-teal-400 hover:bg-teal-600'
+                                    : 'bg-slate-800 text-slate-400 hover:bg-teal-500 hover:text-white border-white/5'
+                                }`}>
+                                <span className="material-icons-round text-sm">card_giftcard</span>
                               </button>
                               {/* Eliminar */}
                               <button onClick={() => handleDelete(pro)} title="Eliminar permanentemente"

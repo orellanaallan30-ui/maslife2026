@@ -10,6 +10,7 @@ const ADMIN_COLUMNS = [
   'booking_fee', 'charge_full_service', 'booking_payment_link',
   'subscription_link', 'rut', 'modalities', 'services',
   'working_hours', 'schedule', 'needs_password_reset', 'instagram',
+  'subscription_exempt', 'paused_at',
 ].join(', ');
 
 function createAdminToken(secret: string): string {

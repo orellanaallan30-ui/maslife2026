@@ -69,12 +69,37 @@ export async function validateBooking(input: Partial<BookingInput>): Promise<Val
 
   const { data: pro } = await supabase
     .from('professionals')
-    .select('id, name, specialty, email, services, is_public, is_approved, payment_enabled, booking_fee, charge_full_service')
+    .select('id, name, specialty, email, services, is_public, is_approved, payment_enabled, booking_fee, charge_full_service, subscription_exempt, paused_at, subscription_status, trial_end_date')
     .eq('id', professionalId)
     .single();
 
   if (!pro || !pro.is_approved) {
     return { ok: false, error: 'Profesional no encontrado o no disponible', code: 404 };
+  }
+
+  // Subscription enforcement with 5-day grace period (skipped if exempt)
+  if (!pro.subscription_exempt) {
+    const GRACE_DAYS = 5;
+    const now = Date.now();
+
+    // Check paused subscription grace period
+    if (pro.paused_at) {
+      const graceCutoff = new Date(pro.paused_at).getTime() + GRACE_DAYS * 86400000;
+      if (now > graceCutoff) {
+        // Grace expired — lazily hide profile and block booking
+        await supabase.from('professionals').update({ is_public: false }).eq('id', pro.id);
+        return { ok: false, error: 'El profesional no está disponible en este momento', code: 403 };
+      }
+    }
+
+    // Check trial expiry grace period
+    if (pro.subscription_status === 'trial' && pro.trial_end_date) {
+      const trialEnd = new Date(pro.trial_end_date).getTime();
+      if (now > trialEnd + GRACE_DAYS * 86400000) {
+        await supabase.from('professionals').update({ is_public: false }).eq('id', pro.id);
+        return { ok: false, error: 'El profesional no está disponible en este momento', code: 403 };
+      }
+    }
   }
 
   const services = (pro.services as Array<{ name: string; price: number; duration: number }>) || [];

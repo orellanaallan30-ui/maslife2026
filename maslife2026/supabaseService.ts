@@ -332,6 +332,8 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     isSubscribed: (d.is_subscribed as boolean) ?? false,
     subscriptionStatus: (d.subscription_status as ProfessionalProfile['subscriptionStatus']) || 'trial',
     trialEndDate: (d.trial_end_date as string) || undefined,
+    subscriptionExempt: (d.subscription_exempt as boolean) ?? false,
+    pausedAt: (d.paused_at as string) || undefined,
     needsPasswordReset: (d.needs_password_reset as boolean) ?? false,
     paymentEnabled: (d.payment_enabled as boolean) ?? false,
     bookingFee: (d.booking_fee as number) || undefined,

@@ -61,6 +61,8 @@ export interface ProfessionalProfile {
   isSubscribed: boolean;
   subscriptionStatus: SubscriptionStatus; // Nuevo: Control de estado
   trialEndDate?: string; // Nuevo: Fin de 30 días gratis
+  subscriptionExempt?: boolean; // Admin free pass — exento de pago
+  pausedAt?: string; // Timestamp cuando se pausó la suscripción
   nextBillingDate?: string; // Nuevo: Fecha de cobro
   subscriptionLink?: string; // Link de pago personalizado
   bookingPaymentLink?: string; // Link de pago para reservas ($5.000)

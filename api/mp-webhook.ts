@@ -124,13 +124,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             : null;
 
           if (newStatus) {
+            const updateFields: Record<string, unknown> = {
+              subscription_status: newStatus,
+              is_subscribed: newStatus === 'active',
+            };
+            if (newStatus === 'active') {
+              // Reactivated — clear grace period and restore visibility
+              updateFields.is_public = true;
+              updateFields.paused_at = null;
+            } else {
+              // Paused/cancelled — record timestamp, keep visible during 5-day grace
+              updateFields.paused_at = new Date().toISOString();
+            }
             const { error } = await supabase
               .from('professionals')
-              .update({
-                subscription_status: newStatus,
-                is_subscribed: newStatus === 'active',
-                is_public: newStatus === 'active',
-              })
+              .update(updateFields)
               .ilike('email', email);
 
             if (error) console.error('[mp-webhook] supabase update error:', error.message);
