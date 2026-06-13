@@ -803,71 +803,73 @@ Entrega el informe con estas secciones:
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 w-full bg-slate-100 font-sans text-slate-900">
-      <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar relative bg-white md:bg-slate-100">
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm no-print">
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-primary/30 shadow-md bg-primary/5 flex items-center justify-center">
-              <span className="material-icons-round text-slate-500 text-4xl">person</span>
+    <div className={`flex-1 flex flex-col min-h-0 w-full font-sans text-slate-900 ${specialtyKey === 'nutricion' ? 'bg-[#FDF2F8]' : 'bg-slate-100'}`}>
+      <main className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar relative ${specialtyKey === 'nutricion' ? 'bg-[#FDF2F8]' : 'bg-white lg:bg-slate-100'}`}>
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 py-3 lg:py-4 flex items-center justify-between gap-3 shadow-sm no-print">
+          {/* Patient info */}
+          <div className="flex items-center gap-3 lg:gap-6 min-w-0">
+            <div className="w-10 h-10 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl overflow-hidden border-2 border-primary/30 shadow-md bg-primary/5 flex items-center justify-center shrink-0">
+              <span className="material-icons-round text-slate-500 text-2xl lg:text-4xl">person</span>
             </div>
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">{personalData.name}</h1>
-              <p className="text-xs font-bold text-primary uppercase tracking-widest mt-1">Paciente Maslife Premium</p>
+            <div className="min-w-0">
+              <h1 className="text-sm lg:text-2xl font-black text-slate-900 tracking-tight truncate">{personalData.name}</h1>
+              <p className="text-[10px] lg:text-xs font-bold text-primary uppercase tracking-widest mt-0.5">Paciente Maslife Premium</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Indicador de auto-guardado */}
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 lg:gap-3 shrink-0">
+            {/* Auto-save indicator — desktop only */}
             {autoSaveStatus !== 'idle' && (
-              <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 transition-all ${autoSaveStatus === 'saving' ? 'text-amber-500' : 'text-emerald-500'}`}>
+              <span className={`hidden lg:flex text-[10px] font-black uppercase tracking-widest items-center gap-1 transition-all ${autoSaveStatus === 'saving' ? 'text-amber-500' : 'text-emerald-500'}`}>
                 <span className={`material-icons-round text-sm ${autoSaveStatus === 'saving' ? 'animate-spin' : ''}`}>
                   {autoSaveStatus === 'saving' ? 'sync' : 'check_circle'}
                 </span>
-                {autoSaveStatus === 'saving' ? 'Auto-guardando...' : 'Guardado automáticamente'}
+                {autoSaveStatus === 'saving' ? 'Auto-guardando...' : 'Guardado'}
               </span>
             )}
-            {/* Descargar PDF */}
+            {/* PDF */}
             <button
               onClick={handleExportFicha}
-              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-600 shadow-sm hover:bg-rose-100 transition-all border-b-4 border-rose-300 active:border-b-0 active:translate-y-1"
+              className="p-2.5 lg:px-6 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-600 shadow-sm hover:bg-rose-100 transition-all border-b-[3px] lg:border-b-4 border-rose-300 active:border-b-0 active:translate-y-1"
               title="Descargar Ficha como PDF"
             >
               <span className="material-icons-round text-lg">picture_as_pdf</span>
-              PDF
+              <span className="hidden lg:inline">PDF</span>
             </button>
-            {/* Orden */}
+            {/* ORDEN */}
             <button
               onClick={() => setShowOrdenModal(true)}
-              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-sky-50 border border-sky-200 text-sky-600 shadow-sm hover:bg-sky-100 transition-all border-b-4 border-sky-300 active:border-b-0 active:translate-y-1"
+              className="p-2.5 lg:px-6 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-sky-50 border border-sky-200 text-sky-600 shadow-sm hover:bg-sky-100 transition-all border-b-[3px] lg:border-b-4 border-sky-300 active:border-b-0 active:translate-y-1"
               title="Emitir Orden Profesional"
             >
               <span className="material-icons-round text-lg">assignment</span>
-              ORDEN
+              <span className="hidden lg:inline">ORDEN</span>
             </button>
-            {/* Exportar FHIR R4 */}
+            {/* FHIR — desktop only */}
             <button
               onClick={handleExportFhir}
-              className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-violet-50 border border-violet-200 text-violet-600 shadow-sm hover:bg-violet-100 transition-all border-b-4 border-violet-300 active:border-b-0 active:translate-y-1"
+              className="hidden lg:flex px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] items-center gap-2 bg-violet-50 border border-violet-200 text-violet-600 shadow-sm hover:bg-violet-100 transition-all border-b-4 border-violet-300 active:border-b-0 active:translate-y-1"
               title="Exportar registro en formato FHIR R4 (estándar interoperabilidad)"
             >
               <span className="material-icons-round text-lg">data_object</span>
               FHIR
             </button>
-            {/* Compartir con paciente */}
+            {/* Compartir */}
             <div className="relative">
               <button
                 onClick={handleShareWithPatient}
                 disabled={shareLoading}
-                className="px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-600 shadow-sm hover:bg-emerald-100 transition-all border-b-4 border-emerald-300 active:border-b-0 active:translate-y-1 disabled:opacity-50"
+                className="p-2.5 lg:px-6 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-600 shadow-sm hover:bg-emerald-100 transition-all border-b-[3px] lg:border-b-4 border-emerald-300 active:border-b-0 active:translate-y-1 disabled:opacity-50"
                 title="Generar enlace de acceso temporal para el paciente (Ley 20.584)"
               >
                 {shareLoading
                   ? <span className="inline-block w-4 h-4 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin" />
                   : <span className="material-icons-round text-lg">share</span>
                 }
-                COMPARTIR
+                <span className="hidden lg:inline">COMPARTIR</span>
               </button>
               {shareLink && (
-                <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 w-80 space-y-3">
+                <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 w-72 lg:w-80 space-y-3">
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Enlace para el paciente (30 días)</p>
                   <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 px-3 py-2">
                     <span className="text-xs text-slate-600 truncate flex-1">{shareLink}</span>
@@ -883,16 +885,18 @@ Entrega el informe con estas secciones:
                 </div>
               )}
             </div>
-            {/* Guardar manualmente */}
+            {/* Guardar */}
             <button
               onClick={handleSaveAttention}
-              className={`px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-400 border-b-4 border-slate-200 cursor-not-allowed shadow-none'}`}
+              className={`p-2.5 lg:px-10 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] border-b-[3px] lg:border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-400 border-b-[3px] lg:border-b-4 border-slate-200 cursor-not-allowed shadow-none'}`}
             >
               <span className="material-icons-round text-lg">{isSaving ? 'sync' : 'save'}</span>
-              {isSaving ? 'Guardando...' : 'Guardar Ficha'}
+              <span className="hidden lg:inline">{isSaving ? 'Guardando...' : 'Guardar Ficha'}</span>
             </button>
-            <button onClick={() => setShowAiPanel(true)} className="bg-primary text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-3 border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] hover:brightness-110 transition-all">
-              <span className="material-icons-round text-lg">auto_awesome</span> AgenteMasLife
+            {/* AI Agent */}
+            <button onClick={() => setShowAiPanel(true)} className="p-2.5 lg:px-10 lg:py-5 bg-primary text-white rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 border-b-[3px] lg:border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] hover:brightness-110 transition-all">
+              <span className="material-icons-round text-lg">auto_awesome</span>
+              <span className="hidden lg:inline">AgenteMasLife</span>
             </button>
           </div>
         </header>
@@ -910,7 +914,7 @@ Entrega el informe con estas secciones:
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto p-6 space-y-10 pb-24 print:p-0">
+        <div className="max-w-6xl mx-auto p-3 lg:p-6 space-y-4 lg:space-y-10 pb-24 print:p-0">
           {/* Aviso consentimiento informado — Ley 20.584 / CENS RCE */}
           {consentWarning && (
             <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-5 py-4 no-print">
@@ -927,12 +931,12 @@ Entrega el informe con estas secciones:
             </div>
           )}
 
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 print:border-none print:shadow-none">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 print:border-none print:shadow-none">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Identificación del Paciente</h2>
               <button onClick={addCustomField} className="text-xs font-black text-primary bg-primary/5 px-6 py-3 rounded-xl no-print hover:bg-primary/10 transition-all">+ AGREGAR CAMPO</button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
               {[
                 { label: 'Nombre Completo', val: personalData.name, k: 'name' },
                 { label: 'RUT / ID', val: personalData.rut, k: 'rut' },
@@ -973,7 +977,7 @@ Entrega el informe con estas secciones:
                 </div>
               ))}
 
-              <div className="md:col-span-3 space-y-2">
+              <div className="lg:col-span-3 space-y-2">
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Diagnóstico Principal</label>
                 <input value={personalData.diagnoses} onChange={e => { setPersonalData({ ...personalData, diagnoses: e.target.value }); setIsDirtyTrue(); }} className="w-full bg-primary/5 text-primary shadow-inner border border-primary/20 rounded-2xl py-5 px-6 font-black text-lg print:bg-white" placeholder="Ej: Esguince de tobillo grado II..." />
               </div>
@@ -998,7 +1002,7 @@ Entrega el informe con estas secciones:
 
           {kiEvalTab !== 'compare' && (<>
           {/* ── Evaluación Kinesiológica ──────────────────────────────────── */}
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
             {/* Header */}
             <div className="flex flex-wrap justify-between items-start gap-4">
               <div>
@@ -1144,7 +1148,7 @@ Entrega el informe con estas secciones:
           </section>
 
           {/* ── Análisis Biomecánico con IA (fotos + resultado) ── */}
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
             <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
               <div>
                 <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
@@ -1197,7 +1201,7 @@ Entrega el informe con estas secciones:
                 </button>
               </div>
 
-              <div className="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 min-h-[350px] flex flex-col shadow-inner relative">
+              <div className="bg-slate-50 rounded-xl lg:rounded-[2.5rem] p-4 lg:p-10 border border-slate-100 min-h-[200px] lg:min-h-[350px] flex flex-col shadow-inner relative">
                 <div className="flex items-center justify-between mb-8">
                   <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Informe IA Estructurado</h4>
                   {analysisResult && (
@@ -1224,7 +1228,7 @@ Entrega el informe con estas secciones:
 
           {/* ── Vista Comparativa EV1 vs EV2 ─────────────────────────────── */}
           {kiEvalTab === 'compare' && (
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
             <div>
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-slate-800 pl-4">Comparación EV1 vs EV2</h2>
               <p className="text-xs font-bold text-slate-500 uppercase mt-2 tracking-widest pl-5">Evolución kinesiológica del paciente</p>
@@ -1436,11 +1440,11 @@ Entrega el informe con estas secciones:
           </div>
 
           {specialtyKey === 'nutricion' && (
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-10">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-10">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
 
             {/* Inputs antropométricos */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
               {[
                 { l: 'Peso (kg)',        v: nutPeso,    set: (n: number) => { setNutPeso(n);    setIsDirtyTrue(); } },
                 { l: 'Talla (cm)',       v: nutTalla,   set: (n: number) => { setNutTalla(n);   setIsDirtyTrue(); } },
@@ -1456,7 +1460,7 @@ Entrega el informe con estas secciones:
             </div>
 
             {/* Género y nivel de actividad */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Género Biológico</label>
                 <div className="flex gap-3">
@@ -1616,7 +1620,7 @@ Entrega el informe con estas secciones:
             </div>
 
             {/* Objetivos nutricionales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
                 <textarea value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
@@ -1689,7 +1693,7 @@ Entrega el informe con estas secciones:
           )}
 
           {specialtyKey === 'psicologia' && (
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-8">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-8">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
 
             {/* Escala de ánimo */}
@@ -1707,7 +1711,7 @@ Entrega el informe con estas secciones:
             </div>
 
             {/* Antecedentes psiquiátricos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
                 <textarea value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
@@ -1733,7 +1737,7 @@ Entrega el informe con estas secciones:
           )}
 
           {/* ── Nota Clínica SOAP ── */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10">
             {(SOAP_LABELS[specialtyKey] || SOAP_LABELS.kinesiologia).map(f => (
               <div key={f.k} className="bg-white rounded-[3rem] border border-slate-200 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
                 <div className="px-10 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
@@ -1743,14 +1747,14 @@ Entrega el informe con estas secciones:
                 <textarea
                   value={soap[f.k as keyof typeof soap] || ''}
                   onChange={e => { setSoap({ ...soap, [f.k]: e.target.value }); setIsDirtyTrue(); }}
-                  className="p-10 h-56 border-none text-sm font-bold text-slate-600 focus:ring-4 focus:ring-primary/5 inset-0 resize-none leading-relaxed"
+                  className="p-4 lg:p-10 h-40 lg:h-56 border-none text-sm font-bold text-slate-600 focus:ring-4 focus:ring-primary/5 inset-0 resize-none leading-relaxed"
                   placeholder={f.ph}
                 />
               </div>
             ))}
           </section>
 
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
             <div className="flex justify-between items-center mb-10">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Objetivos del Tratamiento</h2>
               <button onClick={addGoal} className="text-[10px] bg-teal-500 text-white shadow-[0_10px_30px_-10px_rgba(20,184,166,0.5)] border-b-4 border-teal-700 px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all no-print flex items-center gap-2">
@@ -1761,7 +1765,7 @@ Entrega el informe con estas secciones:
               {goals.map((obj) => (
                 <div key={obj.id} className="p-8 rounded-[2rem] bg-slate-50/50 border border-slate-100 relative print:bg-white animate-in zoom-in-95 group">
                   <button onClick={() => { setGoals(goals.filter(g => g.id !== obj.id)); setIsDirtyTrue(); }} className="absolute top-8 right-8 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 no-print transition-all"><span className="material-icons-round">delete</span></button>
-                  <div className="flex flex-col md:flex-row gap-10 items-start">
+                  <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 items-start">
                     <div className="flex-1 w-full space-y-2">
                       <input value={obj.name} onChange={e => { setGoals(goals.map(g => g.id === obj.id ? { ...g, name: e.target.value } : g)); setIsDirtyTrue(); }} className="w-full bg-transparent border-none p-0 text-2xl font-black text-slate-800 focus:ring-0" />
                       <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden mt-6 shadow-inner border border-slate-200/50">
@@ -1779,7 +1783,7 @@ Entrega el informe con estas secciones:
             </div>
           </section>
 
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
             <div className="flex justify-between items-center mb-10">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Documentos y Exámenes</h2>
               <button
@@ -1830,7 +1834,7 @@ Entrega el informe con estas secciones:
             )}
           </section>
 
-          <section className="bg-white rounded-[3rem] p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
+          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
             <div className="flex justify-between items-center mb-10">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Bitácora de Evolución</h2>
               <button onClick={addSessionLog} className="text-[10px] bg-white border-b-4 border-slate-200 text-primary shadow-sm px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:bg-slate-50 transition-all no-print flex items-center gap-2">
@@ -1844,7 +1848,7 @@ Entrega el informe con estas secciones:
                   <div className="shrink-0 w-[116px] text-right pt-2">
                     <input type="date" value={log.date} onChange={e => { setSessionLogs(sessionLogs.map(s => s.id === log.id ? { ...s, date: e.target.value } : s)); setIsDirtyTrue(); }} className="text-[10px] font-black text-primary uppercase bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 text-center print:bg-transparent shadow-sm" />
                   </div>
-                  <div className="flex-1 bg-slate-50/80 shadow-inner rounded-[2rem] p-10 border border-slate-200 relative print:bg-white group-hover:bg-white group-hover:shadow-[0_20px_40px_-15px_rgba(19,91,236,0.1)] transition-all">
+                  <div className="flex-1 bg-slate-50/80 shadow-inner rounded-xl lg:rounded-[2rem] p-4 lg:p-10 border border-slate-200 relative print:bg-white group-hover:bg-white group-hover:shadow-[0_20px_40px_-15px_rgba(19,91,236,0.1)] transition-all">
                     <button onClick={() => { setSessionLogs(sessionLogs.filter(s => s.id !== log.id)); setIsDirtyTrue(); }} className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white text-slate-300 hover:text-rose-500 hover:shadow-md border border-slate-100 opacity-0 group-hover:opacity-100 no-print transition-all flex items-center justify-center">
                       <span className="material-icons-round text-sm">delete</span>
                     </button>
