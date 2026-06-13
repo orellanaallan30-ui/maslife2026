@@ -93,21 +93,22 @@ const ProfessionalLogin: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full bg-slate-50 flex items-center justify-center p-4 relative">
+    <div className="flex-1 w-full bg-slate-50 overflow-y-auto relative">
       {/* Fondo decorativo */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-teal-500/6 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-teal-500/4 rounded-full blur-3xl" />
       </div>
 
+      <div className="min-h-full flex items-center justify-center py-8 px-4">
       <div className="w-full max-w-md relative">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-4 lg:mb-8">
           <div className="inline-flex items-center justify-center cursor-pointer mb-2" onClick={() => navigate('/')}>
             <img
               src="/logo-agenda-online.svg"
               alt="Agenda Online - Clínica Mas Life"
-              className="w-full max-w-[310px] h-auto object-contain"
+              className="w-full max-w-[220px] lg:max-w-[310px] h-auto object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
                 (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
@@ -242,6 +243,7 @@ const ProfessionalLogin: React.FC = () => {
         <p className="text-center text-xs text-slate-400 mt-4">
           clinicamaslife.cl · Protegido contra accesos no autorizados
         </p>
+      </div>
       </div>
     </div>
   );
