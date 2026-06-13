@@ -43,7 +43,7 @@ const ReferralProgram: React.FC = () => {
 
   const handleShare = () => {
     if (!referralLink) return;
-    const text = `Regístrate en Clínica Mas Life y obtén tu primer mes gratis: ${referralLink}`;
+    const text = `¡Hola! Soy ${loggedPro?.name || 'un profesional de salud'} y uso Clínica Mas Life para gestionar mi agenda y mis pacientes. Te quiero regalar un mes gratis 🎁 — regístrate con mi código y empieza sin costo: ${referralLink}`;
     if (navigator.share) {
       navigator.share({ title: 'Únete a Clínica Mas Life', text, url: referralLink });
     } else {
