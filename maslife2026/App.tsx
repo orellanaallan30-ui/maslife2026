@@ -35,8 +35,61 @@ import logoAgenda  from './assets/logo-agenda.png';
 
 // ── Guards ────────────────────────────────────────────────────
 const ProGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { loggedPro } = useClinic();
-  return loggedPro ? <>{children}</> : <Navigate to="/pro/login" replace />;
+  const { loggedPro, logout } = useClinic();
+  const navigate = useNavigate();
+
+  if (!loggedPro) return <Navigate to="/pro/login" replace />;
+
+  const trialExpired =
+    loggedPro.subscriptionStatus === 'trial' &&
+    !loggedPro.isSubscribed &&
+    loggedPro.trialEndDate &&
+    new Date(loggedPro.trialEndDate) < new Date();
+
+  if (trialExpired) {
+    const subLink = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK ||
+      'https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=e7c9a9a7adc24dee8c1f7fb78bdbdc67';
+    const daysAgo = Math.floor((Date.now() - new Date(loggedPro.trialEndDate!).getTime()) / 86400000);
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+          <div className="bg-gradient-to-br from-teal-600 to-teal-800 px-8 py-10 text-white text-center">
+            <span className="material-icons-round text-5xl mb-3 block opacity-80">lock_clock</span>
+            <h1 className="text-2xl font-black">Tu prueba gratuita terminó</h1>
+            <p className="text-teal-100 text-sm mt-2">
+              Hace {daysAgo === 0 ? 'menos de 1 día' : `${daysAgo} día${daysAgo === 1 ? '' : 's'}`}
+            </p>
+          </div>
+          <div className="px-8 py-8 space-y-5">
+            <p className="text-slate-700 text-sm leading-relaxed text-center">
+              Para seguir usando tu agenda, fichas clínicas y pagos online, activa tu suscripción Pro por <strong>$24.990/mes</strong>.
+            </p>
+            <ul className="space-y-2 text-sm text-slate-600">
+              {['Agenda online 24/7','Pagos con MercadoPago','Fichas clínicas','Referidos y beneficios'].map(f => (
+                <li key={f} className="flex items-center gap-2">
+                  <span className="material-icons-round text-teal-500 text-base">check_circle</span>{f}
+                </li>
+              ))}
+            </ul>
+            <a href={subLink} target="_blank" rel="noopener noreferrer"
+              className="block w-full py-4 bg-teal-600 hover:bg-teal-700 text-white font-black text-center rounded-2xl transition-all">
+              Activar suscripción — $24.990/mes
+            </a>
+            <p className="text-xs text-slate-400 text-center">
+              ¿Ya pagaste? Puede tomar unos minutos en activarse.{' '}
+              <button onClick={() => window.location.reload()} className="underline">Recargar</button>
+            </p>
+            <button onClick={() => logout(navigate, 'PROFESSIONAL')}
+              className="block w-full text-xs text-slate-400 hover:text-slate-600 text-center py-1 transition-colors">
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 };
 
 const RegistroRedirect: React.FC = () => {
