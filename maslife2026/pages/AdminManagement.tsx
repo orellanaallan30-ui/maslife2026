@@ -4,7 +4,19 @@ import { ProfessionalProfile, SubscriptionStatus } from '../types';
 import { useClinic } from '../ClinicContext';
 import { supabase } from '../supabaseClient';
 
-type AdminTab = 'pending' | 'professionals' | 'config';
+type AdminTab = 'pending' | 'professionals' | 'config' | 'charlas';
+
+interface AdminCharla {
+  id: string; titulo: string; descripcion: string | null;
+  fecha: string; hora: string; duracion_min: number;
+  ponente: string | null; meet_link: string | null; es_activa: boolean;
+  _count?: number;
+}
+interface AdminReg {
+  id: string; nombre: string; apellido: string | null; email: string;
+  celular: string | null; ciudad: string | null; temas_interes: string[] | null;
+  created_at: string; charla_titulo: string | null;
+}
 
 const AdminManagement: React.FC = () => {
   const navigate  = useNavigate();
@@ -19,6 +31,19 @@ const AdminManagement: React.FC = () => {
   const [deleteModal, setDeleteModal]   = useState<ProfessionalProfile | null>(null);
   const [rejectModal, setRejectModal]   = useState<ProfessionalProfile | null>(null);
   const [searchQuery, setSearchQuery]   = useState('');
+
+  // ── Charlas state ──
+  const [charlasList, setCharlasList]     = useState<AdminCharla[]>([]);
+  const [charlasLoading, setCharlasLoading] = useState(false);
+  const [showCharlaForm, setShowCharlaForm] = useState(false);
+  const [editingCharla, setEditingCharla]   = useState<AdminCharla | null>(null);
+  const [charlaFormData, setCharlaFormData] = useState({
+    titulo: '', descripcion: '', fecha: '', hora: '20:00',
+    duracion_min: 60, ponente: 'Equipo Clínica Mas Life', meet_link: '', es_activa: true,
+  });
+  const [charlasSaving, setCharlasSaving]   = useState(false);
+  const [selectedCharlaRegs, setSelectedCharlaRegs] = useState<{ charla: AdminCharla; regs: AdminReg[] } | null>(null);
+  const [regsLoading, setRegsLoading]       = useState(false);
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || 'https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34';
 
@@ -43,6 +68,10 @@ const AdminManagement: React.FC = () => {
     };
     if (isAdmin) loadAll();
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'charlas') loadCharlas();
+  }, [isAdmin, activeTab]);
 
   const pending  = allPros.filter(p => !p.isApproved);
   const approved = allPros.filter(p => p.isApproved);
@@ -171,6 +200,90 @@ const AdminManagement: React.FC = () => {
     }
   };
 
+  // ── Charlas handlers ──
+  const loadCharlas = async () => {
+    setCharlasLoading(true);
+    const { data: charlas } = await supabase.from('charlas').select('*').order('fecha', { ascending: true });
+    const { data: counts } = await supabase
+      .from('charla_registrations')
+      .select('charla_id')
+      .not('charla_id', 'is', null);
+    const countMap: Record<string, number> = {};
+    (counts || []).forEach((r: { charla_id: string }) => { countMap[r.charla_id] = (countMap[r.charla_id] || 0) + 1; });
+    setCharlasList((charlas || []).map((c: AdminCharla) => ({ ...c, _count: countMap[c.id] || 0 })));
+    setCharlasLoading(false);
+  };
+
+  const openCharlaForm = (c?: AdminCharla) => {
+    if (c) {
+      setEditingCharla(c);
+      setCharlaFormData({ titulo: c.titulo, descripcion: c.descripcion || '', fecha: c.fecha,
+        hora: c.hora, duracion_min: c.duracion_min, ponente: c.ponente || '',
+        meet_link: c.meet_link || '', es_activa: c.es_activa });
+    } else {
+      setEditingCharla(null);
+      setCharlaFormData({ titulo: '', descripcion: '', fecha: '', hora: '20:00',
+        duracion_min: 60, ponente: 'Equipo Clínica Mas Life', meet_link: '', es_activa: true });
+    }
+    setShowCharlaForm(true);
+  };
+
+  const handleSaveCharla = async () => {
+    if (!charlaFormData.titulo.trim() || !charlaFormData.fecha || !charlaFormData.hora) return;
+    setCharlasSaving(true);
+    const payload = {
+      titulo: charlaFormData.titulo.trim(),
+      descripcion: charlaFormData.descripcion.trim() || null,
+      fecha: charlaFormData.fecha,
+      hora: charlaFormData.hora,
+      duracion_min: charlaFormData.duracion_min,
+      ponente: charlaFormData.ponente.trim() || null,
+      meet_link: charlaFormData.meet_link.trim() || null,
+      es_activa: charlaFormData.es_activa,
+    };
+    if (editingCharla) {
+      await supabase.from('charlas').update(payload).eq('id', editingCharla.id);
+    } else {
+      await supabase.from('charlas').insert(payload);
+    }
+    setCharlasSaving(false);
+    setShowCharlaForm(false);
+    loadCharlas();
+    showToast(editingCharla ? '✅ Charla actualizada' : '✅ Charla creada');
+  };
+
+  const handleToggleCharla = async (c: AdminCharla) => {
+    await supabase.from('charlas').update({ es_activa: !c.es_activa }).eq('id', c.id);
+    setCharlasList(prev => prev.map(x => x.id === c.id ? { ...x, es_activa: !c.es_activa } : x));
+    showToast(`${!c.es_activa ? '✅ Charla activada' : '⏸️ Charla ocultada'}`);
+  };
+
+  const loadRegs = async (c: AdminCharla) => {
+    setRegsLoading(true);
+    const { data } = await supabase
+      .from('charla_registrations')
+      .select('*')
+      .eq('charla_id', c.id)
+      .order('created_at', { ascending: false });
+    setSelectedCharlaRegs({ charla: c, regs: (data || []) as AdminReg[] });
+    setRegsLoading(false);
+  };
+
+  const exportCSV = (regs: AdminReg[], titulo: string) => {
+    const headers = ['Nombre', 'Apellido', 'Email', 'Celular', 'Ciudad', 'Temas', 'Fecha inscripción'];
+    const rows = regs.map(r => [
+      r.nombre, r.apellido || '', r.email, r.celular || '', r.ciudad || '',
+      (r.temas_interes || []).join(' | '),
+      new Date(r.created_at).toLocaleDateString('es-CL'),
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url;
+    a.download = `inscritos-${titulo.replace(/\s+/g, '-').toLowerCase()}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   if (!isAdmin) return null;
 
   const subStatusBadge = (status: SubscriptionStatus, trialEndDate?: string) => {
@@ -240,6 +353,7 @@ const AdminManagement: React.FC = () => {
           {([
             { id: 'pending',       label: 'Pendientes',    icon: 'pending_actions', count: pending.length },
             { id: 'professionals', label: 'Profesionales', icon: 'groups',          count: 0 },
+            { id: 'charlas',       label: 'Charlas',       icon: 'mic',             count: 0 },
             { id: 'config',        label: 'Config',        icon: 'settings',        count: 0 },
           ] as const).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -480,6 +594,75 @@ const AdminManagement: React.FC = () => {
           </div>
         )}
 
+        {/* ── TAB: Charlas ── */}
+        {activeTab === 'charlas' && (
+          <div>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5 gap-4 flex-wrap">
+              <p className="text-slate-400 text-sm font-bold">{charlasList.length} charla{charlasList.length !== 1 ? 's' : ''} registrada{charlasList.length !== 1 ? 's' : ''}</p>
+              <button onClick={() => openCharlaForm()}
+                className="flex items-center gap-2 px-4 py-2.5 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all">
+                <span className="material-icons-round text-base">add</span>
+                Nueva charla
+              </button>
+            </div>
+
+            {charlasLoading ? (
+              <div className="text-center py-16">
+                <span className="material-icons-round text-3xl text-slate-600 animate-spin block mb-2">sync</span>
+                <p className="text-slate-500 text-sm">Cargando...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {charlasList.map(c => (
+                  <div key={c.id} className="bg-slate-900/60 border border-white/10 rounded-2xl p-4 sm:p-5">
+                    <div className="flex items-start gap-4 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${c.es_activa ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-slate-500/20 text-slate-500 border border-slate-500/20'}`}>
+                            {c.es_activa ? 'Activa' : 'Oculta'}
+                          </span>
+                          {c.meet_link && <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">Meet listo</span>}
+                          {c._count !== undefined && c._count > 0 && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-400 border border-teal-500/20">{c._count} inscrito{c._count !== 1 ? 's' : ''}</span>
+                          )}
+                        </div>
+                        <h4 className="text-white font-black text-sm leading-snug">{c.titulo}</h4>
+                        <p className="text-slate-400 text-xs mt-1">{new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' })} · {c.hora} hrs · {c.duracion_min} min</p>
+                        {c.ponente && <p className="text-slate-500 text-xs mt-0.5">{c.ponente}</p>}
+                        {c.meet_link && <p className="text-teal-500 text-xs mt-0.5 truncate">{c.meet_link}</p>}
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button onClick={() => loadRegs(c)}
+                          title="Ver inscritos"
+                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-teal-400 rounded-lg transition-all">
+                          <span className="material-icons-round text-base">group</span>
+                        </button>
+                        <button onClick={() => openCharlaForm(c)}
+                          title="Editar"
+                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all">
+                          <span className="material-icons-round text-base">edit</span>
+                        </button>
+                        <button onClick={() => handleToggleCharla(c)}
+                          title={c.es_activa ? 'Ocultar' : 'Activar'}
+                          className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 rounded-lg transition-all">
+                          <span className="material-icons-round text-base">{c.es_activa ? 'visibility_off' : 'visibility'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {charlasList.length === 0 && (
+                  <div className="text-center py-16">
+                    <span className="material-icons-round text-5xl text-slate-700 block mb-3">mic_off</span>
+                    <p className="text-slate-500 font-bold">No hay charlas creadas</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── TAB: Config ── */}
         {activeTab === 'config' && (
           <div className="space-y-5">
@@ -675,6 +858,126 @@ const AdminManagement: React.FC = () => {
                 Guardar link
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Crear/Editar Charla ── */}
+      {showCharlaForm && (
+        <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowCharlaForm(false)} />
+          <div className="relative bg-slate-900 border border-white/10 w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-white font-black text-lg">{editingCharla ? 'Editar charla' : 'Nueva charla'}</h3>
+              <button onClick={() => setShowCharlaForm(false)} className="p-1.5 hover:bg-slate-800 rounded-xl transition-colors">
+                <span className="material-icons-round text-slate-400">close</span>
+              </button>
+            </div>
+            <div className="flex flex-col gap-4">
+              {[
+                { label: 'Título *', key: 'titulo', type: 'text', placeholder: 'Ej: Manejo del dolor lumbar' },
+                { label: 'Fecha *', key: 'fecha', type: 'date', placeholder: '' },
+                { label: 'Hora *', key: 'hora', type: 'time', placeholder: '20:00' },
+                { label: 'Ponente', key: 'ponente', type: 'text', placeholder: 'Equipo Clínica Mas Life' },
+                { label: 'Link de Google Meet', key: 'meet_link', type: 'url', placeholder: 'https://meet.google.com/...' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{f.label}</label>
+                  <input
+                    type={f.type}
+                    value={(charlaFormData as Record<string, unknown>)[f.key] as string}
+                    onChange={e => setCharlaFormData(p => ({ ...p, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-teal-500 transition-all" />
+                </div>
+              ))}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Descripción</label>
+                <textarea
+                  value={charlaFormData.descripcion}
+                  onChange={e => setCharlaFormData(p => ({ ...p, descripcion: e.target.value }))}
+                  rows={3} placeholder="Descripción breve de la charla..."
+                  className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-teal-500 transition-all resize-none" />
+              </div>
+              <div className="flex items-center gap-3">
+                <input type="checkbox" id="esActiva" checked={charlaFormData.es_activa}
+                  onChange={e => setCharlaFormData(p => ({ ...p, es_activa: e.target.checked }))}
+                  className="w-4 h-4 accent-teal-500 cursor-pointer" />
+                <label htmlFor="esActiva" className="text-sm text-slate-300 font-bold cursor-pointer">Charla activa (visible en el sitio)</label>
+              </div>
+              <div className="flex gap-3 mt-2">
+                <button onClick={() => setShowCharlaForm(false)}
+                  className="flex-1 py-3 bg-slate-800 text-slate-300 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-700 transition-all">
+                  Cancelar
+                </button>
+                <button onClick={handleSaveCharla} disabled={charlasSaving}
+                  className="flex-1 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-60 flex items-center justify-center gap-2">
+                  {charlasSaving ? <><span className="material-icons-round text-sm animate-spin">sync</span>Guardando...</> : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Inscritos de una charla ── */}
+      {selectedCharlaRegs && (
+        <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setSelectedCharlaRegs(null)} />
+          <div className="relative bg-slate-900 border border-white/10 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
+            <div className="flex items-start justify-between mb-4 gap-3">
+              <div>
+                <p className="text-[10px] font-black text-teal-500 uppercase tracking-widest mb-1">Inscritos</p>
+                <h3 className="text-white font-black text-base leading-snug">{selectedCharlaRegs.charla.titulo}</h3>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {selectedCharlaRegs.regs.length > 0 && (
+                  <button onClick={() => exportCSV(selectedCharlaRegs.regs, selectedCharlaRegs.charla.titulo)}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all">
+                    <span className="material-icons-round text-sm">download</span>
+                    CSV
+                  </button>
+                )}
+                <button onClick={() => setSelectedCharlaRegs(null)} className="p-1.5 hover:bg-slate-800 rounded-xl">
+                  <span className="material-icons-round text-slate-400">close</span>
+                </button>
+              </div>
+            </div>
+            {regsLoading ? (
+              <div className="text-center py-12">
+                <span className="material-icons-round text-3xl text-slate-600 animate-spin block mb-2">sync</span>
+              </div>
+            ) : selectedCharlaRegs.regs.length === 0 ? (
+              <div className="text-center py-12">
+                <span className="material-icons-round text-4xl text-slate-700 block mb-3">group</span>
+                <p className="text-slate-500 font-bold">Sin inscritos aún</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-slate-500 text-xs font-bold mb-3">{selectedCharlaRegs.regs.length} inscrito{selectedCharlaRegs.regs.length !== 1 ? 's' : ''}</p>
+                <div className="space-y-2">
+                  {selectedCharlaRegs.regs.map(r => (
+                    <div key={r.id} className="bg-slate-800 rounded-xl p-3 flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center shrink-0 font-black text-sm">
+                        {r.nombre[0]?.toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-black">{r.nombre} {r.apellido}</p>
+                        <p className="text-teal-400 text-xs">{r.email}</p>
+                        <div className="flex gap-3 mt-0.5 flex-wrap">
+                          {r.celular && <span className="text-slate-400 text-xs">{r.celular}</span>}
+                          {r.ciudad && <span className="text-slate-400 text-xs">📍 {r.ciudad}</span>}
+                          {r.temas_interes && r.temas_interes.length > 0 && (
+                            <span className="text-slate-500 text-xs">{r.temas_interes.join(' · ')}</span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-slate-600 text-[10px] shrink-0">{new Date(r.created_at).toLocaleDateString('es-CL')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

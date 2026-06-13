@@ -17,6 +17,7 @@ import Finances              from './pages/Finances';
 import Settings              from './pages/Settings';
 import ProfessionalAgenda    from './pages/ProfessionalAgenda';
 import ReferralProgram       from './pages/ReferralProgram';
+import Charlas               from './pages/Charlas';
 import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
 import { ConsentAcceptPage } from './pages/ConsentAcceptPage';
@@ -423,6 +424,7 @@ const AppContent: React.FC = () => {
           <Route path="/p/:id"               element={<PatientProfile />} />
           <Route path="/verify/:code"        element={<DocumentVerifier />} />
           <Route path="/consent/:id"         element={<ConsentAcceptPage />} />
+          <Route path="/charlas"             element={<Charlas />} />
           <Route path="/privacidad"          element={<PrivacyPolicy />} />
           <Route path="/terminos"            element={<TermsOfService />} />
           <Route path="/mi-ficha/:token"    element={<PatientPortal />} />

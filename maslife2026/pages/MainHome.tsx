@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import logoClinica from '../assets/logo-clinica.png';
+import { supabase } from '../supabaseClient';
 
 declare global {
   interface Window { gsap: any; ScrollTrigger: any; Lenis: any; }
@@ -37,6 +38,29 @@ const MainHome: React.FC = () => {
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', condition: '' });
   const [contactData, setContactData] = useState({ name: '', phone: '', email: '', message: '' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [charlaForm, setCharlaForm] = useState({ nombre: '', email: '', celular: '' });
+  const [charlaSubmitting, setCharlaSubmitting] = useState(false);
+  const [charlaSuccess, setCharlaSuccess] = useState(false);
+  const [charlaError, setCharlaError] = useState('');
+
+  const handleCharlaSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCharlaError('');
+    if (!charlaForm.nombre.trim()) return setCharlaError('Ingresa tu nombre.');
+    if (!charlaForm.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(charlaForm.email)) return setCharlaError('Ingresa un email válido.');
+    setCharlaSubmitting(true);
+    const { error } = await supabase.from('charla_registrations').insert({
+      charla_id: null,
+      charla_titulo: 'Suscripción general — notificaciones de charlas',
+      nombre: charlaForm.nombre.trim(),
+      email: charlaForm.email.trim().toLowerCase(),
+      celular: charlaForm.celular.trim() || null,
+      acepta_comunicaciones: true,
+    });
+    setCharlaSubmitting(false);
+    if (error) { setCharlaError('Ocurrió un error. Intenta de nuevo.'); }
+    else { setCharlaSuccess(true); }
+  };
   const [activeSpecFilter, setActiveSpecFilter] = useState<'destacados' | 'todos'>('destacados');
   const [scrollY, setScrollY] = useState(0);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
@@ -698,6 +722,101 @@ const MainHome: React.FC = () => {
                 <p className="font-outfit font-light text-[.93rem] leading-[1.65]" style={{ color: '#475569' }}>{step.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════ CHARLAS GRATUITAS ═══════════════════ */}
+      <section id="charlas" className="px-[6vw] py-14 lg:py-20" style={{ background: '#f0fdfa' }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-center">
+
+            {/* Texto izquierda */}
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full mb-5">
+                <span className="material-icons-round text-sm">videocam</span>
+                Google Meet · Sin costo
+              </div>
+              <h2 className="text-3xl lg:text-4xl font-black text-slate-900 leading-tight mb-4">
+                Charlas gratuitas<br className="hidden lg:block" /> de salud en vivo
+              </h2>
+              <p className="text-slate-600 text-base lg:text-lg leading-relaxed mb-6">
+                Aprende con los profesionales de Clínica Mas Life sobre nutrición, kinesiología, dolor crónico, salud mental y más. Charlas prácticas, en vivo, sin costo.
+              </p>
+              <div className="flex flex-wrap gap-3 mb-6">
+                {['Nutrición', 'Kinesiología', 'Dolor crónico', 'Salud mental', 'Deporte'].map(tag => (
+                  <span key={tag} className="bg-white border border-teal-200 text-teal-700 text-xs font-black px-3 py-1.5 rounded-full shadow-sm">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <button onClick={() => navigate('/charlas')}
+                className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-800 font-black text-sm transition-colors underline underline-offset-2">
+                <span className="material-icons-round text-base">arrow_forward</span>
+                Ver todas las charlas disponibles
+              </button>
+            </div>
+
+            {/* Formulario derecha */}
+            <div className="w-full lg:w-[420px] shrink-0">
+              <div className="bg-white rounded-3xl border border-teal-100 shadow-xl p-6 lg:p-8">
+                {charlaSuccess ? (
+                  <div className="text-center py-6">
+                    <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="material-icons-round text-emerald-500 text-3xl">check_circle</span>
+                    </div>
+                    <h4 className="text-lg font-black text-slate-900 mb-2">¡Gracias por inscribirte!</h4>
+                    <p className="text-slate-500 text-sm">Te avisaremos por email cada vez que haya una nueva charla gratuita.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleCharlaSubscribe} className="flex flex-col gap-4">
+                    <div>
+                      <p className="text-xs font-black text-teal-600 uppercase tracking-widest mb-1">Únete a la comunidad</p>
+                      <h3 className="text-xl font-black text-slate-900 leading-snug">Recibe notificaciones de próximas charlas</h3>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Nombre *</label>
+                      <input value={charlaForm.nombre} onChange={e => setCharlaForm(f => ({ ...f, nombre: e.target.value }))}
+                        placeholder="Tu nombre"
+                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Email *</label>
+                      <input type="email" value={charlaForm.email} onChange={e => setCharlaForm(f => ({ ...f, email: e.target.value }))}
+                        placeholder="tu@email.com"
+                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Celular <span className="text-slate-400 font-medium normal-case tracking-normal">(opcional)</span></label>
+                      <input value={charlaForm.celular} onChange={e => setCharlaForm(f => ({ ...f, celular: e.target.value }))}
+                        placeholder="+56 9 ..."
+                        className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
+                    </div>
+
+                    {charlaError && (
+                      <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2">
+                        <span className="material-icons-round text-rose-500 text-base shrink-0 mt-0.5">error</span>
+                        <p className="text-sm text-rose-700 font-medium">{charlaError}</p>
+                      </div>
+                    )}
+
+                    <button type="submit" disabled={charlaSubmitting}
+                      className="w-full py-3.5 bg-teal-500 text-white rounded-2xl font-black text-sm hover:bg-teal-600 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
+                      {charlaSubmitting ? (
+                        <><span className="material-icons-round text-base animate-spin">sync</span>Registrando...</>
+                      ) : (
+                        <><span className="material-icons-round text-base">notifications</span>Quiero enterarme</>
+                      )}
+                    </button>
+                    <p className="text-[10px] text-slate-400 text-center">Sin spam · Solo charlas de salud · Puedes darte de baja cuando quieras</p>
+                  </form>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
