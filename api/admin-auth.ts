@@ -73,8 +73,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET;
+
   // ── SSO: sesión Supabase del profesional → token admin ──────────────────
-  // Permite que el admin acceda sin re-ingresar credenciales si ya está logueado
   if (req.method === 'POST' && req.query.action === 'sso') {
     if (!checkIpRateLimit(req.headers, 10, 60 * 60 * 1000)) {
       return res.status(429).json({ error: 'Demasiados intentos.' });
@@ -92,8 +93,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     return res.status(200).json({ token: createAdminToken(ADMIN_JWT_SECRET) });
   }
-
-  const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET;
 
   // POST without auth header = login or validate-clinic-code
   if (req.method === 'POST' && !req.headers.authorization) {
