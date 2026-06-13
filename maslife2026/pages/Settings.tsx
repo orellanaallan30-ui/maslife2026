@@ -23,6 +23,11 @@ const Settings: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  // ── Delete Account State ───────────────────────────────────────────────────
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // ── MFA State ──────────────────────────────────────────────────────────────
   const [mfaFactors, setMfaFactors] = useState<Array<{ id: string; status: string; friendly_name?: string }>>([]);
   const [mfaEnrolling, setMfaEnrolling] = useState(false);
@@ -68,6 +73,24 @@ const Settings: React.FC = () => {
     if (error) { setMfaMsg({ ok: false, text: error.message }); return; }
     setMfaFactors(prev => prev.filter(f => f.id !== factorId));
     setMfaMsg({ ok: true, text: 'MFA desactivado.' });
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!profile?.id) return;
+    setIsDeleting(true);
+    try {
+      await supabase.from('appointments').delete().eq('professional_id', profile.id);
+      await supabase.from('patients').delete().eq('professional_id', profile.id);
+      await supabase.from('transactions').delete().eq('professional_id', profile.id);
+      await supabase.from('professionals').delete().eq('id', profile.id);
+      await supabase.auth.signOut();
+      navigate('/');
+    } catch (err) {
+      console.error('[deleteAccount]', err);
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      alert('Ocurrió un error. Escribe a soporte@maslife.cl para solicitar la eliminación manualmente.');
+    }
   };
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
@@ -1188,6 +1211,93 @@ const Settings: React.FC = () => {
                   Enviar enlace por email
                 </button>
               </section>
+
+              {/* ── Zona de Peligro ── */}
+              <section className="rounded-2xl border border-rose-200 p-6 space-y-4" style={{ background: '#FFF5F5' }}>
+                <div className="flex items-center gap-3">
+                  <span className="material-icons-round text-rose-500">warning</span>
+                  <h3 className="text-base font-black text-rose-700">Zona de Peligro</h3>
+                </div>
+                <div className="flex items-start justify-between gap-4 flex-col lg:flex-row">
+                  <div>
+                    <p className="text-sm font-bold text-rose-800">Eliminar mi cuenta</p>
+                    <p className="text-xs text-rose-600 mt-1 leading-relaxed max-w-sm">
+                      Esta acción es irreversible. Se eliminarán tu perfil, pacientes, citas y transacciones de forma permanente.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setShowDeleteModal(true); setDeleteConfirmText(''); }}
+                    className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-rose-600 border-2 border-rose-300 hover:bg-rose-100 transition-all active:scale-95"
+                    style={{ background: 'white' }}
+                  >
+                    <span className="material-icons-round text-sm">delete_forever</span>
+                    Eliminar cuenta
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* ── Modal Eliminar Cuenta ── */}
+          {showDeleteModal && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-rose-200 overflow-hidden animate-in zoom-in-95 duration-200">
+                {/* Header */}
+                <div className="p-5 border-b border-rose-100" style={{ background: '#FFF5F5' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
+                      <span className="material-icons-round text-rose-500 text-xl">delete_forever</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-rose-700">Eliminar cuenta permanentemente</p>
+                      <p className="text-xs text-rose-500">Esta acción no se puede deshacer</p>
+                    </div>
+                  </div>
+                </div>
+                {/* Body */}
+                <div className="p-5 space-y-4">
+                  <div className="rounded-xl bg-rose-50 border border-rose-100 p-4 space-y-1">
+                    <p className="text-xs font-black text-rose-700 uppercase tracking-widest">Se eliminará permanentemente:</p>
+                    {['Tu perfil profesional y foto', 'Todos tus pacientes y fichas clínicas', 'Historial de citas y transacciones', 'Acceso a MasLife'].map(item => (
+                      <div key={item} className="flex items-center gap-2 text-xs text-rose-600">
+                        <span className="material-icons-round text-sm">remove_circle_outline</span>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-widest">
+                      Escribe <span className="text-rose-600 font-black">ELIMINAR</span> para confirmar
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={e => setDeleteConfirmText(e.target.value)}
+                      placeholder="ELIMINAR"
+                      className="w-full border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-sm focus:border-rose-400 focus:ring-4 focus:ring-rose-100 transition-all"
+                    />
+                  </div>
+                </div>
+                {/* Footer */}
+                <div className="p-5 pt-0 flex gap-3">
+                  <button
+                    onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+                    className="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteConfirmText !== 'ELIMINAR' || isDeleting}
+                    className="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{ background: deleteConfirmText === 'ELIMINAR' && !isDeleting ? '#E11D48' : undefined }}
+                  >
+                    {isDeleting
+                      ? <><span className="inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" /> Eliminando...</>
+                      : <><span className="material-icons-round text-sm">delete_forever</span> Eliminar</>}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
