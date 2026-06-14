@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import logoClinica from '../assets/logo-clinica.png';
+import logoClinica from '../assets/logo-clinica.webp';
 import { supabase } from '../supabaseClient';
 
 declare global {
@@ -502,7 +502,7 @@ const MainHome: React.FC = () => {
         <div className="absolute top-0 right-0 w-[64%] max-w-[380px] lg:hidden pointer-events-none" style={{ height: '58%' }}>
 
           <img
-            src="/hero-profesional.jpg"
+            src="/hero-profesional.webp"
             alt=""
             className="w-full h-full object-cover object-[center_top]"
             draggable={false}
@@ -597,7 +597,7 @@ const MainHome: React.FC = () => {
             <div className="relative hidden lg:flex items-center justify-end mt-10 lg:mt-0">
               <div className="relative w-full max-w-[520px] h-[clamp(440px,68vh,580px)] rounded-3xl overflow-hidden shadow-2xl">
                 <img
-                  src="/hero-profesional.jpg"
+                  src="/hero-profesional.webp"
                   alt="Profesional de salud Clínica Mas Life"
                   className="w-full h-full object-cover object-[center_top]"
                   draggable={false}
