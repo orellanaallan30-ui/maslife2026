@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
 import { getAllPublicProfessionals } from '../supabaseService';
 import { ProfessionalProfile } from '../types';
-import logoAgenda from '../assets/logo-agenda.webp';
+import logoAgenda from '../assets/logo-agenda.png';
 
 const PatientResults: React.FC = () => {
   const navigate = useNavigate();

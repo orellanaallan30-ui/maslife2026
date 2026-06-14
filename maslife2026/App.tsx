@@ -30,8 +30,8 @@ import GlobalAIPanel    from './components/GlobalAIPanel';
 import ToastContainer   from './components/ToastContainer';
 import { ClinicProvider, useClinic } from './ClinicContext';
 import { AppView, Notification } from './types';
-import logoClinica from './assets/logo-clinica.webp';
-import logoAgenda  from './assets/logo-agenda.webp';
+import logoClinica from './assets/logo-clinica.png';
+import logoAgenda  from './assets/logo-agenda.png';
 
 // ── Guards ────────────────────────────────────────────────────
 const ProGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {

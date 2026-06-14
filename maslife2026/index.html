@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -299,16 +299,37 @@
     }
     </script>
 
-    <!-- Preconnect para fuentes (reduce latencia DNS+TLS) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Fuentes: non-blocking con media trick -->
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Manrope:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Manrope:wght@400;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-      <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    </noscript>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script>
+        try {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#00a89e',
+                            teal: { 50: '#f0fdfa', 500: '#00a89e', 600: '#008c84' },
+                            slate: { 900: '#0f172a', 950: '#020617' },
+                            sage:      '#5c8374',
+                            'sage-deep': '#3a5a4d',
+                            sand:      '#c9a96a',
+                            ink:       '#1c2b27',
+                            'ink-soft':'#44574f',
+                            bone:      '#f4f1ea',
+                            'bone-deep':'#ebe6db',
+                        },
+                        fontFamily: {
+                            sans:    ['Manrope', 'sans-serif'],
+                            outfit:  ['Outfit', 'sans-serif'],
+                            display: ['Fraunces', 'Georgia', 'serif'],
+                        }
+                    }
+                }
+            };
+        } catch(e) { /* Tailwind CDN no disponible */ }
+    </script>
     <style>
         :root { scroll-behavior: smooth; }
 
@@ -376,10 +397,10 @@
 <body class="bg-white text-black min-h-screen selection:bg-sage/30">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    <!-- Animation stack: GSAP + ScrollTrigger + Lenis (deferred) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js" defer></script>
+    <!-- Animation stack: GSAP + ScrollTrigger + Lenis -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
 </body>
 
 </html>
