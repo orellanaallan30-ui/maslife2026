@@ -449,6 +449,7 @@ const MainHome: React.FC = () => {
           <span className="material-icons-round text-xl">{mobileMenuOpen ? 'close' : 'menu'}</span>
         </button>
       </nav>
+      <main>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
@@ -719,7 +720,7 @@ const MainHome: React.FC = () => {
                   <span className="material-icons-round text-xl" style={{ color: '#0284c7' }}>{step.icon}</span>
                 </div>
                 <p className="font-outfit text-[.78rem] tracking-[2px] uppercase mb-4 font-bold" style={{ color: '#06b6d4' }}>{step.step}</p>
-                <h4 className="font-display font-light text-xl mb-3 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h4>
+                <h3 className="font-display font-light text-xl mb-3 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h3>
                 <p className="font-outfit font-light text-[.93rem] leading-[1.65]" style={{ color: '#475569' }}>{step.desc}</p>
               </div>
             ))}
@@ -766,7 +767,7 @@ const MainHome: React.FC = () => {
                     <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
                       <span className="material-icons-round text-emerald-500 text-3xl">check_circle</span>
                     </div>
-                    <h4 className="text-lg font-black text-slate-900 mb-2">¡Gracias por inscribirte!</h4>
+                    <h3 className="text-lg font-black text-slate-900 mb-2">¡Gracias por inscribirte!</h3>
                     <p className="text-slate-500 text-sm">Te avisaremos por email cada vez que haya una nueva charla gratuita.</p>
                   </div>
                 ) : (
@@ -869,7 +870,7 @@ const MainHome: React.FC = () => {
                   <img src={card.img} alt={card.alt || card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4 sm:p-5">
-                  <h4 className="font-display font-light text-sm sm:text-base mb-1 leading-snug" style={{ color: '#0f172a' }}>{card.name}</h4>
+                  <h3 className="font-display font-light text-sm sm:text-base mb-1 leading-snug" style={{ color: '#0f172a' }}>{card.name}</h3>
                   <p className="font-outfit text-xs sm:text-sm font-light leading-relaxed mb-3 line-clamp-2" style={{ color: '#475569' }}>{card.desc}</p>
                   <button className="flex items-center gap-1.5 text-xs font-medium transition-all group-hover:gap-2.5" style={{ color: '#0ea5e9' }}>
                     {card.cta}
@@ -998,6 +999,7 @@ const MainHome: React.FC = () => {
                 <button
                   key={i}
                   onClick={() => setTestimonialIndex(i)}
+                  aria-label={`Ir al testimonio ${i + 1}`}
                   className="h-2 rounded-full transition-all duration-300"
                   style={{ width: i === testimonialIndex ? '2rem' : '.5rem', background: i === testimonialIndex ? '#0284c7' : 'rgba(15,23,42,.2)' }}
                 />
@@ -1007,6 +1009,7 @@ const MainHome: React.FC = () => {
             {/* Flechas */}
             <button
               onClick={() => setTestimonialIndex(prev => prev > 0 ? prev - 1 : maxIndex)}
+              aria-label="Testimonio anterior"
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 w-10 h-10 rounded-full flex items-center justify-center transition-all hidden sm:flex"
               style={{ background: '#fff', border: '1px solid rgba(15,23,42,.12)', boxShadow: '0 4px 16px -4px rgba(15,23,42,.15)' }}
             >
@@ -1014,6 +1017,7 @@ const MainHome: React.FC = () => {
             </button>
             <button
               onClick={() => setTestimonialIndex(prev => prev < maxIndex ? prev + 1 : 0)}
+              aria-label="Testimonio siguiente"
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-10 h-10 rounded-full flex items-center justify-center transition-all hidden sm:flex"
               style={{ background: '#fff', border: '1px solid rgba(15,23,42,.12)', boxShadow: '0 4px 16px -4px rgba(15,23,42,.15)' }}
             >
@@ -1063,6 +1067,7 @@ const MainHome: React.FC = () => {
 
       {/* ═══════════════════ FOOTER ═══════════════════ */}
       {/* ── RESPONSIVE: footer — base=mobile lg:=desktop ── */}
+      </main>
       <footer className="pt-12 lg:pt-20 pb-8 px-[6vw]" style={{ background: '#0f172a', color: '#f0f9ff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-10 mb-10 lg:mb-14">
@@ -1078,7 +1083,7 @@ const MainHome: React.FC = () => {
 
             {/* Servicios */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Servicios</h4>
+              <h3 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Servicios</h3>
               <ul className="space-y-3">
                 {[
                   { label: 'Consulta Guiada', action: () => setIsGeneralFormOpen(true) },
@@ -1096,7 +1101,7 @@ const MainHome: React.FC = () => {
 
             {/* Compañía */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Compañía</h4>
+              <h3 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Compañía</h3>
               <ul className="space-y-3">
                 {[
                   { label: 'Método Life', action: () => {} },
@@ -1120,7 +1125,7 @@ const MainHome: React.FC = () => {
 
             {/* Legal */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Legal</h4>
+              <h3 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Legal</h3>
               <ul className="space-y-3">
                 {[{ label: 'Privacidad', href: '/privacidad' }, { label: 'Términos', href: '/terminos' }].map(({ label, href }) => (
                   <li key={label}>
@@ -1138,6 +1143,7 @@ const MainHome: React.FC = () => {
             <p className="font-outfit text-xs" style={{ color: 'rgba(255,255,255,.35)' }}>© 2026 Clínica Mas Life · Ovalle, Coquimbo y La Serena, Chile</p>
             <div className="flex gap-3">
               <a href="https://wa.me/56965329974" target="_blank" rel="noreferrer"
+                 aria-label="Contactar por WhatsApp"
                  className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
                  style={{ background: 'rgba(255,255,255,.08)' }}
                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,.15)'}
@@ -1160,6 +1166,7 @@ const MainHome: React.FC = () => {
         href="https://wa.me/56965329974?text=Hola! Me gustaría que me asignen un profesional de Clínica Mas Life o hacer una consulta."
         target="_blank"
         rel="noreferrer"
+        aria-label="Contactar por WhatsApp"
         className="fixed bottom-6 right-6 z-[100] group"
       >
         {/* Pulse animation */}
