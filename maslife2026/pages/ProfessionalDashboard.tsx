@@ -15,18 +15,19 @@ const ProfessionalDashboard: React.FC = () => {
   const [serverSubStatus, setServerSubStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from('professionals')
-      .select('subscription_status')
-      .eq('id', loggedPro.id)
-      .single()
-      .then(({ data }) => {
-        if (data?.subscription_status) setServerSubStatus(data.subscription_status);
-      })
-      .catch(() => {
-        // Sin conexión: usar estado local como fallback
-        setServerSubStatus(loggedPro.subscriptionStatus);
-      });
+    void Promise.resolve(
+      supabase
+        .from('professionals')
+        .select('subscription_status')
+        .eq('id', loggedPro.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.subscription_status) setServerSubStatus(data.subscription_status);
+        })
+    ).catch(() => {
+      // Sin conexión: usar estado local como fallback
+      setServerSubStatus(loggedPro.subscriptionStatus);
+    });
   }, [loggedPro.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // El estado del servidor tiene precedencia; fallback al local mientras carga

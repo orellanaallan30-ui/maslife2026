@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate } from './types';
+import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate, Notification } from './types';
 import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, deleteAppointment as deleteAppointmentDB, saveTransaction, batchInsertBlocks, deleteBlocksByRecurrence } from './supabaseService';
 
 interface ClinicContextType {

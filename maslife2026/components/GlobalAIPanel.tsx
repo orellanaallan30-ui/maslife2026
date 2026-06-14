@@ -318,13 +318,6 @@ REGLAS:
         for (const toolBlock of toolUseBlocks) {
           const functionResult = await executeFunction(toolBlock.name, toolBlock.input);
 
-          // Audit log
-          void supabaseService.saveAuditLog({
-            action: `AI_EXECUTE_${toolBlock.name.toUpperCase()}`,
-            details: `Params: ${JSON.stringify(toolBlock.input)} | Result: ${functionResult}`,
-            professionalId: loggedPro?.id || 'pro-rodrigo'
-          });
-
           toolResults.push({
             type: 'tool_result',
             tool_use_id: toolBlock.id,

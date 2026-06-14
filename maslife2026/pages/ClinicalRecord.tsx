@@ -766,7 +766,7 @@ Entrega el informe con estas secciones:
     onUpdatePatient(buildUpdatedPatient());
 
     // Guardar versión SOAP inmutable (CENS RCE — historial de versiones)
-    if (initialPatient?.id && loggedPro?.id && Object.values(soap).some(v => v?.trim())) {
+    if (initialPatient?.id && loggedPro?.id && Object.values(soap).some(v => (v as string)?.trim())) {
       supabase.from('soap_versions').insert({
         patient_id: initialPatient.id,
         professional_id: loggedPro.id,

@@ -1,4 +1,4 @@
-import { vi, afterEach } from 'vitest';
+import { vi, afterEach, beforeEach } from 'vitest';
 
 // Silencia console.error en paths de error esperados
 beforeEach(() => {

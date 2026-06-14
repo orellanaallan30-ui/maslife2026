@@ -28,13 +28,14 @@ const PatientPortal: React.FC = () => {
 
   useEffect(() => {
     if (!token) { setError('Enlace inválido.'); setLoading(false); return; }
-    supabase.rpc('get_patient_by_token', { p_token: token })
-      .then(({ data: res, error: err }) => {
-        if (err || !res) { setError('No se pudo cargar la información.'); return; }
-        if (res.error) { setError(res.error); return; }
-        setData(res as PortalData);
-      })
-      .finally(() => setLoading(false));
+    void Promise.resolve(
+      supabase.rpc('get_patient_by_token', { p_token: token })
+        .then(({ data: res, error: err }) => {
+          if (err || !res) { setError('No se pudo cargar la información.'); return; }
+          if ((res as { error?: string }).error) { setError((res as { error?: string }).error!); return; }
+          setData(res as PortalData);
+        })
+    ).finally(() => setLoading(false));
   }, [token]);
 
   if (loading) {
@@ -128,7 +129,7 @@ const PatientPortal: React.FC = () => {
         )}
 
         {/* Nota SOAP */}
-        {Object.values(soap).some(v => v?.trim()) && (
+        {Object.values(soap).some(v => (v as string)?.trim()) && (
           <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
             <h2 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Nota Clínica (SOAP)</h2>
             <div className="grid grid-cols-1 gap-4">

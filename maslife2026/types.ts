@@ -97,6 +97,7 @@ export interface ProfessionalProfile {
   referredBy?:        string;
   referralCreditClp?: number;
   termsAcceptedAt?:   string;
+  rut?:               string;
 }
 
 export interface Appointment {
