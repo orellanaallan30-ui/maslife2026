@@ -215,6 +215,31 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
   return data;
 }
 
+function ratingRequestHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; reviewLink: string }): string {
+  const dateFormatted = p.date ? new Date(p.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  return `<div style="${BASE_STYLE}">
+    <div style="background:linear-gradient(135deg,#0d9488,#0369a1);border-radius:16px 16px 0 0;padding:32px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:8px;">⭐</div>
+      <h1 style="color:white;font-size:22px;margin:0;">¿Cómo fue tu atención?</h1>
+      <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:13px;">Tu opinión ayuda a otros pacientes</p>
+    </div>
+    <div style="${CARD_STYLE}">
+      <p style="color:#334155;font-size:16px;margin:0 0 16px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
+      <p style="color:#475569;font-size:15px;margin:0 0 24px;line-height:1.6;">
+        Tu sesión de <strong>${escapeHtml(p.serviceName)}</strong>${dateFormatted ? ` del ${dateFormatted}` : ''} con
+        <strong>${escapeHtml(p.professionalName)}</strong> ha finalizado. Nos gustaría saber cómo fue tu experiencia.
+      </p>
+      <div style="text-align:center;margin:0 0 24px;font-size:32px;letter-spacing:4px;color:#f59e0b;">★★★★★</div>
+      <div style="text-align:center;margin:0 0 24px;">
+        <a href="${p.reviewLink}" style="display:inline-block;background:#0d9488;color:white;text-decoration:none;font-weight:800;font-size:15px;padding:14px 32px;border-radius:12px;">
+          Dejar mi calificación →
+        </a>
+      </div>
+      <p style="${FOOTER}">Tu RUT solo se usa para verificar que fuiste atendido/a. No se publica.<br>Este es un mensaje automático de Clínica Mas Life.</p>
+    </div>
+  </div>`;
+}
+
 function charlaBlastHtml(nombre: string, asunto: string, mensaje: string): string {
   return `<div style="${BASE_STYLE}">
     <div style="background:linear-gradient(135deg,#0d9488,#0369a1);border-radius:16px 16px 0 0;padding:32px;text-align:center;">
@@ -326,6 +351,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({ submitted: true });
+  }
+
+  // ── Solicitud de calificación post-atención ────────────────────────────────
+  if (req.body?.action === 'rating-request') {
+    const { patientEmail, patientName, professionalName, professionalId, proSlug, serviceName, date } = req.body || {};
+
+    if (!patientEmail || !EMAIL_RE.test(String(patientEmail)))
+      return res.status(400).json({ error: 'Email inválido' });
+    if (!professionalId || !patientName || !professionalName)
+      return res.status(400).json({ error: 'Faltan parámetros requeridos' });
+
+    const { data: pro } = await supabase
+      .from('professionals')
+      .select('reviews_enabled')
+      .eq('id', professionalId)
+      .single();
+    if (!pro?.reviews_enabled)
+      return res.status(403).json({ error: 'Este profesional no acepta calificaciones.' });
+
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
+    const FROM = process.env.EMAIL_FROM || 'notificaciones@clinicamaslife.cl';
+
+    const reviewLink = `https://clinicamaslife.cl/p/${proSlug || professionalId}?review=1&name=${encodeURIComponent(String(patientName))}`;
+    const subject = `¿Cómo fue tu atención con ${escapeHtml(String(professionalName))}? ⭐`;
+    await sendEmail(RESEND_KEY, FROM, String(patientEmail), subject,
+      ratingRequestHtml({
+        professionalName: String(professionalName),
+        patientName: String(patientName),
+        serviceName: String(serviceName || 'Consulta'),
+        date: String(date || ''),
+        reviewLink,
+      })
+    );
+    return res.status(200).json({ ok: true });
   }
 
   // ── Envío masivo a inscritos en charlas (solo admin) ──────────────────────

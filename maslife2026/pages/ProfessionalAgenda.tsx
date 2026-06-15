@@ -245,6 +245,30 @@ const ProfessionalAgenda: React.FC = () => {
 
    const handleStatusChange = (newStatus: Appointment['status']) => {
       if (!editingApp) return;
+
+      // Enviar email de calificación solo la primera vez que se marca Finalizado
+      if (
+        newStatus === 'Finalizado' &&
+        editingApp.status !== 'Finalizado' &&
+        editingApp.patientEmail &&
+        loggedPro?.reviewsEnabled
+      ) {
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'rating-request',
+            patientEmail: editingApp.patientEmail,
+            patientName: editingApp.patientName,
+            professionalName: loggedPro.name,
+            professionalId: loggedPro.id,
+            proSlug: loggedPro.slug,
+            serviceName: editingApp.serviceName,
+            date: editingApp.date,
+          }),
+        }).catch(() => {});
+      }
+
       const updatedApp = { ...editingApp, status: newStatus };
       setEditingApp(updatedApp);
       updateAppointment(updatedApp);

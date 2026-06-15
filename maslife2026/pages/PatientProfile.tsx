@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Appointment, Service, Review } from '../types';
 import { useClinic } from '../ClinicContext';
 import { getProfessionalBySlugOrId, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
@@ -34,7 +34,12 @@ const validatePhone = (phone: string): boolean => {
 const PatientProfile: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { professionals, appointments } = useClinic();
+
+  const _urlParams      = new URLSearchParams(location.search);
+  const _autoOpenReview = _urlParams.get('review') === '1';
+  const _autoNameParam  = _urlParams.get('name') ? decodeURIComponent(_urlParams.get('name')!) : '';
 
   const localDoctor = professionals.find(p => p.id === id || p.slug === id);
   const [fetchedDoctor, setFetchedDoctor] = useState(localDoctor ?? null);
@@ -56,9 +61,9 @@ const PatientProfile: React.FC = () => {
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [rating, setRating] = useState<{ avg: number; count: number }>({ avg: 0, count: 0 });
-  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(_autoOpenReview);
   const [reviewRut, setReviewRut] = useState('');
-  const [reviewName, setReviewName] = useState('');
+  const [reviewName, setReviewName] = useState(_autoNameParam);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewStatus, setReviewStatus] = useState<'idle'|'loading'|'success'|'error'>('idle');
