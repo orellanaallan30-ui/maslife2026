@@ -114,7 +114,7 @@ const Settings: React.FC = () => {
     }
   };
 
-  const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=7e9fa964bb6d4ecd89058685ba8a5b34";
+  const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=e7c9a9a7adc24dee8c1f7fb78bdbdc67";
   const mpLinkWithBack = (localProfile?.subscriptionLink && localProfile.subscriptionLink.trim()) || MP_SUBSCRIPTION_LINK;
   const SUPPORT_PHONE = import.meta.env.VITE_SUPPORT_PHONE || '+56965329974';
   const [subscribedMsg, setSubscribedMsg] = useState(false);

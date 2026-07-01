@@ -7,6 +7,43 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
 );
 
+const escapeHtml = (s: string): string =>
+  String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+// Alerta al admin cuando MercadoPago reporta un pago de suscripción pero ningún
+// profesional coincide con el payer_email. Best-effort: nunca rompe el webhook.
+async function notifyAdminOrphanPreapproval(payerEmail: string, mpStatus: string, preapprovalId: string): Promise<void> {
+  try {
+    const RESEND_KEY  = process.env.RESEND_API_KEY;
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+    const FROM        = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+    if (!RESEND_KEY || !ADMIN_EMAIL) {
+      console.error('[mp-webhook] no se pudo alertar al admin: falta RESEND_API_KEY o ADMIN_EMAIL');
+      return;
+    }
+    const html = `
+      <div style="font-family:sans-serif;line-height:1.5;color:#0f172a">
+        <h2 style="color:#b45309">⚠️ Pago de suscripción sin profesional vinculado</h2>
+        <p>MercadoPago reportó un evento de suscripción pero <b>ningún profesional tiene ese email registrado</b>. La suscripción NO se reactivó automáticamente.</p>
+        <table style="border-collapse:collapse;margin:12px 0">
+          <tr><td style="padding:4px 8px"><b>Email del pago (MP):</b></td><td style="padding:4px 8px">${escapeHtml(payerEmail)}</td></tr>
+          <tr><td style="padding:4px 8px"><b>Estado en MP:</b></td><td style="padding:4px 8px">${escapeHtml(mpStatus)}</td></tr>
+          <tr><td style="padding:4px 8px"><b>Preapproval ID:</b></td><td style="padding:4px 8px">${escapeHtml(preapprovalId)}</td></tr>
+        </table>
+        <p><b>Acción:</b> entra al panel admin, busca al profesional y usa "Activar suscripción", o corrige el email registrado para que coincida con el de MercadoPago.</p>
+      </div>`;
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM, to: [ADMIN_EMAIL], subject: '⚠️ Pago de suscripción sin profesional vinculado', html }),
+    });
+    if (!resp.ok) console.error('[mp-webhook] fallo al enviar alerta admin:', resp.status);
+    else console.log('[mp-webhook] alerta de conciliación enviada al admin');
+  } catch (e) {
+    console.error('[mp-webhook] error enviando alerta admin:', e);
+  }
+}
+
 function validateSignature(req: VercelRequest, secret: string): boolean {
   try {
     const xSignature = req.headers['x-signature'] as string;
@@ -136,13 +173,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               // Paused/cancelled — record timestamp, keep visible during 5-day grace
               updateFields.paused_at = new Date().toISOString();
             }
-            const { error } = await supabase
+            const { data: updatedPros, error } = await supabase
               .from('professionals')
               .update(updateFields)
-              .ilike('email', email);
+              .ilike('email', email)
+              .select('id');
 
-            if (error) console.error('[mp-webhook] supabase update error:', error.message);
-            else console.log('[mp-webhook] subscription updated for', masked, '->', newStatus);
+            if (error) {
+              console.error('[mp-webhook] supabase update error:', error.message);
+            } else if (!updatedPros || updatedPros.length === 0) {
+              // Pago recibido pero ningún profesional coincide con el payer_email.
+              // Antes esto fallaba en silencio; ahora se registra y se alerta al admin.
+              console.error('[mp-webhook] ❌ SIN COINCIDENCIA para', masked, '- status MP:', sub.status);
+              await notifyAdminOrphanPreapproval(email, String(sub.status), String(preapprovalId));
+            } else {
+              console.log('[mp-webhook] subscription updated for', masked, '->', newStatus);
+            }
           }
         }
       } catch (e) {
