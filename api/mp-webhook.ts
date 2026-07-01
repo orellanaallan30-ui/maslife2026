@@ -10,6 +10,26 @@ const supabase = createClient(
 const escapeHtml = (s: string): string =>
   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 
+// Registro permanente de cada webhook en Supabase para diagnóstico. Best-effort:
+// nunca rompe el procesamiento del webhook si el insert falla.
+async function logWebhookEvent(fields: {
+  event_type?: string;
+  action?: string;
+  mp_data_id?: string;
+  signature_valid?: boolean;
+  mp_status?: string;
+  payer_email?: string;
+  matched_professional_id?: string | null;
+  outcome: string;
+  detail?: string;
+}): Promise<void> {
+  try {
+    await supabase.from('webhook_events').insert(fields);
+  } catch (e) {
+    console.error('[mp-webhook] no se pudo registrar webhook_event:', e);
+  }
+}
+
 // Alerta al admin cuando MercadoPago reporta un pago de suscripción pero ningún
 // profesional coincide con el payer_email. Best-effort: nunca rompe el webhook.
 async function notifyAdminOrphanPreapproval(payerEmail: string, mpStatus: string, preapprovalId: string): Promise<void> {
@@ -77,10 +97,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // suscripciones sin pagar). Configura MERCADOPAGO_WEBHOOK_SECRET en Vercel.
   if (!WEBHOOK_SECRET) {
     console.error('[mp-webhook] MERCADOPAGO_WEBHOOK_SECRET no configurado — rechazando');
+    await logWebhookEvent({
+      event_type: req.body?.type, action: req.body?.action, mp_data_id: req.body?.data?.id,
+      signature_valid: false, outcome: 'no_secret',
+    });
     return res.status(503).json({ error: 'Webhook secret not configured' });
   }
   if (!validateSignature(req, WEBHOOK_SECRET)) {
     console.warn('[mp-webhook] Invalid signature');
+    await logWebhookEvent({
+      event_type: req.body?.type, action: req.body?.action, mp_data_id: req.body?.data?.id,
+      signature_valid: false, outcome: 'signature_rejected',
+    });
     return res.status(401).json({ error: 'Invalid signature' });
   }
 
@@ -120,6 +148,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           if (error) {
             console.error('[mp-webhook] reconcile error:', error.message);
+            await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, outcome: 'error', detail: error.message });
           } else if (updated?.length) {
             console.log('[mp-webhook] cita conciliada:', ref);
             // Registrar ingreso en transactions para el panel de finanzas
@@ -133,10 +162,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               type: 'Ingreso',
             });
             if (txErr) console.error('[mp-webhook] transaction insert error:', txErr.message);
+            await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, matched_professional_id: apt.professional_id, outcome: 'matched_updated', detail: `cita ${ref}` });
+          } else {
+            await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, outcome: 'ignored_status', detail: 'cita no pendiente o ref no aprobada' });
           }
         }
       } catch (e) {
         console.error('[mp-webhook] Error consultando pago:', e);
+        await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, outcome: 'error', detail: String(e) });
       }
     }
   }
@@ -181,18 +214,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             if (error) {
               console.error('[mp-webhook] supabase update error:', error.message);
+              await logWebhookEvent({ event_type: 'preapproval', mp_data_id: String(preapprovalId), signature_valid: true, mp_status: String(sub.status), payer_email: email, outcome: 'error', detail: error.message });
             } else if (!updatedPros || updatedPros.length === 0) {
               // Pago recibido pero ningún profesional coincide con el payer_email.
               // Antes esto fallaba en silencio; ahora se registra y se alerta al admin.
               console.error('[mp-webhook] ❌ SIN COINCIDENCIA para', masked, '- status MP:', sub.status);
+              await logWebhookEvent({ event_type: 'preapproval', mp_data_id: String(preapprovalId), signature_valid: true, mp_status: String(sub.status), payer_email: email, outcome: 'unmatched' });
               await notifyAdminOrphanPreapproval(email, String(sub.status), String(preapprovalId));
             } else {
               console.log('[mp-webhook] subscription updated for', masked, '->', newStatus);
+              await logWebhookEvent({ event_type: 'preapproval', mp_data_id: String(preapprovalId), signature_valid: true, mp_status: String(sub.status), payer_email: email, matched_professional_id: updatedPros[0].id, outcome: 'matched_updated' });
             }
+          } else {
+            // Estado de MP que no mapeamos (p.ej. 'pending') — lo registramos para no perderlo.
+            await logWebhookEvent({ event_type: 'preapproval', mp_data_id: String(preapprovalId), signature_valid: true, mp_status: String(sub.status), payer_email: email, outcome: 'ignored_status' });
           }
+        } else {
+          await logWebhookEvent({ event_type: 'preapproval', mp_data_id: String(preapprovalId), signature_valid: true, mp_status: String(sub.status), outcome: 'ignored_status', detail: 'sin payer_email' });
         }
       } catch (e) {
         console.error('[mp-webhook] Error consultando preapproval:', e);
+        await logWebhookEvent({ event_type: 'preapproval', mp_data_id: String(preapprovalId), signature_valid: true, outcome: 'error', detail: String(e) });
       }
     }
   }
