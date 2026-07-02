@@ -630,20 +630,29 @@ Entrega el informe con estas secciones:
     if (!file) return;
     e.target.value = '';
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    // Bucket PRIVADO (Ley 21.719): fotos clínicas de pacientes nunca en bucket público.
+    // RLS de storage acota la carpeta al profesional dueño; se accede con URL firmada.
     const path = `${loggedPro?.id || 'unknown'}/${Date.now()}.${ext}`;
     const { data: uploaded, error } = await supabase.storage
-      .from('patients-images')
+      .from('clinical-images')
       .upload(path, file, { upsert: true });
     if (error || !uploaded) {
       toast.error('No se pudo subir la imagen. Intenta de nuevo.');
       return;
     }
-    const { data: { publicUrl } } = supabase.storage.from('patients-images').getPublicUrl(uploaded.path);
+    const { data: signed, error: signErr } = await supabase.storage
+      .from('clinical-images')
+      .createSignedUrl(uploaded.path, 60 * 60 * 24 * 365 * 5); // 5 años
+    if (signErr || !signed?.signedUrl) {
+      toast.error('No se pudo generar el acceso a la imagen. Intenta de nuevo.');
+      return;
+    }
+    const imageUrl = signed.signedUrl;
     const slot = uploadSlotRef.current;
     setAnalysisImages(prev => {
       const next = [...prev];
-      if (slot >= 0) { next[slot] = publicUrl; return next; }
-      return [...next, publicUrl].slice(0, 4);
+      if (slot >= 0) { next[slot] = imageUrl; return next; }
+      return [...next, imageUrl].slice(0, 4);
     });
     setIsDirtyTrue();
   };

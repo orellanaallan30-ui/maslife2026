@@ -13,7 +13,7 @@ vi.mock('../supabaseClient', () => ({
 }));
 
 import { supabase } from '../supabaseClient';
-import { auditService } from '../auditService';
+import { auditService, _resetIpCacheForTests } from '../auditService';
 
 // ── Helper: query-builder encadenable ────────────────────────────────────────
 function makeBuilder(result: { data?: unknown; error?: unknown } = { data: null, error: null }) {
@@ -43,6 +43,7 @@ const sampleLogArgs = {
 // ═════════════════════════════════════════════════════════════════════════════
 describe('auditService.log', () => {
   beforeEach(() => {
+    _resetIpCacheForTests(); // la IP se cachea a nivel de módulo — aislar cada caso
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       json: vi.fn().mockResolvedValue({ ip: '192.168.1.1' }),
     }));

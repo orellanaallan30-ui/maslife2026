@@ -10,6 +10,8 @@ import { AuditAction } from './types_clinical';
 // Caché de IP a nivel de módulo: evita golpear ipify en cada evento auditado
 // (p. ej. auto-save clínico). Se resuelve una vez por sesión de página.
 let cachedIP: string | null = null;
+/** Solo para tests: limpia la caché de IP entre casos. */
+export function _resetIpCacheForTests(): void { cachedIP = null; }
 async function getClientIP(): Promise<string> {
   if (cachedIP) return cachedIP;
   try {
