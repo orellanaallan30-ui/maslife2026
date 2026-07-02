@@ -187,9 +187,18 @@ export async function getProfessional(id: string): Promise<ProfessionalProfile |
   return mapDBtoPro(data);
 }
 
+// Columnas visibles en el perfil PÚBLICO (Ley 21.719): sin email, rut, teléfono
+// ni internos de suscripción/referidos. Debe coincidir con el GRANT de columnas
+// a `anon` en la BD — agregar una columna aquí requiere también el GRANT.
+const PUBLIC_PRO_COLUMNS =
+  'id, slug, name, specialty, city, bio, avatar, working_hours, schedule, modalities, ' +
+  'services, is_public, is_verified, is_approved, is_subscribed, subscription_status, ' +
+  'payment_enabled, booking_fee, charge_full_service, mp_connected, mp_public_key, ' +
+  'instagram, reviews_enabled, created_at';
+
 export async function getProfessionalBySlugOrId(slugOrId: string): Promise<ProfessionalProfile | null> {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
-  const base = supabase.from('professionals').select('*');
+  const base = supabase.from('professionals').select(PUBLIC_PRO_COLUMNS);
   const { data, error } = isUuid
     ? await base.or(`slug.eq.${slugOrId},id.eq.${slugOrId}`).maybeSingle()
     : await base.eq('slug', slugOrId).maybeSingle();
@@ -207,7 +216,7 @@ export async function saveProfessional(pro: ProfessionalProfile): Promise<void> 
 export async function getAllPublicProfessionals(): Promise<ProfessionalProfile[]> {
   const { data, error } = await supabase
     .from('professionals')
-    .select('*')
+    .select(PUBLIC_PRO_COLUMNS)
     .eq('is_public', true)
     .order('name', { ascending: true });
   if (error || !data) return [];

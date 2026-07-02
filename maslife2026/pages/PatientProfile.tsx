@@ -344,13 +344,14 @@ const PatientProfile: React.FC = () => {
         throw new Error(bookData.error || 'No se pudo registrar la cita');
       }
 
-      // Siempre enviar confirmación al profesional (y al paciente si dio email)
-      if (doctor.email) {
+      // Siempre enviar confirmación al profesional (y al paciente si dio email).
+      // El email del pro no se expone al cliente: notify lo resuelve por professionalId.
+      {
         fetch('/api/notify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            to: doctor.email,
+            professionalId: doctor.id,
             professionalName: doctor.name,
             patientName: patientData.name,
             serviceName: selectedService!.name,
@@ -382,7 +383,7 @@ const PatientProfile: React.FC = () => {
 
     const modality = selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial';
     const notify = {
-      to: doctor.email,
+      professionalId: doctor.id,
       professionalName: doctor.name,
       patientName: patientData.name,
       serviceName: selectedService!.name,

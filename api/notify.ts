@@ -458,7 +458,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_API_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
 
-  const { to, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price, duration } = req.body;
+  const { to: toRaw, professionalId, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price, duration } = req.body;
+
+  // El perfil público ya no expone el email del profesional (Ley 21.719):
+  // el cliente envía professionalId y el email se resuelve aquí con service role.
+  let to = typeof toRaw === 'string' ? toRaw : '';
+  const PRO_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!EMAIL_RE.test(to) && typeof professionalId === 'string' && PRO_UUID_RE.test(professionalId)) {
+    const { data: proRow } = await supabase
+      .from('professionals').select('email').eq('id', professionalId).maybeSingle();
+    if (proRow?.email) to = proRow.email as string;
+  }
+
   if (!to || !patientName) return res.status(400).json({ error: 'Faltan campos requeridos' });
 
   if (!EMAIL_RE.test(to)) return res.status(400).json({ error: 'Email de destinatario inválido' });
