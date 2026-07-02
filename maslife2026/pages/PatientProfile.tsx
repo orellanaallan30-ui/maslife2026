@@ -46,6 +46,8 @@ const PatientProfile: React.FC = () => {
   const [loadingDoctor, setLoadingDoctor] = useState(!localDoctor);
   // Citas reales del profesional desde Supabase (para bloquear cupos correctamente)
   const [proAppointments, setProAppointments] = useState<Appointment[]>([]);
+  // Se incrementa para recargar disponibilidad (p. ej. tras un SLOT_TAKEN)
+  const [availabilityRefresh, setAvailabilityRefresh] = useState(0);
 
   // Pasos y formulario — declarados ANTES de todos los useEffects para evitar TDZ
   const [step, setStep] = useState(1);
@@ -102,6 +104,22 @@ const PatientProfile: React.FC = () => {
     const daysArr = [];
     const today = new Date();
 
+    // Horas ocupadas considerando la DURACIÓN completa: una cita/bloqueo de
+    // 90-120 min (o que parte a las 13:05) debe tachar TODAS las horas que pisa,
+    // no solo la de inicio — si no, el paciente puede reservar encima.
+    const busy = new Set<string>();
+    allAppointments.forEach(a => {
+      if (a.professionalId !== doctor.id || !a.date || !a.time) return;
+      const [ah, am] = String(a.time).split(':').map(Number);
+      const startMin = (ah || 0) * 60 + (am || 0);
+      const endMin = startMin + (a.duration || 60);
+      for (let hh = Math.floor(startMin / 60); hh <= Math.floor((endMin - 1) / 60); hh++) {
+        busy.add(`${a.date}|${String(hh).padStart(2, '0')}:00`);
+      }
+    });
+    const todayStr = today.toISOString().split('T')[0];
+    const nowHour = today.getHours();
+
     for (let i = 0; i < 14; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
@@ -128,8 +146,10 @@ const PatientProfile: React.FC = () => {
 
         for (let h = startH; h < endH; h++) {
           const timeStr = `${String(h).padStart(2, '0')}:00`;
-          const isBusy = allAppointments.some(a => a.professionalId === doctor.id && a.date === dateStr && a.time === timeStr);
-          slots.push({ time: timeStr, available: !isBusy });
+          const isBusy = busy.has(`${dateStr}|${timeStr}`);
+          // Hoy: las horas que ya pasaron no se pueden reservar
+          const isPast = dateStr === todayStr && h <= nowHour;
+          slots.push({ time: timeStr, available: !isBusy && !isPast });
         }
 
         if (slots.length > 0) {
@@ -169,7 +189,7 @@ const PatientProfile: React.FC = () => {
         } as unknown as Appointment)));
       })
       .catch(() => {});
-  }, [fetchedDoctor?.id]);
+  }, [fetchedDoctor?.id, availabilityRefresh]);
 
   useEffect(() => {
     if (!fetchedDoctor?.id || !fetchedDoctor.reviewsEnabled) return;
@@ -339,6 +359,7 @@ const PatientProfile: React.FC = () => {
       const bookData = await bookRes.json();
       if (!bookRes.ok || !bookData.saved) {
         if (bookData.error === 'SLOT_TAKEN') {
+          setAvailabilityRefresh(n => n + 1); // refrescar el grid con el cupo ya tachado
           throw new Error('Ese horario acaba de ser tomado por otro paciente. Elige otro horario.');
         }
         throw new Error(bookData.error || 'No se pudo registrar la cita');
@@ -421,6 +442,7 @@ const PatientProfile: React.FC = () => {
       const data = await res.json();
       if (data?.error === 'SLOT_TAKEN') {
         setIsProcessing(false);
+        setAvailabilityRefresh(n => n + 1); // refrescar el grid con el cupo ya tachado
         setMpError('Ese horario acaba de ser tomado por otro paciente. No se cobró nada — elige otro horario.');
         return;
       }
