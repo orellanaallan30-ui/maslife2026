@@ -608,9 +608,12 @@ describe('saveTransaction', () => {
     );
   });
 
-  it('lanza el error de Supabase si upsert falla', async () => {
+  it('lanza el error de Supabase si upsert falla (tras reintentos)', async () => {
     const dbError = { message: 'Save failed' };
-    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: dbError }));
+    vi.mocked(supabase.from)
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }));
 
     await expect(saveTransaction(sampleTransaction, 'pro-1')).rejects.toEqual(dbError);
   });

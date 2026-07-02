@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate, Notification } from './types';
-import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, deleteAppointment as deleteAppointmentDB, saveTransaction, batchInsertBlocks, deleteBlocksByRecurrence } from './supabaseService';
+import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, deleteAppointment as deleteAppointmentDB, saveTransaction, deleteTransaction as deleteTransactionDB, batchInsertBlocks, deleteBlocksByRecurrence } from './supabaseService';
 import { auditService } from './auditService';
 
 interface ClinicContextType {
@@ -39,6 +39,7 @@ interface ClinicContextType {
   // Transacciones
   manualTransactions: Transaction[];
   addManualTransaction: (t: Transaction) => void;
+  deleteManualTransaction: (id: string) => void;
 
   // Templates
   templates: ClinicalTemplate[];
@@ -222,6 +223,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, [loggedPro]);
 
   // Cargar datos del profesional desde Supabase al iniciar sesión
+  const lastLoadRef = useRef(0);
   useEffect(() => {
     if (!loggedPro) {
       // Al cerrar sesión: limpiar datos para no filtrar a la próxima sesión
@@ -252,7 +254,14 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           const localOnly = prev.filter(a => a.professionalId === loggedPro.id && !supaIds.has(a.id));
           return [...supaApps, ...localOnly];
         });
-        if (supaTransactions.length > 0) setManualTransactions(supaTransactions);
+        setManualTransactions(prev => {
+          const supaIds = new Set(supaTransactions.map(t => t.id));
+          const localOnly = prev.filter(t => t.professionalId === loggedPro.id && !supaIds.has(t.id));
+          // Backfill: transacciones que quedaron solo en este dispositivo (guardado
+          // fallido o versión antigua) se suben ahora; si falla, reintenta al próximo login
+          localOnly.forEach(t => saveTransaction(t, loggedPro.id).catch(() => null));
+          return [...supaTransactions, ...localOnly];
+        });
       } catch {
         setAppointments(prev =>
           prev.filter(a => !a.professionalId || a.professionalId === loggedPro.id)
@@ -269,6 +278,19 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     };
 
     loadProData();
+    lastLoadRef.current = Date.now();
+
+    // Refresco al volver a la app (móvil ↔ web): si la pestaña vuelve a ser
+    // visible y pasaron ≥60s desde la última carga, recargar desde Supabase
+    // para ver citas/transacciones creadas en otro dispositivo sin F5.
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      if (Date.now() - lastLoadRef.current < 60_000) return;
+      lastLoadRef.current = Date.now();
+      loadProData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -443,6 +465,14 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     });
   };
 
+  const deleteManualTransaction = (id: string) => {
+    setManualTransactions(prev => prev.filter(t => t.id !== id));
+    deleteTransactionDB(id).catch(err => {
+      console.error('[deleteManualTransaction] No se pudo eliminar en Supabase:', err?.message || err);
+      addNotification('⚠️ La transacción NO se eliminó del servidor. Intenta de nuevo.', 'payment');
+    });
+  };
+
   const logout = (navigate: any, view: string) => {
     supabase.auth.signOut().catch(() => {});
     setLoggedPro(null);
@@ -482,6 +512,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     updatePatient,
     manualTransactions,
     addManualTransaction,
+    deleteManualTransaction,
     templates,
     setTemplates,
     notifications,

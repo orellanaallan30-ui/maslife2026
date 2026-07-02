@@ -18,20 +18,19 @@ interface MPSummary {
 
 const Finances: React.FC = () => {
   const navigate = useNavigate();
-  const { appointments: allAppointments, manualTransactions: allTransactions, deleteAppointment, deleteTransaction, setManualTransactions, logout, loggedPro } = useClinic();
+  const { appointments: allAppointments, manualTransactions: allTransactions, deleteAppointment, addManualTransaction, deleteManualTransaction, logout, loggedPro } = useClinic();
 
   // Solo mostrar datos financieros de este profesional
   const appointments = allAppointments.filter(a => !a.professionalId || a.professionalId === loggedPro?.id);
   const manualTransactions = allTransactions.filter(t => !t.professionalId || t.professionalId === loggedPro?.id);
 
-  const onAddTransaction = (t: Transaction) => setManualTransactions(prev => [...prev, t]);
-  const onDeleteTransaction = (id: string) => setManualTransactions(prev => prev.filter(item => item.id !== id));
+  // Persisten en Supabase con notificación si falla (nunca solo en este dispositivo)
+  const onAddTransaction = (t: Transaction) => addManualTransaction(t);
+  const onDeleteTransaction = (id: string) => deleteManualTransaction(id);
   const onReset = async () => {
     // Delete each appointment and manual transaction from Supabase so they don't come back on refresh
-    await Promise.all([
-      ...appointments.map(a => deleteAppointment(a.id)),
-      ...manualTransactions.map(t => deleteTransaction(t.id))
-    ]);
+    appointments.forEach(a => deleteAppointment(a.id));
+    manualTransactions.forEach(t => deleteManualTransaction(t.id));
   };
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
   const [showConfirmReset, setShowConfirmReset] = useState(false);

@@ -203,7 +203,8 @@ export async function getProfessionalBySlugOrId(slugOrId: string): Promise<Profe
     ? await base.or(`slug.eq.${slugOrId},id.eq.${slugOrId}`).maybeSingle()
     : await base.eq('slug', slugOrId).maybeSingle();
   if (error || !data) return null;
-  return mapDBtoPro(data);
+  // El select con string dinámica no infiere el tipo de fila — cast explícito
+  return mapDBtoPro(data as unknown as Record<string, unknown>);
 }
 
 export async function saveProfessional(pro: ProfessionalProfile): Promise<void> {
@@ -220,7 +221,7 @@ export async function getAllPublicProfessionals(): Promise<ProfessionalProfile[]
     .eq('is_public', true)
     .order('name', { ascending: true });
   if (error || !data) return [];
-  return data.map(mapDBtoPro);
+  return (data as unknown as Record<string, unknown>[]).map(mapDBtoPro);
 }
 
 // ── Pacientes — siempre requieren proId ──────────────────────
@@ -301,14 +302,17 @@ export async function getTransactions(proId: string): Promise<Transaction[]> {
   return (data || []).map((t: Record<string, unknown>) => ({
     id: t.id as string, amount: t.amount as number,
     description: t.description as string, date: t.date as string, type: t.type as Transaction['type'],
+    professionalId: (t.professional_id as string) || undefined,
   }));
 }
 
 export async function saveTransaction(t: Transaction, proId: string): Promise<void> {
-  const { error } = await supabase.from('transactions').upsert({
-    id: t.id, amount: t.amount, description: t.description, date: t.date, type: t.type, professional_id: proId,
+  await withRetry(async () => {
+    const { error } = await supabase.from('transactions').upsert({
+      id: t.id, amount: t.amount, description: t.description, date: t.date, type: t.type, professional_id: proId,
+    });
+    if (error) throw error;
   });
-  if (error) throw error;
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
