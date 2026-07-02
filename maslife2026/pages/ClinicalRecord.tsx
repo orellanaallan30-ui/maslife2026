@@ -200,9 +200,15 @@ const ClinicalRecord: React.FC = () => {
   // Campos personalizados POR SECCIÓN (kinesiología, nutrición, psicología, SOAP,
   // objetivos, etc.). Cada sección de la ficha permite agregar/editar campos libres;
   // persisten dentro de specialtyData.sectionFields, para todas las especialidades.
-  const [sectionFields, setSectionFields] = useState<Record<string, CustomField[]>>(
-    (savedSpec.sectionFields as Record<string, CustomField[]>) || {}
-  );
+  const [sectionFields, setSectionFields] = useState<Record<string, CustomField[]>>(() => {
+    const saved = ((savedSpec.sectionFields as Record<string, CustomField[]>) || {});
+    // Migración: la clave general 'kinesiologia' (versión anterior) pasa a la
+    // primera subsección para no perder campos ya creados.
+    if (saved.kinesiologia?.length) {
+      return { ...saved, 'ki-antropometria': [...(saved['ki-antropometria'] || []), ...saved.kinesiologia], kinesiologia: [] };
+    }
+    return saved;
+  });
 
   // Cargar datos kinesiológicos guardados (soporta formato legacy y nuevo EV1/EV2)
   React.useEffect(() => {
@@ -699,44 +705,67 @@ Entrega el informe con estas secciones:
     setSectionFields(prev => ({ ...prev, [section]: (prev[section] || []).filter((_, i) => i !== index) }));
     setIsDirtyTrue();
   };
+  const moveSectionField = (section: string, index: number, dir: -1 | 1) => {
+    setSectionFields(prev => {
+      const list = [...(prev[section] || [])];
+      const target = index + dir;
+      if (target < 0 || target >= list.length) return prev;
+      [list[index], list[target]] = [list[target], list[index]];
+      return { ...prev, [section]: list };
+    });
+    setIsDirtyTrue();
+  };
 
   // Función de render (no componente anidado: evita perder el foco al tipear).
-  // Se invoca al final de cada sección de la ficha.
+  // Va ARRIBA de cada sección/subsección: botón compacto + campos reordenables
+  // con flechas. Cada campo es una tarjeta autocontenida para que las etiquetas
+  // no choquen con el contenido fijo de la sección.
   const renderSectionFields = (section: string) => {
     const fields = sectionFields[section] || [];
     return (
-      <div className={`${fields.length > 0 ? 'pt-6 mt-4 border-t border-dashed border-slate-200' : 'pt-2'} ${fields.length === 0 ? 'print:hidden' : ''}`}>
+      <div className={fields.length === 0 ? 'mb-3 print:hidden' : 'mb-6'}>
+        <button
+          onClick={() => addSectionField(section)}
+          className="text-[10px] font-black text-primary bg-primary/5 px-4 py-2 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest mb-3"
+        >
+          + Agregar campo
+        </button>
         {fields.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {fields.map((cf, idx) => (
-              <div key={idx} className="space-y-1 relative group animate-in slide-in-from-left-4 duration-300">
-                <div className="flex justify-between items-center pr-1 mb-1">
+              <div key={idx} className="bg-slate-50 rounded-2xl p-3 border border-slate-200 animate-in slide-in-from-left-4 duration-300">
+                <div className="flex items-center gap-1 mb-2">
                   <input
                     value={cf.label}
                     onChange={e => updateSectionField(section, idx, 'label', e.target.value)}
                     placeholder="Etiqueta del campo..."
-                    className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
+                    className="flex-1 min-w-0 text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0"
                   />
-                  <button onClick={() => removeSectionField(section, idx)} className="opacity-0 group-hover:opacity-100 text-rose-500 no-print transition-all">
-                    <span className="material-icons-round text-xs">delete</span>
-                  </button>
+                  <div className="flex items-center gap-0.5 shrink-0 no-print">
+                    <button onClick={() => moveSectionField(section, idx, -1)} disabled={idx === 0} title="Subir"
+                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white disabled:opacity-20 transition-all">
+                      <span className="material-icons-round text-sm">arrow_upward</span>
+                    </button>
+                    <button onClick={() => moveSectionField(section, idx, 1)} disabled={idx === fields.length - 1} title="Bajar"
+                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white disabled:opacity-20 transition-all">
+                      <span className="material-icons-round text-sm">arrow_downward</span>
+                    </button>
+                    <button onClick={() => removeSectionField(section, idx)} title="Eliminar"
+                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-white transition-all">
+                      <span className="material-icons-round text-sm">delete</span>
+                    </button>
+                  </div>
                 </div>
                 <input
                   value={cf.value}
                   onChange={e => updateSectionField(section, idx, 'value', e.target.value)}
                   placeholder="Valor..."
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
                 />
               </div>
             ))}
           </div>
         )}
-        <button
-          onClick={() => addSectionField(section)}
-          className="text-[10px] font-black text-primary bg-primary/5 px-5 py-2.5 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest"
-        >
-          + Agregar campo
-        </button>
       </div>
     );
   };
@@ -1106,6 +1135,7 @@ Entrega el informe con estas secciones:
             {/* ── 1. Datos Antropométricos ─────────────────────── */}
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Datos Antropométricos</h3>
+              {renderSectionFields('ki-antropometria')}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
                   { label: 'Peso (kg)', key: 'weight', placeholder: '70' },
@@ -1144,6 +1174,7 @@ Entrega el informe con estas secciones:
             {/* ── 2. Evaluación Postural Estructurada ──────────── */}
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Evaluación Postural Estructurada</h3>
+              {renderSectionFields('ki-postural')}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {([
                   { label: 'Plomada Sagital', key: 'plomadaSag', options: ['Normal','Hiperlordosis lumbar','Inversión lumbar','Hipercifosis dorsal','Rectificación lumbar','Cabeza adelantada'] },
@@ -1182,6 +1213,7 @@ Entrega el informe con estas secciones:
             {/* ── 3. ROM ─────────────────────────────────────────── */}
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Rango de Movimiento (ROM) en grados</h3>
+              {renderSectionFields('ki-rom')}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {([
                   ['Cuello Flex.','CueFlex','45'],['Cuello Ext.','CueExt','45'],
@@ -1212,6 +1244,7 @@ Entrega el informe con estas secciones:
             {/* ── 4. Tests Especiales ────────────────────────────── */}
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Tests Especiales</h3>
+              {renderSectionFields('ki-tests')}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => (
                   <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-200">
@@ -1235,7 +1268,6 @@ Entrega el informe con estas secciones:
                 ))}
               </div>
             </div>
-            {renderSectionFields('kinesiologia')}
           </section>
 
           {/* ── Análisis Biomecánico con IA (fotos + resultado) ── */}
@@ -1251,6 +1283,7 @@ Entrega el informe con estas secciones:
                 ))}
               </div>
             </div>
+            {renderSectionFields('biomecanica')}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
               <div className="space-y-6">
@@ -1314,7 +1347,6 @@ Entrega el informe con estas secciones:
                 </div>
               </div>
             </div>
-            {renderSectionFields('biomecanica')}
           </section>
           </>)}
 
@@ -1325,6 +1357,7 @@ Entrega el informe con estas secciones:
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-slate-800 pl-4">Comparación EV1 vs EV2</h2>
               <p className="text-xs font-bold text-slate-500 uppercase mt-2 tracking-widest pl-5">Evolución kinesiológica del paciente</p>
             </div>
+            {renderSectionFields('comparacion')}
 
             {/* Fotos comparativas */}
             <div>
@@ -1510,7 +1543,6 @@ Entrega el informe con estas secciones:
                 })}
               </div>
             </div>
-            {renderSectionFields('comparacion')}
           </section>
           )}
 
@@ -1535,6 +1567,7 @@ Entrega el informe con estas secciones:
           {specialtyKey === 'nutricion' && (
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-10">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
+            {renderSectionFields('nutricion')}
 
             {/* Inputs antropométricos */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
@@ -1782,13 +1815,13 @@ Entrega el informe con estas secciones:
                 </table>
               </div>
             </div>
-            {renderSectionFields('nutricion')}
           </section>
           )}
 
           {specialtyKey === 'psicologia' && (
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-8">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
+            {renderSectionFields('psicologia')}
 
             {/* Escala de ánimo */}
             <div className="space-y-4">
@@ -1827,12 +1860,12 @@ Entrega el informe con estas secciones:
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
                 className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
             </div>
-            {renderSectionFields('psicologia')}
           </section>
           )}
 
           {/* ── Nota Clínica SOAP ── */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10">
+            <div className="lg:col-span-2">{renderSectionFields('soap')}</div>
             {(SOAP_LABELS[specialtyKey] || SOAP_LABELS.kinesiologia).map(f => (
               <div key={f.k} className="bg-white rounded-[3rem] border border-slate-200 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
                 <div className="px-10 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
@@ -1847,7 +1880,6 @@ Entrega el informe con estas secciones:
                 />
               </div>
             ))}
-            <div className="lg:col-span-2">{renderSectionFields('soap')}</div>
           </section>
 
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
@@ -1857,6 +1889,7 @@ Entrega el informe con estas secciones:
                 <span className="material-icons-round text-sm">add</span> NUEVO OBJETIVO
               </button>
             </div>
+            {renderSectionFields('objetivos')}
             <div className="space-y-8">
               {goals.map((obj) => (
                 <div key={obj.id} className="p-8 rounded-[2rem] bg-slate-50/50 border border-slate-100 relative print:bg-white animate-in zoom-in-95 group">
@@ -1877,7 +1910,6 @@ Entrega el informe con estas secciones:
                 </div>
               ))}
             </div>
-            {renderSectionFields('objetivos')}
           </section>
 
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
@@ -1899,6 +1931,7 @@ Entrega el informe con estas secciones:
                 accept=".pdf,image/*"
               />
             </div>
+            {renderSectionFields('documentos')}
             {files.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {files.map(file => (
@@ -1929,7 +1962,6 @@ Entrega el informe con estas secciones:
                 <p className="text-slate-400 font-bold text-sm tracking-wide">No hay documentos adjuntos para este paciente.</p>
               </div>
             )}
-            {renderSectionFields('documentos')}
           </section>
 
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
@@ -1939,6 +1971,7 @@ Entrega el informe con estas secciones:
                 <span className="material-icons-round text-sm">add</span> NUEVA SESIÓN
               </button>
             </div>
+            {renderSectionFields('bitacora')}
             <div className="space-y-6">
               {sessionLogs.map(log => (
                 <div key={log.id} className="flex gap-8 relative group">
@@ -1955,7 +1988,6 @@ Entrega el informe con estas secciones:
                 </div>
               ))}
             </div>
-            {renderSectionFields('bitacora')}
           </section>
         </div>
 
