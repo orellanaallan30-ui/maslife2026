@@ -63,6 +63,7 @@ export type AuditAction =
   | 'CONSENT_SEND'
   | 'CONSENT_ACCEPT'
   | 'PATIENT_CREATE'
+  | 'PATIENT_UPDATE'
   | 'PATIENT_VIEW'
   | 'DOCUMENT_VERIFY';
 

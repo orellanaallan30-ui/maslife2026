@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate, Notification } from './types';
 import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, deleteAppointment as deleteAppointmentDB, saveTransaction, batchInsertBlocks, deleteBlocksByRecurrence } from './supabaseService';
+import { auditService } from './auditService';
 
 interface ClinicContextType {
   // Estado de carga
@@ -414,6 +415,11 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       savePatient(withPro, loggedPro.id).catch(err => {
         console.error('[addPatient] No se pudo guardar en Supabase:', err?.message || err);
         addNotification(`⚠️ El paciente ${patient.name} NO se guardó en el servidor. Revisa tu conexión y vuelve a crearlo.`, 'appointment');
+      });
+      // Trazabilidad Ley 21.719 — registrar creación de dato de salud
+      void auditService.log({
+        userId: loggedPro.id, userName: loggedPro.name,
+        action: 'PATIENT_CREATE', resourceId: patient.id, resourceType: 'patient',
       });
     }
   };

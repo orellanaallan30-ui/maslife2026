@@ -9,6 +9,7 @@ import { toast } from '../lib/toast';
 import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF } from '../pdfExport';
 import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
+import { auditService } from '../auditService';
 
 interface Message {
   role: 'user' | 'model';
@@ -303,6 +304,11 @@ const ClinicalRecord: React.FC = () => {
       .order('saved_at', { ascending: false })
       .limit(5)
       .then(({ data }) => { if (data) setSoapVersions(data); });
+    // Trazabilidad Ley 21.719 — registrar acceso a la ficha clínica del paciente
+    void auditService.log({
+      userId: loggedPro.id, userName: loggedPro.name,
+      action: 'SOAP_VIEW', resourceId: initialPatient.id, resourceType: 'soap',
+    });
   }, [initialPatient?.id, loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Verificar consentimiento informado (CENS RCE — Ley 20.584)
@@ -492,6 +498,13 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
 
   const handleExportFicha = async () => {
     if (!loggedPro) { toast.error('No hay profesional conectado'); return; }
+    // Trazabilidad Ley 21.719 — registrar exportación de datos de salud
+    if (initialPatient?.id) {
+      void auditService.log({
+        userId: loggedPro.id, userName: loggedPro.name,
+        action: 'SOAP_EXPORT_PDF', resourceId: initialPatient.id, resourceType: 'soap',
+      });
+    }
     const patientObj = { ...safePatient, ...personalData } as Patient;
     await exportPatientFichaToPDF(
       patientObj,

@@ -7,11 +7,16 @@ import { AuditAction } from './types_clinical';
  * En producción, la IP real viene del header X-Forwarded-For en el backend.
  * Aquí usamos un fallback de browser para el lado cliente.
  */
+// Caché de IP a nivel de módulo: evita golpear ipify en cada evento auditado
+// (p. ej. auto-save clínico). Se resuelve una vez por sesión de página.
+let cachedIP: string | null = null;
 async function getClientIP(): Promise<string> {
+  if (cachedIP) return cachedIP;
   try {
     const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
     const data = await res.json();
-    return data.ip || 'UNKNOWN';
+    cachedIP = data.ip || 'UNKNOWN';
+    return cachedIP;
   } catch {
     return 'UNKNOWN';
   }
