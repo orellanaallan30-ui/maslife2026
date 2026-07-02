@@ -41,7 +41,8 @@ export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
 export async function askClaudeWithImages(
   images: string[],
   textPrompt: string,
-  systemPrompt?: string
+  systemPrompt?: string,
+  maxTokens?: number
 ): Promise<string> {
   const imageBlocks = images.map(img => {
     if (img.startsWith('http')) {
@@ -58,7 +59,7 @@ export async function askClaudeWithImages(
     const result = await callClaudeAPI({
       messages: [{ role: 'user', content }],
       system: systemPrompt || 'Eres un experto en biomecánica y fisioterapia avanzada.',
-      maxTokens: 2048,
+      maxTokens: maxTokens || 2048,
     });
     const textBlocks = result.content?.filter((b: any) => b.type === 'text') || [];
     return textBlocks.map((b: any) => b.text).join('\n') || 'Sin respuesta.';

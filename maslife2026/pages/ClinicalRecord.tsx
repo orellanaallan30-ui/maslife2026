@@ -10,6 +10,7 @@ import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF } from '../p
 import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
 import { auditService } from '../auditService';
+import BiomechReport, { BiomechReportData } from '../components/BiomechReport';
 
 interface Message {
   role: 'user' | 'model';
@@ -200,6 +201,13 @@ const ClinicalRecord: React.FC = () => {
   // Campos personalizados POR SECCIÓN (kinesiología, nutrición, psicología, SOAP,
   // objetivos, etc.). Cada sección de la ficha permite agregar/editar campos libres;
   // persisten dentro de specialtyData.sectionFields, para todas las especialidades.
+  // Informe biomecánico estructurado (pantalla visual estilo kiosco) — persiste
+  // en specialtyData.biomechReport
+  const [biomechReport, setBiomechReport] = useState<BiomechReportData | null>(
+    (savedSpec.biomechReport as BiomechReportData) || null
+  );
+  const [showBiomechReport, setShowBiomechReport] = useState(false);
+
   const [sectionFields, setSectionFields] = useState<Record<string, CustomField[]>>(() => {
     const saved = ((savedSpec.sectionFields as Record<string, CustomField[]>) || {});
     // Migración: la clave general 'kinesiologia' (versión anterior) pasa a la
@@ -620,14 +628,42 @@ Entrega el informe con estas secciones:
 2. IMPRESIÓN BIOMECÁNICA GLOBAL
 3. DIAGNÓSTICO POSTURAL KINESIOLÓGICO (con código CIE-10 sugerido)
 4. OBJETIVOS DE TRATAMIENTO PRIORIZADOS (máx. 5)
-5. PLAN KINESIOLÓGICO SUGERIDO`;
+5. PLAN KINESIOLÓGICO SUGERIDO
+
+AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EXACTO
+(estimaciones cuantitativas a partir de lo observado; 4-8 métricas y 3-5 simetrías):
+\`\`\`json
+{
+  "metricas": [{ "nombre": "Inclinación pélvica", "valor": 2, "unidad": "cm",
+    "rango_normal": [0, 1], "umbral_riesgo": 4,
+    "severidad": "normal|atencion|riesgo", "zona": "pelvis",
+    "comentario": "breve explicación clínica" }],
+  "simetrias": [{ "zona": "Hombros", "izquierda": "hallazgo lado izq",
+    "derecha": "hallazgo lado der", "diferencia": "1 cm", "severidad": "atencion" }],
+  "impresion_global": "…", "diagnostico": "…", "cie10": "…",
+  "objetivos": ["…"], "plan": ["…"]
+}
+\`\`\``;
 
       const result = await askClaudeWithImages(
         analysisImages,
         prompt,
-        "Eres un kinesiólogo clínico experto en análisis postural y biomecánico. Analiza las fotografías proporcionadas y genera un informe técnico profesional en español. Describe lo que observas visualmente en cada imagen con precisión clínica."
+        "Eres un kinesiólogo clínico experto en análisis postural y biomecánico. Analiza las fotografías proporcionadas y genera un informe técnico profesional en español. Describe lo que observas visualmente en cada imagen con precisión clínica. Las métricas del bloque JSON son estimaciones visuales cuantificadas: sé consistente entre el texto y el JSON.",
+        4096
       );
-      setAnalysisResult(result || 'El análisis no pudo ser completado.');
+
+      // Separar el bloque JSON estructurado (informe visual) del texto narrativo
+      const jsonMatch = (result || '').match(/```json\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        try {
+          const parsed = JSON.parse(jsonMatch[1]) as BiomechReportData;
+          if (Array.isArray(parsed.metricas)) {
+            setBiomechReport({ ...parsed, generado: new Date().toISOString(), tipo: analysisType });
+          }
+        } catch { /* JSON malformado: el informe de texto sigue siendo útil */ }
+      }
+      const narrative = (result || '').replace(/```json[\s\S]*?```/, '').trim();
+      setAnalysisResult(narrative || 'El análisis no pudo ser completado.');
     } catch (error) {
       console.error(error);
       setAnalysisResult('Error al procesar el análisis. Verifica que ANTHROPIC_API_KEY esté configurada en Vercel.');
@@ -638,10 +674,76 @@ Entrega el informe con estas secciones:
 
   const uploadSlotRef = useRef<number>(-1); // -1 = append, 0-3 = slot específico
 
+  // Extrae N fotogramas de un video local vía <video>+<canvas>. La API de visión
+  // analiza imágenes (no video): los fotogramas entran al mismo pipeline y sirven
+  // para evaluar marcha, sentadilla u otros movimientos.
+  const extractVideoFrames = (file: File, count = 4): Promise<string[]> =>
+    new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const video = document.createElement('video');
+      video.preload = 'auto';
+      video.muted = true;
+      video.playsInline = true;
+      const frames: string[] = [];
+      const positions = [0.15, 0.4, 0.65, 0.9].slice(0, count);
+      let i = 0;
+      const canvas = document.createElement('canvas');
+      const fail = (msg: string) => { URL.revokeObjectURL(url); reject(new Error(msg)); };
+      video.onerror = () => fail('No se pudo leer el video');
+      video.onloadedmetadata = () => {
+        if (!video.duration || !isFinite(video.duration)) return fail('Video sin duración');
+        const scale = Math.min(1, 900 / (video.videoWidth || 900));
+        canvas.width = Math.round((video.videoWidth || 900) * scale);
+        canvas.height = Math.round((video.videoHeight || 1200) * scale);
+        video.currentTime = positions[0] * video.duration;
+      };
+      video.onseeked = () => {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return fail('Canvas no disponible');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        frames.push(canvas.toDataURL('image/jpeg', 0.8));
+        i++;
+        if (i < positions.length) video.currentTime = positions[i] * video.duration;
+        else { URL.revokeObjectURL(url); resolve(frames); }
+      };
+      video.src = url;
+    });
+
   const handlePosturalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+
+    // ── VIDEO: se guarda en el registro clínico y se extraen fotogramas ──
+    if (file.type.startsWith('video/')) {
+      if (file.size > 60 * 1024 * 1024) { toast.error('El video supera los 60 MB. Graba un clip más corto.'); return; }
+      toast.info('Procesando video: extrayendo fotogramas…');
+      try {
+        // El video original queda en el bucket privado como respaldo clínico
+        const vext = file.name.split('.').pop()?.toLowerCase() || 'mp4';
+        const vpath = `${loggedPro?.id || 'unknown'}/${Date.now()}-video.${vext}`;
+        supabase.storage.from('clinical-images').upload(vpath, file, { upsert: true })
+          .then(({ error: vErr }) => { if (vErr) console.error('[video upload]', vErr.message); });
+
+        const frames = await extractVideoFrames(file, 4);
+        const slot = uploadSlotRef.current;
+        setAnalysisImages(prev => {
+          const next = [...prev];
+          if (slot >= 0) {
+            let s = slot;
+            for (const f of frames) { if (s > 3) break; next[s] = f; s++; }
+            return next.slice(0, 4);
+          }
+          return [...next, ...frames].slice(0, 4);
+        });
+        setIsDirtyTrue();
+        toast.success(`Video procesado: ${frames.length} fotogramas listos para el análisis.`);
+      } catch {
+        toast.error('No se pudo procesar el video. Intenta con formato MP4.');
+      }
+      return;
+    }
+
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     // Bucket PRIVADO (Ley 21.719): fotos clínicas de pacientes nunca en bucket público.
     // RLS de storage acota la carpeta al profesional dueño; se accede con URL firmada.
@@ -871,6 +973,8 @@ Entrega el informe con estas secciones:
         kinesio: { initial: kiData.initial, final: kiData.final },
         // Campos personalizados por sección (todas las especialidades)
         sectionFields,
+        // Informe biomecánico visual (IA)
+        biomechReport,
       };
     })(),
   } as Patient);
@@ -1313,7 +1417,7 @@ Entrega el informe con estas secciones:
                     </div>
                   ))}
                 </div>
-                <input type="file" ref={posturalInputRef} onChange={handlePosturalUpload} className="hidden" accept="image/*" />
+                <input type="file" ref={posturalInputRef} onChange={handlePosturalUpload} className="hidden" accept="image/*,video/mp4,video/quicktime,video/webm" />
 
                 <button
                   onClick={runAdvancedAnalysis}
@@ -1322,6 +1426,16 @@ Entrega el informe con estas secciones:
                 >
                   <span className={`material-icons-round ${isAnalyzing ? 'animate-spin' : ''}`}>{isAnalyzing ? 'sync' : 'biotech'}</span>
                   {isAnalyzing ? 'Procesando imágenes con IA...' : `Ejecutar Análisis ${analysisType}`}
+                </button>
+
+                <button
+                  onClick={() => setShowBiomechReport(true)}
+                  disabled={!biomechReport}
+                  title={biomechReport ? 'Ver informe biomecánico visual' : 'Ejecuta primero un análisis con IA'}
+                  className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-500 border-b-4 border-amber-600 text-slate-950 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-[0_10px_30px_-10px_rgba(245,158,11,0.5)] active:border-b-0 active:translate-y-1 hover:brightness-105 transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4 no-print"
+                >
+                  <span className="material-icons-round">insights</span>
+                  Informe Visual — Postura · Simetrías · ROM
                 </button>
               </div>
 
@@ -2247,6 +2361,20 @@ Entrega el informe con estas secciones:
           </div>
         </div>
       </div>
+
+      {/* Informe biomecánico visual (pantalla completa, estilo kiosco) */}
+      {showBiomechReport && biomechReport && (
+        <BiomechReport
+          report={biomechReport}
+          images={analysisImages}
+          patientName={personalData.name}
+          rom={kiRom}
+          anthro={kiAnthro}
+          imc={kiImc}
+          discrep={kiDiscrep}
+          onClose={() => setShowBiomechReport(false)}
+        />
+      )}
     </div>
   );
 };

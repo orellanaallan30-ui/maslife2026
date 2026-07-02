@@ -20,10 +20,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada en Vercel' });
   }
 
-  const { messages, system, tools } = req.body;
+  const { messages, system, tools, max_tokens } = req.body;
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages requerido' });
   }
+  // El cliente puede pedir más tokens (informes largos); tope duro de 4096
+  const maxTokens = typeof max_tokens === 'number' && max_tokens > 0 ? Math.min(max_tokens, 4096) : 2048;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -34,8 +36,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2048,
+        model: 'claude-sonnet-5',
+        max_tokens: maxTokens,
         system: system || '',
         messages,
         tools: tools || [],
