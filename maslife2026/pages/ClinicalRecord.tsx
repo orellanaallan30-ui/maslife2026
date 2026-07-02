@@ -197,6 +197,13 @@ const ClinicalRecord: React.FC = () => {
   // ── Estado: datos especialidad guardados ───────────────────────────────────
   const savedSpec = (safePatient.specialtyData || {}) as Record<string, any>;
 
+  // Campos personalizados POR SECCIÓN (kinesiología, nutrición, psicología, SOAP,
+  // objetivos, etc.). Cada sección de la ficha permite agregar/editar campos libres;
+  // persisten dentro de specialtyData.sectionFields, para todas las especialidades.
+  const [sectionFields, setSectionFields] = useState<Record<string, CustomField[]>>(
+    (savedSpec.sectionFields as Record<string, CustomField[]>) || {}
+  );
+
   // Cargar datos kinesiológicos guardados (soporta formato legacy y nuevo EV1/EV2)
   React.useEffect(() => {
     const ki = savedSpec.kinesio as any;
@@ -675,6 +682,65 @@ Entrega el informe con estas secciones:
     setCustomFields(customFields.filter((_, i) => i !== index));
   };
 
+  // ── Campos personalizados por sección ──────────────────────────────────────
+  const addSectionField = (section: string) => {
+    setSectionFields(prev => ({ ...prev, [section]: [...(prev[section] || []), { label: '', value: '' }] }));
+    setIsDirtyTrue();
+  };
+  const updateSectionField = (section: string, index: number, key: 'label' | 'value', val: string) => {
+    setSectionFields(prev => {
+      const list = [...(prev[section] || [])];
+      list[index] = { ...list[index], [key]: val };
+      return { ...prev, [section]: list };
+    });
+    setIsDirtyTrue();
+  };
+  const removeSectionField = (section: string, index: number) => {
+    setSectionFields(prev => ({ ...prev, [section]: (prev[section] || []).filter((_, i) => i !== index) }));
+    setIsDirtyTrue();
+  };
+
+  // Función de render (no componente anidado: evita perder el foco al tipear).
+  // Se invoca al final de cada sección de la ficha.
+  const renderSectionFields = (section: string) => {
+    const fields = sectionFields[section] || [];
+    return (
+      <div className={`${fields.length > 0 ? 'pt-6 mt-4 border-t border-dashed border-slate-200' : 'pt-2'} ${fields.length === 0 ? 'print:hidden' : ''}`}>
+        {fields.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
+            {fields.map((cf, idx) => (
+              <div key={idx} className="space-y-1 relative group animate-in slide-in-from-left-4 duration-300">
+                <div className="flex justify-between items-center pr-1 mb-1">
+                  <input
+                    value={cf.label}
+                    onChange={e => updateSectionField(section, idx, 'label', e.target.value)}
+                    placeholder="Etiqueta del campo..."
+                    className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
+                  />
+                  <button onClick={() => removeSectionField(section, idx)} className="opacity-0 group-hover:opacity-100 text-rose-500 no-print transition-all">
+                    <span className="material-icons-round text-xs">delete</span>
+                  </button>
+                </div>
+                <input
+                  value={cf.value}
+                  onChange={e => updateSectionField(section, idx, 'value', e.target.value)}
+                  placeholder="Valor..."
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={() => addSectionField(section)}
+          className="text-[10px] font-black text-primary bg-primary/5 px-5 py-2.5 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest"
+        >
+          + Agregar campo
+        </button>
+      </div>
+    );
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const fileList = Array.from(e.target.files);
@@ -774,6 +840,8 @@ Entrega el informe con estas secciones:
         psychMood, psychPsychHistory, psychIntervention, psychNextObjective,
         // Kinesiología
         kinesio: { initial: kiData.initial, final: kiData.final },
+        // Campos personalizados por sección (todas las especialidades)
+        sectionFields,
       };
     })(),
   } as Patient);
@@ -1167,6 +1235,7 @@ Entrega el informe con estas secciones:
                 ))}
               </div>
             </div>
+            {renderSectionFields('kinesiologia')}
           </section>
 
           {/* ── Análisis Biomecánico con IA (fotos + resultado) ── */}
@@ -1245,6 +1314,7 @@ Entrega el informe con estas secciones:
                 </div>
               </div>
             </div>
+            {renderSectionFields('biomecanica')}
           </section>
           </>)}
 
@@ -1440,6 +1510,7 @@ Entrega el informe con estas secciones:
                 })}
               </div>
             </div>
+            {renderSectionFields('comparacion')}
           </section>
           )}
 
@@ -1711,6 +1782,7 @@ Entrega el informe con estas secciones:
                 </table>
               </div>
             </div>
+            {renderSectionFields('nutricion')}
           </section>
           )}
 
@@ -1755,6 +1827,7 @@ Entrega el informe con estas secciones:
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
                 className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
             </div>
+            {renderSectionFields('psicologia')}
           </section>
           )}
 
@@ -1774,6 +1847,7 @@ Entrega el informe con estas secciones:
                 />
               </div>
             ))}
+            <div className="lg:col-span-2">{renderSectionFields('soap')}</div>
           </section>
 
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
@@ -1803,6 +1877,7 @@ Entrega el informe con estas secciones:
                 </div>
               ))}
             </div>
+            {renderSectionFields('objetivos')}
           </section>
 
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
@@ -1854,6 +1929,7 @@ Entrega el informe con estas secciones:
                 <p className="text-slate-400 font-bold text-sm tracking-wide">No hay documentos adjuntos para este paciente.</p>
               </div>
             )}
+            {renderSectionFields('documentos')}
           </section>
 
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
@@ -1879,6 +1955,7 @@ Entrega el informe con estas secciones:
                 </div>
               ))}
             </div>
+            {renderSectionFields('bitacora')}
           </section>
         </div>
 
