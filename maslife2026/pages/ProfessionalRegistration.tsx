@@ -55,7 +55,7 @@ const ProfessionalRegistration: React.FC = () => {
     name: '', email: '', password: '', confirm: '',
     specialty: '', city: 'Ovalle', customCity: '',
     modalities: { online: true, inPerson: true, home: false },
-    serviceName: 'Consulta Inicial', servicePrice: '45000',
+    serviceName: 'Consulta Inicial', servicePrice: '',
     avatar: null as string | null,
   });
 
@@ -184,7 +184,7 @@ const ProfessionalRegistration: React.FC = () => {
       const trialEnd = new Date();
       trialEnd.setDate(trialEnd.getDate() + 30);
       const services = [{ id: 's1', name: form.serviceName,
-        price: parseInt(form.servicePrice) || 45000, duration: 45, description: '' }];
+        price: parseInt(form.servicePrice) || 25000, duration: 45, description: '' }];
       const slug = form.name.trim().toLowerCase()
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, '-')

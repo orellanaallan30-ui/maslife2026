@@ -634,6 +634,15 @@ const Settings: React.FC = () => {
                         </button>
                       </div>
 
+                      {localProfile.paymentEnabled && !localProfile.mpConnected && (
+                        <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 animate-in slide-in-from-top-4 duration-300">
+                          <span className="material-icons-round text-amber-500 text-xl shrink-0">warning_amber</span>
+                          <p className="text-xs font-bold text-amber-800 leading-relaxed">
+                            Tienes los cobros activos pero <b>aún no conectaste tu MercadoPago</b>. Mientras no lo conectes, tus pacientes reservarán sin pago. Conéctalo arriba para empezar a recibir los pagos en tu cuenta.
+                          </p>
+                        </div>
+                      )}
+
                       {localProfile.paymentEnabled && (
                         <div className="space-y-3 animate-in slide-in-from-top-4 duration-300">
                           <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Modo de cobro al reservar</p>

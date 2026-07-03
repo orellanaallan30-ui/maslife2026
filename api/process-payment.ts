@@ -59,6 +59,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Monto fuera de rango' });
   }
 
+  // ── Token del profesional: cada pago va a SU cuenta de MercadoPago ──
+  // Si cobra pero no conectó su MP, se rechaza (no se enruta el dinero a la
+  // cuenta de la plataforma). Se verifica ANTES de bloquear el cupo.
+  const { data: secret } = await supabase
+    .from('professional_secrets')
+    .select('mp_access_token')
+    .eq('professional_id', prepared.pro.id)
+    .maybeSingle();
+  if (!secret?.mp_access_token) {
+    return res.status(409).json({
+      error: 'MP_NOT_CONNECTED',
+      message: 'El profesional aún no conectó su MercadoPago. No se puede cobrar en línea.',
+    });
+  }
+
   // ── 2. Bloquear el cupo ANTES de redirigir a MP ──
   await releaseStaleHolds(prepared.pro.id);
   const reservation = await insertBooking(input as BookingInput, prepared, {
@@ -73,16 +88,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   const appointmentId = reservation.id;
 
-  // ── Token del vendedor (marketplace) si tiene MP conectado ──
-  let ACCESS_TOKEN = PLATFORM_TOKEN;
+  // ── Token del vendedor: el pago se cobra a la cuenta MP del profesional ──
+  const ACCESS_TOKEN = secret.mp_access_token.trim();
   let marketplaceFee: number | undefined;
-  const { data: secret } = await supabase
-    .from('professional_secrets')
-    .select('mp_access_token')
-    .eq('professional_id', prepared.pro.id)
-    .maybeSingle();
-  if (secret?.mp_access_token) {
-    ACCESS_TOKEN = secret.mp_access_token.trim();
+  {
     const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 5);
     const fee = Math.round(amountDue * pct / 100);
     if (fee > 0 && fee < amountDue) marketplaceFee = fee;

@@ -79,6 +79,10 @@ const PatientProfile: React.FC = () => {
   const confirmedDateRef      = React.useRef<string>('');
 
   const doctor = fetchedDoctor;
+  // Solo se cobra en línea si el profesional activó cobros Y conectó su MercadoPago.
+  // Si activó cobros pero no conectó MP, la reserva se hace sin pago (no un
+  // checkout que fallaría y no se enruta dinero a otra cuenta).
+  const willCharge = !!(doctor?.paymentEnabled && doctor?.mpConnected);
   const bookingFee = doctor?.bookingFee || 5000;
   const paymentAmount = (doctor?.chargeFullService && selectedService)
     ? selectedService.price
@@ -162,10 +166,12 @@ const PatientProfile: React.FC = () => {
   }, [doctor, appointments, proAppointments]);
 
   useEffect(() => {
-    if (localDoctor) { setFetchedDoctor(localDoctor); setLoadingDoctor(false); return; }
     if (!id) { setLoadingDoctor(false); return; }
+    // Supabase es la fuente de verdad: siempre traer el dato fresco. localDoctor
+    // solo sirve de placeholder inicial mientras carga (evita mostrar servicios
+    // /precios stale de un seed local o de localStorage).
     getProfessionalBySlugOrId(id)
-      .then(pro => setFetchedDoctor(pro))
+      .then(pro => { if (pro) setFetchedDoctor(pro); })
       .finally(() => setLoadingDoctor(false));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -595,7 +601,7 @@ const PatientProfile: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Pagado</span>
-                        <p className="text-2xl font-black text-slate-900">${doctor.paymentEnabled ? paymentAmount.toLocaleString('es-CL') : '0'}</p>
+                        <p className="text-2xl font-black text-slate-900">${willCharge ? paymentAmount.toLocaleString('es-CL') : '0'}</p>
                       </div>
                     </div>
                   </div>
@@ -1127,27 +1133,27 @@ const PatientProfile: React.FC = () => {
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">A pagar ahora</span>
-                        {doctor.paymentEnabled && (
+                        {willCharge && (
                           <span className="text-xs font-bold text-slate-500">
                             {doctor.chargeFullService ? 'Precio del servicio' : 'Bono de Reserva de Cupo'}
                           </span>
                         )}
                       </div>
                       <span className="text-4xl font-black text-primary tracking-tighter">
-                        {doctor.paymentEnabled ? `$${paymentAmount.toLocaleString('es-CL')}` : 'Gratis'}
+                        {willCharge ? `$${paymentAmount.toLocaleString('es-CL')}` : 'Gratis'}
                       </span>
                     </div>
                 </div>
 
                 <div className="text-center mb-8">
                   <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-4 scale-in-center">
-                    <span className="material-icons-round text-3xl text-primary">{doctor.paymentEnabled ? 'account_balance_wallet' : 'verified'}</span>
+                    <span className="material-icons-round text-3xl text-primary">{willCharge ? 'account_balance_wallet' : 'verified'}</span>
                   </div>
                   <h3 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Confirmación de Cita</h3>
                   <p className="text-slate-500 font-bold text-sm">Estás a un paso de asegurar tu atención en nuestra plataforma.</p>
                 </div>
                 
-                {doctor.paymentEnabled ? (
+                {willCharge ? (
                   <div className="space-y-3 w-full">
                     {/* Encabezado MP */}
                     <div className="flex items-center gap-2 mb-1">

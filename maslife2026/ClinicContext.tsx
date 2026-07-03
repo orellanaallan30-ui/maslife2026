@@ -70,36 +70,18 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     // Limpiar la clave legacy por si existía
     localStorage.removeItem('maslife_admin_auth');
   };
-  // Estado inicial con profesional de prueba
+  // Limpieza única de data semilla vieja (demo) que quedó cacheada en navegadores.
+  // Supabase es la fuente de verdad: los datos reales se recargan en loadProData.
+  if (localStorage.getItem('maslife_seed_v') !== '2') {
+    localStorage.removeItem('maslife_professionals');
+    localStorage.removeItem('maslife_appointments');
+    localStorage.removeItem('maslife_patients');
+    localStorage.setItem('maslife_seed_v', '2');
+  }
+
   const [professionals, setProfessionals] = useState<ProfessionalProfile[]>(() => {
     const saved = localStorage.getItem('maslife_professionals');
-    if (saved) return JSON.parse(saved);
-
-    return [{
-      id: 'pro-rodrigo',
-      slug: 'rodrigo-orellana',
-      name: 'Rodrigo Orellana',
-      email: 'orellanaallan30@gmail.com',
-      needsPasswordReset: false,
-      isVerified: true,
-      isSubscribed: true,
-      subscriptionStatus: 'active',
-      specialty: 'Kinesiología y Rehabilitación',
-      city: 'Santiago',
-      bio: 'Especialista en rehabilitación avanzada y gestión clínica.',
-      workingHours: { start: "08:00", end: "20:00" },
-      modalities: { online: true, inPerson: true, home: true },
-      isPublic: true,
-      paymentEnabled: true,
-      bookingPaymentLink: 'https://www.flow.cl/app/pay.php?token=reserva5000',
-      phone: '+56965329974',
-      createdAt: new Date().toISOString(),
-      avatar: 'https://picsum.photos/seed/rodrigo/400/400',
-      services: [
-        { id: 's-1', name: 'Consulta Integral', price: 45000, duration: 45, description: 'Sesión completa de evaluación.' },
-        { id: 's-2', name: 'Terapia Manual', price: 35000, duration: 30, description: 'Tratamiento manual especializado.' }
-      ]
-    }];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [loggedPro, setLoggedPro] = useState<ProfessionalProfile | null>(() => {
@@ -133,51 +115,12 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const [appointments, setAppointments] = useState<Appointment[]>(() => {
     const saved = localStorage.getItem('maslife_appointments');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'app-1',
-        patientId: 'p1',
-        patientName: 'Ana Martínez',
-        patientPhone: '+56 9 1234 5678',
-        doctorName: 'Rodrigo Orellana',
-        specialty: 'Kinesiología',
-        serviceName: 'Consulta Integral',
-        date: new Date().toISOString().split('T')[0],
-        time: '09:00',
-        duration: 45,
-        type: 'Online',
-        status: 'Confirmado',
-        price: 45000,
-        paymentStatus: 'Pendiente',
-        category: 'Medical',
-        professionalId: 'pro-rodrigo'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [patients, setPatients] = useState<Patient[]>(() => {
     const saved = localStorage.getItem('maslife_patients');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'p1',
-        name: 'Ana Martínez',
-        rut: '12.345.678-9',
-        email: 'ana@email.com',
-        phone: '+56 9 1234 5678',
-        risk: 'Bajo',
-        status: 'Confirmado',
-        archived: false,
-        customFields: [],
-        attachments: [],
-        allergies: [],
-        medicalHistory: '',
-        age: 34,
-        prevision: 'Fonasa',
-        gender: 'Femenino',
-        birthDate: '1990-01-01',
-        address: 'Av. Libertador 1234, Santiago'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [manualTransactions, setManualTransactions] = useState<Transaction[]>(() => {

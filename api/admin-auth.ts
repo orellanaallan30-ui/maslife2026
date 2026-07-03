@@ -147,7 +147,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (!username || !password) return res.status(400).json({ error: 'Faltan credenciales' });
     await new Promise(r => setTimeout(r, 300));
-    if (username.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim() || password !== ADMIN_PASSWORD) {
+    // Comparación tolerante a espacios/saltos accidentales (típico al pegar la
+    // clave en Vercel) y timing-safe. El usuario debe ser el email admin.
+    const inputPass = String(password).trim();
+    const envPass = String(ADMIN_PASSWORD).trim();
+    const passOk = inputPass.length === envPass.length &&
+      timingSafeEqual(Buffer.from(inputPass), Buffer.from(envPass));
+    if (username.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim() || !passOk) {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
     return res.status(200).json({ token: createAdminToken(ADMIN_JWT_SECRET) });
