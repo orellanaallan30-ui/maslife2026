@@ -15,8 +15,8 @@ const CHILEAN_CITIES = [
 ].sort();
 
 
+// Registro en 2 pasos: no depende de un código manual (escalable).
 const STEPS = [
-  { label: 'Código',    icon: 'shield' },
   { label: 'Perfil',   icon: 'person' },
   { label: 'Servicios',icon: 'medical_services' },
 ];
@@ -35,6 +35,7 @@ function mapDBtoPro(d: Record<string, any>) {
     bookingPaymentLink: d.booking_payment_link || undefined,
     subscriptionLink: d.subscription_link || '', createdAt: d.created_at || new Date().toISOString(),
     rut: d.rut || undefined, schedule: d.schedule || undefined,
+    sisCode: d.sis_code || undefined,
   };
 }
 
@@ -43,17 +44,15 @@ const ProfessionalRegistration: React.FC = () => {
   const { setLoggedPro } = useClinic();
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
-  const [authCode, setAuthCode] = useState(searchParams.get('ref') ?? '');
-  const [codeError, setCodeError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [registrationDone, setRegistrationDone] = useState(false);
-  const [referrerId, setReferrerId] = useState<string | null>(null);
-  const [referrerName, setReferrerName] = useState<string | null>(null);
+  const [registrationDone, setRegistrationDone] = useState(false); // sesión activa → pantalla de pago
+  const [emailSent, setEmailSent] = useState<string | null>(null);  // confirmación por email → "revisa tu correo"
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [form, setForm] = useState({
     name: '', email: '', password: '', confirm: '',
     specialty: '', city: 'Ovalle', customCity: '',
+    sisCode: '', referralCode: searchParams.get('ref') ?? '',
     modalities: { online: true, inPerson: true, home: false },
     serviceName: 'Consulta Inicial', servicePrice: '',
     avatar: null as string | null,
@@ -70,32 +69,6 @@ const ProfessionalRegistration: React.FC = () => {
     match:  form.password === form.confirm && form.confirm !== '',
   };
 
-  const handleCodeNext = async () => {
-    setLoading(true);
-    setCodeError('');
-    try {
-      const res = await fetch('/api/admin-auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'validate-code', code: authCode.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.valid) {
-        setCodeError(data.error || 'Código incorrecto. Solicítalo a la administración.');
-        return;
-      }
-      if (data.referrerId) {
-        setReferrerId(data.referrerId);
-        setReferrerName(data.referrerName || null);
-      }
-      setStep(2);
-    } catch {
-      setCodeError('Error de conexión. Intenta de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleProfileNext = () => {
     if (!form.name.trim())  { setError('Ingresa tu nombre.'); return; }
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { setError('Email inválido.'); return; }
@@ -103,7 +76,24 @@ const ProfessionalRegistration: React.FC = () => {
     if (!pwChecks.match)    { setError('Las contraseñas no coinciden.'); return; }
     if (!form.specialty.trim()) { setError('Ingresa tu especialidad.'); return; }
     if (form.city === 'Otra ciudad' && !form.customCity.trim()) { setError('Ingresa el nombre de tu ciudad.'); return; }
-    setError(''); setStep(3);
+    setError(''); setStep(2);
+  };
+
+  // Valida un código de referido (opcional). Nunca bloquea el registro:
+  // si es inválido o hay error de red, se ignora y se continúa sin referido.
+  const resolveReferrer = async (code: string): Promise<string | null> => {
+    const trimmed = code.trim();
+    if (!trimmed) return null;
+    try {
+      const res = await fetch('/api/admin-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'validate-code', code: trimmed }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.valid && data.referrerId) return data.referrerId as string;
+    } catch { /* referido opcional — se ignora si falla */ }
+    return null;
   };
 
   const handleFinish = async (e: React.FormEvent) => {
@@ -111,6 +101,7 @@ const ProfessionalRegistration: React.FC = () => {
     if (!acceptedTerms) { setError('Debes aceptar los Términos y Condiciones para continuar.'); return; }
     setLoading(true); setError('');
     const finalCity = form.city === 'Otra ciudad' ? form.customCity.trim() : form.city;
+    const emailLower = form.email.trim().toLowerCase();
 
     let timedOut = false;
     const timeoutId = setTimeout(() => {
@@ -120,8 +111,11 @@ const ProfessionalRegistration: React.FC = () => {
     }, 25000);
 
     try {
+      const referrerId = await resolveReferrer(form.referralCode);
+      if (timedOut) return;
+
       const { data: authData, error: authErr } = await supabase.auth.signUp({
-        email: form.email.trim().toLowerCase(),
+        email: emailLower,
         password: form.password,
         options: {
           data: { name: form.name.trim(), specialty: form.specialty.trim() },
@@ -136,29 +130,14 @@ const ProfessionalRegistration: React.FC = () => {
         return;
       }
 
-      let realUid: string;
-      if (authData?.session) {
-        realUid = authData.session.user.id;
-      } else {
-        if (authData?.user) {
-          await supabase.rpc('auto_confirm_new_user', { user_id: authData.user.id });
-          await new Promise(r => setTimeout(r, 700));
-        }
-        if (timedOut) return;
-        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-          email: form.email.trim().toLowerCase(),
-          password: form.password,
-        });
-        if (timedOut) return;
-        if (signInErr || !signInData?.session) {
-          setError(signInErr?.message?.toLowerCase().includes('email not confirmed')
-            ? 'Cuenta creada. Revisa tu email y confirma tu cuenta para ingresar. Luego vuelve al login.'
-            : 'Cuenta creada. Ingresa desde la pantalla de login con tu email y contraseña.');
-          return;
-        }
-        realUid = signInData.session.user.id;
+      // Con confirmación por email activada, signUp NO devuelve sesión: usamos el
+      // user.id que sí entrega, y la fila se inserta vía la política pro_insert_anon.
+      const realUid = authData?.session?.user?.id ?? authData?.user?.id;
+      if (!realUid) {
+        setError('No se pudo crear la cuenta. Intenta de nuevo.');
+        return;
       }
-      if (timedOut) return;
+      const hasSession = !!authData?.session;
 
       // Generar código de referido único (4 letras del nombre + 4 del UUID)
       const namePrefix = form.name.trim()
@@ -166,20 +145,9 @@ const ProfessionalRegistration: React.FC = () => {
         .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(4, 'X');
       const referralCode = namePrefix + realUid.replace(/-/g, '').slice(0, 4).toUpperCase();
 
-      // Subir foto de perfil a Storage (evita base64 en DB)
-      let avatarUrl = '';
-      if (form.avatar?.startsWith('data:')) {
-        try {
-          const blob = await fetch(form.avatar).then(r => r.blob());
-          const ext = blob.type.split('/')[1] || 'jpg';
-          const { data: uploaded, error: upErr } = await supabase.storage
-            .from('patients-images')
-            .upload(`avatars/${realUid}.${ext}`, blob, { upsert: true, contentType: blob.type });
-          if (!upErr && uploaded) {
-            avatarUrl = supabase.storage.from('patients-images').getPublicUrl(uploaded.path).data.publicUrl;
-          }
-        } catch { /* foto opcional */ }
-      }
+      // Avatar: sin sesión no se puede subir a Storage (requiere auth), así que se
+      // guarda como base64 en la fila. Es una sola imagen por registro.
+      const avatarValue = form.avatar?.startsWith('data:') ? form.avatar : '';
 
       const trialEnd = new Date();
       trialEnd.setDate(trialEnd.getDate() + 30);
@@ -194,19 +162,22 @@ const ProfessionalRegistration: React.FC = () => {
         .from('professionals').select('*').eq('id', realUid).maybeSingle();
       if (timedOut) return;
       if (existingPro) {
-        setLoggedPro(mapDBtoPro(existingPro) as any);
-        navigate('/pro/dashboard');
+        if (hasSession) { setLoggedPro(mapDBtoPro(existingPro) as any); navigate('/pro/dashboard'); return; }
+        clearTimeout(timeoutId);
+        setEmailSent(emailLower);
         return;
       }
 
       const { error: saveErr } = await supabase.from('professionals').insert({
         id: realUid, slug, name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
+        email: emailLower,
         specialty: form.specialty.trim(), city: finalCity,
-        bio: '', avatar: avatarUrl,
+        bio: '', avatar: avatarValue,
         working_hours: { start: '09:00', end: '18:00' },
         modalities: form.modalities, services,
-        is_public: true, is_verified: true, is_approved: true,
+        // Cuenta usable tras confirmar el correo; la insignia "Verificado" la otorga
+        // el admin tras revisar el código SIS + RUT (is_verified arranca en false).
+        is_public: true, is_verified: false, is_approved: true,
         is_subscribed: false, subscription_status: 'trial',
         trial_end_date: trialEnd.toISOString(),
         needs_password_reset: false, payment_enabled: false,
@@ -214,13 +185,15 @@ const ProfessionalRegistration: React.FC = () => {
         terms_accepted_at: new Date().toISOString(),
         referral_code: referralCode,
         referred_by: referrerId || null,
+        sis_code: form.sisCode.trim() || null,
       });
       if (timedOut) return;
 
       if (saveErr) {
         if (saveErr.code === '23505') {
           const { data: proData } = await supabase.from('professionals').select('*').eq('id', realUid).maybeSingle();
-          if (proData) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
+          if (proData && hasSession) { setLoggedPro(mapDBtoPro(proData) as any); navigate('/pro/dashboard'); return; }
+          if (proData) { clearTimeout(timeoutId); setEmailSent(emailLower); return; }
           setError('Este email ya tiene un perfil. Intenta iniciar sesión.');
         } else {
           setError('Error al guardar el perfil: ' + saveErr.message);
@@ -238,14 +211,22 @@ const ProfessionalRegistration: React.FC = () => {
       }
 
       clearTimeout(timeoutId);
+
+      // Sin sesión (confirmación por email): mostrar "revisa tu correo".
+      if (!hasSession) {
+        setEmailSent(emailLower);
+        return;
+      }
+
+      // Con sesión activa (confirmación desactivada en Supabase): entrar directo.
       setLoggedPro({
         id: realUid, slug, name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
+        email: emailLower,
         specialty: form.specialty.trim(), city: finalCity,
-        bio: '', avatar: avatarUrl,
+        bio: '', avatar: avatarValue,
         workingHours: { start: '09:00', end: '18:00' },
         modalities: form.modalities, services,
-        isPublic: true, isVerified: true, isApproved: true,
+        isPublic: true, isVerified: false, isApproved: true,
         isSubscribed: false, subscriptionStatus: 'trial',
         trialEndDate: trialEnd.toISOString(),
         needsPasswordReset: false, paymentEnabled: false,
@@ -268,6 +249,47 @@ const ProfessionalRegistration: React.FC = () => {
 
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK ||
     'https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=e7c9a9a7adc24dee8c1f7fb78bdbdc67';
+
+  // ── Pantalla "revisa tu correo" (confirmación por email) ──
+  if (emailSent) {
+    return (
+      <div className="flex-1 overflow-y-auto w-full bg-slate-50">
+        <div className="flex flex-col items-center justify-center min-h-full py-10 px-4">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 p-8 text-center space-y-5">
+            <div className="flex justify-center">
+              <div className="w-20 h-20 rounded-full bg-teal-100 flex items-center justify-center">
+                <span className="material-icons-round text-teal-500" style={{fontSize:'3rem'}}>mark_email_read</span>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900">¡Revisa tu correo!</h3>
+              <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                Enviamos un enlace de confirmación a<br/>
+                <strong className="text-slate-800">{emailSent}</strong>
+              </p>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left">
+              <p className="text-xs text-slate-600 leading-relaxed">
+                <strong className="text-slate-800">1.</strong> Abre el correo de Clínica Mas Life.<br/>
+                <strong className="text-slate-800">2.</strong> Haz clic en <strong>"Confirmar cuenta"</strong>.<br/>
+                <strong className="text-slate-800">3.</strong> Inicia sesión y completa tu perfil.
+              </p>
+            </div>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              ¿No lo ves? Revisa tu carpeta de spam o correo no deseado. El enlace puede tardar unos minutos.
+            </p>
+            <button
+              onClick={() => navigate('/pro/login')}
+              className="w-full py-4 bg-teal-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25 flex items-center justify-center gap-2"
+            >
+              <span className="material-icons-round text-base">login</span>
+              Ir a iniciar sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto w-full bg-slate-50">
@@ -312,64 +334,23 @@ const ProfessionalRegistration: React.FC = () => {
         {/* Card */}
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
           <div className="h-1.5 bg-slate-100">
-            <div className="h-full bg-teal-500 transition-all duration-700 rounded-full" style={{width:`${(step/3)*100}%`}}/>
+            <div className="h-full bg-teal-500 transition-all duration-700 rounded-full" style={{width:`${(step/2)*100}%`}}/>
           </div>
           <div className="p-5 sm:p-8">
 
-            {/* PASO 1 */}
+            {/* PASO 1 — Perfil */}
             {step===1&&(
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 bg-slate-900 rounded-2xl flex items-center justify-center shrink-0">
-                    <span className="material-icons-round text-teal-400 text-xl">vpn_key</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-slate-900">Código de autorización</h3>
-                    <p className="text-xs text-slate-500">Proporcionado por la administración de la clínica</p>
-                  </div>
-                </div>
-                {searchParams.get('ref') ? (
+              <div className="space-y-4">
+                <h3 className="text-lg font-black text-slate-900">Tus datos profesionales</h3>
+                {searchParams.get('ref') && (
                   <div className="bg-teal-50 border-2 border-teal-300 rounded-2xl p-4 flex items-start gap-3">
                     <span className="material-icons-round text-teal-500 text-2xl shrink-0">card_giftcard</span>
                     <div>
                       <p className="font-black text-teal-800 text-sm">¡Un colega te invitó a Clínica Mas Life!</p>
-                      <p className="text-teal-700 text-xs mt-1 leading-relaxed">Tu código de referido ya está listo. Solo haz clic en <strong>"Validar y Continuar"</strong> para unirte y obtener tu primer mes gratis.</p>
+                      <p className="text-teal-700 text-xs mt-1 leading-relaxed">Tu código de referido ya está aplicado. Completa tu registro para unirte.</p>
                     </div>
                   </div>
-                ) : (
-                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-4 text-sm text-teal-800">
-                    Ingresa el código que te entregó el administrador de Clínica Mas Life para acceder al registro.
-                  </div>
                 )}
-                <div>
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Código de acceso</label>
-                  <input value={authCode} onChange={e=>{setAuthCode(e.target.value.toUpperCase());setCodeError('');}}
-                    onKeyDown={e=>e.key==='Enter'&&handleCodeNext()}
-                    placeholder="••••••••••••"
-                    className="w-full py-4 px-6 rounded-2xl bg-slate-950 border-2 border-slate-800
-                      font-mono text-xl tracking-[0.3em] text-white text-center uppercase
-                      focus:border-teal-500 outline-none placeholder:text-slate-700"/>
-                  {codeError&&<p className="text-rose-500 text-xs font-bold mt-2 flex items-center gap-1"><span className="material-icons-round text-xs">error</span>{codeError}</p>}
-                  {referrerName&&<p className="text-emerald-600 text-xs font-bold mt-2 flex items-center gap-1"><span className="material-icons-round text-xs">check_circle</span>Código de <strong className="ml-0.5">{referrerName}</strong> — ¡ambos recibirán beneficios!</p>}
-                </div>
-                <button onClick={handleCodeNext} disabled={authCode.length<4 || loading}
-                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest
-                    disabled:opacity-40 hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
-                  {loading
-                    ? <><span className="material-icons-round text-base animate-spin">sync</span>Validando...</>
-                    : <>Validar y Continuar <span className="material-icons-round text-base">arrow_forward</span></>
-                  }
-                </button>
-                <p className="text-center text-sm text-slate-500">
-                  ¿Ya tienes cuenta? <Link to="/pro/login" className="text-teal-600 font-bold hover:text-teal-800">Inicia sesión</Link>
-                </p>
-              </div>
-            )}
-
-            {/* PASO 2 */}
-            {step===2&&(
-              <div className="space-y-4">
-                <h3 className="text-lg font-black text-slate-900">Tus datos profesionales</h3>
                 {/* Avatar */}
                 <div className="flex items-center gap-4 mb-2">
                   <div className="relative shrink-0">
@@ -427,18 +408,35 @@ const ProfessionalRegistration: React.FC = () => {
                       className={`${inp} mt-2`} placeholder="Escribe el nombre de tu ciudad"/>
                   )}
                 </div>
+                {/* Código SIS (opcional) — habilita la insignia de verificado */}
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">N° registro Superintendencia de Salud (SIS)</label>
+                  <input value={form.sisCode} onChange={e=>setForm(f=>({...f,sisCode:e.target.value}))} className={inp} placeholder="Opcional — para tu insignia de verificado"/>
+                  <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed flex items-start gap-1">
+                    <span className="material-icons-round text-xs mt-0.5 text-teal-500">verified</span>
+                    El administrador revisa tu SIS + RUT para otorgarte la insignia de <strong className="text-slate-500">Profesional Verificado</strong> que aparece junto a tu foto.
+                  </p>
+                </div>
+                {/* Código promocional / referido (opcional) */}
+                <div>
+                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Código promocional (opcional)</label>
+                  <input value={form.referralCode} onChange={e=>setForm(f=>({...f,referralCode:e.target.value.toUpperCase()}))} className={`${inp} font-mono tracking-widest`} placeholder="Si un colega te invitó, ingrésalo aquí"/>
+                  <p className="text-[11px] text-slate-400 mt-1.5">Puedes registrarte sin código. Si tienes uno de referido, ambos reciben beneficios.</p>
+                </div>
                 {error&&<div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2">
                   <span className="material-icons-round text-rose-500 text-base shrink-0 mt-0.5">error</span>
                   <p className="text-sm text-rose-700 font-medium">{error}</p></div>}
-                <div className="flex gap-3 pt-1">
-                  <button onClick={()=>{setStep(1);setError('');}} className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Atrás</button>
-                  <button onClick={handleProfileNext} className="flex-[2] py-3.5 bg-teal-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25">Siguiente</button>
+                <div className="pt-1">
+                  <button onClick={handleProfileNext} className="w-full py-3.5 bg-teal-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25">Siguiente</button>
                 </div>
+                <p className="text-center text-sm text-slate-500">
+                  ¿Ya tienes cuenta? <Link to="/pro/login" className="text-teal-600 font-bold hover:text-teal-800">Inicia sesión</Link>
+                </p>
               </div>
             )}
 
-            {/* PASO 3 */}
-            {step===3 && !registrationDone && (
+            {/* PASO 2 — Servicios y términos */}
+            {step===2 && !registrationDone && (
               <form onSubmit={handleFinish} className="space-y-5">
                 <h3 className="text-lg font-black text-slate-900">Modalidades y primer servicio</h3>
                 <div>
@@ -461,9 +459,9 @@ const ProfessionalRegistration: React.FC = () => {
                   <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Precio (CLP)</label>
                     <input type="text" inputMode="numeric" value={form.servicePrice} onChange={e=>setForm(f=>({...f,servicePrice:e.target.value.replace(/\D/g,'')}))} className={inp} placeholder="45000"/></div>
                 </div>
-                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-start gap-3">
-                  <span className="material-icons-round text-emerald-500 text-xl shrink-0 mt-0.5">verified</span>
-                  <p className="text-sm text-emerald-800 font-medium">Al usar el código de la clínica tu cuenta queda <strong>activa inmediatamente</strong>. Podrás ingresar al panel ahora mismo.</p>
+                <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex items-start gap-3">
+                  <span className="material-icons-round text-teal-500 text-xl shrink-0 mt-0.5">mark_email_read</span>
+                  <p className="text-sm text-teal-800 font-medium">Te enviaremos un <strong>correo de confirmación</strong>. Confírmalo para activar tu cuenta e ingresar al panel. Tu período de prueba de 30 días comienza al confirmar.</p>
                 </div>
                 {error&&<div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2">
                   <span className="material-icons-round text-rose-500 text-base shrink-0 mt-0.5">error</span>
@@ -483,7 +481,7 @@ const ProfessionalRegistration: React.FC = () => {
                   </span>
                 </label>
                 <div className="flex gap-3 pt-1">
-                  <button type="button" onClick={()=>{setStep(2);setError('');}} className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Atrás</button>
+                  <button type="button" onClick={()=>{setStep(1);setError('');}} className="flex-1 py-3.5 bg-slate-100 text-slate-600 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">Atrás</button>
                   <button type="submit" disabled={loading || !acceptedTerms}
                     className="flex-[2] py-3.5 bg-teal-500 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25 disabled:opacity-60 flex items-center justify-center gap-2">
                     {loading?<><span className="material-icons-round text-base animate-spin">sync</span>Creando...</>:<><span className="material-icons-round text-base">how_to_reg</span>Crear mi cuenta</>}
@@ -492,8 +490,8 @@ const ProfessionalRegistration: React.FC = () => {
               </form>
             )}
 
-            {/* PASO 4 — Configurar método de pago */}
-            {step===3 && registrationDone && (
+            {/* Sesión activa (confirmación desactivada) — Configurar método de pago */}
+            {step===2 && registrationDone && (
               <div className="space-y-6 text-center">
                 <div className="flex justify-center">
                   <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">

@@ -194,7 +194,7 @@ const PUBLIC_PRO_COLUMNS =
   'id, slug, name, specialty, city, bio, avatar, working_hours, schedule, modalities, ' +
   'services, is_public, is_verified, is_approved, is_subscribed, subscription_status, ' +
   'payment_enabled, booking_fee, charge_full_service, mp_connected, mp_public_key, ' +
-  'instagram, reviews_enabled, created_at';
+  'instagram, reviews_enabled, created_at, seed_rating, seed_rating_count';
 
 export async function getProfessionalBySlugOrId(slugOrId: string): Promise<ProfessionalProfile | null> {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
@@ -365,6 +365,9 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     referredBy:        (d.referred_by as string)        || undefined,
     referralCreditClp: (d.referral_credit_clp as number) ?? 0,
     termsAcceptedAt:   (d.terms_accepted_at as string)  || undefined,
+    sisCode:           (d.sis_code as string)           || undefined,
+    seedRating:        (d.seed_rating as number)        ?? 0,
+    seedRatingCount:   (d.seed_rating_count as number)  ?? 0,
   } as ProfessionalProfile;
 }
 
@@ -514,14 +517,23 @@ export async function getProfessionalReviews(professionalId: string): Promise<Re
   }));
 }
 
-export async function getProfessionalRating(professionalId: string): Promise<{ avg: number; count: number }> {
+export async function getProfessionalRating(
+  professionalId: string,
+  seedRating = 0,
+  seedRatingCount = 0,
+): Promise<{ avg: number; count: number }> {
   const { data, error } = await supabase
     .from('professional_reviews')
     .select('rating')
     .eq('professional_id', professionalId);
-  if (error || !data || data.length === 0) return { avg: 0, count: 0 };
-  const avg = data.reduce((s, r) => s + r.rating, 0) / data.length;
-  return { avg: Math.round(avg * 10) / 10, count: data.length };
+  const realSum = (error || !data) ? 0 : data.reduce((s, r) => s + r.rating, 0);
+  const realCount = (error || !data) ? 0 : data.length;
+  // Combina la nota base del admin (seed) con las reseñas reales, ponderando por cantidad.
+  const seedSum = (seedRating || 0) * (seedRatingCount || 0);
+  const totalCount = realCount + (seedRatingCount || 0);
+  if (totalCount === 0) return { avg: 0, count: 0 };
+  const avg = (realSum + seedSum) / totalCount;
+  return { avg: Math.round(avg * 10) / 10, count: totalCount };
 }
 
 export async function getReferralCount(professionalId: string): Promise<number> {

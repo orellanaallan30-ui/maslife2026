@@ -200,8 +200,8 @@ const PatientProfile: React.FC = () => {
   useEffect(() => {
     if (!fetchedDoctor?.id || !fetchedDoctor.reviewsEnabled) return;
     getProfessionalReviews(fetchedDoctor.id).then(setReviews);
-    getProfessionalRating(fetchedDoctor.id).then(setRating);
-  }, [fetchedDoctor?.id, fetchedDoctor?.reviewsEnabled]);
+    getProfessionalRating(fetchedDoctor.id, fetchedDoctor.seedRating, fetchedDoctor.seedRatingCount).then(setRating);
+  }, [fetchedDoctor?.id, fetchedDoctor?.reviewsEnabled, fetchedDoctor?.seedRating, fetchedDoctor?.seedRatingCount]);
 
   // Retorno desde Checkout Pro de MercadoPago. Al volver de la página de pago,
   // MP agrega ?mp_return=1&status=approved&external_reference=... a la back_url.
@@ -748,17 +748,21 @@ const PatientProfile: React.FC = () => {
                     src={doctor.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=0d9488&color=fff&size=200`}
                     alt={doctor.name}
                   />
-                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 border-2 border-white rounded-lg p-0.5 flex items-center justify-center">
-                    <span className="material-icons-round text-white" style={{ fontSize: '10px' }}>verified</span>
-                  </div>
+                  {doctor.isVerified && (
+                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 border-2 border-white rounded-lg p-0.5 flex items-center justify-center">
+                      <span className="material-icons-round text-white" style={{ fontSize: '10px' }}>verified</span>
+                    </div>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-black text-slate-900 text-base leading-tight">{doctor.name}</h3>
-                    <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
-                      <span className="material-icons-round" style={{ fontSize: '10px' }}>verified</span>
-                      Verificado
-                    </span>
+                    {doctor.isVerified && (
+                      <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                        <span className="material-icons-round" style={{ fontSize: '10px' }}>verified</span>
+                        Verificado
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs font-bold text-primary mt-0.5">{doctor.specialty}</p>
                   {doctor.city && (
@@ -912,7 +916,7 @@ const PatientProfile: React.FC = () => {
                                   } else {
                                     setReviewStatus('success');
                                     getProfessionalReviews(fetchedDoctor!.id).then(setReviews);
-                                    getProfessionalRating(fetchedDoctor!.id).then(setRating);
+                                    getProfessionalRating(fetchedDoctor!.id, fetchedDoctor!.seedRating, fetchedDoctor!.seedRatingCount).then(setRating);
                                   }
                                 } catch {
                                   setReviewError('Error de conexión. Intenta de nuevo.');

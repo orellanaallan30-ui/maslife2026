@@ -256,9 +256,11 @@ const PatientResults: React.FC = () => {
                       onError={(e) => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(doc.name)}&background=0284c7&color=fff&size=200`; }}
                       alt={doc.name}
                     />
-                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-lg border-2 border-white">
-                      <span className="material-icons-round text-[10px]">verified</span>
-                    </div>
+                    {doc.isVerified && (
+                      <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-lg border-2 border-white">
+                        <span className="material-icons-round text-[10px]">verified</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Info */}

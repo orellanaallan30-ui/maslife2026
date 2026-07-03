@@ -34,6 +34,7 @@ const AdminManagement: React.FC = () => {
   const [subLinkModal, setSubLinkModal] = useState<{ pro: ProfessionalProfile; link: string } | null>(null);
   const [deleteModal, setDeleteModal]   = useState<ProfessionalProfile | null>(null);
   const [rejectModal, setRejectModal]   = useState<ProfessionalProfile | null>(null);
+  const [seedModal, setSeedModal]       = useState<{ pro: ProfessionalProfile; rating: string; count: string } | null>(null);
   const [searchQuery, setSearchQuery]   = useState('');
 
   // ── Charlas state ──
@@ -154,11 +155,40 @@ const AdminManagement: React.FC = () => {
   const handleApprove = async (pro: ProfessionalProfile) => {
     setLoading(pro.id, true);
     try {
-      const res = await adminFetch('PATCH', { id: pro.id, is_verified: true, is_approved: true });
+      // Aprobar = perfil usable. La insignia "Verificado" se otorga aparte tras
+      // revisar el código SIS + RUT (handleToggleVerified).
+      const res = await adminFetch('PATCH', { id: pro.id, is_approved: true });
       if (!res.ok) throw new Error((await res.json()).error);
-      setAllPros(prev => prev.map(p => p.id === pro.id ? { ...p, isVerified: true, isApproved: true } : p));
+      setAllPros(prev => prev.map(p => p.id === pro.id ? { ...p, isApproved: true } : p));
       showToast(`✅ ${pro.name} aprobado`);
     } catch { showToast('❌ Error al aprobar.'); }
+    finally { setLoading(pro.id, false); }
+  };
+
+  // Otorga o retira la insignia de "Profesional Verificado" (tras revisar SIS + RUT).
+  const handleToggleVerified = async (pro: ProfessionalProfile) => {
+    setLoading(pro.id, true);
+    const next = !pro.isVerified;
+    try {
+      const res = await adminFetch('PATCH', { id: pro.id, is_verified: next });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setAllPros(prev => prev.map(p => p.id === pro.id ? { ...p, isVerified: next } : p));
+      showToast(next ? `🛡️ ${pro.name} verificado` : `Insignia retirada a ${pro.name}`);
+    } catch { showToast('❌ Error al actualizar la insignia.'); }
+    finally { setLoading(pro.id, false); }
+  };
+
+  // Fija la nota base (estrellas) y nº de reseñas base para que el perfil no parta en cero.
+  const handleSeedRating = async (pro: ProfessionalProfile, rating: number, count: number) => {
+    const safeRating = Math.max(0, Math.min(5, rating));
+    const safeCount = Math.max(0, Math.round(count));
+    setLoading(pro.id, true);
+    try {
+      const res = await adminFetch('PATCH', { id: pro.id, seed_rating: safeRating, seed_rating_count: safeCount });
+      if (!res.ok) throw new Error((await res.json()).error);
+      setAllPros(prev => prev.map(p => p.id === pro.id ? { ...p, seedRating: safeRating, seedRatingCount: safeCount } : p));
+      showToast(`⭐ Nota base de ${pro.name}: ${safeRating} (${safeCount})`);
+    } catch { showToast('❌ Error al fijar la nota base.'); }
     finally { setLoading(pro.id, false); }
   };
 
@@ -503,6 +533,7 @@ const AdminManagement: React.FC = () => {
                           <p className="text-xs text-slate-500">{pro.email}</p>
                           <p className="text-xs text-teal-600 font-bold mt-0.5">{pro.specialty} · {pro.city}</p>
                           {pro.rut && <p className="text-xs text-slate-600 mt-0.5">RUT: {pro.rut}</p>}
+                          {pro.sisCode && <p className="text-xs text-slate-600 mt-0.5">SIS: <strong className="font-mono">{pro.sisCode}</strong></p>}
                         </div>
                       </div>
                       <div className="flex gap-2 pt-3 border-t border-slate-200">
@@ -681,6 +712,28 @@ const AdminManagement: React.FC = () => {
                                     : 'bg-slate-100 text-slate-500 hover:bg-teal-500 hover:text-white border-slate-200'
                                 }`}>
                                 <span className="material-icons-round text-sm">card_giftcard</span>
+                              </button>
+                              {/* Insignia verificado (revisar SIS + RUT) */}
+                              <button onClick={() => handleToggleVerified(pro)}
+                                title={pro.isVerified
+                                  ? `Verificado — SIS: ${pro.sisCode || 's/i'} · RUT: ${pro.rut || 's/i'} (clic para quitar)`
+                                  : `Otorgar insignia de verificado — SIS: ${pro.sisCode || 's/i'} · RUT: ${pro.rut || 's/i'}`}
+                                className={`p-2 rounded-xl border transition-all ${
+                                  pro.isVerified
+                                    ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white border-slate-200'
+                                }`}>
+                                <span className="material-icons-round text-sm">verified</span>
+                              </button>
+                              {/* Nota base (estrellas) */}
+                              <button onClick={() => setSeedModal({ pro, rating: String(pro.seedRating ?? 0), count: String(pro.seedRatingCount ?? 0) })}
+                                title={`Nota base: ${pro.seedRating ?? 0} (${pro.seedRatingCount ?? 0} reseñas)`}
+                                className={`p-2 rounded-xl border transition-all ${
+                                  (pro.seedRating ?? 0) > 0
+                                    ? 'bg-amber-500/20 text-amber-600 border-amber-500/30 hover:bg-amber-500 hover:text-white'
+                                    : 'bg-slate-100 text-slate-500 hover:bg-amber-500 hover:text-white border-slate-200'
+                                }`}>
+                                <span className="material-icons-round text-sm">star</span>
                               </button>
                               {/* Eliminar */}
                               <button onClick={() => handleDelete(pro)} title="Eliminar permanentemente"
@@ -1109,6 +1162,60 @@ const AdminManagement: React.FC = () => {
         </div>
       )}
 
+      {/* ── MODAL: Nota base (estrellas) ── */}
+      {seedModal && (
+        <div className="fixed inset-0 bg-slate-50/80 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                <span className="material-icons-round text-amber-600 text-2xl">star</span>
+              </div>
+              <div>
+                <h3 className="text-slate-900 font-black text-lg">Nota base del perfil</h3>
+                <p className="text-slate-400 text-sm">{seedModal.pro.name}</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+              Fija una calificación inicial para que el perfil no parta en cero. Se combina con las reseñas reales que lleguen (promedio ponderado).
+            </p>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estrellas (0–5)</label>
+                <input type="number" min={0} max={5} step={0.1} value={seedModal.rating}
+                  onChange={e => setSeedModal({ ...seedModal, rating: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 text-2xl font-black focus:outline-none focus:border-amber-500/50 text-center"
+                  placeholder="4.8" autoFocus />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nº reseñas base</label>
+                <input type="number" min={0} max={9999} value={seedModal.count}
+                  onChange={e => setSeedModal({ ...seedModal, count: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 text-2xl font-black focus:outline-none focus:border-amber-500/50 text-center"
+                  placeholder="12" />
+              </div>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-6 text-xs text-amber-700 flex items-center gap-1.5">
+              <span className="material-icons-round text-sm">star</span>
+              Mostrará <strong>{(Math.max(0, Math.min(5, parseFloat(seedModal.rating) || 0))).toFixed(1)}</strong> con <strong>{Math.max(0, Math.round(parseInt(seedModal.count) || 0))}</strong> reseñas base.
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => setSeedModal(null)}
+                className="flex-1 py-3 bg-slate-100 text-slate-600 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all">
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  const m = seedModal; setSeedModal(null);
+                  await handleSeedRating(m.pro, parseFloat(m.rating) || 0, parseInt(m.count) || 0);
+                }}
+                className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-b-4 border-amber-700 active:border-b-0 active:translate-y-1">
+                Guardar nota
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL: Link de suscripción ── */}
       {subLinkModal && (
         <div className="fixed inset-0 bg-slate-50/80 backdrop-blur-md z-[200] flex items-center justify-center p-6">
@@ -1387,6 +1494,9 @@ function mapDBtoPro(d: Record<string, unknown>): ProfessionalProfile {
     rut:                d.rut as string | undefined,
     schedule:           d.schedule as ProfessionalProfile['schedule'],
     instagram:          (d.instagram as string)             || undefined,
+    sisCode:            (d.sis_code as string)              || undefined,
+    seedRating:         (d.seed_rating as number)           ?? 0,
+    seedRatingCount:    (d.seed_rating_count as number)     ?? 0,
   };
 }
 

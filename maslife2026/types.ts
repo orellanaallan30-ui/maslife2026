@@ -99,6 +99,9 @@ export interface ProfessionalProfile {
   referralCreditClp?: number;
   termsAcceptedAt?:   string;
   rut?:               string;
+  sisCode?:           string;  // N° registro Superintendencia de Salud (privado, solo admin/dueño)
+  seedRating?:        number;  // nota base 0-5 asignada por admin
+  seedRatingCount?:   number;  // nº reseñas base para ponderar
 }
 
 export interface Appointment {

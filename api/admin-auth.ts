@@ -11,6 +11,7 @@ const ADMIN_COLUMNS = [
   'subscription_link', 'rut', 'modalities', 'services',
   'working_hours', 'schedule', 'needs_password_reset', 'instagram',
   'subscription_exempt', 'paused_at',
+  'sis_code', 'seed_rating', 'seed_rating_count',
 ].join(', ');
 
 function createAdminToken(secret: string): string {
@@ -117,15 +118,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!checkRateLimit(req.headers, 5, 60 * 60 * 1000)) {
         return res.status(429).json({ valid: false, error: 'Demasiados intentos. Intenta en 1 hora.' });
       }
+      // El código ya NO es obligatorio para registrarse (registro escalable por
+      // email). Este endpoint queda solo para resolver códigos de referido y,
+      // opcionalmente, el código de clínica legacy si sigue configurado.
       const CLINIC_CODE = process.env.CLINIC_AUTH_CODE;
-      if (!CLINIC_CODE) return res.status(500).json({ valid: false, error: 'Código no configurado en servidor' });
       if (!code) return res.status(400).json({ valid: false });
       await new Promise(r => setTimeout(r, 400));
-      const valid = timingSafeEqualStr(
-        (code as string).toUpperCase().trim(),
-        CLINIC_CODE.toUpperCase().trim()
-      );
-      if (valid) return res.status(200).json({ valid: true });
+      if (CLINIC_CODE) {
+        const valid = timingSafeEqualStr(
+          (code as string).toUpperCase().trim(),
+          CLINIC_CODE.toUpperCase().trim()
+        );
+        if (valid) return res.status(200).json({ valid: true });
+      }
 
       // Fallback: check if it's a professional referral code
       if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
