@@ -281,8 +281,10 @@ const PatientProfile: React.FC = () => {
             confirmed = (await resp.json())?.confirmed === true;
           } catch (e) { console.error('[checkout-pro] confirmación', e); }
         }
-        // Notificamos al profesional siempre (el webhook concilia si esto falló).
-        if (pending.doctorEmail) {
+        // Notificar a profesional y paciente (el correo del pro se resuelve en el
+        // servidor por professionalId; el .ics va adjunto). El webhook concilia
+        // la cita si la confirmación falló.
+        if (pending.notify) {
           fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -457,7 +459,6 @@ const PatientProfile: React.FC = () => {
           PENDING_BOOKING_KEY,
           JSON.stringify({
             appointmentId: data.appointmentId,
-            doctorEmail: doctor.email,
             notify,
             // Datos para reconstruir el comprobante al volver del redirect de MP
             receipt: {

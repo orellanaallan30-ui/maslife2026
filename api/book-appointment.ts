@@ -2,11 +2,28 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, confirmBookingPaid, releaseStaleHolds, BookingInput, UUID_RE } from './_lib/booking';
+import { getValidToken, appointmentToGCalEvent, createGCalEvent } from './_lib/googleCalendar';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
 );
+
+// Agenda una reserva de paciente en el Google Calendar del profesional (si lo
+// tiene conectado). Server-side vía refresh token guardado — no necesita la
+// sesión del profesional. Best-effort: nunca voltea una reserva ya confirmada.
+async function syncBookingToGoogle(professionalId: string, appointmentId: string): Promise<void> {
+  try {
+    const gc = await getValidToken(professionalId);
+    if (!gc) return; // el profesional no conectó Google
+    const { data: row } = await supabase.from('appointments').select('*').eq('id', appointmentId).single();
+    if (!row || row.google_event_id) return; // ya sincronizada
+    const eventId = await createGCalEvent(gc.token, gc.calendarId, appointmentToGCalEvent(row));
+    if (eventId) await supabase.from('appointments').update({ google_event_id: eventId }).eq('id', appointmentId);
+  } catch (e) {
+    console.error('[book-appointment] Google Calendar sync falló:', e);
+  }
+}
 
 /**
  * Endpoint de reservas para pacientes anónimos. El cliente NO escribe en
@@ -97,6 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           String(payment.external_reference) === String(appointmentId)
         ) {
           const ok = await confirmBookingPaid(appointmentId, Math.round(Number(payment.transaction_amount) || 0));
+          if (ok) await syncBookingToGoogle(app.professional_id, appointmentId);
           return res.status(200).json({ confirmed: ok });
         }
         return res.status(200).json({ confirmed: false, paymentStatus: payment.status });
@@ -133,5 +151,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(result.code || 500).json({ error: result.error || 'No se pudo registrar la cita' });
   }
 
+  await syncBookingToGoogle(prepared.pro.id, result.id);
   return res.status(200).json({ saved: true, appointmentId: result.id });
 }
