@@ -193,6 +193,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ data });
   }
 
+  // ── Finanzas: ingreso por profesional + comisión de la plataforma ──
+  if (req.method === 'GET' && req.query.action === 'finance') {
+    const feePct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 5);
+    const { data: pros } = await supabase.from('professionals').select('id, name, email');
+    const { data: paid } = await supabase
+      .from('appointments')
+      .select('professional_id, payment_amount, paid_at')
+      .eq('payment_status', 'Pagado');
+    const byPro: Record<string, { count: number; gross: number }> = {};
+    for (const a of paid || []) {
+      const pid = a.professional_id as string;
+      if (!pid) continue;
+      byPro[pid] = byPro[pid] || { count: 0, gross: 0 };
+      byPro[pid].count += 1;
+      byPro[pid].gross += Number(a.payment_amount) || 0;
+    }
+    const rows = (pros || []).map(p => {
+      const agg = byPro[p.id] || { count: 0, gross: 0 };
+      const fee = Math.round(agg.gross * feePct / 100);
+      return { id: p.id, name: p.name, email: p.email, paidCount: agg.count, gross: agg.gross, platformFee: fee, net: agg.gross - fee };
+    }).sort((a, b) => b.gross - a.gross);
+    const totals = rows.reduce((t, r) => ({ gross: t.gross + r.gross, fee: t.fee + r.platformFee, count: t.count + r.paidCount }), { gross: 0, fee: 0, count: 0 });
+    return res.status(200).json({ feePct, rows, totals });
+  }
+
+  // ── Salud del sistema: eventos de webhook + auditoría reciente ──
+  if (req.method === 'GET' && req.query.action === 'health') {
+    const { data: events } = await supabase
+      .from('webhook_events')
+      .select('created_at, event_type, outcome, mp_status, payer_email, detail')
+      .order('created_at', { ascending: false })
+      .limit(40);
+    const { data: orphans } = await supabase
+      .from('professionals')
+      .select('id, name, subscription_status, is_public, paused_at')
+      .eq('subscription_status', 'paused');
+    const counts: Record<string, number> = {};
+    for (const e of events || []) counts[e.outcome || 'unknown'] = (counts[e.outcome || 'unknown'] || 0) + 1;
+    return res.status(200).json({ events: events || [], outcomeCounts: counts, pausedPros: orphans || [] });
+  }
+
+  // ── Buzón de sugerencias / soporte ──
+  if (req.method === 'GET' && req.query.action === 'feedback') {
+    const { data, error } = await supabase
+      .from('feedback')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ data });
+  }
+  if (req.method === 'PATCH' && req.query.action === 'feedback') {
+    const { id, status, admin_reply } = req.body || {};
+    if (!id) return res.status(400).json({ error: 'Missing id' });
+    const patch: Record<string, unknown> = {};
+    if (status) { patch.status = status; if (status === 'resolved') patch.resolved_at = new Date().toISOString(); }
+    if (typeof admin_reply === 'string') patch.admin_reply = admin_reply;
+    const { error } = await supabase.from('feedback').update(patch).eq('id', id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true });
+  }
+
   if (req.method === 'PATCH') {
     const { id, ...fields } = req.body || {};
     if (!id || typeof id !== 'string') return res.status(400).json({ error: 'Missing id' });

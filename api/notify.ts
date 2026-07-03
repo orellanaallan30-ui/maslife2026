@@ -390,11 +390,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── Envío masivo a inscritos en charlas (solo admin) ──────────────────────
   if (req.body?.action === 'charla-blast') {
-    const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET;
-    if (!ADMIN_JWT_SECRET) return res.status(500).json({ error: 'Configuración incompleta' });
+    // El token admin se firma con la service-role key (ver admin-auth.ts).
+    const ADMIN_SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.ADMIN_JWT_SECRET;
+    if (!ADMIN_SECRET) return res.status(500).json({ error: 'Configuración incompleta' });
     const authHeader = (req.headers.authorization as string | undefined) || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    if (!verifyAdminJwt(token, ADMIN_JWT_SECRET)) return res.status(401).json({ error: 'No autorizado' });
+    if (!verifyAdminJwt(token, ADMIN_SECRET)) return res.status(401).json({ error: 'No autorizado' });
 
     const RESEND_KEY = process.env.RESEND_API_KEY;
     if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
@@ -437,6 +438,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (batchRes.ok) sent += batch.length;
     }
 
+    return res.status(200).json({ sent, total: unique.length });
+  }
+
+  // ── Mensaje masivo a profesionales (solo admin) ───────────────────────────
+  if (req.body?.action === 'pro-blast') {
+    const ADMIN_SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.ADMIN_JWT_SECRET;
+    if (!ADMIN_SECRET) return res.status(500).json({ error: 'Configuración incompleta' });
+    const authHeader = (req.headers.authorization as string | undefined) || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (!verifyAdminJwt(token, ADMIN_SECRET)) return res.status(401).json({ error: 'No autorizado' });
+
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
+
+    const { asunto, mensaje, professionalIds } = req.body;
+    if (!asunto?.trim() || !mensaje?.trim()) return res.status(400).json({ error: 'asunto y mensaje son requeridos' });
+
+    // Destinatarios: todos, o los IDs seleccionados
+    let query = supabase.from('professionals').select('name, email').neq('email', '');
+    if (Array.isArray(professionalIds) && professionalIds.length) query = query.in('id', professionalIds);
+    const { data: pros, error: fetchErr } = await query;
+    if (fetchErr) return res.status(500).json({ error: fetchErr.message });
+    if (!pros || pros.length === 0) return res.status(200).json({ sent: 0, message: 'Sin destinatarios' });
+
+    const seen = new Set<string>();
+    const unique = (pros as { name: string; email: string }[]).filter(r => {
+      if (!EMAIL_RE.test(r.email) || seen.has(r.email.toLowerCase())) return false;
+      seen.add(r.email.toLowerCase()); return true;
+    });
+
+    const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+    const cleanAsunto = cleanLine(asunto);
+    let sent = 0;
+    const chunk = 100;
+    for (let i = 0; i < unique.length; i += chunk) {
+      const batch = unique.slice(i, i + chunk).map(r => ({
+        from: FROM,
+        to: [r.email],
+        subject: cleanAsunto,
+        html: charlaBlastHtml(r.name, cleanAsunto, mensaje),
+      }));
+      const batchRes = await fetch('https://api.resend.com/emails/batch', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(batch),
+      });
+      if (batchRes.ok) sent += batch.length;
+    }
     return res.status(200).json({ sent, total: unique.length });
   }
 

@@ -27,6 +27,36 @@ const Settings: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
 
+  // ── Soporte / Sugerencias ──────────────────────────────────────────────────
+  const [fbType, setFbType] = useState<'suggestion' | 'problem'>('suggestion');
+  const [fbSubject, setFbSubject] = useState('');
+  const [fbMessage, setFbMessage] = useState('');
+  const [fbSending, setFbSending] = useState(false);
+  const [fbSent, setFbSent] = useState(false);
+
+  const submitFeedback = async () => {
+    if (!fbMessage.trim() || !profile) return;
+    setFbSending(true);
+    try {
+      const { error } = await supabase.from('feedback').insert({
+        professional_id: profile.id,
+        professional_name: profile.name,
+        professional_email: profile.email,
+        type: fbType,
+        subject: fbSubject.trim() || null,
+        message: fbMessage.trim(),
+      });
+      if (error) throw error;
+      setFbSent(true);
+      setFbSubject(''); setFbMessage('');
+      setTimeout(() => setFbSent(false), 6000);
+    } catch (e: any) {
+      addNotification(`⚠️ No se pudo enviar tu mensaje: ${e?.message || 'intenta de nuevo'}`, 'system');
+    } finally {
+      setFbSending(false);
+    }
+  };
+
   const handleAdminSSO = async () => {
     setAdminLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
@@ -1165,6 +1195,55 @@ const Settings: React.FC = () => {
           {/* ── Tab Seguridad — MFA (CENS RCE) ── */}
           {activeTab === 'seguridad' && (
             <div className="space-y-6 animate-in fade-in duration-500 max-w-xl">
+              {/* Soporte / Sugerencias */}
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <span className="material-icons-round text-primary">forum</span>
+                  <h3 className="text-base font-black text-black">Sugerencias y Soporte</h3>
+                </div>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  ¿Tienes una idea para mejorar la plataforma o encontraste un problema? Escríbenos — el equipo lo revisa y te responde.
+                </p>
+                {fbSent ? (
+                  <div className="flex items-center gap-2 px-4 py-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-sm font-bold">
+                    <span className="material-icons-round text-base">check_circle</span>
+                    ¡Gracias! Recibimos tu mensaje y te responderemos pronto.
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-2">
+                      {([['suggestion', 'Sugerencia', 'lightbulb'], ['problem', 'Problema', 'bug_report']] as const).map(([val, label, icon]) => (
+                        <button key={val} onClick={() => setFbType(val)}
+                          className={`flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 border ${fbType === val ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-200 hover:border-primary/40'}`}>
+                          <span className="material-icons-round text-sm">{icon}</span> {label}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      value={fbSubject}
+                      onChange={e => setFbSubject(e.target.value)}
+                      placeholder="Asunto (opcional)"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-bold text-sm text-slate-800 outline-none focus:border-primary"
+                    />
+                    <textarea
+                      value={fbMessage}
+                      onChange={e => setFbMessage(e.target.value)}
+                      rows={4}
+                      placeholder={fbType === 'problem' ? 'Describe el problema con el mayor detalle posible…' : 'Cuéntanos tu idea…'}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 font-bold text-sm text-slate-800 outline-none focus:border-primary resize-none"
+                    />
+                    <button
+                      onClick={submitFeedback}
+                      disabled={fbSending || !fbMessage.trim()}
+                      className="w-full py-3 rounded-xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-lg disabled:opacity-40 hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                    >
+                      <span className="material-icons-round text-sm">{fbSending ? 'sync' : 'send'}</span>
+                      {fbSending ? 'Enviando…' : 'Enviar mensaje'}
+                    </button>
+                  </>
+                )}
+              </section>
+
               <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
                 <div className="flex items-center gap-3">
                   <span className="material-icons-round text-slate-700">shield</span>
