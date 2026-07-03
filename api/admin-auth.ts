@@ -74,15 +74,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET;
+  // El token admin se firma con la SERVICE_ROLE_KEY (siempre configurada: las
+  // operaciones admin ya la usan), para no depender de ADMIN_JWT_SECRET.
+  const TOKEN_SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.ADMIN_JWT_SECRET || '';
 
-  // ── SSO: sesión Supabase del profesional → token admin ──────────────────
+  // ── SSO: sesión Supabase del profesional (flag is_admin) → token admin ──
   if (req.method === 'POST' && req.query.action === 'sso') {
     if (!checkIpRateLimit(req.headers, 10, 60 * 60 * 1000)) {
       return res.status(429).json({ error: 'Demasiados intentos.' });
     }
-    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-    if (!ADMIN_EMAIL || !ADMIN_JWT_SECRET) return res.status(500).json({ error: 'No configurado' });
+    if (!TOKEN_SECRET) return res.status(500).json({ error: 'No configurado' });
     const authHeader = req.headers.authorization as string | undefined;
     if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'Token requerido' });
     const supabaseJwt = authHeader.slice(7);
@@ -90,10 +91,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const adminSupabase = getAdminSupabase();
       const { data: { user }, error } = await adminSupabase.auth.getUser(supabaseJwt);
       if (error || !user?.email) return res.status(401).json({ error: 'Sesión inválida', detail: error?.message });
-      if (user.email.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim()) {
+      // El acceso admin se controla con el flag is_admin del profesional.
+      // Retrocompat: también se acepta si el email coincide con ADMIN_EMAIL.
+      const { data: proRow } = await adminSupabase
+        .from('professionals').select('is_admin').eq('id', user.id).maybeSingle();
+      const envAdmin = process.env.ADMIN_EMAIL;
+      const isAdmin = proRow?.is_admin === true ||
+        (!!envAdmin && user.email.toLowerCase().trim() === envAdmin.toLowerCase().trim());
+      if (!isAdmin) {
         return res.status(403).json({ error: 'Sin permisos de administrador', email: user.email });
       }
-      return res.status(200).json({ token: createAdminToken(ADMIN_JWT_SECRET) });
+      return res.status(200).json({ token: createAdminToken(TOKEN_SECRET) });
     } catch (e: any) {
       console.error('[SSO]', e?.message, e?.stack?.slice(0, 300));
       return res.status(500).json({ error: 'Error SSO', detail: e?.message });
@@ -142,8 +150,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
     const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-    if (!ADMIN_EMAIL || !ADMIN_PASSWORD || !ADMIN_JWT_SECRET) {
-      return res.status(500).json({ error: 'Panel de administración no configurado.' });
+    // Ruta legacy por contraseña: opcional. El acceso principal es por sesión (SSO).
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+      return res.status(500).json({ error: 'Login por contraseña no disponible. Usa tu sesión de profesional.' });
     }
     if (!username || !password) return res.status(400).json({ error: 'Faltan credenciales' });
     await new Promise(r => setTimeout(r, 300));
@@ -156,15 +165,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (username.toLowerCase().trim() !== ADMIN_EMAIL.toLowerCase().trim() || !passOk) {
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
-    return res.status(200).json({ token: createAdminToken(ADMIN_JWT_SECRET) });
+    return res.status(200).json({ token: createAdminToken(TOKEN_SECRET) });
   }
 
   // All other methods require a valid admin token
-  if (!ADMIN_JWT_SECRET) return res.status(500).json({ valid: false });
+  if (!TOKEN_SECRET) return res.status(500).json({ valid: false });
   const authHeader = req.headers.authorization as string | undefined;
   if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ valid: false });
   const token = authHeader.slice(7);
-  if (!verifyAdminToken(token, ADMIN_JWT_SECRET)) return res.status(401).json({ valid: false });
+  if (!verifyAdminToken(token, TOKEN_SECRET)) return res.status(401).json({ valid: false });
 
   if (req.method === 'GET' && !req.query.action) {
     return res.status(200).json({ valid: true });

@@ -14,6 +14,8 @@ const AdminLogin: React.FC = () => {
   const [ssoLoading, setSsoLoading] = useState(false);
   const [hasSsoSession, setHasSsoSession] = useState(false);
   const [ssoEmail, setSsoEmail] = useState('');
+  const [autoChecking, setAutoChecking] = useState(true); // verificando sesión al entrar
+  const [showPasswordForm, setShowPasswordForm] = useState(false); // fallback legacy
 
   useEffect(() => {
     const saved = localStorage.getItem('maslife_admin_saved');
@@ -23,14 +25,18 @@ const AdminLogin: React.FC = () => {
         if (u) { setUsername(u); setRememberMe(true); }
       } catch { /* ignorar datos corruptos */ }
     }
-    // Check if there's already a Supabase pro session available for SSO
+    // Si hay sesión de profesional, intentar entrar al admin AUTOMÁTICAMENTE
+    // (sin pedir credenciales). El acceso lo controla el flag is_admin.
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.email) {
         setHasSsoSession(true);
         setSsoEmail(session.user.email);
+        handleSSO(true); // auto: si no es admin, muestra 403 sin bloquear
+      } else {
+        setAutoChecking(false);
       }
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showError = (msg: string) => {
     setErrorMsg(msg);
@@ -74,14 +80,14 @@ const AdminLogin: React.FC = () => {
     }
   };
 
-  const handleSSO = async () => {
+  const handleSSO = async (isAuto = false) => {
     setSsoLoading(true);
     setErrorMsg(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        showError('No hay sesión activa. Ingresa a tu panel de profesional primero y vuelve aquí.');
-        setSsoLoading(false);
+        if (!isAuto) showError('No hay sesión activa. Ingresa a tu panel de profesional primero y vuelve aquí.');
+        setSsoLoading(false); setAutoChecking(false);
         return;
       }
       const res = await fetch('/api/admin-auth?action=sso', {
@@ -89,27 +95,23 @@ const AdminLogin: React.FC = () => {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       const body = await res.json().catch(() => ({}));
-      if (res.status === 500) {
-        showError('Variables de entorno no configuradas: falta ADMIN_EMAIL o ADMIN_JWT_SECRET en Vercel.');
-        setSsoLoading(false);
-        return;
-      }
       if (res.status === 403) {
-        showError(`Tu cuenta (${body.email || session.user?.email}) no tiene permisos de administrador.`);
-        setSsoLoading(false);
+        // Sesión válida pero sin permisos: en modo auto, no molestar con error.
+        if (!isAuto) showError(`Tu cuenta (${body.email || session.user?.email}) no tiene permisos de administrador.`);
+        setSsoLoading(false); setAutoChecking(false);
         return;
       }
       if (!res.ok || !body.token) {
-        showError(body.error || 'Error de autenticación SSO');
-        setSsoLoading(false);
+        if (!isAuto) showError(body.error || 'Error de autenticación');
+        setSsoLoading(false); setAutoChecking(false);
         return;
       }
       sessionStorage.setItem('maslife_admin_token', body.token);
       setIsAdmin(true);
       navigate('/admin/management');
     } catch {
-      showError('Error de red al conectar con el servidor.');
-      setSsoLoading(false);
+      if (!isAuto) showError('Error de red al conectar con el servidor.');
+      setSsoLoading(false); setAutoChecking(false);
     }
   };
 
@@ -131,13 +133,21 @@ const AdminLogin: React.FC = () => {
 
         <div className="bg-slate-900/80 backdrop-blur-2xl p-8 rounded-[3rem] shadow-[0_48px_80px_-16px_rgba(0,0,0,0.5)] border border-white/10 relative space-y-6">
 
-          {/* SSO rápido si hay sesión de profesional activa */}
-          {hasSsoSession && (
+          {/* Verificando la sesión al entrar (acceso automático) */}
+          {autoChecking && (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <span className="material-icons-round text-teal-400 text-4xl animate-spin">sync</span>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Verificando acceso…</p>
+            </div>
+          )}
+
+          {/* Con sesión pero acceso automático no completó (reintento manual) */}
+          {!autoChecking && hasSsoSession && (
             <div className="bg-teal-500/10 border border-teal-500/20 rounded-2xl p-4">
               <p className="text-[10px] font-black text-teal-400 uppercase tracking-widest mb-1">Sesión detectada</p>
               <p className="text-xs text-slate-300 font-bold mb-3 truncate">{ssoEmail}</p>
               <button
-                onClick={handleSSO}
+                onClick={() => handleSSO()}
                 disabled={ssoLoading}
                 className="w-full py-3 bg-teal-500 hover:bg-teal-400 disabled:opacity-60 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
               >
@@ -149,15 +159,38 @@ const AdminLogin: React.FC = () => {
             </div>
           )}
 
-          {/* Separador si hay SSO */}
-          {hasSsoSession && (
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">o con contraseña</span>
-              <div className="flex-1 h-px bg-white/10" />
+          {/* Sin sesión: guiar a iniciar sesión de profesional */}
+          {!autoChecking && !hasSsoSession && (
+            <div className="text-center space-y-4">
+              <p className="text-sm font-bold text-slate-300 leading-relaxed">
+                Para entrar al panel de administración, inicia sesión con tu cuenta de profesional.
+              </p>
+              <button
+                onClick={() => navigate('/pro/login')}
+                className="w-full py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg hover:brightness-110 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-icons-round text-sm">login</span> Iniciar sesión de profesional
+              </button>
             </div>
           )}
 
+          {errorMsg && (
+            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl animate-in shake duration-300">
+              <p className="text-xs font-bold text-rose-400 leading-relaxed">{errorMsg}</p>
+            </div>
+          )}
+
+          {/* Fallback legacy: login por contraseña (oculto) */}
+          {!autoChecking && !showPasswordForm && (
+            <button
+              onClick={() => setShowPasswordForm(true)}
+              className="w-full text-[10px] font-black text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
+            >
+              Usar contraseña
+            </button>
+          )}
+
+          {showPasswordForm && (
           <form onSubmit={handleAdminLogin} className="space-y-6">
             <div className="space-y-3">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Correo Administrador</label>
@@ -202,12 +235,6 @@ const AdminLogin: React.FC = () => {
               </label>
             </div>
 
-            {errorMsg && (
-              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl animate-in shake duration-300">
-                <p className="text-xs font-bold text-rose-400 leading-relaxed">{errorMsg}</p>
-              </div>
-            )}
-
             <button
               type="submit"
               className="group w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
@@ -216,13 +243,6 @@ const AdminLogin: React.FC = () => {
               <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">security</span>
             </button>
           </form>
-
-          {/* Instrucciones si no hay SSO */}
-          {!hasSsoSession && (
-            <p className="text-[10px] text-slate-600 text-center leading-relaxed">
-              ¿Sin contraseña? Inicia sesión en tu panel de profesional primero,<br />
-              luego vuelve aquí para entrar con un clic.
-            </p>
           )}
         </div>
 
