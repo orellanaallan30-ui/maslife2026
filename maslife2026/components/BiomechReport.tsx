@@ -35,6 +35,7 @@ interface Props {
   images: string[];
   patientName: string;
   rom: Record<string, string>;
+  romDefs?: Array<{ id: string; label: string; normal: string }>;
   anthro: { weight?: string; height?: string; reach?: string; legR?: string; legL?: string };
   imc: string | null;
   discrep: string | null;
@@ -83,12 +84,18 @@ const Gauge: React.FC<{ m: BiomechMetric }> = ({ m }) => {
   );
 };
 
-const BiomechReport: React.FC<Props> = ({ report, images, patientName, rom, anthro, imc, discrep, onClose }) => {
+const BiomechReport: React.FC<Props> = ({ report, images, patientName, rom, romDefs, anthro, imc, discrep, onClose }) => {
   const [tab, setTab] = useState<typeof TABS[number]>('POSTURA');
   const [imgIdx, setImgIdx] = useState(0);
   const validImages = images.filter(Boolean);
 
-  const romEntries = Object.entries(ROM_NORMALS)
+  // Usa las definiciones personalizadas del profesional si existen (labels y
+  // normales editados); si no, los valores de referencia estándar.
+  const romSource: Array<[string, { label: string; normal: number }]> = romDefs?.length
+    ? romDefs.map(d => [d.id, { label: d.label || d.id, normal: parseFloat(d.normal) || 0 }])
+    : Object.entries(ROM_NORMALS);
+
+  const romEntries = romSource
     .map(([key, def]) => {
       const raw = rom[key];
       if (!raw) return null;

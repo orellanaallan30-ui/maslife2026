@@ -47,6 +47,7 @@ export interface SessionLog {
 export interface CustomField {
   label: string;
   value: string;
+  color?: string; // acento visual elegido por el profesional (hex)
 }
 
 export interface ProfessionalProfile {

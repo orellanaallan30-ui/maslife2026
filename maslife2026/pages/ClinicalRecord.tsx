@@ -60,6 +60,33 @@ const SOAP_LABELS: Record<string, Array<{ l: string; c: string; k: string; bg: s
   ],
 };
 
+// ── ROM: definiciones por defecto (label y normal EDITABLES por el profesional) ──
+// Los ids coinciden con las keys históricas de kiRom para que los valores ya
+// guardados migren sin tocar nada.
+export interface RomDef { id: string; label: string; normal: string; color?: string }
+const ROM_DEFAULTS: RomDef[] = [
+  { id: 'CueFlex', label: 'Cuello Flex.', normal: '45' },  { id: 'CueExt',  label: 'Cuello Ext.',  normal: '45' },
+  { id: 'CueRotD', label: 'Cuello Rot.D', normal: '80' },  { id: 'CueRotI', label: 'Cuello Rot.I', normal: '80' },
+  { id: 'HomFlex', label: 'Hombro Flex.', normal: '180' }, { id: 'HomAbd',  label: 'Hombro Abd.',  normal: '180' },
+  { id: 'ColFlex', label: 'Col. Flex.',   normal: '90' },  { id: 'ColExt',  label: 'Col. Ext.',    normal: '30' },
+  { id: 'CadFlex', label: 'Cadera Flex.', normal: '120' }, { id: 'CadExt',  label: 'Cadera Ext.',  normal: '30' },
+  { id: 'RodFlex', label: 'Rodilla Flex.', normal: '135' },{ id: 'RodExt',  label: 'Rodilla Ext.', normal: '0' },
+  { id: 'TobFlex', label: 'Tobillo Flex.', normal: '20' }, { id: 'TobExt',  label: 'Tobillo Ext.', normal: '50' },
+];
+
+// ── Catálogo de tests especiales por zona afectada (recomendaciones) ──
+const TEST_CATALOG: Record<string, string[]> = {
+  'Columna / Lumbar': ['Lasègue', 'Bragard', 'Slump', 'Schober', 'Adams', 'Kemp'],
+  'Hombro':           ['Neer', 'Hawkins', 'Jobe', 'Speed', 'Yergason'],
+  'Rodilla':          ['Lachman', 'Cajón Anterior', 'Cajón Posterior', 'McMurray', 'Apley', 'Thessaly'],
+  'Cadera':           ['FABER', 'FADIR', 'Thomas', 'Ober', 'Trendelenburg'],
+  'Tobillo / Pie':    ['Cajón Anterior de Tobillo', 'Thompson', 'Weight Bearing Lunge'],
+  'Neuro / Equilibrio': ['Romberg', 'Unipodal', 'Timed Up & Go'],
+};
+
+// Paleta de acentos que el profesional puede asignar a campos (label + borde)
+const FIELD_COLORS = ['#475569', '#0d9488', '#0284c7', '#d97706', '#e11d48', '#7c3aed'];
+
 const ClinicalRecord: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -207,6 +234,27 @@ const ClinicalRecord: React.FC = () => {
     (savedSpec.biomechReport as BiomechReportData) || null
   );
   const [showBiomechReport, setShowBiomechReport] = useState(false);
+
+  // ROM personalizable: labels, normales y colores editables. Compartido entre
+  // EV1/EV2 (los VALORES siguen siendo por evaluación en kiRom).
+  const [romDefs, setRomDefs] = useState<RomDef[]>(
+    (savedSpec.romDefs as RomDef[])?.length ? (savedSpec.romDefs as RomDef[]) : ROM_DEFAULTS
+  );
+
+  // Tests especiales: solo aparecen los que el profesional escoge. Fichas con
+  // resultados previos conservan sus tests; fichas nuevas parten vacías.
+  const [testDefs, setTestDefs] = useState<string[]>(() => {
+    const saved = savedSpec.testDefs as string[] | undefined;
+    if (saved) return saved;
+    const ki = savedSpec.kinesio as { initial?: { tests?: Record<string, string> }; final?: { tests?: Record<string, string> } } | undefined;
+    const withResults = new Set<string>([
+      ...Object.keys(ki?.initial?.tests || {}),
+      ...Object.keys(ki?.final?.tests || {}),
+    ]);
+    return [...withResults];
+  });
+  const [testRegion, setTestRegion] = useState<string>('');
+  const [customTestName, setCustomTestName] = useState('');
 
   const [sectionFields, setSectionFields] = useState<Record<string, CustomField[]>>(() => {
     const saved = ((savedSpec.sectionFields as Record<string, CustomField[]>) || {});
@@ -536,7 +584,14 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
       anamnesis,
       soap,
       specialtyKey,
-      { nutPeso, nutTalla, nutCintura, nutCadera, nutGoals: nutGoals, psychMood, psychIntervention, psychNextObjective }
+      {
+        nutPeso, nutTalla, nutCintura, nutCadera, nutGoals: nutGoals, psychMood, psychIntervention, psychNextObjective,
+        // Todo lo personalizado por el profesional también sale en el PDF
+        romDefs,
+        testDefs,
+        sectionFields,
+        kinesio: { initial: kiData.initial, final: kiData.final },
+      }
     );
   };
 
@@ -795,7 +850,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
     setSectionFields(prev => ({ ...prev, [section]: [...(prev[section] || []), { label: '', value: '' }] }));
     setIsDirtyTrue();
   };
-  const updateSectionField = (section: string, index: number, key: 'label' | 'value', val: string) => {
+  const updateSectionField = (section: string, index: number, key: 'label' | 'value' | 'color', val: string | undefined) => {
     setSectionFields(prev => {
       const list = [...(prev[section] || [])];
       list[index] = { ...list[index], [key]: val };
@@ -818,14 +873,80 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
     setIsDirtyTrue();
   };
 
+  // Rota entre los colores de acento; volver al primero limpia el color
+  const cycleFieldColor = (current?: string): string | undefined => {
+    const idx = FIELD_COLORS.indexOf(current || FIELD_COLORS[0]);
+    const next = FIELD_COLORS[(idx + 1) % FIELD_COLORS.length];
+    return next === FIELD_COLORS[0] ? undefined : next;
+  };
+
+  // ── ROM personalizable (labels, normales, colores, orden) ──
+  const updateRomDef = (defId: string, patch: Partial<RomDef>) => {
+    setRomDefs(prev => prev.map(d => d.id === defId ? { ...d, ...patch } : d));
+    setIsDirtyTrue();
+  };
+  const addRomDef = () => {
+    setRomDefs(prev => [...prev, { id: `rom-${Date.now()}`, label: '', normal: '' }]);
+    setIsDirtyTrue();
+  };
+  const removeRomDef = (defId: string) => {
+    setRomDefs(prev => prev.filter(d => d.id !== defId));
+    setIsDirtyTrue();
+  };
+  const moveRomDef = (defId: string, dir: -1 | 1) => {
+    setRomDefs(prev => {
+      const idx = prev.findIndex(d => d.id === defId);
+      const target = idx + dir;
+      if (idx < 0 || target < 0 || target >= prev.length) return prev;
+      const list = [...prev];
+      [list[idx], list[target]] = [list[target], list[idx]];
+      return list;
+    });
+    setIsDirtyTrue();
+  };
+
+  // ── Tests especiales escogidos por el profesional ──
+  const addTest = (name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+    setTestDefs(prev => prev.includes(clean) ? prev : [...prev, clean]);
+    setIsDirtyTrue();
+  };
+  const removeTest = (name: string) => {
+    setTestDefs(prev => prev.filter(t => t !== name));
+    setIsDirtyTrue();
+  };
+  const renameTest = (oldName: string, newName: string) => {
+    const clean = newName.trim();
+    if (!clean || clean === oldName) return;
+    setTestDefs(prev => {
+      const renamed = prev.map(t => (t === oldName ? clean : t));
+      return [...new Set(renamed)];
+    });
+    // Migra el resultado registrado en AMBAS evaluaciones (EV1 y EV2)
+    setKiData(prev => {
+      const migrate = (tests: Record<string, 'pos' | 'neg' | 'ne'>) => {
+        if (!(oldName in tests)) return tests;
+        const { [oldName]: v, ...rest } = tests;
+        return { ...rest, [clean]: v };
+      };
+      return {
+        ...prev,
+        initial: { ...prev.initial, tests: migrate(prev.initial.tests) },
+        final:   { ...prev.final,   tests: migrate(prev.final.tests) },
+      };
+    });
+    setIsDirtyTrue();
+  };
+
   // Función de render (no componente anidado: evita perder el foco al tipear).
-  // Va ARRIBA de cada sección/subsección: botón compacto + campos reordenables
-  // con flechas. Cada campo es una tarjeta autocontenida para que las etiquetas
-  // no choquen con el contenido fijo de la sección.
+  // Va ARRIBA de cada sección/subsección. Los campos usan EXACTAMENTE el patrón
+  // visual de los campos nativos de la ficha (label uppercase + input redondeado),
+  // con etiqueta, color y orden editables por el profesional.
   const renderSectionFields = (section: string) => {
     const fields = sectionFields[section] || [];
     return (
-      <div className={fields.length === 0 ? 'mb-3 print:hidden' : 'mb-6'}>
+      <div className={fields.length === 0 ? 'mb-3 print:hidden' : 'mb-4'}>
         <button
           onClick={() => addSectionField(section)}
           className="text-[10px] font-black text-primary bg-primary/5 px-4 py-2 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest mb-3"
@@ -833,28 +954,33 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           + Agregar campo
         </button>
         {fields.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {fields.map((cf, idx) => (
-              <div key={idx} className="bg-slate-50 rounded-2xl p-3 border border-slate-200 animate-in slide-in-from-left-4 duration-300">
-                <div className="flex items-center gap-1 mb-2">
+              <div key={idx} className="space-y-1 group/cf animate-in slide-in-from-left-4 duration-300">
+                <div className="flex items-center gap-1">
                   <input
                     value={cf.label}
                     onChange={e => updateSectionField(section, idx, 'label', e.target.value)}
-                    placeholder="Etiqueta del campo..."
-                    className="flex-1 min-w-0 text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0"
+                    placeholder="Etiqueta..."
+                    className="flex-1 min-w-0 text-[10px] font-black uppercase tracking-widest ml-1 bg-transparent border-none p-0 focus:ring-0"
+                    style={{ color: cf.color || '#475569' }}
                   />
-                  <div className="flex items-center gap-0.5 shrink-0 no-print">
+                  <div className="flex items-center shrink-0 opacity-30 group-hover/cf:opacity-100 focus-within:opacity-100 transition-all no-print">
                     <button onClick={() => moveSectionField(section, idx, -1)} disabled={idx === 0} title="Subir"
-                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white disabled:opacity-20 transition-all">
-                      <span className="material-icons-round text-sm">arrow_upward</span>
+                      className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                      <span className="material-icons-round text-xs">arrow_upward</span>
                     </button>
                     <button onClick={() => moveSectionField(section, idx, 1)} disabled={idx === fields.length - 1} title="Bajar"
-                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:bg-white disabled:opacity-20 transition-all">
-                      <span className="material-icons-round text-sm">arrow_downward</span>
+                      className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                      <span className="material-icons-round text-xs">arrow_downward</span>
+                    </button>
+                    <button onClick={() => updateSectionField(section, idx, 'color', cycleFieldColor(cf.color))} title="Cambiar color"
+                      className="w-5 h-5 flex items-center justify-center">
+                      <span className="w-3 h-3 rounded-full inline-block border border-slate-300" style={{ background: cf.color || '#94a3b8' }} />
                     </button>
                     <button onClick={() => removeSectionField(section, idx)} title="Eliminar"
-                      className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-white transition-all">
-                      <span className="material-icons-round text-sm">delete</span>
+                      className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-rose-500">
+                      <span className="material-icons-round text-xs">delete</span>
                     </button>
                   </div>
                 </div>
@@ -862,7 +988,8 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   value={cf.value}
                   onChange={e => updateSectionField(section, idx, 'value', e.target.value)}
                   placeholder="Valor..."
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
+                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
+                  style={{ borderColor: cf.color ? `${cf.color}66` : '#cbd5e1' }}
                 />
               </div>
             ))}
@@ -973,6 +1100,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
         kinesio: { initial: kiData.initial, final: kiData.final },
         // Campos personalizados por sección (todas las especialidades)
         sectionFields,
+        // Definiciones personalizadas de ROM y tests escogidos por el profesional
+        romDefs,
+        testDefs,
         // Informe biomecánico visual (IA)
         biomechReport,
       };
@@ -1319,58 +1449,159 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Rango de Movimiento (ROM) en grados</h3>
               {renderSectionFields('ki-rom')}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {([
-                  ['Cuello Flex.','CueFlex','45'],['Cuello Ext.','CueExt','45'],
-                  ['Cuello Rot.D','CueRotD','80'],['Cuello Rot.I','CueRotI','80'],
-                  ['Hombro Flex.','HomFlex','180'],['Hombro Abd.','HomAbd','180'],
-                  ['Col. Flex.','ColFlex','90'],['Col. Ext.','ColExt','30'],
-                  ['Cadera Flex.','CadFlex','120'],['Cadera Ext.','CadExt','30'],
-                  ['Rodilla Flex.','RodFlex','135'],['Rodilla Ext.','RodExt','0'],
-                  ['Tobillo Flex.','TobFlex','20'],['Tobillo Ext.','TobExt','50'],
-                ] as [string,string,string][]).map(([label, key, placeholder]) => (
-                  <div key={key} className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label} <span className="text-slate-400">(N:{placeholder}°)</span></label>
+                {romDefs.map((def, idx) => (
+                  <div key={def.id} className="space-y-1 group/rom">
+                    <div className="flex items-center gap-1">
+                      <input
+                        value={def.label}
+                        onChange={e => updateRomDef(def.id, { label: e.target.value })}
+                        placeholder="Nombre..."
+                        className="flex-1 min-w-0 text-[10px] font-black uppercase tracking-widest ml-1 bg-transparent border-none p-0 focus:ring-0"
+                        style={{ color: def.color || '#475569' }}
+                      />
+                      <span className="text-[10px] font-black text-slate-400 shrink-0">(N:</span>
+                      <input
+                        value={def.normal}
+                        onChange={e => updateRomDef(def.id, { normal: e.target.value })}
+                        className="w-7 shrink-0 text-[10px] font-black text-slate-400 bg-transparent border-none p-0 focus:ring-0 text-center"
+                      />
+                      <span className="text-[10px] font-black text-slate-400 shrink-0">°)</span>
+                      <div className="flex items-center shrink-0 opacity-30 group-hover/rom:opacity-100 focus-within:opacity-100 transition-all no-print">
+                        <button onClick={() => moveRomDef(def.id, -1)} disabled={idx === 0} title="Subir"
+                          className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                          <span className="material-icons-round text-xs">arrow_upward</span>
+                        </button>
+                        <button onClick={() => moveRomDef(def.id, 1)} disabled={idx === romDefs.length - 1} title="Bajar"
+                          className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                          <span className="material-icons-round text-xs">arrow_downward</span>
+                        </button>
+                        <button onClick={() => updateRomDef(def.id, { color: cycleFieldColor(def.color) })} title="Cambiar color"
+                          className="w-5 h-5 flex items-center justify-center">
+                          <span className="w-3 h-3 rounded-full inline-block border border-slate-300" style={{ background: def.color || '#94a3b8' }} />
+                        </button>
+                        <button onClick={() => removeRomDef(def.id)} title="Eliminar"
+                          className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-rose-500">
+                          <span className="material-icons-round text-xs">delete</span>
+                        </button>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-1">
                       <input
                         type="number"
-                        value={kiRom[key] || ''}
-                        onChange={e => { setKiRom(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
-                        placeholder={placeholder}
-                        className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-3 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                        value={kiRom[def.id] || ''}
+                        onChange={e => { setKiRom(p => ({ ...p, [def.id]: e.target.value })); setIsDirtyTrue(); }}
+                        placeholder={def.normal}
+                        className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border rounded-2xl py-3 px-3 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                        style={{ borderColor: def.color ? `${def.color}66` : '#cbd5e1' }}
                       />
                       <span className="text-xs font-black text-slate-400">°</span>
                     </div>
                   </div>
                 ))}
               </div>
+              <button
+                onClick={addRomDef}
+                className="mt-3 text-[10px] font-black text-primary bg-primary/5 px-4 py-2 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest"
+              >
+                + Agregar campo ROM
+              </button>
             </div>
 
             {/* ── 4. Tests Especiales ────────────────────────────── */}
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Tests Especiales</h3>
               {renderSectionFields('ki-tests')}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => (
-                  <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-200">
-                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">{test}</p>
-                    <div className="flex gap-1">
-                      {(['pos','neg','ne'] as const).map(v => (
-                        <button
-                          key={v}
-                          onClick={() => { setKiTests(p => ({ ...p, [test]: v })); setIsDirtyTrue(); }}
-                          className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wide transition-all ${
-                            kiTests[test] === v
-                              ? v === 'pos' ? 'bg-rose-500 text-white shadow-sm'
-                                : v === 'neg' ? 'bg-emerald-500 text-white shadow-sm'
-                                : 'bg-slate-600 text-white shadow-sm'
-                              : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
-                          }`}
-                        >{v === 'ne' ? 'N/E' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
-                      ))}
-                    </div>
+              {/* Selector de zona afectada → tests recomendados */}
+              <div className="mb-4 space-y-3 no-print">
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(TEST_CATALOG).map(region => (
+                    <button
+                      key={region}
+                      onClick={() => setTestRegion(r => r === region ? '' : region)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                        testRegion === region
+                          ? 'bg-primary text-white border-primary shadow-sm'
+                          : 'bg-white text-slate-500 border-slate-200 hover:border-primary/40 hover:text-primary'
+                      }`}
+                    >
+                      {region}
+                    </button>
+                  ))}
+                </div>
+                {testRegion && (
+                  <div className="flex flex-wrap items-center gap-2 p-3 bg-primary/5 rounded-2xl border border-primary/10">
+                    <p className="w-full text-[9px] font-black text-primary uppercase tracking-widest">Tests recomendados — {testRegion}</p>
+                    {TEST_CATALOG[testRegion].filter(t => !testDefs.includes(t)).map(t => (
+                      <button
+                        key={t}
+                        onClick={() => addTest(t)}
+                        className="px-3 py-1.5 rounded-xl text-[10px] font-bold bg-white text-slate-600 border border-slate-200 hover:border-primary hover:text-primary transition-all"
+                      >
+                        + {t}
+                      </button>
+                    ))}
+                    {TEST_CATALOG[testRegion].every(t => testDefs.includes(t)) && (
+                      <p className="text-[10px] text-slate-400 italic">Todos los tests de esta zona ya están agregados.</p>
+                    )}
                   </div>
-                ))}
+                )}
+                <div className="flex gap-2">
+                  <input
+                    value={customTestName}
+                    onChange={e => setCustomTestName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { addTest(customTestName); setCustomTestName(''); } }}
+                    placeholder="Agregar otro test (nombre propio)..."
+                    className="flex-1 bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                  />
+                  <button
+                    onClick={() => { addTest(customTestName); setCustomTestName(''); }}
+                    disabled={!customTestName.trim()}
+                    className="px-5 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40 transition-all"
+                  >
+                    Agregar
+                  </button>
+                </div>
               </div>
+
+              {testDefs.length === 0 ? (
+                <p className="text-xs text-slate-400 italic py-2">Escoge la zona afectada del paciente para ver los tests recomendados, o agrega uno propio.</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {testDefs.map(test => (
+                    <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-200 group/test">
+                      <div className="flex items-center gap-1 mb-2">
+                        <input
+                          defaultValue={test}
+                          onBlur={e => { const nn = e.target.value.trim(); if (nn && nn !== test) renameTest(test, nn); else e.target.value = test; }}
+                          className="flex-1 min-w-0 text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0"
+                        />
+                        <button
+                          onClick={() => removeTest(test)}
+                          title="Quitar test"
+                          className="shrink-0 w-5 h-5 flex items-center justify-center text-slate-300 hover:text-rose-500 opacity-40 group-hover/test:opacity-100 transition-all no-print"
+                        >
+                          <span className="material-icons-round text-xs">close</span>
+                        </button>
+                      </div>
+                      <div className="flex gap-1">
+                        {(['pos','neg','ne'] as const).map(v => (
+                          <button
+                            key={v}
+                            onClick={() => { setKiTests(p => ({ ...p, [test]: v })); setIsDirtyTrue(); }}
+                            className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wide transition-all ${
+                              kiTests[test] === v
+                                ? v === 'pos' ? 'bg-rose-500 text-white shadow-sm'
+                                  : v === 'neg' ? 'bg-emerald-500 text-white shadow-sm'
+                                  : 'bg-slate-600 text-white shadow-sm'
+                                : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
+                            }`}
+                          >{v === 'ne' ? 'N/E' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -2369,6 +2600,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           images={analysisImages}
           patientName={personalData.name}
           rom={kiRom}
+          romDefs={romDefs}
           anthro={kiAnthro}
           imc={kiImc}
           discrep={kiDiscrep}

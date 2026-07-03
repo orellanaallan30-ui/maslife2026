@@ -644,6 +644,113 @@ export async function exportPatientFichaToPDF(
     y += 3;
   }
 
+  // ── ROM personalizado (labels/normales editados por el profesional) ──
+  const romDefsPdf = (specialtyData?.romDefs as Array<{ id: string; label: string; normal: string }>) || [];
+  const kinesioPdf = specialtyData?.kinesio as {
+    initial?: { rom?: Record<string, string>; tests?: Record<string, string> };
+    final?: { rom?: Record<string, string>; tests?: Record<string, string> };
+  } | undefined;
+  const romRows = romDefsPdf
+    .map(d => ({
+      label: d.label || '—',
+      normal: d.normal,
+      ev1: kinesioPdf?.initial?.rom?.[d.id] ?? '',
+      ev2: kinesioPdf?.final?.rom?.[d.id] ?? '',
+    }))
+    .filter(r => r.ev1 !== '' || r.ev2 !== '');
+  if (romRows.length) {
+    if (y + 24 > 265) { doc.addPage(); y = MARGIN; }
+    y = drawSectionHeader(doc, 'RANGO DE MOVIMIENTO (ROM)', MARGIN, y, COL);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Articulación / Campo', MARGIN + 2, y + 4);
+    doc.text('Normal', MARGIN + COL - 62, y + 4);
+    doc.text('EV1', MARGIN + COL - 40, y + 4);
+    doc.text('EV2', MARGIN + COL - 20, y + 4);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+    for (const r of romRows) {
+      if (y + 6 > 265) { doc.addPage(); y = MARGIN; }
+      doc.text(String(r.label).slice(0, 45), MARGIN + 2, y + 4);
+      doc.text(r.normal !== '' && r.normal !== undefined ? `${r.normal}°` : '—', MARGIN + COL - 62, y + 4);
+      doc.text(r.ev1 !== '' ? `${r.ev1}°` : '—', MARGIN + COL - 40, y + 4);
+      doc.text(r.ev2 !== '' ? `${r.ev2}°` : '—', MARGIN + COL - 20, y + 4);
+      y += 5.5;
+    }
+    y += 3;
+  }
+
+  // ── Tests especiales escogidos por el profesional ──
+  const testDefsPdf = (specialtyData?.testDefs as string[]) || [];
+  const fmtTest = (v?: string) => v === 'pos' ? 'POSITIVO' : v === 'neg' ? 'Negativo' : v === 'ne' ? 'N/E' : '—';
+  if (testDefsPdf.length) {
+    if (y + 24 > 265) { doc.addPage(); y = MARGIN; }
+    y = drawSectionHeader(doc, 'TESTS ESPECIALES', MARGIN, y, COL);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Test', MARGIN + 2, y + 4);
+    doc.text('EV1', MARGIN + COL - 48, y + 4);
+    doc.text('EV2', MARGIN + COL - 22, y + 4);
+    y += 7;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(30, 41, 59);
+    for (const t of testDefsPdf) {
+      if (y + 6 > 265) { doc.addPage(); y = MARGIN; }
+      doc.text(String(t).slice(0, 50), MARGIN + 2, y + 4);
+      doc.text(fmtTest(kinesioPdf?.initial?.tests?.[t]), MARGIN + COL - 48, y + 4);
+      doc.text(fmtTest(kinesioPdf?.final?.tests?.[t]), MARGIN + COL - 22, y + 4);
+      y += 5.5;
+    }
+    y += 3;
+  }
+
+  // ── Campos personalizados agregados por el profesional en cada sección ──
+  const sectionFieldsPdf = specialtyData?.sectionFields as Record<string, Array<{ label: string; value: string }>> | undefined;
+  const SECTION_TITLES: Record<string, string> = {
+    'ki-antropometria': 'Datos Antropométricos', 'ki-postural': 'Evaluación Postural',
+    'ki-rom': 'Rango de Movimiento', 'ki-tests': 'Tests Especiales',
+    biomecanica: 'Análisis Biomecánico', comparacion: 'Comparación EV1 vs EV2',
+    nutricion: 'Evaluación Nutricional', psicologia: 'Evaluación Psicológica',
+    soap: 'Nota Clínica', objetivos: 'Objetivos del Tratamiento',
+    documentos: 'Documentos', bitacora: 'Bitácora de Evolución',
+  };
+  const sectionsWithFields = Object.entries(sectionFieldsPdf || {})
+    .map(([sec, list]) => [sec, (list || []).filter(f => (f.label || '').trim() || (f.value || '').trim())] as const)
+    .filter(([, list]) => list.length > 0);
+  if (sectionsWithFields.length) {
+    if (y + 24 > 265) { doc.addPage(); y = MARGIN; }
+    y = drawSectionHeader(doc, 'CAMPOS PERSONALIZADOS', MARGIN, y, COL);
+    for (const [sec, list] of sectionsWithFields) {
+      if (y + 10 > 265) { doc.addPage(); y = MARGIN; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text((SECTION_TITLES[sec] || sec).toUpperCase(), MARGIN + 2, y + 4);
+      y += 6;
+      for (const f of list) {
+        const val = String(f.value || '—');
+        const lines = doc.splitTextToSize(val, COL - 60);
+        if (y + lines.length * 4.5 + 2 > 265) { doc.addPage(); y = MARGIN; }
+        drawField(doc, String(f.label || '—').slice(0, 28), lines[0], MARGIN + 4, y);
+        if (lines.length > 1) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(30, 41, 59);
+          doc.text(lines.slice(1), MARGIN + 34, y + 4.5);
+          y += (lines.length - 1) * 4.5;
+        }
+        y += 5.5;
+      }
+      y += 2;
+    }
+    y += 3;
+  }
+
   // Firma auto-generada
   if (y + 42 > 265) { doc.addPage(); y = MARGIN; }
   drawAutoSignature(doc, professional, MARGIN, COL, y);
