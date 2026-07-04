@@ -212,7 +212,12 @@ const Settings: React.FC = () => {
       onSave(profileToSave);
       saveProfessional(profileToSave).catch(err => {
         console.error('[Settings] No se pudo guardar perfil en Supabase:', err?.message);
-        addNotification('⚠️ Los cambios de perfil NO se guardaron en el servidor. Intenta de nuevo.', 'appointment');
+        addNotification(
+          err?.authExpired
+            ? '🔒 Tu sesión expiró. Vuelve a iniciar sesión para guardar tus cambios.'
+            : '⚠️ Los cambios de perfil NO se guardaron en el servidor. Intenta de nuevo.',
+          'appointment',
+        );
       });
       setHasChanges(false);
       setShowSavedMsg(true);

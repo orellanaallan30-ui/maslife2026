@@ -278,7 +278,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     // Persistir en Supabase — si falla, avisar en vez de ocultar el error
     saveAppointment(app).catch(err => {
       console.error('[addAppointment] No se pudo guardar la cita en Supabase:', err?.message || err);
-      addNotification(`⚠️ La cita de ${app.patientName} NO se guardó en el servidor. Revisa tu conexión y créala de nuevo.`, 'appointment');
+      notifyWriteError(err, `⚠️ La cita de ${app.patientName} NO se guardó en el servidor. Revisa tu conexión y créala de nuevo.`);
     });
 
     // Notificación por email — solo citas reales con paciente, nunca bloqueos de horario
@@ -323,7 +323,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     addNotification(`Cita actualizada: ${updated.patientName} (${updated.date} ${updated.time})`, 'appointment');
     saveAppointment(updated).catch(err => {
       console.error('[updateAppointment] No se pudo guardar en Supabase:', err?.message || err);
-      addNotification(`⚠️ Los cambios de la cita de ${updated.patientName} NO se guardaron. Intenta de nuevo.`, 'appointment');
+      notifyWriteError(err, `⚠️ Los cambios de la cita de ${updated.patientName} NO se guardaron. Intenta de nuevo.`);
     });
   };
 
@@ -335,7 +335,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
     deleteAppointmentDB(id).catch(err => {
       console.error('[deleteAppointment] No se pudo eliminar en Supabase:', err?.message || err);
-      addNotification(`⚠️ La cita NO se eliminó en el servidor. Recarga la página para verificar.`, 'appointment');
+      notifyWriteError(err, `⚠️ La cita NO se eliminó en el servidor. Recarga la página para verificar.`);
     });
   };
 
@@ -351,14 +351,39 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const addNotification = (title: string, type: 'appointment' | 'payment' | 'system') => {
-    const newNotif: Notification = {
-      id: `notif-${Date.now()}`,
-      title,
-      time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+    const now = Date.now();
+    setNotifications(prev => {
+      // De-dup: si ya existe una notificación idéntica sin leer creada hace <10s,
+      // no agregamos otra (evita el flood de "NO se guardaron" al reintentar).
+      const dup = prev.find(n => {
+        if (n.title !== title || n.read) return false;
+        const ts = parseInt(String(n.id).replace(/^notif-/, '').split('-')[0], 10);
+        return Number.isFinite(ts) && (now - ts) < 10_000;
+      });
+      if (dup) return prev;
+      const newNotif: Notification = {
+        id: `notif-${now}-${Math.floor(Math.random() * 1e6)}`,
+        title,
+        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        type,
+        read: false
+      };
+      return [newNotif, ...prev];
+    });
+  };
+
+  // Notifica un fallo de escritura. Si el error es de sesión expirada, muestra un
+  // mensaje único y accionable (el de-dup de addNotification evita el flood).
+  const notifyWriteError = (
+    err: unknown,
+    fallback: string,
+    type: 'appointment' | 'payment' | 'system' = 'appointment',
+  ) => {
+    const authExpired = !!(err as { authExpired?: boolean })?.authExpired;
+    addNotification(
+      authExpired ? '🔒 Tu sesión expiró. Vuelve a iniciar sesión para guardar tus cambios.' : fallback,
       type,
-      read: false
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+    );
   };
 
   const markNotificationRead = (id: string) => {
@@ -379,7 +404,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (loggedPro) {
       savePatient(withPro, loggedPro.id).catch(err => {
         console.error('[addPatient] No se pudo guardar en Supabase:', err?.message || err);
-        addNotification(`⚠️ El paciente ${patient.name} NO se guardó en el servidor. Revisa tu conexión y vuelve a crearlo.`, 'appointment');
+        notifyWriteError(err, `⚠️ El paciente ${patient.name} NO se guardó en el servidor. Revisa tu conexión y vuelve a crearlo.`);
       });
       // Trazabilidad Ley 21.719 — registrar creación de dato de salud
       void auditService.log({
@@ -394,7 +419,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (loggedPro) {
       savePatient(patient, loggedPro.id).catch(err => {
         console.error('[updatePatient] No se pudo guardar en Supabase:', err?.message || err);
-        addNotification(`⚠️ Los cambios de ${patient.name} NO se guardaron en el servidor. Intenta de nuevo.`, 'appointment');
+        notifyWriteError(err, `⚠️ Los cambios de ${patient.name} NO se guardaron en el servidor. Intenta de nuevo.`);
       });
     }
   };
@@ -404,7 +429,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setManualTransactions(prev => [...prev, withPro]);
     if (loggedPro) saveTransaction(withPro, loggedPro.id).catch(err => {
       console.error('[addManualTransaction] No se pudo guardar en Supabase:', err?.message || err);
-      addNotification(`⚠️ La transacción NO se guardó en el servidor. Intenta de nuevo.`, 'payment');
+      notifyWriteError(err, `⚠️ La transacción NO se guardó en el servidor. Intenta de nuevo.`, 'payment');
     });
   };
 
@@ -412,7 +437,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setManualTransactions(prev => prev.filter(t => t.id !== id));
     deleteTransactionDB(id).catch(err => {
       console.error('[deleteManualTransaction] No se pudo eliminar en Supabase:', err?.message || err);
-      addNotification('⚠️ La transacción NO se eliminó del servidor. Intenta de nuevo.', 'payment');
+      notifyWriteError(err, '⚠️ La transacción NO se eliminó del servidor. Intenta de nuevo.', 'payment');
     });
   };
 

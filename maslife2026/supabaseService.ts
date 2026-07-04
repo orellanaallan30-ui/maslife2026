@@ -2,8 +2,21 @@
 import { supabase } from './supabaseClient';
 import { Patient, Appointment, Transaction, ProfessionalProfile, Review } from './types';
 
+// Detecta si un error de Supabase se debe a la sesión (JWT expirado / sin permiso
+// por RLS). En ese caso re-loguearse es la solución, no reintentar.
+export function isAuthError(err: unknown): boolean {
+  if (!err) return false;
+  const e = err as { code?: string; status?: number; message?: string };
+  if (e.code === 'PGRST301' || e.code === '42501') return true;      // JWT expirado / permiso RLS
+  if (e.status === 401 || e.status === 403) return true;
+  const msg = (e.message || '').toLowerCase();
+  return /\bjwt\b|token|not authenticated|permission denied|row-level security|rls/.test(msg);
+}
+
 // Reintenta operaciones de escritura refrescando la sesión entre intentos.
 // Cubre JWT expirado (común en móvil tras background) y cortes breves de red.
+// Si al final el fallo es de sesión, marca el error con `authExpired` para que la
+// UI muestre un aviso accionable ("vuelve a iniciar sesión") en vez de un genérico.
 async function withRetry<T>(operation: () => Promise<T>, maxAttempts = 3): Promise<T> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -16,6 +29,9 @@ async function withRetry<T>(operation: () => Promise<T>, maxAttempts = 3): Promi
     } catch (err) {
       lastError = err;
     }
+  }
+  if (isAuthError(lastError)) {
+    try { (lastError as Record<string, unknown>).authExpired = true; } catch { /* error inmutable */ }
   }
   throw lastError;
 }
