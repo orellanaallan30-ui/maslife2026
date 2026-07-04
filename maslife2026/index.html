@@ -299,37 +299,9 @@
     }
     </script>
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Tailwind se compila en el build (Vite + PostCSS). Config en tailwind.config.js. -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <script>
-        try {
-            tailwind.config = {
-                darkMode: 'class',
-                theme: {
-                    extend: {
-                        colors: {
-                            primary: '#00a89e',
-                            teal: { 50: '#f0fdfa', 500: '#00a89e', 600: '#008c84' },
-                            slate: { 900: '#0f172a', 950: '#020617' },
-                            sage:      '#5c8374',
-                            'sage-deep': '#3a5a4d',
-                            sand:      '#c9a96a',
-                            ink:       '#1c2b27',
-                            'ink-soft':'#44574f',
-                            bone:      '#f4f1ea',
-                            'bone-deep':'#ebe6db',
-                        },
-                        fontFamily: {
-                            sans:    ['Manrope', 'sans-serif'],
-                            outfit:  ['Outfit', 'sans-serif'],
-                            display: ['Fraunces', 'Georgia', 'serif'],
-                        }
-                    }
-                }
-            };
-        } catch(e) { /* Tailwind CDN no disponible */ }
-    </script>
     <style>
         :root { scroll-behavior: smooth; }
 
