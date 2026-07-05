@@ -1,19 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
 import { getAllPublicProfessionals } from '../supabaseService';
 import { ProfessionalProfile } from '../types';
 import logoAgenda from '../assets/logo-agenda.png';
 
+// Normaliza texto para comparaciones sin acentos ni mayúsculas (ej: "Kinesiología" ≈ "kinesiologia").
+const normalizeText = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+const AREAS = [
+  { value: '', label: 'Todas', icon: 'grid_view', grad: 'linear-gradient(135deg, #475569, #64748b)' },
+  { value: 'Kinesiología', label: 'Kinesiología', icon: 'directions_run', grad: 'linear-gradient(135deg, #0284c7, #0ea5e9)' },
+  { value: 'Psicología', label: 'Psicología', icon: 'psychology', grad: 'linear-gradient(135deg, #6366f1, #818cf8)' },
+  { value: 'Nutrición', label: 'Nutrición', icon: 'restaurant', grad: 'linear-gradient(135deg, #059669, #10b981)' },
+  { value: 'Fonoaudiología', label: 'Fonoaudiología', icon: 'record_voice_over', grad: 'linear-gradient(135deg, #0891b2, #22d3ee)' },
+  { value: 'Terapia Ocupacional', label: 'T. Ocupacional', icon: 'accessibility_new', grad: 'linear-gradient(135deg, #d97706, #f59e0b)' },
+  { value: 'Podología', label: 'Podología', icon: 'directions_walk', grad: 'linear-gradient(135deg, #db2777, #f472b6)' },
+  { value: 'Técnico en Enfermería', label: 'TENS', icon: 'medical_services', grad: 'linear-gradient(135deg, #dc2626, #f87171)' },
+  { value: 'Masoterapia', label: 'Masoterapia', icon: 'spa', grad: 'linear-gradient(135deg, #7c3aed, #a78bfa)' },
+];
+
+// Mapea el parámetro ?modalidad=online,presencial,domicilio a las etiquetas internas.
+const MODALITY_MAP: Record<string, string> = {
+  online: 'Online', presencial: 'Presencial', domicilio: 'Domicilio',
+};
+
 const PatientResults: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { professionals } = useClinic();
   // Mostrar inmediatamente los profesionales públicos del caché local mientras Supabase responde
   const [publicPros, setPublicPros] = useState<ProfessionalProfile[]>(() => professionals.filter(p => p.isPublic));
   const [loading, setLoading] = useState(true);
-  const [citySearch, setCitySearch] = useState('');
-  const [selectedArea, setSelectedArea] = useState('');
-  const [selectedModality, setSelectedModality] = useState<string[]>([]);
+  // Estado inicial desde la URL → permite anuncios que abren el buscador ya filtrado
+  // (ej: /patient/results?ciudad=ovalle&area=kinesiologia&modalidad=domicilio).
+  const [citySearch, setCitySearch] = useState(() => searchParams.get('ciudad') || '');
+  const [selectedArea, setSelectedArea] = useState(() => {
+    const a = searchParams.get('area');
+    if (!a) return '';
+    const match = AREAS.find(x => x.value && normalizeText(x.value).includes(normalizeText(a)));
+    return match ? match.value : '';
+  });
+  const [selectedModality, setSelectedModality] = useState<string[]>(() => {
+    const m = searchParams.get('modalidad');
+    if (!m) return [];
+    return m.split(',').map(x => MODALITY_MAP[normalizeText(x)]).filter(Boolean);
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [visibleCount, setVisibleCount] = useState(12);
 
@@ -25,17 +58,14 @@ const PatientResults: React.FC = () => {
       .finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const areas = [
-    { value: '', label: 'Todas', icon: 'grid_view', grad: 'linear-gradient(135deg, #475569, #64748b)' },
-    { value: 'Kinesiología', label: 'Kinesiología', icon: 'directions_run', grad: 'linear-gradient(135deg, #0284c7, #0ea5e9)' },
-    { value: 'Psicología', label: 'Psicología', icon: 'psychology', grad: 'linear-gradient(135deg, #6366f1, #818cf8)' },
-    { value: 'Nutrición', label: 'Nutrición', icon: 'restaurant', grad: 'linear-gradient(135deg, #059669, #10b981)' },
-    { value: 'Fonoaudiología', label: 'Fonoaudiología', icon: 'record_voice_over', grad: 'linear-gradient(135deg, #0891b2, #22d3ee)' },
-    { value: 'Terapia Ocupacional', label: 'T. Ocupacional', icon: 'accessibility_new', grad: 'linear-gradient(135deg, #d97706, #f59e0b)' },
-    { value: 'Podología', label: 'Podología', icon: 'directions_walk', grad: 'linear-gradient(135deg, #db2777, #f472b6)' },
-    { value: 'Técnico en Enfermería', label: 'TENS', icon: 'medical_services', grad: 'linear-gradient(135deg, #dc2626, #f87171)' },
-    { value: 'Masoterapia', label: 'Masoterapia', icon: 'spa', grad: 'linear-gradient(135deg, #7c3aed, #a78bfa)' },
-  ];
+  // Sincroniza los filtros activos de vuelta a la URL (para compartir/retargeting).
+  useEffect(() => {
+    const next: Record<string, string> = {};
+    if (citySearch.trim()) next.ciudad = citySearch.trim();
+    if (selectedArea) next.area = normalizeText(selectedArea);
+    if (selectedModality.length) next.modalidad = selectedModality.map(m => normalizeText(m)).join(',');
+    setSearchParams(next, { replace: true });
+  }, [citySearch, selectedArea, selectedModality]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleModality = (mode: string) => {
     setSelectedModality(prev =>
@@ -44,8 +74,8 @@ const PatientResults: React.FC = () => {
   };
 
   const visibleDoctors = publicPros.filter(p => {
-    if (citySearch && !(p.city && p.city.toLowerCase().includes(citySearch.toLowerCase().trim()))) return false;
-    if (selectedArea && !p.specialty?.toLowerCase().includes(selectedArea.toLowerCase())) return false;
+    if (citySearch && !(p.city && normalizeText(p.city).includes(normalizeText(citySearch)))) return false;
+    if (selectedArea && !(p.specialty && normalizeText(p.specialty).includes(normalizeText(selectedArea)))) return false;
     if (selectedModality.length > 0) {
       const hasModality = selectedModality.some(m => {
         if (m === 'Online') return p.modalities?.online;
@@ -100,7 +130,7 @@ const PatientResults: React.FC = () => {
         <div className="mb-6">
           <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-3">Selecciona un área</h3>
           <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0" style={{ scrollbarWidth: 'none' }}>
-            {areas.map(a => {
+            {AREAS.map(a => {
               const active = selectedArea === a.value;
               return (
                 <button
