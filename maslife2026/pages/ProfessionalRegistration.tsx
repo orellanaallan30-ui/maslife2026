@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
 import { supabase } from '../supabaseClient';
+import { trackProRegistration, trackSubscriptionClick } from '../analytics';
 
 const CHILEAN_CITIES = [
   'Antofagasta','Arica','Calama','Castro','Chillán','Concepción',
@@ -211,6 +212,7 @@ const ProfessionalRegistration: React.FC = () => {
       }
 
       clearTimeout(timeoutId);
+      trackProRegistration(); // conversión: profesional registrado (campaña de suscripción)
 
       // Sin sesión (confirmación por email): mostrar "revisa tu correo".
       if (!hasSession) {
@@ -524,6 +526,7 @@ const ProfessionalRegistration: React.FC = () => {
                 <div className="space-y-3">
                   <a
                     href={MP_SUBSCRIPTION_LINK}
+                    onClick={trackSubscriptionClick}
                     className="w-full py-4 bg-teal-500 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-teal-600 transition-all shadow-lg shadow-teal-500/25 flex items-center justify-center gap-2"
                   >
                     <span className="material-icons-round text-base">payment</span>

@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Appointment, Service, Review } from '../types';
 import { useClinic } from '../ClinicContext';
 import { getProfessionalBySlugOrId, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
+import { trackViewProfile, trackStartBooking, trackBookingConfirmed } from '../analytics';
 
 // Clave de localStorage donde se guarda la reserva mientras el paciente paga en
 // la página de MercadoPago (Checkout Pro). Se lee al volver por back_urls.
@@ -171,7 +172,7 @@ const PatientProfile: React.FC = () => {
     // solo sirve de placeholder inicial mientras carga (evita mostrar servicios
     // /precios stale de un seed local o de localStorage).
     getProfessionalBySlugOrId(id)
-      .then(pro => { if (pro) setFetchedDoctor(pro); })
+      .then(pro => { if (pro) { setFetchedDoctor(pro); trackViewProfile(pro.slug || pro.id); } })
       .finally(() => setLoadingDoctor(false));
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -291,6 +292,7 @@ const PatientProfile: React.FC = () => {
             body: JSON.stringify({ ...(pending.notify || {}), paymentId, needsManualEntry: !confirmed }),
           }).catch(() => {});
         }
+        if (confirmed) trackBookingConfirmed(pending.notify?.price);
         setIsConfirmed(true);
       } catch (e) {
         console.error('[checkout-pro] retorno', e);
@@ -394,6 +396,7 @@ const PatientProfile: React.FC = () => {
         }).catch(() => {});
       }
 
+      trackBookingConfirmed(selectedService?.price);
       setIsProcessing(false);
       setIsConfirmed(true);
     } catch (error: any) {
@@ -409,6 +412,7 @@ const PatientProfile: React.FC = () => {
     setIsProcessing(true);
     setMpError('');
     setBookingError('');
+    trackStartBooking(selectedService?.price);
 
     const modality = selectedModality === 'online' ? 'Online' : selectedModality === 'home' ? 'Domicilio' : 'Presencial';
     const notify = {
