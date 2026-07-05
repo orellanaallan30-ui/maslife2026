@@ -4,6 +4,7 @@ import {
   useNavigate, useLocation, Outlet
 } from 'react-router-dom';
 import MainHome              from './pages/MainHome';
+import ProLanding            from './pages/ProLanding';
 import PatientResults        from './pages/PatientResults';
 import PatientProfile        from './pages/PatientProfile';
 import ProfessionalDashboard from './pages/ProfessionalDashboard';
@@ -531,6 +532,7 @@ const AppContent: React.FC = () => {
           <Route path="/verify/:code"        element={<DocumentVerifier />} />
           <Route path="/consent/:id"         element={<ConsentAcceptPage />} />
           <Route path="/registro"            element={<RegistroRedirect />} />
+          <Route path="/unete"               element={<ProLanding />} />
           <Route path="/charlas"             element={<Charlas />} />
           <Route path="/privacidad"          element={<PrivacyPolicy />} />
           <Route path="/terminos"            element={<TermsOfService />} />
