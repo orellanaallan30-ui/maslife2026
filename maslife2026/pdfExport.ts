@@ -455,6 +455,22 @@ export async function exportPatientFichaToPDF(
   }
   y += 2;
 
+  // Campos adicionales que el profesional agregó en Datos Personales
+  const extraFields = ((patient.customFields || []) as Array<{ label?: string; value?: string }>)
+    .filter(f => (f.label || '').trim() || (f.value || '').trim());
+  if (extraFields.length) {
+    if (y + 12 > 265) { doc.addPage(); y = MARGIN; }
+    y = drawSectionHeader(doc, 'CAMPOS ADICIONALES', MARGIN, y, COL);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    for (let i = 0; i < extraFields.length; i += 2) {
+      drawField(doc, extraFields[i].label || '—', extraFields[i].value || '—', MARGIN + 2, y);
+      if (extraFields[i + 1]) drawField(doc, extraFields[i + 1].label || '—', extraFields[i + 1].value || '—', MARGIN + 2 + half, y);
+      y += 5.5;
+    }
+    y += 2;
+  }
+
   // Datos Clínicos
   if (y + 30 > 265) { doc.addPage(); y = MARGIN; }
   y = drawSectionHeader(doc, 'DATOS CLÍNICOS', MARGIN, y, COL);

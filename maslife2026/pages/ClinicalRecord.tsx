@@ -574,7 +574,9 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         action: 'SOAP_EXPORT_PDF', resourceId: initialPatient.id, resourceType: 'soap',
       });
     }
-    const patientObj = { ...safePatient, ...personalData } as Patient;
+    // customFields es estado propio (no está en personalData): incluirlo en vivo
+    // para que los campos agregados por el profesional salgan en el PDF.
+    const patientObj = { ...safePatient, ...personalData, customFields } as Patient;
     await exportPatientFichaToPDF(
       patientObj,
       loggedPro,
