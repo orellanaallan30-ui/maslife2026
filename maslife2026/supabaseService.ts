@@ -439,10 +439,12 @@ function mapPatientToDB(p: Patient): Record<string, unknown> {
     custom_fields: p.customFields || [], attachments: p.attachments || [],
     allergies: p.allergies || [], medical_history: p.medicalHistory || '',
     age: p.age || 0, prevision: p.prevision || '', gender: p.gender || '',
-    birth_date: p.birthDate || '', address: p.address || '',
+    // birth_date y last_visit son columnas DATE: '' es inválido en Postgres
+    // (invalid input syntax for type date). Deben ir como null si están vacías.
+    birth_date: p.birthDate || null, address: p.address || '',
     vitals: p.vitals || null, soap: p.soap || null,
     goals: p.goals || [], session_logs: p.sessionLogs || [],
-    last_visit: p.lastVisit || '', emergency_contact: p.emergencyContact || '',
+    last_visit: p.lastVisit || null, emergency_contact: p.emergencyContact || '',
     professional_id: p.professionalId || null,
     diagnoses: p.diagnoses || '',
     specialty_data: p.specialtyData || null,
