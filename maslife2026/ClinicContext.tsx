@@ -186,25 +186,46 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         ]);
         // Merge: Supabase es la fuente de verdad, pero si hay registros locales
         // con IDs que no están en Supabase (guardado fallido), los conservamos
-        // en lugar de perderlos silenciosamente.
+        // en lugar de perderlos silenciosamente — y los RE-SINCRONIZAMOS (rescate).
+        const proId = loggedPro.id;
+        let patientsToSync: Patient[] = [];
+        let appsToSync: Appointment[] = [];
+        let txnsToSync: Transaction[] = [];
+
         setPatients(prev => {
           const supaIds = new Set(supaPatients.map(p => p.id));
-          const localOnly = prev.filter(p => p.professionalId === loggedPro.id && !supaIds.has(p.id));
+          const localOnly = prev.filter(p => p.professionalId === proId && !supaIds.has(p.id));
+          patientsToSync = localOnly;            // asignación (idempotente bajo StrictMode)
           return [...supaPatients, ...localOnly];
         });
         setAppointments(prev => {
           const supaIds = new Set(supaApps.map(a => a.id));
-          const localOnly = prev.filter(a => a.professionalId === loggedPro.id && !supaIds.has(a.id));
+          const localOnly = prev.filter(a => a.professionalId === proId && !supaIds.has(a.id));
+          appsToSync = localOnly;
           return [...supaApps, ...localOnly];
         });
         setManualTransactions(prev => {
           const supaIds = new Set(supaTransactions.map(t => t.id));
-          const localOnly = prev.filter(t => t.professionalId === loggedPro.id && !supaIds.has(t.id));
-          // Backfill: transacciones que quedaron solo en este dispositivo (guardado
-          // fallido o versión antigua) se suben ahora; si falla, reintenta al próximo login
-          localOnly.forEach(t => saveTransaction(t, loggedPro.id).catch(() => null));
+          const localOnly = prev.filter(t => t.professionalId === proId && !supaIds.has(t.id));
+          txnsToSync = localOnly;
           return [...supaTransactions, ...localOnly];
         });
+
+        // Rescate: sube a la nube lo que solo estaba en ESTE dispositivo (guardados
+        // que antes fallaban). Idempotente (upsert por id) → seguro en cualquier
+        // dispositivo y profesional. Si algo falla, se reintenta en la próxima carga;
+        // no bloquea la app ni satura de notificaciones (solo log de consola).
+        void (async () => {
+          for (const p of patientsToSync) {
+            try { await savePatient(p, proId); } catch (e) { console.warn('[rescate paciente]', (e as Error)?.message || e); }
+          }
+          for (const a of appsToSync) {
+            try { await saveAppointment({ ...a, professionalId: proId }); } catch (e) { console.warn('[rescate cita]', (e as Error)?.message || e); }
+          }
+          for (const t of txnsToSync) {
+            try { await saveTransaction(t, proId); } catch (e) { console.warn('[rescate transacción]', (e as Error)?.message || e); }
+          }
+        })();
       } catch {
         setAppointments(prev =>
           prev.filter(a => !a.professionalId || a.professionalId === loggedPro.id)

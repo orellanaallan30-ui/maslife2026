@@ -435,6 +435,16 @@ describe('savePatient', () => {
 
     await expect(savePatient(samplePatient, 'pro-1')).rejects.toEqual(dbError);
   });
+
+  // Regresión: birth_date y last_visit son columnas DATE; '' es inválido en Postgres.
+  it('envía null (no "") en fechas vacías', async () => {
+    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: null }));
+    await savePatient({ ...samplePatient, birthDate: '', lastVisit: '' } as Patient, 'pro-1');
+    const builder = vi.mocked(supabase.from).mock.results[0].value;
+    const payload = builder.upsert.mock.calls[0][0];
+    expect(payload.birth_date).toBeNull();
+    expect(payload.last_visit).toBeNull();
+  });
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -521,6 +531,17 @@ describe('saveAppointment', () => {
         professional_id: 'pro-1',
       })
     );
+  });
+
+  // Regresión: patient_id/recurrence_id son UUID y paid_at es timestamp; '' es inválido.
+  it('envía null (no "") en UUID/fecha vacíos', async () => {
+    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: null }));
+    await saveAppointment({ ...sampleAppointment, patientId: '', recurrenceId: '', paidAt: '' } as Appointment);
+    const builder = vi.mocked(supabase.from).mock.results[0].value;
+    const payload = builder.upsert.mock.calls[0][0];
+    expect(payload.patient_id).toBeNull();
+    expect(payload.recurrence_id).toBeNull();
+    expect(payload.paid_at).toBeNull();
   });
 
   it('lanza el error de Supabase si upsert falla (tras reintentos)', async () => {
