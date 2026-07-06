@@ -325,7 +325,10 @@ export async function getTransactions(proId: string): Promise<Transaction[]> {
 export async function saveTransaction(t: Transaction, proId: string): Promise<void> {
   await withRetry(async () => {
     const { error } = await supabase.from('transactions').upsert({
-      id: t.id, amount: t.amount, description: t.description, date: t.date, type: t.type, professional_id: proId,
+      id: t.id, amount: t.amount, description: t.description,
+      // date es DATE NOT NULL: si viniera vacío, usar hoy (evita fallo de guardado).
+      date: t.date || new Date().toISOString().slice(0, 10),
+      type: t.type, professional_id: proId,
     });
     if (error) throw error;
   });
@@ -475,14 +478,15 @@ function mapDBtoAppointment(a: Record<string, unknown>): Appointment {
 
 function mapAppointmentToDB(a: Appointment): Record<string, unknown> {
   return {
-    id: a.id, patient_id: a.patientId, patient_name: a.patientName, patient_phone: a.patientPhone,
+    // patient_id/recurrence_id son UUID: '' es inválido en Postgres. Van null si vacíos.
+    id: a.id, patient_id: a.patientId || null, patient_name: a.patientName, patient_phone: a.patientPhone,
     doctor_name: a.doctorName, specialty: a.specialty, service_name: a.serviceName,
     date: a.date, time: a.time, duration: a.duration, type: a.type, status: a.status,
     price: a.price, payment_status: a.paymentStatus, notes: a.notes, color: a.color,
     category: a.category, professional_id: a.professionalId,
-    booking_source: a.bookingSource, paid_at: a.paidAt, payment_amount: a.paymentAmount,
+    booking_source: a.bookingSource, paid_at: a.paidAt || null, payment_amount: a.paymentAmount || null,
     patient_email: a.patientEmail,
-    recurrence_id: a.recurrenceId ?? null,
+    recurrence_id: a.recurrenceId || null,
     recurrence_type: a.recurrenceType ?? null,
     block_mode: a.blockMode ?? null,
     patient_rut: a.patientRut || null,
