@@ -409,6 +409,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ok: true });
   }
 
+  // ── Correo de bienvenida a un profesional recién registrado (nuestro Resend) ─
+  if (req.body?.action === 'pro-welcome') {
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(200).json({ ok: false, skipped: true });
+    const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+    const { to, professionalName } = req.body || {};
+    if (!to || !EMAIL_RE.test(String(to))) return res.status(400).json({ error: 'Email inválido' });
+    const html = `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto">
+      <h2 style="color:#0f172a">¡Bienvenido/a a Clínica Mas Life, ${escapeHtml(String(professionalName || ''))}! 🧡</h2>
+      <p style="color:#475569">Tu cuenta ya está activa y tienes <b>30 días gratis</b> para probar todo, sin permanencia.</p>
+      <p style="color:#475569">Para empezar:</p>
+      <ol style="color:#475569;line-height:1.7">
+        <li>Completa tu perfil (foto, especialidad y ciudad).</li>
+        <li>Agrega tus servicios con precio y duración.</li>
+        <li>Comparte tu link de reservas y empieza a recibir pacientes.</li>
+      </ol>
+      <p style="margin:22px 0"><a href="https://clinicamaslife.cl/pro/dashboard" style="display:inline-block;background:#00a89e;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold">Ir a mi panel</a></p>
+      <p style="color:#94a3b8;font-size:12px">Si no creaste esta cuenta, ignora este correo.</p>
+    </div>`;
+    await sendEmail(RESEND_KEY, FROM, String(to), '¡Tu cuenta en Clínica Mas Life está lista! 🧡', html).catch(() => null);
+    return res.status(200).json({ ok: true });
+  }
+
   // ── Envío masivo a inscritos en charlas (solo admin) ──────────────────────
   if (req.body?.action === 'charla-blast') {
     // El token admin se firma con la service-role key (ver admin-auth.ts).

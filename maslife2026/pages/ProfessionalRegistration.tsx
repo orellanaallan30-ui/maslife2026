@@ -138,7 +138,18 @@ const ProfessionalRegistration: React.FC = () => {
         setError('No se pudo crear la cuenta. Intenta de nuevo.');
         return;
       }
-      const hasSession = !!authData?.session;
+      // Auto-confirmamos la cuenta y entramos de inmediato — NO depende del SMTP de
+      // Supabase (que requiere el dashboard). El correo de bienvenida se envía por
+      // nuestro Resend, y la verificación real de profesional la hace el admin (SIS + RUT).
+      let hasSession = !!authData?.session;
+      if (!hasSession && authData?.user) {
+        try {
+          await supabase.rpc('auto_confirm_new_user', { user_id: realUid });
+          const { data: signInData } = await supabase.auth.signInWithPassword({ email: emailLower, password: form.password });
+          if (signInData?.session) hasSession = true;
+        } catch { /* si falla, la fila igual se inserta vía pro_insert_anon */ }
+        if (timedOut) return;
+      }
 
       // Generar código de referido único (4 letras del nombre + 4 del UUID)
       const namePrefix = form.name.trim()
@@ -214,7 +225,15 @@ const ProfessionalRegistration: React.FC = () => {
       clearTimeout(timeoutId);
       trackProRegistration(); // conversión: profesional registrado (campaña de suscripción)
 
-      // Sin sesión (confirmación por email): mostrar "revisa tu correo".
+      // Correo de bienvenida propio (Resend) — confirma que su correo es válido y
+      // le da la bienvenida. Fire-and-forget, no bloquea el ingreso.
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'pro-welcome', to: emailLower, professionalName: form.name.trim() }),
+      }).catch(() => {});
+
+      // Fallback muy raro: si el auto-confirm + login fallaron, guiar al login.
       if (!hasSession) {
         setEmailSent(emailLower);
         return;
@@ -462,8 +481,8 @@ const ProfessionalRegistration: React.FC = () => {
                     <input type="text" inputMode="numeric" value={form.servicePrice} onChange={e=>setForm(f=>({...f,servicePrice:e.target.value.replace(/\D/g,'')}))} className={inp} placeholder="45000"/></div>
                 </div>
                 <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex items-start gap-3">
-                  <span className="material-icons-round text-teal-500 text-xl shrink-0 mt-0.5">mark_email_read</span>
-                  <p className="text-sm text-teal-800 font-medium">Te enviaremos un <strong>correo de confirmación</strong>. Confírmalo para activar tu cuenta e ingresar al panel. Tu período de prueba de 30 días comienza al confirmar.</p>
+                  <span className="material-icons-round text-teal-500 text-xl shrink-0 mt-0.5">verified</span>
+                  <p className="text-sm text-teal-800 font-medium">Tu cuenta se activa <strong>al instante</strong> con <strong>30 días gratis</strong>, sin permanencia. Te enviaremos un correo de bienvenida y entrarás directo a tu panel.</p>
                 </div>
                 {error&&<div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2">
                   <span className="material-icons-round text-rose-500 text-base shrink-0 mt-0.5">error</span>
