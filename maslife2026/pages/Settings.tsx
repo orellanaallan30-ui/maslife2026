@@ -47,6 +47,16 @@ const Settings: React.FC = () => {
         message: fbMessage.trim(),
       });
       if (error) throw error;
+      // Aviso proactivo al administrador por correo (no bloquea el envío).
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'admin-feedback',
+          fbType, subject: fbSubject.trim(), message: fbMessage.trim(),
+          professionalName: profile.name, professionalEmail: profile.email,
+        }),
+      }).catch(() => {});
       setFbSent(true);
       setFbSubject(''); setFbMessage('');
       setTimeout(() => setFbSent(false), 6000);
