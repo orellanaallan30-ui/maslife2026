@@ -157,7 +157,7 @@ export async function registerProfessional(
     createdAt: new Date().toISOString(),
   };
 
-  const { error: saveError } = await supabase.from('professionals').insert(mapProToDB(newPro as ProfessionalProfile));
+  const { error: saveError } = await supabase.from('professionals').insert(sanitizeForDB(mapProToDB(newPro as ProfessionalProfile)));
   if (saveError) {
     await supabase.auth.admin.deleteUser(proId).catch(() => null);
     return { error: 'Error al guardar el perfil. Intenta de nuevo.' };
@@ -223,9 +223,19 @@ export async function getProfessionalBySlugOrId(slugOrId: string): Promise<Profe
   return mapDBtoPro(data as unknown as Record<string, unknown>);
 }
 
+// Blindaje permanente: convierte '' → null antes de CUALQUIER guardado. Postgres
+// rechaza '' en columnas date/uuid/numeric (fue la causa de que no se guardaran los
+// pacientes); null siempre es válido. Al leer, los mappers ya reponen '' con `|| ''`.
+// Con esto el error es imposible por diseño, incluso para columnas futuras.
+function sanitizeForDB<T extends Record<string, unknown>>(obj: T): T {
+  const out: Record<string, unknown> = {};
+  for (const k in obj) out[k] = obj[k] === '' ? null : obj[k];
+  return out as T;
+}
+
 export async function saveProfessional(pro: ProfessionalProfile): Promise<void> {
   await withRetry(async () => {
-    const { error } = await supabase.from('professionals').upsert(mapProToDB(pro));
+    const { error } = await supabase.from('professionals').upsert(sanitizeForDB(mapProToDB(pro)));
     if (error) throw error;
   });
 }
@@ -262,7 +272,7 @@ export async function softDeletePatient(id: string): Promise<void> {
 
 export async function savePatient(patient: Patient, proId: string): Promise<void> {
   await withRetry(async () => {
-    const { error } = await supabase.from('patients').upsert({ ...mapPatientToDB(patient), professional_id: proId });
+    const { error } = await supabase.from('patients').upsert(sanitizeForDB({ ...mapPatientToDB(patient), professional_id: proId }));
     if (error) throw error;
   });
 }
@@ -282,7 +292,7 @@ export async function getAppointments(proId: string): Promise<Appointment[]> {
 export async function saveAppointment(app: Appointment): Promise<void> {
   if (!app.professionalId) throw new Error('Appointment sin professionalId');
   await withRetry(async () => {
-    const { error } = await supabase.from('appointments').upsert(mapAppointmentToDB(app));
+    const { error } = await supabase.from('appointments').upsert(sanitizeForDB(mapAppointmentToDB(app)));
     if (error) throw error;
   });
   // Sync to Google Calendar (fire-and-forget, non-blocking)
@@ -324,12 +334,12 @@ export async function getTransactions(proId: string): Promise<Transaction[]> {
 
 export async function saveTransaction(t: Transaction, proId: string): Promise<void> {
   await withRetry(async () => {
-    const { error } = await supabase.from('transactions').upsert({
+    const { error } = await supabase.from('transactions').upsert(sanitizeForDB({
       id: t.id, amount: t.amount, description: t.description,
       // date es DATE NOT NULL: si viniera vacío, usar hoy (evita fallo de guardado).
       date: t.date || new Date().toISOString().slice(0, 10),
       type: t.type, professional_id: proId,
-    });
+    }));
     if (error) throw error;
   });
 }
@@ -495,7 +505,7 @@ function mapAppointmentToDB(a: Appointment): Record<string, unknown> {
 
 export async function batchInsertBlocks(blocks: Appointment[]): Promise<void> {
   if (blocks.length === 0) return;
-  const { error } = await supabase.from('appointments').insert(blocks.map(mapAppointmentToDB));
+  const { error } = await supabase.from('appointments').insert(blocks.map(b => sanitizeForDB(mapAppointmentToDB(b))));
   if (error) throw error;
 }
 
