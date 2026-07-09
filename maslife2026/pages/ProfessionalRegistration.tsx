@@ -133,7 +133,7 @@ const ProfessionalRegistration: React.FC = () => {
 
       // Con confirmación por email activada, signUp NO devuelve sesión: usamos el
       // user.id que sí entrega, y la fila se inserta vía la política pro_insert_anon.
-      const realUid = authData?.session?.user?.id ?? authData?.user?.id;
+      let realUid = authData?.session?.user?.id ?? authData?.user?.id;
       if (!realUid) {
         setError('No se pudo crear la cuenta. Intenta de nuevo.');
         return;
@@ -144,9 +144,15 @@ const ProfessionalRegistration: React.FC = () => {
       let hasSession = !!authData?.session;
       if (!hasSession && authData?.user) {
         try {
-          await supabase.rpc('auto_confirm_new_user', { user_id: realUid });
+          await supabase.rpc('auto_confirm_new_user', { user_id: authData.user.id });
           const { data: signInData } = await supabase.auth.signInWithPassword({ email: emailLower, password: form.password });
-          if (signInData?.session) hasSession = true;
+          if (signInData?.session) {
+            hasSession = true;
+            // CLAVE: usar el id REAL de la sesión. Si el correo ya tenía una cuenta,
+            // signUp devuelve un id ofuscado; el perfil DEBE llevar el id del login,
+            // o el profesional nunca encontrará su perfil al iniciar sesión.
+            realUid = signInData.session.user.id;
+          }
         } catch { /* si falla, la fila igual se inserta vía pro_insert_anon */ }
         if (timedOut) return;
       }
