@@ -27,6 +27,18 @@ const Settings: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
 
+  // ── Acceso admin: solo se muestra el botón si el profesional es admin ────────
+  // (el servidor igual valida is_admin en cada uso; esto es la puerta visual).
+  const [isAdminUser, setIsAdminUser] = useState(false);
+  useEffect(() => {
+    if (!profile?.id) return;
+    supabase.from('professionals').select('is_admin').eq('id', profile.id).maybeSingle()
+      .then(
+        ({ data }) => setIsAdminUser(data?.is_admin === true),
+        () => setIsAdminUser(false),
+      );
+  }, [profile?.id]);
+
   // ── Soporte / Sugerencias ──────────────────────────────────────────────────
   const [fbType, setFbType] = useState<'suggestion' | 'problem'>('suggestion');
   const [fbSubject, setFbSubject] = useState('');
@@ -375,18 +387,20 @@ const Settings: React.FC = () => {
                   Guardar Cambios
                 </button>
               )}
-              {/* Acceso admin directo — SSO silencioso si el email coincide con ADMIN_EMAIL */}
-              <button
-                onClick={handleAdminSSO}
-                disabled={adminLoading}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-violet-600 border border-violet-200 bg-white hover:bg-violet-50 active:scale-95 transition-all disabled:opacity-60"
-              >
-                {adminLoading
-                  ? <span className="material-icons-round text-sm animate-spin">sync</span>
-                  : <span className="material-icons-round text-sm">admin_panel_settings</span>
-                }
-                Admin
-              </button>
+              {/* Acceso admin directo — SOLO visible para administradores (is_admin) */}
+              {isAdminUser && (
+                <button
+                  onClick={handleAdminSSO}
+                  disabled={adminLoading}
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-violet-600 border border-violet-200 bg-white hover:bg-violet-50 active:scale-95 transition-all disabled:opacity-60"
+                >
+                  {adminLoading
+                    ? <span className="material-icons-round text-sm animate-spin">sync</span>
+                    : <span className="material-icons-round text-sm">admin_panel_settings</span>
+                  }
+                  Admin
+                </button>
+              )}
               {/* Cerrar Sesión — visible en todos los tabs, especialmente útil en mobile */}
               <button
                 onClick={onLogout}
