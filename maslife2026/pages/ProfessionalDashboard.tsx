@@ -41,6 +41,16 @@ const ProfessionalDashboard: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Bienvenida (solo primer ingreso, por profesional)
+  const [showWelcome, setShowWelcome] = useState(false);
+  useEffect(() => {
+    if (!localStorage.getItem(`maslife_welcome_seen_${loggedPro.id}`)) setShowWelcome(true);
+  }, [loggedPro.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const dismissWelcome = () => {
+    localStorage.setItem(`maslife_welcome_seen_${loggedPro.id}`, '1');
+    setShowWelcome(false);
+  };
+
   const bookingLink = `${window.location.origin}/p/${loggedPro.slug || loggedPro.id}`;
 
   const handleCopyBookingLink = useCallback(() => {
@@ -70,6 +80,13 @@ const ProfessionalDashboard: React.FC = () => {
   const profileComplete = !!(loggedPro.slug && loggedPro.specialty && loggedPro.services?.length > 0);
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=e7c9a9a7adc24dee8c1f7fb78bdbdc67";
   const mpLinkWithBack = MP_SUBSCRIPTION_LINK;
+
+  // Estado de prueba gratis (para el banner de suscripción)
+  const subStatus = serverSubStatus ?? loggedPro.subscriptionStatus;
+  const isTrial = subStatus === 'trial';
+  const trialDaysLeft = loggedPro.trialEndDate
+    ? Math.ceil((new Date(loggedPro.trialEndDate).getTime() - currentTime.getTime()) / 86400000)
+    : null;
 
   const SPECIALTY_TITLES: Record<string, string> = {
     'Kinesiología': 'Kinesiólogo',
@@ -198,8 +215,78 @@ const ProfessionalDashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Bienvenida — solo primer ingreso */}
+      {showWelcome && (
+        <div className="absolute inset-0 z-[210] bg-[#0B1736]/70 backdrop-blur-md flex items-center justify-center p-6">
+          <div className="bg-white w-full max-w-md rounded-3xl p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{background:'#00B3A415'}}>
+                <span className="material-icons-round" style={{color:'#00B3A4'}}>waving_hand</span>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold leading-tight" style={{color:'#0B1736'}}>¡Bienvenido/a a Mas Life! 🧡</h2>
+                <p className="text-xs" style={{color:'#7A859F'}}>Tu agenda profesional en 4 pasos</p>
+              </div>
+            </div>
+            <div className="space-y-3 mb-5">
+              {[
+                { t: 'Completa tu perfil', d: 'Foto, especialidad y ciudad para que te encuentren.' },
+                { t: 'Agrega tus servicios', d: 'Nombre, precio y duración de cada atención.' },
+                { t: 'Comparte tu link', d: 'Envía tu enlace de reservas por WhatsApp o redes.' },
+                { t: 'Recibe reservas', d: 'Tus pacientes agendan y pagan online, 24/7.' },
+              ].map((s, idx) => (
+                <div key={s.t} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs text-white" style={{background:'#00B3A4'}}>{idx + 1}</div>
+                  <div>
+                    <p className="font-bold text-sm" style={{color:'#0B1736'}}>{s.t}</p>
+                    <p className="text-xs leading-relaxed" style={{color:'#7A859F'}}>{s.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 mb-5 text-xs text-teal-700 flex items-center gap-2">
+              <span className="material-icons-round text-sm">card_giftcard</span>
+              Tienes <b>30 días gratis</b> para probar todo, sin permanencia.
+            </div>
+            <button onClick={dismissWelcome}
+              className="w-full py-3.5 rounded-2xl text-white font-bold text-sm uppercase tracking-widest transition-all hover:brightness-110"
+              style={{background:'#00B3A4'}}>
+              Empezar
+            </button>
+          </div>
+        </div>
+      )}
+
       <main className="flex-1 min-h-0 overflow-y-auto px-4 pt-5 pb-24 md:px-10 md:pt-10 md:pb-10 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
+
+          {/* Banner de prueba gratis + suscripción */}
+          {isTrial && (
+            <div className={`mb-5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between ${(trialDaysLeft ?? 99) <= 5 ? 'bg-amber-50 border border-amber-200' : 'bg-teal-50 border border-teal-200'}`}>
+              <div className="flex items-center gap-3">
+                <span className={`material-icons-round ${(trialDaysLeft ?? 99) <= 5 ? 'text-amber-500' : 'text-teal-500'}`}>
+                  {(trialDaysLeft ?? 99) <= 5 ? 'schedule' : 'card_giftcard'}
+                </span>
+                <div>
+                  <p className="font-bold text-sm" style={{color:'#0B1736'}}>
+                    {trialDaysLeft !== null && trialDaysLeft > 0
+                      ? `Te quedan ${trialDaysLeft} día${trialDaysLeft === 1 ? '' : 's'} de prueba gratis`
+                      : 'Tu prueba gratis terminó'}
+                  </p>
+                  <p className="text-xs" style={{color:'#7A859F'}}>
+                    {trialDaysLeft !== null && trialDaysLeft > 0
+                      ? 'Suscríbete cuando quieras — sin permanencia.'
+                      : 'Suscríbete para seguir recibiendo pacientes.'}
+                  </p>
+                </div>
+              </div>
+              <a href={mpLinkWithBack}
+                className="shrink-0 px-5 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110"
+                style={{background:'#00B3A4'}}>
+                <span className="material-icons-round text-sm">workspace_premium</span> Suscribirme
+              </a>
+            </div>
+          )}
 
           {/* ── Header ── */}
           <div className="mb-5 flex items-start justify-between gap-3">
