@@ -388,6 +388,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ ok: true });
   }
 
+  // ── Aviso al administrador: nuevo mensaje de soporte de un profesional ──────
+  // Solo envía al ADMIN_EMAIL fijo (no a destinatarios arbitrarios), así que no se
+  // puede abusar para spam a terceros. No bloquea si el correo no está configurado.
+  if (req.body?.action === 'admin-feedback') {
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+    if (!RESEND_KEY || !ADMIN_EMAIL) return res.status(200).json({ ok: false, skipped: true });
+    const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+    const { fbType, subject, message, professionalName, professionalEmail } = req.body || {};
+    const tipo = fbType === 'problem' ? '🐞 Problema' : '💡 Sugerencia';
+    const html = `<div style="font-family:system-ui,sans-serif;max-width:560px">
+      <h2 style="color:#0f172a">${tipo} — nuevo mensaje de soporte</h2>
+      <p><b>De:</b> ${escapeHtml(String(professionalName || '—'))} (${escapeHtml(String(professionalEmail || '—'))})</p>
+      ${subject ? `<p><b>Asunto:</b> ${escapeHtml(String(subject))}</p>` : ''}
+      <p style="white-space:pre-wrap;background:#f8fafc;padding:12px;border-radius:8px">${escapeHtml(String(message || ''))}</p>
+      <p style="color:#64748b;font-size:13px">Revísalo y márcalo como resuelto en el panel admin → Soporte.</p>
+    </div>`;
+    await sendEmail(RESEND_KEY, FROM, ADMIN_EMAIL, `[MasLife Soporte] ${tipo}${subject ? ': ' + subject : ''}`, html).catch(() => null);
+    return res.status(200).json({ ok: true });
+  }
+
   // ── Envío masivo a inscritos en charlas (solo admin) ──────────────────────
   if (req.body?.action === 'charla-blast') {
     // El token admin se firma con la service-role key (ver admin-auth.ts).
