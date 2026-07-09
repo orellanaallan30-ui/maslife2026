@@ -106,12 +106,34 @@ function cleanLine(str: unknown): string {
   return String(str ?? '').replace(/[\r\n]+/g, ' ').trim();
 }
 
-const BASE_STYLE = `font-family:'Segoe UI',sans-serif;max-width:600px;margin:0 auto;background:#f8fafc;padding:24px;`;
-const CARD_STYLE = `background:white;padding:32px;border-radius:0 0 16px 16px;border:1px solid #e2e8f0;`;
 const ROW_LABEL = `padding:8px 0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;`;
 const ROW_VALUE = `padding:8px 0;color:#0f172a;font-weight:bold;text-align:right;`;
-const INFO_BOX = `background:#f0f9ff;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #2563eb;`;
-const FOOTER = `color:#94a3b8;font-size:12px;text-align:center;margin-top:24px;`;
+const INFO_BOX = `background:#f0fdfa;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #00a89e;`;
+
+// ── Plantilla de marca MasLife para TODOS los correos ────────────────────────
+// Header teal con el nombre de la clínica, tarjeta de contenido y footer oscuro
+// con copyright (estilo profesional, tipo Passline pero con nuestra marca).
+const BRAND_TEAL = '#00a89e';
+const BRAND_TEAL_DEEP = '#007e77';
+
+function emailShell(opts: { icon?: string; title: string; subtitle?: string; bodyHtml: string }): string {
+  return `<div style="font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;background:#f4f6f8;padding:24px;">
+    <div style="background:linear-gradient(135deg,${BRAND_TEAL},${BRAND_TEAL_DEEP});border-radius:16px 16px 0 0;padding:34px 32px;text-align:center;">
+      ${opts.icon ? `<div style="font-size:40px;line-height:1;margin-bottom:10px;">${opts.icon}</div>` : ''}
+      <div style="font-size:23px;font-weight:800;color:#ffffff;letter-spacing:.3px;">Clínica Mas Life <span style="opacity:.9;">🧡</span></div>
+      <div style="color:rgba(255,255,255,.85);font-size:11px;margin-top:5px;letter-spacing:1.5px;text-transform:uppercase;">clinicamaslife.cl</div>
+    </div>
+    <div style="background:#ffffff;padding:32px;border-left:1px solid #e6ebf0;border-right:1px solid #e6ebf0;">
+      <h1 style="color:#0f172a;font-size:20px;margin:0 0 ${opts.subtitle ? '4px' : '18px'};text-align:center;">${escapeHtml(opts.title)}</h1>
+      ${opts.subtitle ? `<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 22px;">${escapeHtml(opts.subtitle)}</p>` : ''}
+      ${opts.bodyHtml}
+    </div>
+    <div style="background:#0e1b2b;border-radius:0 0 16px 16px;padding:22px 32px;text-align:center;">
+      <div style="font-size:15px;font-weight:800;color:#ffffff;">Clínica Mas Life <span style="opacity:.9;">🧡</span></div>
+      <div style="color:#7a8aa0;font-size:11px;margin-top:6px;">© 2026 Clínica Mas Life · Todos los derechos reservados.</div>
+    </div>
+  </div>`;
+}
 
 // value se escapa como HTML; los labels son literales de confianza
 function tableRow(label: string, value: string) {
@@ -119,14 +141,12 @@ function tableRow(label: string, value: string) {
 }
 
 function professionalNewBookingHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; time: string; type: string }) {
-  return `<div style="${BASE_STYLE}">
-    <div style="background:#2563eb;border-radius:16px 16px 0 0;padding:32px;text-align:center;">
-      <h1 style="color:white;font-size:22px;margin:0;">Nueva Cita Agendada</h1>
-      <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:14px;">Clínica Maslife – Agenda Online</p>
-    </div>
-    <div style="${CARD_STYLE}">
-      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(p.professionalName || 'Profesional')}</strong>,</p>
-      <p style="color:#64748b;font-size:14px;">Tienes una nueva cita agendada:</p>
+  return emailShell({
+    icon: '📅',
+    title: 'Nueva cita agendada',
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 8px;">Hola <strong>${escapeHtml(p.professionalName || 'Profesional')}</strong>,</p>
+      <p style="color:#64748b;font-size:14px;margin:0 0 4px;">Tienes una nueva cita agendada:</p>
       <div style="${INFO_BOX}">
         <table style="width:100%;border-collapse:collapse;">
           ${tableRow('Paciente', p.patientName)}
@@ -135,23 +155,19 @@ function professionalNewBookingHtml(p: { professionalName: string; patientName: 
           ${tableRow('Hora', p.time)}
           ${tableRow('Modalidad', p.type || 'Presencial')}
         </table>
-      </div>
-      <p style="${FOOTER}">Mensaje automático de Clínica Maslife Agenda Online.</p>
-    </div>
-  </div>`;
+      </div>`,
+  });
 }
 
 function patientConfirmationHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; type: string }) {
-  return `<div style="${BASE_STYLE}">
-    <div style="background:#10b981;border-radius:16px 16px 0 0;padding:32px;text-align:center;">
-      <div style="font-size:48px;margin-bottom:8px;">✅</div>
-      <h1 style="color:white;font-size:22px;margin:0;">¡Tu cita está confirmada!</h1>
-      <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">Clínica Maslife – Agenda Online</p>
-    </div>
-    <div style="${CARD_STYLE}">
-      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
-      <p style="color:#64748b;font-size:14px;">Tu hora médica ha quedado reservada exitosamente. Aquí están los detalles:</p>
-      <div style="background:#f0fdf4;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #10b981;">
+  return emailShell({
+    icon: '✅',
+    title: '¡Tu cita está confirmada!',
+    subtitle: 'Tu hora quedó reservada exitosamente',
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 8px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
+      <p style="color:#64748b;font-size:14px;margin:0 0 4px;">Aquí están los detalles de tu cita:</p>
+      <div style="${INFO_BOX}">
         <table style="width:100%;border-collapse:collapse;">
           ${tableRow('Profesional', p.doctorName)}
           ${tableRow('Servicio', p.serviceName || 'Consulta')}
@@ -160,24 +176,19 @@ function patientConfirmationHtml(p: { patientName: string; doctorName: string; s
           ${tableRow('Modalidad', p.type || 'Presencial')}
         </table>
       </div>
-      <p style="color:#334155;font-size:14px;">Adjuntamos un archivo de calendario (.ics) para que agregues esta cita a Google Calendar, Apple Calendar u Outlook con un clic.</p>
-      <p style="color:#334155;font-size:14px;">Si necesitas cancelar o reagendar, comunícate directamente con el profesional.</p>
-      <p style="${FOOTER}">Este es un mensaje automático de Clínica Maslife Agenda Online.</p>
-    </div>
-  </div>`;
+      <p style="color:#64748b;font-size:13px;margin:0 0 6px;">Adjuntamos un archivo de calendario (.ics) para agregar la cita a Google Calendar, Apple Calendar u Outlook con un clic.</p>
+      <p style="color:#64748b;font-size:13px;margin:0;">Si necesitas cancelar o reagendar, comunícate directamente con el profesional.</p>`,
+  });
 }
 
 function paymentReceiptHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; transactionRef?: string; price?: number }) {
   const priceStr = p.price ? `$${p.price.toLocaleString('es-CL')}` : '—';
-  return `<div style="${BASE_STYLE}">
-    <div style="background:#2563eb;border-radius:16px 16px 0 0;padding:32px;text-align:center;">
-      <div style="font-size:48px;margin-bottom:8px;">🧾</div>
-      <h1 style="color:white;font-size:22px;margin:0;">Comprobante de Pago</h1>
-      <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">Clínica Maslife – Agenda Online</p>
-    </div>
-    <div style="${CARD_STYLE}">
-      <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
-      <p style="color:#64748b;font-size:14px;">Tu pago ha sido confirmado:</p>
+  return emailShell({
+    icon: '🧾',
+    title: 'Comprobante de pago',
+    subtitle: 'Tu pago ha sido confirmado',
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 8px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
       <div style="${INFO_BOX}">
         <table style="width:100%;border-collapse:collapse;">
           ${tableRow('Paciente', p.patientName)}
@@ -189,9 +200,8 @@ function paymentReceiptHtml(p: { patientName: string; doctorName: string; servic
           ${tableRow('Monto Pagado', priceStr)}
         </table>
       </div>
-      <p style="${FOOTER}">Este es un mensaje automático de Clínica Maslife Agenda Online.</p>
-    </div>
-  </div>`;
+      <p style="color:#64748b;font-size:13px;margin:0;">Guarda este comprobante como respaldo de tu pago.</p>`,
+  });
 }
 
 async function sendEmail(apiKey: string, from: string, to: string, subject: string, html: string, icsContent?: string) {
@@ -217,44 +227,38 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
 
 function ratingRequestHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; reviewLink: string }): string {
   const dateFormatted = p.date ? new Date(p.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-  return `<div style="${BASE_STYLE}">
-    <div style="background:linear-gradient(135deg,#0d9488,#0369a1);border-radius:16px 16px 0 0;padding:32px;text-align:center;">
-      <div style="font-size:40px;margin-bottom:8px;">⭐</div>
-      <h1 style="color:white;font-size:22px;margin:0;">¿Cómo fue tu atención?</h1>
-      <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:13px;">Tu opinión ayuda a otros pacientes</p>
-    </div>
-    <div style="${CARD_STYLE}">
-      <p style="color:#334155;font-size:16px;margin:0 0 16px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
+  return emailShell({
+    icon: '⭐',
+    title: '¿Cómo fue tu atención?',
+    subtitle: 'Tu opinión ayuda a otros pacientes',
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 16px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
       <p style="color:#475569;font-size:15px;margin:0 0 24px;line-height:1.6;">
         Tu sesión de <strong>${escapeHtml(p.serviceName)}</strong>${dateFormatted ? ` del ${dateFormatted}` : ''} con
         <strong>${escapeHtml(p.professionalName)}</strong> ha finalizado. Nos gustaría saber cómo fue tu experiencia.
       </p>
       <div style="text-align:center;margin:0 0 24px;font-size:32px;letter-spacing:4px;color:#f59e0b;">★★★★★</div>
       <div style="text-align:center;margin:0 0 24px;">
-        <a href="${p.reviewLink}" style="display:inline-block;background:#0d9488;color:white;text-decoration:none;font-weight:800;font-size:15px;padding:14px 32px;border-radius:12px;">
+        <a href="${p.reviewLink}" style="display:inline-block;background:${BRAND_TEAL};color:white;text-decoration:none;font-weight:800;font-size:15px;padding:14px 32px;border-radius:12px;">
           Dejar mi calificación →
         </a>
       </div>
-      <p style="${FOOTER}">Tu RUT solo se usa para verificar que fuiste atendido/a. No se publica.<br>Este es un mensaje automático de Clínica Mas Life.</p>
-    </div>
-  </div>`;
+      <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">Tu RUT solo se usa para verificar que fuiste atendido/a. No se publica.</p>`,
+  });
 }
 
 function charlaBlastHtml(nombre: string, asunto: string, mensaje: string): string {
-  return `<div style="${BASE_STYLE}">
-    <div style="background:linear-gradient(135deg,#0d9488,#0369a1);border-radius:16px 16px 0 0;padding:32px;text-align:center;">
-      <div style="font-size:40px;margin-bottom:8px;">📢</div>
-      <h1 style="color:white;font-size:22px;margin:0;">${escapeHtml(asunto)}</h1>
-      <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:13px;">Clínica Mas Life · Charlas de salud</p>
-    </div>
-    <div style="${CARD_STYLE}">
+  return emailShell({
+    icon: '📢',
+    title: asunto,
+    subtitle: 'Clínica Mas Life · Charlas de salud',
+    bodyHtml: `
       <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(nombre)}</strong>,</p>
       <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(mensaje)}</div>
       <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
-      <p style="${FOOTER}">Recibiste este mensaje porque te inscribiste a las charlas gratuitas de Clínica Mas Life.<br>
-      Para no recibir más comunicaciones, responde este email solicitando darte de baja.</p>
-    </div>
-  </div>`;
+      <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">Recibiste este mensaje porque te inscribiste a las charlas gratuitas de Clínica Mas Life.<br>
+      Para no recibir más comunicaciones, responde este email solicitando darte de baja.</p>`,
+  });
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -398,13 +402,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
     const { fbType, subject, message, professionalName, professionalEmail } = req.body || {};
     const tipo = fbType === 'problem' ? '🐞 Problema' : '💡 Sugerencia';
-    const html = `<div style="font-family:system-ui,sans-serif;max-width:560px">
-      <h2 style="color:#0f172a">${tipo} — nuevo mensaje de soporte</h2>
-      <p><b>De:</b> ${escapeHtml(String(professionalName || '—'))} (${escapeHtml(String(professionalEmail || '—'))})</p>
-      ${subject ? `<p><b>Asunto:</b> ${escapeHtml(String(subject))}</p>` : ''}
-      <p style="white-space:pre-wrap;background:#f8fafc;padding:12px;border-radius:8px">${escapeHtml(String(message || ''))}</p>
-      <p style="color:#64748b;font-size:13px">Revísalo y márcalo como resuelto en el panel admin → Soporte.</p>
-    </div>`;
+    const html = emailShell({
+      icon: '📨',
+      title: `${tipo} — nuevo mensaje de soporte`,
+      bodyHtml: `
+        <p style="color:#334155;font-size:15px;margin:0 0 8px;"><strong>De:</strong> ${escapeHtml(String(professionalName || '—'))} (${escapeHtml(String(professionalEmail || '—'))})</p>
+        ${subject ? `<p style="color:#334155;font-size:15px;margin:0 0 12px;"><strong>Asunto:</strong> ${escapeHtml(String(subject))}</p>` : ''}
+        <div style="white-space:pre-wrap;background:#f8fafc;color:#334155;font-size:14px;line-height:1.6;padding:16px;border-radius:12px;border-left:4px solid ${BRAND_TEAL};">${escapeHtml(String(message || ''))}</div>
+        <p style="color:#94a3b8;font-size:13px;margin:18px 0 0;">Revísalo y márcalo como resuelto en el panel admin → Soporte.</p>`,
+    });
     await sendEmail(RESEND_KEY, FROM, ADMIN_EMAIL, `[MasLife Soporte] ${tipo}${subject ? ': ' + subject : ''}`, html).catch(() => null);
     return res.status(200).json({ ok: true });
   }
@@ -416,18 +422,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
     const { to, professionalName } = req.body || {};
     if (!to || !EMAIL_RE.test(String(to))) return res.status(400).json({ error: 'Email inválido' });
-    const html = `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto">
-      <h2 style="color:#0f172a">¡Bienvenido/a a Clínica Mas Life, ${escapeHtml(String(professionalName || ''))}! 🧡</h2>
-      <p style="color:#475569">Tu cuenta ya está activa y tienes <b>30 días gratis</b> para probar todo, sin permanencia.</p>
-      <p style="color:#475569">Para empezar:</p>
-      <ol style="color:#475569;line-height:1.7">
-        <li>Completa tu perfil (foto, especialidad y ciudad).</li>
-        <li>Agrega tus servicios con precio y duración.</li>
-        <li>Comparte tu link de reservas y empieza a recibir pacientes.</li>
-      </ol>
-      <p style="margin:22px 0"><a href="https://clinicamaslife.cl/pro/dashboard" style="display:inline-block;background:#00a89e;color:#fff;padding:12px 24px;border-radius:10px;text-decoration:none;font-weight:bold">Ir a mi panel</a></p>
-      <p style="color:#94a3b8;font-size:12px">Si no creaste esta cuenta, ignora este correo.</p>
-    </div>`;
+    const html = emailShell({
+      icon: '🧡',
+      title: `¡Bienvenido/a a Clínica Mas Life, ${String(professionalName || '')}!`,
+      subtitle: 'Tu cuenta ya está activa',
+      bodyHtml: `
+        <p style="color:#334155;font-size:15px;margin:0 0 16px;">Tienes <strong>30 días gratis</strong> para probar todo, sin permanencia.</p>
+        <p style="color:#475569;font-size:14px;margin:0 0 8px;">Para empezar:</p>
+        <ol style="color:#475569;font-size:14px;line-height:1.8;margin:0 0 8px;padding-left:20px;">
+          <li>Completa tu perfil (foto, especialidad y ciudad).</li>
+          <li>Agrega tus servicios con precio y duración.</li>
+          <li>Comparte tu link de reservas y empieza a recibir pacientes.</li>
+        </ol>
+        <div style="text-align:center;margin:24px 0 8px;">
+          <a href="https://clinicamaslife.cl/pro/dashboard" style="display:inline-block;background:${BRAND_TEAL};color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:800;font-size:15px;">Ir a mi panel →</a>
+        </div>
+        <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">Si no creaste esta cuenta, ignora este correo.</p>`,
+    });
     await sendEmail(RESEND_KEY, FROM, String(to), '¡Tu cuenta en Clínica Mas Life está lista! 🧡', html).catch(() => null);
     return res.status(200).json({ ok: true });
   }
