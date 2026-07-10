@@ -260,33 +260,43 @@ const ProfessionalDashboard: React.FC = () => {
       <main className="flex-1 min-h-0 overflow-y-auto px-4 pt-5 pb-24 md:px-10 md:pt-10 md:pb-10 custom-scrollbar">
         <div className="max-w-6xl mx-auto">
 
-          {/* Banner de prueba gratis + suscripción */}
-          {isTrial && (
-            <div className={`mb-5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between ${(trialDaysLeft ?? 99) <= 5 ? 'bg-amber-50 border border-amber-200' : 'bg-teal-50 border border-teal-200'}`}>
+          {/* Banner de prueba gratis. El CTA de pago (Suscribirme) aparece solo en los
+              últimos 7 días o al vencer; antes es solo un aviso amistoso, sin presión. */}
+          {isTrial && (() => {
+            const ended = !(trialDaysLeft !== null && trialDaysLeft > 0);   // vencida o sin fecha
+            const showSub = ended || (trialDaysLeft ?? 99) <= 7;            // botón solo cerca del final
+            const urgent = (trialDaysLeft ?? 99) <= 5;                      // tono ámbar
+            return (
+            <div className={`mb-5 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between ${urgent ? 'bg-amber-50 border border-amber-200' : 'bg-teal-50 border border-teal-200'}`}>
               <div className="flex items-center gap-3">
-                <span className={`material-icons-round ${(trialDaysLeft ?? 99) <= 5 ? 'text-amber-500' : 'text-teal-500'}`}>
-                  {(trialDaysLeft ?? 99) <= 5 ? 'schedule' : 'card_giftcard'}
+                <span className={`material-icons-round ${urgent ? 'text-amber-500' : 'text-teal-500'}`}>
+                  {urgent ? 'schedule' : 'card_giftcard'}
                 </span>
                 <div>
                   <p className="font-bold text-sm" style={{color:'#0B1736'}}>
-                    {trialDaysLeft !== null && trialDaysLeft > 0
+                    {!ended
                       ? `Te quedan ${trialDaysLeft} día${trialDaysLeft === 1 ? '' : 's'} de prueba gratis`
                       : 'Tu prueba gratis terminó'}
                   </p>
                   <p className="text-xs" style={{color:'#7A859F'}}>
-                    {trialDaysLeft !== null && trialDaysLeft > 0
-                      ? 'Suscríbete cuando quieras — sin permanencia.'
-                      : 'Suscríbete para seguir recibiendo pacientes.'}
+                    {ended
+                      ? 'Suscríbete para seguir recibiendo pacientes.'
+                      : showSub
+                        ? 'Suscríbete para no perder tu agenda — sin permanencia.'
+                        : 'Disfruta todas las funciones, sin costo.'}
                   </p>
                 </div>
               </div>
-              <a href={mpLinkWithBack}
-                className="shrink-0 px-5 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110"
-                style={{background:'#00B3A4'}}>
-                <span className="material-icons-round text-sm">workspace_premium</span> Suscribirme
-              </a>
+              {showSub && (
+                <a href={mpLinkWithBack}
+                  className="shrink-0 px-5 py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110"
+                  style={{background:'#00B3A4'}}>
+                  <span className="material-icons-round text-sm">workspace_premium</span> Suscribirme
+                </a>
+              )}
             </div>
-          )}
+            );
+          })()}
 
           {/* ── Header ── */}
           <div className="mb-5 flex items-start justify-between gap-3">
