@@ -116,21 +116,28 @@ const INFO_BOX = `background:#f0fdfa;border-radius:12px;padding:20px;margin:20px
 const BRAND_TEAL = '#00a89e';
 const BRAND_TEAL_DEEP = '#007e77';
 
-function emailShell(opts: { icon?: string; title: string; subtitle?: string; bodyHtml: string }): string {
-  return `<div style="font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;background:#f4f6f8;padding:24px;">
-    <div style="background:linear-gradient(135deg,${BRAND_TEAL},${BRAND_TEAL_DEEP});border-radius:16px 16px 0 0;padding:34px 32px;text-align:center;">
-      ${opts.icon ? `<div style="font-size:40px;line-height:1;margin-bottom:10px;">${opts.icon}</div>` : ''}
-      <div style="font-size:23px;font-weight:800;color:#ffffff;letter-spacing:.3px;">Clínica Mas Life <span style="opacity:.9;">🧡</span></div>
-      <div style="color:rgba(255,255,255,.85);font-size:11px;margin-top:5px;letter-spacing:1.5px;text-transform:uppercase;">clinicamaslife.cl</div>
+// Tipografías seguras para correo: los clientes descartan las fuentes web
+// (Manrope/Fraunces), así que usamos un serif elegante (Georgia) para el wordmark
+// y los títulos, y un sans limpio para el cuerpo. Sin emojis ni imágenes.
+const FONT_SERIF = `Georgia,'Times New Roman',serif`;
+const FONT_SANS = `'Manrope','Helvetica Neue',Helvetica,Arial,sans-serif`;
+
+function emailShell(opts: { kicker?: string; title: string; subtitle?: string; bodyHtml: string }): string {
+  return `<div style="font-family:${FONT_SANS};max-width:600px;margin:0 auto;background:#f4f6f8;padding:24px;">
+    <div style="background:linear-gradient(135deg,${BRAND_TEAL},${BRAND_TEAL_DEEP});border-radius:16px 16px 0 0;padding:36px 32px 32px;text-align:center;">
+      <div style="width:56px;height:56px;line-height:56px;margin:0 auto 14px;background:#ffffff;border-radius:15px;font-family:${FONT_SERIF};font-size:24px;font-weight:700;color:${BRAND_TEAL};box-shadow:0 4px 12px rgba(0,0,0,.12);">ML</div>
+      <div style="font-family:${FONT_SERIF};font-size:27px;font-weight:700;color:#ffffff;letter-spacing:.2px;">Clínica Mas Life</div>
+      <div style="color:rgba(255,255,255,.82);font-size:11px;margin-top:7px;letter-spacing:2px;text-transform:uppercase;">clinicamaslife.cl</div>
     </div>
-    <div style="background:#ffffff;padding:32px;border-left:1px solid #e6ebf0;border-right:1px solid #e6ebf0;">
-      <h1 style="color:#0f172a;font-size:20px;margin:0 0 ${opts.subtitle ? '4px' : '18px'};text-align:center;">${escapeHtml(opts.title)}</h1>
-      ${opts.subtitle ? `<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 22px;">${escapeHtml(opts.subtitle)}</p>` : ''}
+    <div style="background:#ffffff;padding:34px 32px;border-left:1px solid #e6ebf0;border-right:1px solid #e6ebf0;">
+      ${opts.kicker ? `<div style="text-align:center;color:${BRAND_TEAL};font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">${escapeHtml(opts.kicker)}</div>` : ''}
+      <h1 style="font-family:${FONT_SERIF};color:#0f172a;font-size:24px;font-weight:700;margin:0 0 ${opts.subtitle ? '6px' : '20px'};text-align:center;line-height:1.25;">${escapeHtml(opts.title)}</h1>
+      ${opts.subtitle ? `<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 24px;">${escapeHtml(opts.subtitle)}</p>` : ''}
       ${opts.bodyHtml}
     </div>
-    <div style="background:#0e1b2b;border-radius:0 0 16px 16px;padding:22px 32px;text-align:center;">
-      <div style="font-size:15px;font-weight:800;color:#ffffff;">Clínica Mas Life <span style="opacity:.9;">🧡</span></div>
-      <div style="color:#7a8aa0;font-size:11px;margin-top:6px;">© 2026 Clínica Mas Life · Todos los derechos reservados.</div>
+    <div style="background:#0e1b2b;border-radius:0 0 16px 16px;padding:24px 32px;text-align:center;">
+      <div style="font-family:${FONT_SERIF};font-size:17px;font-weight:700;color:#ffffff;">Clínica Mas Life</div>
+      <div style="color:#7a8aa0;font-size:11px;margin-top:7px;letter-spacing:.2px;">© 2026 Clínica Mas Life · Todos los derechos reservados.</div>
     </div>
   </div>`;
 }
@@ -142,7 +149,7 @@ function tableRow(label: string, value: string) {
 
 function professionalNewBookingHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; time: string; type: string }) {
   return emailShell({
-    icon: '📅',
+    kicker: 'Nueva cita',
     title: 'Nueva cita agendada',
     bodyHtml: `
       <p style="color:#334155;font-size:15px;margin:0 0 8px;">Hola <strong>${escapeHtml(p.professionalName || 'Profesional')}</strong>,</p>
@@ -161,7 +168,7 @@ function professionalNewBookingHtml(p: { professionalName: string; patientName: 
 
 function patientConfirmationHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; type: string }) {
   return emailShell({
-    icon: '✅',
+    kicker: 'Cita confirmada',
     title: '¡Tu cita está confirmada!',
     subtitle: 'Tu hora quedó reservada exitosamente',
     bodyHtml: `
@@ -184,7 +191,7 @@ function patientConfirmationHtml(p: { patientName: string; doctorName: string; s
 function paymentReceiptHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; transactionRef?: string; price?: number }) {
   const priceStr = p.price ? `$${p.price.toLocaleString('es-CL')}` : '—';
   return emailShell({
-    icon: '🧾',
+    kicker: 'Comprobante',
     title: 'Comprobante de pago',
     subtitle: 'Tu pago ha sido confirmado',
     bodyHtml: `
@@ -228,7 +235,7 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
 function ratingRequestHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; reviewLink: string }): string {
   const dateFormatted = p.date ? new Date(p.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
   return emailShell({
-    icon: '⭐',
+    kicker: 'Tu opinión',
     title: '¿Cómo fue tu atención?',
     subtitle: 'Tu opinión ayuda a otros pacientes',
     bodyHtml: `
@@ -249,9 +256,8 @@ function ratingRequestHtml(p: { professionalName: string; patientName: string; s
 
 function charlaBlastHtml(nombre: string, asunto: string, mensaje: string): string {
   return emailShell({
-    icon: '📢',
+    kicker: 'Charlas de salud',
     title: asunto,
-    subtitle: 'Clínica Mas Life · Charlas de salud',
     bodyHtml: `
       <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(nombre)}</strong>,</p>
       <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(mensaje)}</div>
@@ -379,7 +385,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const FROM = process.env.EMAIL_FROM || 'notificaciones@clinicamaslife.cl';
 
     const reviewLink = `https://clinicamaslife.cl/p/${proSlug || professionalId}?review=1&name=${encodeURIComponent(String(patientName))}`;
-    const subject = `¿Cómo fue tu atención con ${escapeHtml(String(professionalName))}? ⭐`;
+    const subject = `¿Cómo fue tu atención con ${escapeHtml(String(professionalName))}?`;
     await sendEmail(RESEND_KEY, FROM, String(patientEmail), subject,
       ratingRequestHtml({
         professionalName: String(professionalName),
@@ -401,10 +407,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!RESEND_KEY || !ADMIN_EMAIL) return res.status(200).json({ ok: false, skipped: true });
     const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
     const { fbType, subject, message, professionalName, professionalEmail } = req.body || {};
-    const tipo = fbType === 'problem' ? '🐞 Problema' : '💡 Sugerencia';
+    const tipo = fbType === 'problem' ? 'Problema' : 'Sugerencia';
     const html = emailShell({
-      icon: '📨',
-      title: `${tipo} — nuevo mensaje de soporte`,
+      kicker: 'Soporte',
+      title: `${tipo} — nuevo mensaje`,
       bodyHtml: `
         <p style="color:#334155;font-size:15px;margin:0 0 8px;"><strong>De:</strong> ${escapeHtml(String(professionalName || '—'))} (${escapeHtml(String(professionalEmail || '—'))})</p>
         ${subject ? `<p style="color:#334155;font-size:15px;margin:0 0 12px;"><strong>Asunto:</strong> ${escapeHtml(String(subject))}</p>` : ''}
@@ -423,7 +429,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { to, professionalName } = req.body || {};
     if (!to || !EMAIL_RE.test(String(to))) return res.status(400).json({ error: 'Email inválido' });
     const html = emailShell({
-      icon: '🧡',
+      kicker: 'Bienvenida',
       title: `¡Bienvenido/a a Clínica Mas Life, ${String(professionalName || '')}!`,
       subtitle: 'Tu cuenta ya está activa',
       bodyHtml: `
@@ -439,7 +445,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         </div>
         <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">Si no creaste esta cuenta, ignora este correo.</p>`,
     });
-    await sendEmail(RESEND_KEY, FROM, String(to), '¡Tu cuenta en Clínica Mas Life está lista! 🧡', html).catch(() => null);
+    await sendEmail(RESEND_KEY, FROM, String(to), '¡Tu cuenta en Clínica Mas Life está lista!', html).catch(() => null);
     return res.status(200).json({ ok: true });
   }
 
