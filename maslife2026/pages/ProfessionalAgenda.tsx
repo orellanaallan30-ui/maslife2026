@@ -186,7 +186,11 @@ const ProfessionalAgenda: React.FC = () => {
 
       try {
          await batchAddAppointments(blocks);
-      } catch { /* silencioso */ }
+      } catch (err) {
+         // batchAddAppointments ya notificó al usuario (notifyWriteError);
+         // aquí solo dejamos rastro para diagnóstico.
+         console.error('[SmartBlock] Bloqueos no guardados:', (err as Error)?.message || err);
+      }
 
       setBlockApplying(false);
       setIsCreateModalOpen(false);

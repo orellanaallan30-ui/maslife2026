@@ -505,8 +505,27 @@ function mapAppointmentToDB(a: Appointment): Record<string, unknown> {
 
 export async function batchInsertBlocks(blocks: Appointment[]): Promise<void> {
   if (blocks.length === 0) return;
-  const { error } = await supabase.from('appointments').insert(blocks.map(b => sanitizeForDB(mapAppointmentToDB(b))));
-  if (error) throw error;
+  const rows = blocks.map(b => sanitizeForDB(mapAppointmentToDB(b)));
+  try {
+    await withRetry(async () => {
+      const { error } = await supabase.from('appointments').insert(rows);
+      if (error) throw error;
+    });
+  } catch (err: any) {
+    // El insert por lote es atómico: un solo conflicto (23505, horario ya ocupado)
+    // bota TODOS los bloqueos. Fallback fila a fila para guardar los que sí se
+    // pueden y reportar cuántos quedaron fuera.
+    if (err?.code !== '23505') throw err;
+    let failed = 0;
+    for (const row of rows) {
+      const { error } = await supabase.from('appointments').insert(row);
+      if (error && error.code !== '23505') throw error;
+      if (error) failed++;
+    }
+    if (failed > 0) {
+      throw new Error(`${failed} de ${rows.length} bloqueos no se guardaron: esos horarios ya estaban ocupados.`);
+    }
+  }
 }
 
 export async function deleteBlocksByRecurrence(

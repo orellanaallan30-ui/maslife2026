@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
+import { toMinutes, rangesOverlap } from './overlap';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -132,14 +133,36 @@ export async function validateBooking(input: Partial<BookingInput>): Promise<Val
 }
 
 /**
- * Inserta la cita con service_role. El índice UNIQUE (professional_id, date, time)
- * convierte cualquier carrera de doble reserva en error 23505.
+ * Inserta la cita con service_role. Antes del insert se verifica solapamiento
+ * contra TODAS las citas/bloqueos no cancelados del día (el índice UNIQUE solo
+ * ataja choques de hora EXACTA; una cita de 120 min a las 13:00 también debe
+ * bloquear las 14:00). El índice UNIQUE (professional_id, date, time) queda como
+ * última defensa ante carreras de doble reserva (error 23505).
  */
 export async function insertBooking(
   input: BookingInput,
   prepared: PreparedBooking,
   opts: { status: 'Confirmado' | 'Pendiente'; paymentStatus: 'Pagado' | 'Pendiente'; paymentAmount?: number }
 ): Promise<InsertResult> {
+  const newStart = toMinutes(input.time);
+  const newDur = prepared.service.duration || 60;
+  const { data: dayApps, error: dayErr } = await supabase
+    .from('appointments')
+    .select('time, duration, status')
+    .eq('professional_id', prepared.pro.id)
+    .eq('date', input.date)
+    .neq('status', 'Cancelado');
+  if (dayErr) {
+    console.error('[booking] conflict check error:', dayErr.message);
+    return { ok: false, error: 'No se pudo verificar disponibilidad', code: 500 };
+  }
+  const conflict = (dayApps || []).some(a =>
+    rangesOverlap(newStart, newDur, toMinutes(a.time), a.duration || 60)
+  );
+  if (conflict) {
+    return { ok: false, error: 'SLOT_TAKEN', code: 409 };
+  }
+
   const id = randomUUID();
   const { error } = await supabase.from('appointments').insert({
     id,

@@ -296,10 +296,26 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const addAppointment = async (app: Appointment) => {
     setAppointments(prev => [...prev, app]);
     addNotification(`Nueva cita: ${app.patientName} - ${app.serviceName} (${app.date} ${app.time})`, 'appointment');
-    // Persistir en Supabase — si falla, avisar en vez de ocultar el error
-    saveAppointment(app).catch(err => {
-      console.error('[addAppointment] No se pudo guardar la cita en Supabase:', err?.message || err);
-      notifyWriteError(err, `⚠️ La cita de ${app.patientName} NO se guardó en el servidor. Revisa tu conexión y créala de nuevo.`);
+    // Persistir en Supabase — si falla, avisar en vez de ocultar el error.
+    // Caso FK 23503: la cita apunta a un paciente que solo existe en este
+    // dispositivo (ficha nunca sincronizada) → subir la ficha y reintentar una vez.
+    saveAppointment(app).catch(async err => {
+      const msg = String(err?.message || err || '');
+      const isPatientFk = (err?.code === '23503' || msg.includes('23503') || msg.includes('foreign key')) && app.patientId;
+      if (isPatientFk) {
+        const localPatient = patients.find(p => p.id === app.patientId);
+        if (localPatient) {
+          try {
+            await savePatient(localPatient, app.professionalId);
+            await saveAppointment(app);
+            return; // reparado: ficha + cita quedaron en la nube
+          } catch (retryErr) {
+            err = retryErr;
+          }
+        }
+      }
+      console.error('[addAppointment] No se pudo guardar la cita en Supabase:', (err as any)?.message || err);
+      notifyWriteError(err, `⚠️ La cita de ${app.patientName} NO se guardó en el servidor: el horario seguirá visible como disponible para tus pacientes. Créala de nuevo.`);
     });
 
     // Notificación por email — solo citas reales con paciente, nunca bloqueos de horario
@@ -336,7 +352,14 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const batchAddAppointments = async (apps: Appointment[]) => {
     setAppointments(prev => [...prev, ...apps]);
-    await batchInsertBlocks(apps);
+    try {
+      await batchInsertBlocks(apps);
+    } catch (err) {
+      // Nunca silencioso: si los bloqueos no llegan a la nube, esos horarios
+      // siguen visibles como disponibles para los pacientes.
+      notifyWriteError(err, `⚠️ ${apps.length > 1 ? 'Los bloqueos NO se guardaron' : 'El bloqueo NO se guardó'} en el servidor: esos horarios siguen disponibles para tus pacientes. Intenta de nuevo.`);
+      throw err;
+    }
   };
 
   const updateAppointment = (updated: Appointment) => {
