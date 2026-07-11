@@ -173,6 +173,8 @@ export interface Patient {
   specialtyData?: Record<string, unknown>;
   professionalId?: string;
   deletedAt?: string;
+  /** Última modificación de la ficha (ISO). La escribe el cliente al guardar. */
+  updatedAt?: string;
 }
 
 export interface ClinicalTemplate {

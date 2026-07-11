@@ -442,6 +442,7 @@ function mapDBtoPatient(p: Record<string, unknown>): Patient {
     diagnoses: (p.diagnoses as string) || '',
     specialtyData: (p.specialty_data as Record<string, unknown>) || undefined,
     deletedAt: (p.deleted_at as string) || undefined,
+    updatedAt: (p.updated_at as string) || undefined,
   };
 }
 
@@ -462,6 +463,9 @@ function mapPatientToDB(p: Patient): Record<string, unknown> {
     diagnoses: p.diagnoses || '',
     specialty_data: p.specialtyData || null,
     deleted_at: p.deletedAt || null,
+    // Registro de último cambio: se estampa en cada guardado (se muestra en la
+    // ficha impresa como "Última modificación").
+    updated_at: new Date().toISOString(),
   };
 }
 
