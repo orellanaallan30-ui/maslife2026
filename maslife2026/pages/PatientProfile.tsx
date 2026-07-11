@@ -4,6 +4,7 @@ import { Appointment, Service, Review } from '../types';
 import { useClinic } from '../ClinicContext';
 import { getProfessionalBySlugOrId, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
 import { trackViewProfile, trackStartBooking, trackBookingConfirmed } from '../analytics';
+import { usePageMeta, useJsonLd } from '../lib/seo';
 
 // Clave de localStorage donde se guarda la reserva mientras el paciente paga en
 // la página de MercadoPago (Checkout Pro). Se lee al volver por back_urls.
@@ -80,6 +81,25 @@ const PatientProfile: React.FC = () => {
   const confirmedDateRef      = React.useRef<string>('');
 
   const doctor = fetchedDoctor;
+
+  // SEO por perfil: título/descripción/canonical propios + JSON-LD Physician.
+  const proSlug = doctor?.slug || doctor?.id || '';
+  usePageMeta(doctor ? {
+    title: `Reserva con ${doctor.name} — ${doctor.specialty}${doctor.city ? ` en ${doctor.city}` : ''} | Clínica Mas Life`,
+    description: `Agenda tu hora online con ${doctor.name}, ${doctor.specialty}${doctor.city ? ` en ${doctor.city}` : ''}. Reserva en línea 24/7, atención presencial u online.`,
+    canonicalPath: `/p/${proSlug}`,
+    image: doctor.avatar || undefined,
+  } : null);
+  useJsonLd('pro-profile', doctor ? {
+    '@context': 'https://schema.org',
+    '@type': 'Physician',
+    name: doctor.name,
+    medicalSpecialty: doctor.specialty,
+    url: `https://clinicamaslife.cl/p/${proSlug}`,
+    ...(doctor.avatar ? { image: doctor.avatar } : {}),
+    ...(doctor.city ? { address: { '@type': 'PostalAddress', addressLocality: doctor.city, addressCountry: 'CL' } } : {}),
+  } : null);
+
   // Solo se cobra en línea si el profesional activó cobros Y conectó su MercadoPago.
   // Si activó cobros pero no conectó MP, la reserva se hace sin pago (no un
   // checkout que fallaría y no se enruta dinero a otra cuenta).

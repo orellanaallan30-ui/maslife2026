@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoClinica from '../assets/logo-clinica.png';
 import { trackSubscriptionClick } from '../analytics';
+import { usePageMeta } from '../lib/seo';
 
 // Landing "Para profesionales" — destino de la campaña de suscripción.
 // Reutiliza la estética de la landing de pacientes (MainHome): celeste #0284c7→#0ea5e9,
@@ -10,6 +11,12 @@ const GRAD = 'linear-gradient(135deg, #0284c7, #0ea5e9)';
 
 const ProLanding: React.FC = () => {
   const navigate = useNavigate();
+
+  usePageMeta({
+    title: 'Agenda online para profesionales de salud — 30 días gratis | Clínica Mas Life',
+    description: 'Agenda online 24/7, pagos con MercadoPago y fichas clínicas digitales para kinesiólogos, nutricionistas y psicólogos en Chile. Prueba 30 días gratis, sin tarjeta y sin permanencia.',
+    canonicalPath: '/unete',
+  });
 
   const goRegister = () => { trackSubscriptionClick(); navigate('/pro/register'); };
 

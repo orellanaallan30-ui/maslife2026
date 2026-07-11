@@ -158,50 +158,6 @@
     <priority>0.79</priority>
   </url>
 
-  <!-- ── Especialidades por ciudad (nuevas) ────────────── -->
-  <url>
-    <loc>https://clinicamaslife.cl/kinesiologo-la-serena</loc>
-    <lastmod>2026-06-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.92</priority>
-  </url>
-  <url>
-    <loc>https://clinicamaslife.cl/kinesiologo-coquimbo</loc>
-    <lastmod>2026-06-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.90</priority>
-  </url>
-  <url>
-    <loc>https://clinicamaslife.cl/kinesiologia-domicilio-la-serena</loc>
-    <lastmod>2026-06-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.90</priority>
-  </url>
-  <url>
-    <loc>https://clinicamaslife.cl/kinesiologia-domicilio-coquimbo</loc>
-    <lastmod>2026-06-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.88</priority>
-  </url>
-  <url>
-    <loc>https://clinicamaslife.cl/nutricionista-ovalle</loc>
-    <lastmod>2026-06-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://clinicamaslife.cl/psicologo-ovalle</loc>
-    <lastmod>2026-06-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.85</priority>
-  </url>
-  <url>
-    <loc>https://clinicamaslife.cl/fonoaudiologo-ovalle</loc>
-    <lastmod>2026-06-14</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.80</priority>
-  </url>
-
   <!-- ── Patologías específicas (guías educativas) ─────── -->
   <url>
     <loc>https://clinicamaslife.cl/tratamiento-dolor-lumbar-ovalle</loc>
@@ -232,6 +188,41 @@
     <lastmod>2026-06-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.74</priority>
+  </url>
+
+  <!-- ── Para profesionales (embudo) y charlas ──────────── -->
+  <url>
+    <loc>https://clinicamaslife.cl/unete</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/charlas</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- ── Perfiles de profesionales (/p/:slug) ──────────────
+       Actualizar esta sección cuando se sumen profesionales. -->
+  <url>
+    <loc>https://clinicamaslife.cl/p/rodrigo-orellana</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/p/sebastian-orellana-d24840</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/p/nicolas-olivares-eaa45b</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
   </url>
 
 </urlset>
