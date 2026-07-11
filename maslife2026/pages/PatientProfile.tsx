@@ -1000,7 +1000,7 @@ const PatientProfile: React.FC = () => {
                   {availableDays.length > 0 ? availableDays.map((day, i) => (
                     <button
                       key={i}
-                      onClick={() => setSelectedDay(i)}
+                      onClick={() => { setSelectedDay(i); setAvailabilityRefresh(n => n + 1); }}
                       className={`flex-none w-28 py-5 px-2 rounded-[1.5rem] flex flex-col items-center gap-2 border-2 transition-all relative ${selectedDay === i ? 'border-primary bg-primary shadow-lg shadow-primary/20 text-white' : 'border-slate-100 bg-white text-slate-500 hover:border-primary/50'}`}
                     >
                       <span className={`text-[10px] font-black uppercase tracking-widest ${selectedDay === i ? 'text-white/80' : 'text-slate-400'}`}>{day.name}</span>
