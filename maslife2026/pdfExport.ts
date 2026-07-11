@@ -306,10 +306,10 @@ function drawMembrete(doc: jsPDFInstance, W: number, MARGIN: number, rightText: 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(255, 255, 255);
-  doc.text('AgendaMaslife', MARGIN, 14);
+  doc.text('Clínica Mas Life', MARGIN, 14);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('Plataforma de Gestión Clínica', MARGIN, 21);
+  doc.text('clinicamaslife.cl · Plataforma de Gestión Clínica', MARGIN, 21);
   doc.setFontSize(7.5);
   doc.text(rightText, W - MARGIN, 17, { align: 'right' });
 }
@@ -321,10 +321,45 @@ function drawFooters(doc: jsPDFInstance, W: number, pro: ProfessionalProfile): v
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
     doc.text(
-      `AgendaMaslife · ${pro.name} · ${pro.specialty}   Página ${p} de ${total}`,
+      `Clínica Mas Life · ${pro.name} · ${pro.specialty}   Página ${p} de ${total}`,
       W / 2, 290, { align: 'center' }
     );
   }
+}
+
+// Bloque de trazabilidad bajo el membrete: registro de último cambio (fecha +
+// profesional) y fecha de emisión del documento. Común a TODOS los PDF.
+function fmtDateTime(iso?: string): string {
+  const d = iso ? new Date(iso) : new Date();
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' } as Intl.DateTimeFormatOptions);
+}
+
+function drawDocMeta(
+  doc: jsPDFInstance,
+  MARGIN: number,
+  COL: number,
+  y: number,
+  opts: { updatedAt?: string; proName: string; proSpecialty?: string; docId?: string }
+): number {
+  const boxH = 12;
+  doc.setFillColor(240, 253, 250);
+  doc.setDrawColor(0, 168, 158);
+  doc.rect(MARGIN, y, COL, boxH, 'FD');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.setTextColor(0, 126, 119);
+  doc.text('ÚLTIMA MODIFICACIÓN', MARGIN + 3, y + 4.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(30, 41, 59);
+  doc.text(`${fmtDateTime(opts.updatedAt)} · ${opts.proName}${opts.proSpecialty ? ` (${opts.proSpecialty})` : ''}`, MARGIN + 36, y + 4.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0, 126, 119);
+  doc.text('DOCUMENTO GENERADO', MARGIN + 3, y + 9.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(30, 41, 59);
+  doc.text(`${fmtDateTime()}${opts.docId ? ` · Ficha N° ${String(opts.docId).slice(0, 8).toUpperCase()}` : ''}`, MARGIN + 36, y + 9.5);
+  return y + boxH + 5;
 }
 
 function drawAutoSignature(
@@ -429,7 +464,15 @@ export async function exportPatientFichaToPDF(
   y += 5;
   doc.setDrawColor(0, 168, 158);
   doc.line(MARGIN, y, W - MARGIN, y);
-  y += 8;
+  y += 6;
+
+  // Registro de cambios: quién y cuándo modificó la ficha por última vez
+  y = drawDocMeta(doc, MARGIN, COL, y, {
+    updatedAt: patient.updatedAt,
+    proName: professional.name,
+    proSpecialty: professional.specialty,
+    docId: patient.id,
+  });
 
   // Datos Personales
   y = drawSectionHeader(doc, 'DATOS PERSONALES', MARGIN, y, COL);
@@ -491,10 +534,17 @@ export async function exportPatientFichaToPDF(
     y += 4.5;
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(30, 41, 59);
-    const lines = doc.splitTextToSize(anamnesis.substring(0, 500), COL - 4);
-    if (y + lines.length * 4.5 > 265) { doc.addPage(); y = MARGIN; }
-    doc.text(lines, MARGIN + 2, y);
-    y += lines.length * 4.5 + 2;
+    // Texto completo (sin truncar), paginado línea a línea
+    const lines: string[] = doc.splitTextToSize(anamnesis, COL - 4);
+    for (const ln of lines) {
+      if (y + 4.5 > 265) { doc.addPage(); y = MARGIN; }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(30, 41, 59);
+      doc.text(ln, MARGIN + 2, y);
+      y += 4.5;
+    }
+    y += 2;
   }
   y += 2;
 
@@ -502,27 +552,43 @@ export async function exportPatientFichaToPDF(
   if (y + 25 > 265) { doc.addPage(); y = MARGIN; }
   y = drawSectionHeader(doc, 'SIGNOS VITALES', MARGIN, y, COL);
   const vitCols = COL / 5;
-  const vitalsData = [
-    ['FC (LPM)', String(vitals.heartRate)],
-    ['PA SIS', String(vitals.systolic)],
-    ['PA DIA', String(vitals.diastolic)],
-    ['SAT O2 %', String(vitals.oxygenSaturation)],
-    ['TEMP °C', String(vitals.temperature)],
+  const fmtVit = (v?: number) => (v && v !== 0) ? String(v) : '—';
+  const vitalsRows: [string, string][][] = [
+    [
+      ['FC (LPM)', fmtVit(vitals.heartRate)],
+      ['PA SIS', fmtVit(vitals.systolic)],
+      ['PA DIA', fmtVit(vitals.diastolic)],
+      ['SAT O2 %', fmtVit(vitals.oxygenSaturation)],
+      ['TEMP °C', fmtVit(vitals.temperature)],
+    ],
+    [
+      ['FR (RPM)', fmtVit(vitals.respiratoryRate)],
+      ['PESO KG', fmtVit(vitals.weight)],
+      ['TALLA CM', fmtVit(vitals.height)],
+      ['IMC', fmtVit(vitals.bmi)],
+      ['GLUCOSA', fmtVit(vitals.glucose)],
+    ],
   ];
-  doc.setFillColor(248, 250, 252);
-  doc.rect(MARGIN, y, COL, 16, 'F');
-  vitalsData.forEach(([label, val], i) => {
-    const cx = MARGIN + i * vitCols + vitCols / 2;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(100, 116, 139);
-    doc.text(label, cx, y + 5, { align: 'center' });
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
-    doc.setTextColor(0, 168, 158);
-    doc.text(val, cx, y + 13, { align: 'center' });
-  });
-  y += 20;
+  for (const row of vitalsRows) {
+    // Fila solo si tiene algún dato (la primera siempre se muestra como referencia)
+    const hasData = row.some(([, v]) => v !== '—');
+    if (row === vitalsRows[1] && !hasData) break;
+    doc.setFillColor(248, 250, 252);
+    doc.rect(MARGIN, y, COL, 16, 'F');
+    row.forEach(([label, val], i) => {
+      const cx = MARGIN + i * vitCols + vitCols / 2;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text(label, cx, y + 5, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(0, 168, 158);
+      doc.text(val, cx, y + 13, { align: 'center' });
+    });
+    y += 18;
+  }
+  y += 2;
 
   // SOAP
   const soapHasContent = Object.values(soap).some(v => v?.trim());
@@ -591,7 +657,7 @@ export async function exportPatientFichaToPDF(
   if (sessionLogs.length > 0) {
     if (y + 20 > 265) { doc.addPage(); y = MARGIN; }
     y = drawSectionHeader(doc, 'HISTORIAL DE SESIONES', MARGIN, y, COL);
-    const last8 = sessionLogs.slice(-8).reverse();
+    const allSessions = [...sessionLogs].reverse(); // todas, más recientes primero
     doc.setFillColor(226, 232, 240);
     doc.rect(MARGIN, y, COL, 7, 'F');
     doc.setFont('helvetica', 'bold');
@@ -601,7 +667,7 @@ export async function exportPatientFichaToPDF(
     doc.text('Nota', MARGIN + 30, y + 5);
     doc.text('Código', MARGIN + COL - 25, y + 5);
     y += 8;
-    for (const s of last8) {
+    for (const s of allSessions) {
       const noteLines = doc.splitTextToSize(s.note || '—', COL - 60);
       const rh = Math.max(6, noteLines.length * 4.5);
       if (y + rh > 265) { doc.addPage(); y = MARGIN; }
@@ -620,19 +686,99 @@ export async function exportPatientFichaToPDF(
   if (specialtyKey === 'nutricion' && specialtyData) {
     if (y + 20 > 265) { doc.addPage(); y = MARGIN; }
     y = drawSectionHeader(doc, 'EVALUACIÓN NUTRICIONAL', MARGIN, y, COL);
+    const sd = specialtyData as Record<string, any>;
+    const nm = sd.nutMetrics as { bmi?: number; bmr?: number; totalCalories?: number; whr?: number } | undefined;
     const nutFields = [
-      ['Peso', specialtyData.nutPeso ? `${specialtyData.nutPeso} kg` : '—'],
-      ['Talla', specialtyData.nutTalla ? `${specialtyData.nutTalla} cm` : '—'],
-      ['Cintura', specialtyData.nutCintura ? `${specialtyData.nutCintura} cm` : '—'],
-      ['Cadera', specialtyData.nutCadera ? `${specialtyData.nutCadera} cm` : '—'],
-      ['Objetivos', String(specialtyData.nutGoals || '—')],
+      ['Peso', sd.nutPeso ? `${sd.nutPeso} kg` : '—'],
+      ['Talla', sd.nutTalla ? `${sd.nutTalla} cm` : '—'],
+      ['Cintura', sd.nutCintura ? `${sd.nutCintura} cm` : '—'],
+      ['Cadera', sd.nutCadera ? `${sd.nutCadera} cm` : '—'],
+      ['Género', String(sd.nutGender || '—')],
+      ['Actividad', String(sd.nutActivity || '—')],
+      ['IMC', nm?.bmi ? String(nm.bmi) : '—'],
+      ['TMB / GET', nm?.bmr ? `${nm.bmr} / ${nm.totalCalories || '—'} kcal` : '—'],
+      ['Rel. cintura/cadera', nm?.whr ? String(nm.whr) : '—'],
+      ['Objetivos', String(sd.nutGoals || '—')],
+      ['Suplementos', String(sd.nutSupplements || '—')],
     ];
     for (let i = 0; i < nutFields.length; i += 2) {
       drawField(doc, nutFields[i][0], String(nutFields[i][1]), MARGIN + 2, y);
       if (nutFields[i + 1]) drawField(doc, nutFields[i + 1][0], String(nutFields[i + 1][1]), MARGIN + 2 + COL / 2, y);
       y += 5.5;
     }
-    y += 3;
+    y += 2;
+
+    // Composición corporal (si hay datos)
+    const hasComp = (sd.nutMasaGrasaPct || 0) > 0 || (sd.nutMasaMuscularPct || 0) > 0 || (sd.nutSum6Pliegues || 0) > 0;
+    if (hasComp) {
+      if (y + 18 > 265) { doc.addPage(); y = MARGIN; }
+      y = drawSectionHeader(doc, 'COMPOSICIÓN CORPORAL', MARGIN, y, COL);
+      const compFields = [
+        ['% Masa grasa', sd.nutMasaGrasaPct ? `${sd.nutMasaGrasaPct}%` : '—'],
+        ['% Masa adiposa', sd.nutMasaAdiposaPct ? `${sd.nutMasaAdiposaPct}%` : '—'],
+        ['% Masa muscular', sd.nutMasaMuscularPct ? `${sd.nutMasaMuscularPct}%` : '—'],
+        ['Σ 6 pliegues', sd.nutSum6Pliegues ? `${sd.nutSum6Pliegues} mm` : '—'],
+        ['Σ 8 pliegues', sd.nutSum8Pliegues ? `${sd.nutSum8Pliegues} mm` : '—'],
+      ];
+      for (let i = 0; i < compFields.length; i += 2) {
+        drawField(doc, compFields[i][0], String(compFields[i][1]), MARGIN + 2, y);
+        if (compFields[i + 1]) drawField(doc, compFields[i + 1][0], String(compFields[i + 1][1]), MARGIN + 2 + COL / 2, y);
+        y += 5.5;
+      }
+      y += 2;
+    }
+
+    // Plan alimentario (tabla comida / detalle)
+    const mealPlan = (sd.mealPlan as Array<{ meal?: string; time?: string; detail?: string; foods?: string }>) || [];
+    const mealRows = mealPlan.filter(m => (m.detail || m.foods || '').toString().trim());
+    if (mealRows.length) {
+      if (y + 20 > 265) { doc.addPage(); y = MARGIN; }
+      y = drawSectionHeader(doc, 'PLAN ALIMENTARIO', MARGIN, y, COL);
+      doc.setFillColor(226, 232, 240);
+      doc.rect(MARGIN, y, COL, 7, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(30, 41, 59);
+      doc.text('Comida', MARGIN + 2, y + 5);
+      doc.text('Detalle', MARGIN + 45, y + 5);
+      y += 8;
+      for (const m of mealRows) {
+        const detail = String(m.detail || m.foods || '—');
+        const dl = doc.splitTextToSize(detail, COL - 50);
+        const rh = Math.max(6, dl.length * 4.5);
+        if (y + rh > 265) { doc.addPage(); y = MARGIN; }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(51, 65, 85);
+        doc.text(String(m.meal || m.time || '—'), MARGIN + 2, y + 4.5);
+        doc.text(dl, MARGIN + 45, y + 4.5);
+        y += rh + 2;
+      }
+      y += 2;
+    }
+
+    // Evolución de composición (historial EV por fecha)
+    const compHist = (sd.compositionHistory as Array<Record<string, number | string>>) || [];
+    if (compHist.length > 1) {
+      if (y + 20 > 265) { doc.addPage(); y = MARGIN; }
+      y = drawSectionHeader(doc, 'EVOLUCIÓN COMPOSICIÓN CORPORAL', MARGIN, y, COL);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      ['Fecha', 'Peso', 'IMC', '% Grasa', '% Músculo'].forEach((h, i) => doc.text(h, MARGIN + 2 + i * (COL / 5), y + 4));
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      for (const h of compHist.slice(-10)) {
+        if (y + 5.5 > 265) { doc.addPage(); y = MARGIN; }
+        [String(h.date || '—'), h.peso ? `${h.peso} kg` : '—', String(h.imc || '—'),
+         h.masaGrasaPct ? `${h.masaGrasaPct}%` : '—', h.masaMuscularPct ? `${h.masaMuscularPct}%` : '—']
+          .forEach((v, i) => doc.text(v, MARGIN + 2 + i * (COL / 5), y + 4));
+        y += 5.5;
+      }
+      y += 3;
+    }
   }
 
   // Datos de especialidad: psicología
@@ -641,6 +787,7 @@ export async function exportPatientFichaToPDF(
     y = drawSectionHeader(doc, 'EVALUACIÓN PSICOLÓGICA', MARGIN, y, COL);
     const psychFields: [string, string][] = [
       ['Escala de ánimo', specialtyData.psychMood !== undefined ? `${specialtyData.psychMood}/10` : '—'],
+      ['Historial psicológico', String((specialtyData as Record<string, any>).psychPsychHistory || '—')],
       ['Intervención', String(specialtyData.psychIntervention || '—')],
       ['Objetivo próx. sesión', String(specialtyData.psychNextObjective || '—')],
     ];
@@ -658,6 +805,105 @@ export async function exportPatientFichaToPDF(
       y += 5.5;
     }
     y += 3;
+  }
+
+  // ── Antecedentes mórbidos / quirúrgicos (checkeados) ──
+  const morbidosPdf = ((specialtyData as Record<string, any>)?.morbidos as Array<{ label: string; checked: boolean }>) || [];
+  const quirurgicosPdf = ((specialtyData as Record<string, any>)?.quirurgicos as Array<{ label: string; checked: boolean }>) || [];
+  const morbChecked = morbidosPdf.filter(a => a.checked).map(a => a.label);
+  const quirChecked = quirurgicosPdf.filter(a => a.checked).map(a => a.label);
+  if (morbChecked.length || quirChecked.length) {
+    if (y + 18 > 265) { doc.addPage(); y = MARGIN; }
+    y = drawSectionHeader(doc, 'ANTECEDENTES', MARGIN, y, COL);
+    if (morbChecked.length) {
+      drawField(doc, 'Mórbidos', morbChecked.join(', '), MARGIN + 2, y);
+      y += 5.5;
+    }
+    if (quirChecked.length) {
+      drawField(doc, 'Quirúrgicos', quirChecked.join(', '), MARGIN + 2, y);
+      y += 5.5;
+    }
+    y += 2;
+  }
+
+  // ── Kinesiología: antropometría y evaluación postural (EV1 / EV2) ──
+  const kinesioFull = specialtyData?.kinesio as {
+    initial?: { anthro?: Record<string, string | number>; postural?: Record<string, string>; images?: string[] };
+    final?: { anthro?: Record<string, string | number>; postural?: Record<string, string>; images?: string[] };
+  } | undefined;
+  if (specialtyKey === 'kinesiologia' && kinesioFull) {
+    const ANTHRO_LABELS: [string, string, string][] = [
+      ['weight', 'Peso', 'kg'], ['height', 'Talla', 'cm'], ['reach', 'Envergadura', 'cm'],
+      ['legR', 'EID derecha', 'cm'], ['legL', 'EID izquierda', 'cm'],
+    ];
+    const anthroRows = ANTHRO_LABELS
+      .map(([k, label, unit]) => ({
+        label, unit,
+        ev1: kinesioFull.initial?.anthro?.[k] ?? '',
+        ev2: kinesioFull.final?.anthro?.[k] ?? '',
+      }))
+      .filter(r => String(r.ev1) !== '' || String(r.ev2) !== '');
+    if (anthroRows.length) {
+      if (y + 24 > 265) { doc.addPage(); y = MARGIN; }
+      y = drawSectionHeader(doc, 'DATOS ANTROPOMÉTRICOS (KINESIOLOGÍA)', MARGIN, y, COL);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Medida', MARGIN + 2, y + 4);
+      doc.text('EV1', MARGIN + COL - 40, y + 4);
+      doc.text('EV2', MARGIN + COL - 20, y + 4);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(30, 41, 59);
+      for (const r of anthroRows) {
+        if (y + 6 > 265) { doc.addPage(); y = MARGIN; }
+        doc.text(r.label, MARGIN + 2, y + 4);
+        doc.text(String(r.ev1) !== '' ? `${r.ev1} ${r.unit}` : '—', MARGIN + COL - 40, y + 4);
+        doc.text(String(r.ev2) !== '' ? `${r.ev2} ${r.unit}` : '—', MARGIN + COL - 20, y + 4);
+        y += 5.5;
+      }
+      y += 3;
+    }
+
+    const POSTURAL_LABELS: [string, string][] = [
+      ['plomadaSag', 'Plomada sagital'], ['plomadaFront', 'Plomada frontal'],
+      ['shoulders', 'Hombros'], ['scapulas', 'Escápulas'], ['pelvis', 'Pelvis'],
+      ['knees', 'Rodillas'], ['feet', 'Pies'], ['observations', 'Observaciones'],
+    ];
+    const posturalRows = POSTURAL_LABELS
+      .map(([k, label]) => ({
+        label,
+        ev1: kinesioFull.initial?.postural?.[k] ?? '',
+        ev2: kinesioFull.final?.postural?.[k] ?? '',
+      }))
+      .filter(r => String(r.ev1).trim() !== '' || String(r.ev2).trim() !== '');
+    if (posturalRows.length) {
+      if (y + 24 > 265) { doc.addPage(); y = MARGIN; }
+      y = drawSectionHeader(doc, 'EVALUACIÓN POSTURAL (KINESIOLOGÍA)', MARGIN, y, COL);
+      for (const r of posturalRows) {
+        const txt = [r.ev1 && `EV1: ${r.ev1}`, r.ev2 && `EV2: ${r.ev2}`].filter(Boolean).join('  ·  ');
+        const lines = doc.splitTextToSize(txt, COL - 40);
+        if (y + lines.length * 4.5 + 2 > 265) { doc.addPage(); y = MARGIN; }
+        drawField(doc, r.label, lines[0], MARGIN + 2, y);
+        if (lines.length > 1) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(30, 41, 59);
+          doc.text(lines.slice(1), MARGIN + 30, y + 4.5);
+          y += (lines.length - 1) * 4.5;
+        }
+        y += 5.5;
+      }
+      y += 2;
+    }
+
+    const nImgs = (kinesioFull.initial?.images?.length || 0) + (kinesioFull.final?.images?.length || 0);
+    if (nImgs > 0) {
+      if (y + 8 > 265) { doc.addPage(); y = MARGIN; }
+      drawField(doc, 'Fotos posturales', `${nImgs} imagen(es) registradas en la ficha digital`, MARGIN + 2, y);
+      y += 7;
+    }
   }
 
   // ── ROM personalizado (labels/normales editados por el profesional) ──
@@ -767,6 +1013,31 @@ export async function exportPatientFichaToPDF(
     y += 3;
   }
 
+  // ── Documentos adjuntos (lista) ──
+  const attachList = ((patient.attachments || []) as Array<{ name?: string; date?: string; type?: string }>)
+    .filter(f => (f.name || '').trim());
+  if (attachList.length) {
+    if (y + 18 > 265) { doc.addPage(); y = MARGIN; }
+    y = drawSectionHeader(doc, 'DOCUMENTOS ADJUNTOS', MARGIN, y, COL);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(51, 65, 85);
+    for (const f of attachList) {
+      if (y + 5.5 > 265) { doc.addPage(); y = MARGIN; }
+      doc.text(`• ${f.name}${f.date ? `  (${f.date})` : ''}`, MARGIN + 2, y + 4);
+      y += 5.5;
+    }
+    y += 3;
+  }
+
+  // ── Consentimiento informado ──
+  if ((specialtyData as Record<string, any>)?.consentAccepted !== undefined) {
+    if (y + 8 > 265) { doc.addPage(); y = MARGIN; }
+    const ok = (specialtyData as Record<string, any>).consentAccepted === true;
+    drawField(doc, 'Consentimiento', ok ? 'Aceptado por el paciente' : 'PENDIENTE de aceptación', MARGIN + 2, y);
+    y += 8;
+  }
+
   // Firma auto-generada
   if (y + 42 > 265) { doc.addPage(); y = MARGIN; }
   drawAutoSignature(doc, professional, MARGIN, COL, y);
@@ -805,13 +1076,33 @@ export async function exportReportToPDF(
   y += 5;
   doc.setDrawColor(0, 168, 158);
   doc.line(MARGIN, y, W - MARGIN, y);
-  y += 7;
+  y += 6;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
-  doc.setTextColor(51, 65, 85);
-  doc.text(`Paciente: ${patient.name}  ·  RUT: ${patient.rut}  ·  Fecha: ${dateStr}`, MARGIN, y);
-  y += 8;
+  // Registro de cambios (plantilla unificada)
+  y = drawDocMeta(doc, MARGIN, COL, y, {
+    updatedAt: patient.updatedAt,
+    proName: professional.name,
+    proSpecialty: professional.specialty,
+    docId: patient.id,
+  });
+
+  // Identificación del paciente
+  y = drawSectionHeader(doc, 'IDENTIFICACIÓN DEL PACIENTE', MARGIN, y, COL);
+  const half = COL / 2;
+  const idFields: [string, string][] = [
+    ['Nombre', patient.name || '—'],
+    ['RUT', patient.rut || '—'],
+    ['Edad', patient.age ? `${patient.age} años` : '—'],
+    ['Previsión', patient.prevision || '—'],
+    ['Diagnóstico', patient.diagnoses || '—'],
+    ['Fecha informe', dateStr],
+  ];
+  for (let i = 0; i < idFields.length; i += 2) {
+    drawField(doc, idFields[i][0], idFields[i][1], MARGIN + 2, y);
+    if (idFields[i + 1]) drawField(doc, idFields[i + 1][0], idFields[i + 1][1], MARGIN + 2 + half, y);
+    y += 5.5;
+  }
+  y += 4;
 
   const allLines = doc.splitTextToSize(content, COL);
   for (const line of allLines) {
@@ -872,6 +1163,14 @@ export async function exportOrdenPDF(
 
   drawMembrete(doc, W, MARGIN, dateStr);
   y = 36;
+
+  // Registro de cambios (plantilla unificada)
+  y = drawDocMeta(doc, MARGIN, COL, y, {
+    updatedAt: patient.updatedAt,
+    proName: professional.name,
+    proSpecialty: professional.specialty,
+    docId: patient.id,
+  });
 
   // Título
   doc.setFont('helvetica', 'bold');

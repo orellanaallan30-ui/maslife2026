@@ -199,13 +199,22 @@ const ClinicalRecord: React.FC = () => {
 
   const [customFields, setCustomFields] = useState<CustomField[]>(safePatient.customFields || []);
 
-  const [morbidos, setMorbidos] = useState<Antecedent[]>([
-    { id: 'm1', label: 'Hipertensión Arterial', checked: false },
-    { id: 'm2', label: 'Diabetes Mellitus II', checked: false },
-  ]);
-  const [quirurgicos, setQuirurgicos] = useState<Antecedent[]>([
-    { id: 'q1', label: 'Apendicectomía', checked: false },
-  ]);
+  // Antecedentes: se rehidratan desde specialtyData si la ficha ya los tenía
+  // guardados (antes vivían solo en la sesión de edición y se perdían al recargar).
+  const _savedAntecedentes = (safePatient.specialtyData || {}) as Record<string, any>;
+  const [morbidos, setMorbidos] = useState<Antecedent[]>(
+    (_savedAntecedentes.morbidos as Antecedent[])?.length
+      ? (_savedAntecedentes.morbidos as Antecedent[])
+      : [
+          { id: 'm1', label: 'Hipertensión Arterial', checked: false },
+          { id: 'm2', label: 'Diabetes Mellitus II', checked: false },
+        ]
+  );
+  const [quirurgicos, setQuirurgicos] = useState<Antecedent[]>(
+    (_savedAntecedentes.quirurgicos as Antecedent[])?.length
+      ? (_savedAntecedentes.quirurgicos as Antecedent[])
+      : [{ id: 'q1', label: 'Apendicectomía', checked: false }]
+  );
   const [anamnesis, setAnamnesis] = useState(safePatient.medicalHistory || '');
 
   const [vitals, setVitals] = useState<Vitals>(safePatient.vitals || {
@@ -574,9 +583,9 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         action: 'SOAP_EXPORT_PDF', resourceId: initialPatient.id, resourceType: 'soap',
       });
     }
-    // customFields es estado propio (no está en personalData): incluirlo en vivo
-    // para que los campos agregados por el profesional salgan en el PDF.
-    const patientObj = { ...safePatient, ...personalData, customFields } as Patient;
+    // ÚNICA FUENTE DE VERDAD: el PDF recibe el MISMO objeto que se guarda en la
+    // ficha (buildUpdatedPatient), así lo impreso siempre coincide con lo editado.
+    const patientObj = buildUpdatedPatient();
     await exportPatientFichaToPDF(
       patientObj,
       loggedPro,
@@ -587,12 +596,11 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
       soap,
       specialtyKey,
       {
-        nutPeso, nutTalla, nutCintura, nutCadera, nutGoals: nutGoals, psychMood, psychIntervention, psychNextObjective,
-        // Todo lo personalizado por el profesional también sale en el PDF
-        romDefs,
-        testDefs,
-        sectionFields,
-        kinesio: { initial: kiData.initial, final: kiData.final },
+        ...(patientObj.specialtyData as Record<string, unknown>),
+        // Métricas derivadas de nutrición (calculadas en vivo, no persistidas)
+        nutMetrics,
+        // Estado del consentimiento informado para la portada de la ficha
+        consentAccepted: !consentWarning,
       }
     );
   };
@@ -1107,6 +1115,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
         testDefs,
         // Informe biomecánico visual (IA)
         biomechReport,
+        // Antecedentes mórbidos/quirúrgicos (antes solo vivían en la sesión de edición)
+        morbidos,
+        quirurgicos,
       };
     })(),
   } as Patient);
