@@ -43,7 +43,7 @@ const ReferralProgram: React.FC = () => {
 
   const handleShare = () => {
     if (!referralLink) return;
-    const text = `¡Hola! Soy ${loggedPro?.name || 'un profesional de salud'} y uso Clínica Mas Life para gestionar mi agenda y mis pacientes. Te quiero regalar un mes gratis 🎁 — regístrate con mi código y empieza sin costo: ${referralLink}`;
+    const text = `¡Hola! Soy ${loggedPro?.name || 'un profesional de salud'} y uso Clínica Mas Life para gestionar mi agenda y mis pacientes. Regístrate con mi enlace y empieza con 30 días gratis, sin tarjeta: ${referralLink}`;
     if (navigator.share) {
       navigator.share({ title: 'Únete a Clínica Mas Life', text, url: referralLink });
     } else {
@@ -86,8 +86,8 @@ const ReferralProgram: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-center space-y-1">
           <span className="material-icons-round text-2xl text-emerald-500">person_add</span>
           <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Tu referido obtiene</p>
-          <p className="text-xl font-black text-slate-900">1 mes gratis</p>
-          <p className="text-[10px] text-slate-400 leading-snug">Además del período de prueba estándar</p>
+          <p className="text-xl font-black text-slate-900">30 días gratis</p>
+          <p className="text-[10px] text-slate-400 leading-snug">El período de prueba completo, sin tarjeta ni permanencia</p>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-center space-y-1">
           <span className="material-icons-round text-2xl text-primary">savings</span>
@@ -164,7 +164,7 @@ const ReferralProgram: React.FC = () => {
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">¿Cómo funciona?</p>
         {[
           { icon: 'link', text: 'Copia tu enlace único y compártelo con colegas de salud' },
-          { icon: 'person_add', text: 'Tu colega se registra usando tu enlace y obtiene 1 mes extra gratis' },
+          { icon: 'person_add', text: 'Tu colega se registra usando tu enlace y obtiene sus 30 días gratis' },
           { icon: 'check_circle', text: 'Ambos reciben sus beneficios automáticamente' },
         ].map((s, i) => (
           <div key={i} className="flex items-start gap-3">

@@ -287,7 +287,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: referred } = await supabase.from('professionals').select('id').eq('id', referred_id).single();
     if (!referrer || !referred) return res.status(404).json({ error: 'Profesional no encontrado' });
 
-    // Give referrer $1,000 credit
+    // Recompensa SOLO al referidor: $1.000 de descuento en su próxima facturación.
+    // El referido nuevo recibe únicamente los 30 días de prueba estándar
+    // (sin días extra), según la política vigente.
     await supabase.rpc('increment_referral_credit', { pro_id: referrer_id, amount: 1000 })
       .then(async ({ error }) => {
         if (error) {
@@ -296,12 +298,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           await supabase.from('professionals').update({ referral_credit_clp: ((pro as any)?.referral_credit_clp || 0) + 1000 }).eq('id', referrer_id);
         }
       });
-
-    // Give referred professional +30 extra days
-    const { data: refPro } = await supabase.from('professionals').select('trial_end_date').eq('id', referred_id).single();
-    const base = (refPro as any)?.trial_end_date ? new Date((refPro as any).trial_end_date) : new Date();
-    const extended = new Date(Math.max(base.getTime(), Date.now()) + 30 * 24 * 60 * 60 * 1000);
-    await supabase.from('professionals').update({ trial_end_date: extended.toISOString() }).eq('id', referred_id);
 
     return res.status(200).json({ rewarded: true });
   }
