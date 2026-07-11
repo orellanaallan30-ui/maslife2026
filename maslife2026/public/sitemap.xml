@@ -190,6 +190,70 @@
     <priority>0.74</priority>
   </url>
 
+  <!-- ── Especialidades La Serena / Coquimbo (2026-07) ──── -->
+  <url>
+    <loc>https://clinicamaslife.cl/psicologo-coquimbo</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/fonoaudiologo-la-serena</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.81</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/fonoaudiologo-coquimbo</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.81</priority>
+  </url>
+
+  <!-- ── Patologías La Serena / Coquimbo (2026-07) ──────── -->
+  <url>
+    <loc>https://clinicamaslife.cl/tratamiento-dolor-lumbar-la-serena</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.77</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/tratamiento-dolor-lumbar-coquimbo</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.77</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/lesiones-deportivas-la-serena</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.76</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/lesiones-deportivas-coquimbo</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.76</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/rehabilitacion-post-operatoria-la-serena</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.76</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/rehabilitacion-post-operatoria-coquimbo</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.76</priority>
+  </url>
+  <url>
+    <loc>https://clinicamaslife.cl/escoliosis-tratamiento-la-serena</loc>
+    <lastmod>2026-07-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
   <!-- ── Para profesionales (embudo) y charlas ──────────── -->
   <url>
     <loc>https://clinicamaslife.cl/unete</loc>
