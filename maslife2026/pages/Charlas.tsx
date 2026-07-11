@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { usePageMeta } from '../lib/seo';
 
 interface Charla {
   id: string;
@@ -40,6 +41,13 @@ const defaultForm = (): FormState => ({
 
 const Charlas: React.FC = () => {
   const navigate = useNavigate();
+
+  usePageMeta({
+    title: 'Charlas de salud gratuitas en Ovalle y Región de Coquimbo | Clínica Mas Life',
+    description: 'Inscríbete gratis en nuestras charlas de salud: kinesiología, nutrición y bienestar. Cupos limitados, presenciales y online, en la Región de Coquimbo.',
+    canonicalPath: '/charlas',
+  });
+
   const [charlas, setCharlas] = useState<Charla[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Charla | null>(null);
