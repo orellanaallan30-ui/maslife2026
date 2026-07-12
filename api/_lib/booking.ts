@@ -64,9 +64,21 @@ export async function validateBooking(input: Partial<BookingInput>): Promise<Val
   if (!serviceName || !date || !time || !DATE_RE.test(String(date)) || !TIME_RE.test(String(time))) {
     return { ok: false, error: 'Fecha, hora o servicio inválidos', code: 400 };
   }
-  const today = new Date().toISOString().split('T')[0];
+  // Zona horaria de Chile para "hoy/ahora" (el servidor corre en UTC).
+  const nowCL = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Santiago' }));
+  const today = `${nowCL.getFullYear()}-${String(nowCL.getMonth() + 1).padStart(2, '0')}-${String(nowCL.getDate()).padStart(2, '0')}`;
   if (String(date) < today) {
     return { ok: false, error: 'No se puede reservar en el pasado', code: 400 };
+  }
+  // Mismo día: rechazar horas ya pasadas (la UI las oculta, pero una llamada
+  // directa a la API podía reservar un horario del pasado).
+  if (String(date) === today) {
+    const [h, m] = String(time).split(':').map(Number);
+    const slotMin = (h || 0) * 60 + (m || 0);
+    const nowMin = nowCL.getHours() * 60 + nowCL.getMinutes();
+    if (slotMin <= nowMin) {
+      return { ok: false, error: 'Ese horario ya pasó. Elige uno futuro.', code: 400 };
+    }
   }
 
   const { data: pro } = await supabase
@@ -199,6 +211,24 @@ export async function insertBooking(
     return { ok: false, error: 'No se pudo registrar la cita', code: 500 };
   }
   return { ok: true, id };
+}
+
+/**
+ * Reclama el envío de notificaciones de una cita de forma atómica: setea
+ * notified_at solo si aún era null. Devuelve la fila (con los datos para el correo)
+ * si ESTE proceso ganó el claim, o null si ya se había notificado. Evita correos
+ * duplicados entre el retorno del cliente y el webhook de MercadoPago.
+ */
+export async function claimNotify(id: string): Promise<Record<string, any> | null> {
+  const { data, error } = await supabase
+    .from('appointments')
+    .update({ notified_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('notified_at', null)
+    .select('id, professional_id, patient_name, patient_email, doctor_name, service_name, date, time, type, duration, payment_amount')
+    .maybeSingle();
+  if (error) { console.error('[booking] claimNotify error:', error.message); return null; }
+  return data || null;
 }
 
 /** Marca una cita pendiente como pagada y confirmada tras la aprobación de MP. */

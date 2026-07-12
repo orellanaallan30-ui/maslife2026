@@ -563,21 +563,26 @@ describe('saveAppointment', () => {
 // ═════════════════════════════════════════════════════════════════════════════
 describe('deleteAppointment', () => {
   it('llama a delete en la tabla appointments con el id correcto', async () => {
-    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: null }));
+    // Nuevo flujo: primero SELECT (google_event_id) y luego DELETE.
+    vi.mocked(supabase.from)
+      .mockReturnValueOnce(makeBuilder({ data: { google_event_id: null }, error: null })) // select
+      .mockReturnValueOnce(makeBuilder({ error: null }));                                   // delete
 
     await deleteAppointment('apt-1');
 
     expect(vi.mocked(supabase.from)).toHaveBeenCalledWith('appointments');
-    const builder = vi.mocked(supabase.from).mock.results[0].value;
-    expect(builder.eq).toHaveBeenCalledWith('id', 'apt-1');
+    const deleteBuilder = vi.mocked(supabase.from).mock.results[1].value;
+    expect(deleteBuilder.delete).toHaveBeenCalled();
+    expect(deleteBuilder.eq).toHaveBeenCalledWith('id', 'apt-1');
   });
 
   it('lanza el error de Supabase si delete falla (tras reintentos)', async () => {
     const dbError = { message: 'Delete failed' };
     vi.mocked(supabase.from)
-      .mockReturnValueOnce(makeBuilder({ error: dbError }))
-      .mockReturnValueOnce(makeBuilder({ error: dbError }))
-      .mockReturnValueOnce(makeBuilder({ error: dbError }));
+      .mockReturnValueOnce(makeBuilder({ data: null, error: null }))   // select google_event_id
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))            // delete intento 1
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))            // intento 2
+      .mockReturnValueOnce(makeBuilder({ error: dbError }));           // intento 3
 
     await expect(deleteAppointment('apt-1')).rejects.toEqual(dbError);
   });

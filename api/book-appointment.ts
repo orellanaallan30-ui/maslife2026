@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
-import { validateBooking, insertBooking, confirmBookingPaid, releaseStaleHolds, BookingInput, UUID_RE } from './_lib/booking';
+import { validateBooking, insertBooking, confirmBookingPaid, claimNotify, releaseStaleHolds, BookingInput, UUID_RE } from './_lib/booking';
 import { getValidToken, appointmentToGCalEvent, createGCalEvent } from './_lib/googleCalendar';
 
 const supabase = createClient(
@@ -88,7 +88,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', appointmentId)
       .single();
     if (!app) return res.status(404).json({ error: 'Cita no encontrada' });
-    if (app.payment_status === 'Pagado') return res.status(200).json({ confirmed: true });
+    // Ya pagada (p.ej. el webhook llegó primero): confirmada, pero NO volver a
+    // notificar (el que la marcó pagada ya reclamó el envío).
+    if (app.payment_status === 'Pagado') return res.status(200).json({ confirmed: true, shouldNotify: false });
 
     // El pago puede vivir en la cuenta del profesional (marketplace) o en la
     // de la plataforma: probar primero con el token del vendedor.
@@ -115,7 +117,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ) {
           const ok = await confirmBookingPaid(appointmentId, Math.round(Number(payment.transaction_amount) || 0));
           if (ok) await syncBookingToGoogle(app.professional_id, appointmentId);
-          return res.status(200).json({ confirmed: ok });
+          // El cliente solo debe enviar correos si ganó el claim (evita duplicado con el webhook).
+          const claimed = ok ? await claimNotify(appointmentId) : null;
+          return res.status(200).json({ confirmed: ok, shouldNotify: !!claimed });
         }
         return res.status(200).json({ confirmed: false, paymentStatus: payment.status });
       } catch { /* probar siguiente token */ }
