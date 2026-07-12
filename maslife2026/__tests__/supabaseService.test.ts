@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 vi.mock('../supabaseClient', () => ({
   supabase: {
     from: vi.fn(),
+    rpc: vi.fn(),
     auth: {
       signInWithPassword: vi.fn(),
       signUp: vi.fn(),
@@ -451,23 +452,20 @@ describe('savePatient', () => {
 // deletePatient
 // ═════════════════════════════════════════════════════════════════════════════
 describe('deletePatient', () => {
-  it('llama a delete en la tabla patients con el id correcto', async () => {
-    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: null }));
+  it('llama al RPC de borrado en cascada con el id correcto', async () => {
+    vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: null, error: null } as any);
 
     await deletePatient('pat-1');
 
-    expect(vi.mocked(supabase.from)).toHaveBeenCalledWith('patients');
-    const builder = vi.mocked(supabase.from).mock.results[0].value;
-    expect(builder.delete).toHaveBeenCalled();
-    expect(builder.eq).toHaveBeenCalledWith('id', 'pat-1');
+    expect(vi.mocked(supabase.rpc)).toHaveBeenCalledWith('delete_patient_cascade', { p_id: 'pat-1' });
   });
 
-  it('lanza el error de Supabase si delete falla (tras reintentos)', async () => {
+  it('lanza el error de Supabase si el RPC falla (tras reintentos)', async () => {
     const dbError = { message: 'Delete failed' };
-    vi.mocked(supabase.from)
-      .mockReturnValueOnce(makeBuilder({ error: dbError }))
-      .mockReturnValueOnce(makeBuilder({ error: dbError }))
-      .mockReturnValueOnce(makeBuilder({ error: dbError }));
+    vi.mocked(supabase.rpc)
+      .mockResolvedValueOnce({ data: null, error: dbError } as any)
+      .mockResolvedValueOnce({ data: null, error: dbError } as any)
+      .mockResolvedValueOnce({ data: null, error: dbError } as any);
 
     await expect(deletePatient('pat-1')).rejects.toEqual(dbError);
   });

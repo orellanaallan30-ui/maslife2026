@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 const PrivacyPolicy: React.FC = () => {
   const navigate = useNavigate();
-  const updated = '5 de junio de 2026';
+  const updated = '12 de julio de 2026';
 
   return (
     <div className="min-h-screen bg-white font-sans text-slate-800">
@@ -34,11 +34,13 @@ const PrivacyPolicy: React.FC = () => {
 
         <Section title="2. Datos que recopilamos">
           <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Pacientes:</strong> nombre completo, RUT, fecha de nacimiento, teléfono, correo electrónico, dirección, previsión de salud, historial clínico, diagnósticos, y datos de fichas clínicas ingresados por el profesional tratante.</li>
+            <li><strong>Pacientes (incluye datos sensibles de salud):</strong> nombre completo, RUT, fecha de nacimiento, teléfono, correo electrónico, dirección, previsión de salud, historial y ficha clínica, diagnósticos, evaluaciones, signos vitales, notas de evolución (SOAP), y firma en consentimientos informados.</li>
             <li><strong>Profesionales:</strong> nombre, RUT, especialidad, datos de contacto, horarios de atención, foto de perfil, y credenciales de acceso.</li>
-            <li><strong>Datos de uso:</strong> registro de accesos, acciones realizadas en la plataforma, dirección IP y agente de usuario (para auditoría y seguridad).</li>
-            <li><strong>Integraciones externas:</strong> si conectas Google Calendar, almacenamos de forma segura los tokens de autorización necesarios para sincronizar tu agenda.</li>
+            <li><strong>Datos de uso:</strong> registro de accesos y acciones en la plataforma, dirección IP y agente de usuario (para auditoría y seguridad exigidas por la normativa).</li>
+            <li><strong>Pagos:</strong> el cobro en línea lo procesa MercadoPago; no almacenamos los datos de tu tarjeta.</li>
+            <li><strong>Integraciones externas:</strong> si conectas Google Calendar, almacenamos de forma segura los tokens necesarios para sincronizar tu agenda.</li>
           </ul>
+          <p className="mt-3 text-xs text-slate-500">Los datos de salud son <strong>datos personales sensibles</strong> y reciben protección reforzada conforme a la Ley N° 21.719.</p>
         </Section>
 
         <Section title="3. Finalidad del tratamiento">
@@ -53,7 +55,7 @@ const PrivacyPolicy: React.FC = () => {
 
         <Section title="4. Base legal">
           <p>
-            El tratamiento de datos se realiza en conformidad con la <strong>Ley N° 19.628 sobre Protección de la Vida Privada</strong> de Chile y sus modificaciones. La base legal es el consentimiento del titular, la ejecución de un contrato de servicios, y el cumplimiento de obligaciones legales del prestador de salud.
+            El tratamiento se realiza conforme a la <strong>Ley N° 21.719</strong>, que regula la protección y el tratamiento de datos personales en Chile (y crea la Agencia de Protección de Datos Personales). Al tratarse de <strong>datos sensibles de salud</strong>, la base principal es el <strong>consentimiento explícito</strong> del titular, junto con la ejecución del contrato de servicios y el cumplimiento de las obligaciones legales del prestador de salud.
           </p>
         </Section>
 
@@ -76,28 +78,38 @@ const PrivacyPolicy: React.FC = () => {
           </p>
         </Section>
 
-        <Section title="7. Transferencia de datos">
-          <p>
-            Los datos personales no se transfieren a terceros con fines comerciales. Únicamente se comparten con proveedores de infraestructura técnica (Supabase, Vercel, Google LLC para servicios de calendario) en la medida necesaria para prestar el servicio, quienes están sujetos a sus propias políticas de privacidad.
-          </p>
+        <Section title="7. Proveedores que tratan datos por nosotros">
+          <p>No vendemos datos personales. Compartimos lo estrictamente necesario con los siguientes proveedores (encargados de tratamiento), cada uno con sus propias políticas de privacidad:</p>
+          <ul className="list-disc pl-5 space-y-1 mt-3">
+            <li><strong>Supabase</strong> — base de datos y autenticación (alojamiento de los datos).</li>
+            <li><strong>Vercel</strong> — alojamiento y ejecución de la aplicación.</li>
+            <li><strong>MercadoPago</strong> — procesamiento de pagos en línea.</li>
+            <li><strong>Resend</strong> — envío de correos transaccionales (confirmaciones, comprobantes).</li>
+            <li><strong>Google LLC</strong> — sincronización con Google Calendar (solo si el profesional lo autoriza).</li>
+            <li><strong>Anthropic</strong> — asistente de inteligencia artificial para apoyo a los profesionales, cuando el profesional usa esa función.</li>
+            <li><strong>Google Analytics y Meta</strong> — métricas de uso del sitio (datos de navegación).</li>
+          </ul>
+          <p className="mt-3 text-xs text-slate-500">Algunos de estos proveedores están fuera de Chile; en esos casos la transferencia se realiza con las garantías que exige la Ley N° 21.719.</p>
         </Section>
 
         <Section title="8. Derechos del titular">
-          <p>De acuerdo con la legislación chilena, los titulares de datos tienen derecho a:</p>
+          <p>Conforme a la Ley N° 21.719, los titulares de datos tienen derecho a:</p>
           <ul className="list-disc pl-5 space-y-1 mt-2">
-            <li>Acceder a sus datos personales.</li>
-            <li>Rectificar datos inexactos o incompletos.</li>
-            <li>Solicitar la eliminación de sus datos (salvo obligación legal de conservarlos).</li>
-            <li>Oponerse al tratamiento de sus datos.</li>
+            <li><strong>Acceso:</strong> conocer qué datos suyos tratamos.</li>
+            <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos.</li>
+            <li><strong>Supresión (eliminación):</strong> solicitar el borrado de sus datos, salvo obligación legal de conservarlos.</li>
+            <li><strong>Oposición:</strong> oponerse a un tratamiento determinado.</li>
+            <li><strong>Portabilidad:</strong> recibir sus datos en un formato estructurado.</li>
+            <li><strong>Retiro del consentimiento:</strong> el paciente puede retirar en cualquier momento el consentimiento otorgado, sin efecto retroactivo.</li>
           </ul>
           <p className="mt-3">
-            Para ejercer estos derechos, escríbenos a: <a href="mailto:contacto@clinicamaslife.cl" className="text-primary underline">contacto@clinicamaslife.cl</a>
+            Para ejercer estos derechos, escríbenos a: <a href="mailto:contacto@clinicamaslife.cl" className="text-primary underline">contacto@clinicamaslife.cl</a>. Responderemos en los plazos que fija la ley.
           </p>
         </Section>
 
         <Section title="9. Conservación de datos">
           <p>
-            Los datos clínicos se conservan por el período mínimo exigido por la normativa sanitaria chilena. Las fichas clínicas eliminadas por el profesional se mantienen en estado de retención por 90 días antes de su eliminación definitiva, permitiendo su recuperación en caso de error.
+            Los datos clínicos se conservan por el período que exige la normativa sanitaria chilena mientras la relación de atención esté vigente. Las fichas eliminadas por el profesional pasan a un estado de retención de <strong>90 días</strong> (por si fue un error) y luego se eliminan de forma <strong>definitiva y automática</strong>, incluyendo todos los datos asociados (citas, consentimientos y notas de evolución). Cuando un paciente o profesional solicita la eliminación, esta se propaga a toda su información en la plataforma.
           </p>
         </Section>
 

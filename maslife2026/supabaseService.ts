@@ -287,8 +287,11 @@ export async function savePatient(patient: Patient, proId: string): Promise<void
 }
 
 export async function deletePatient(id: string): Promise<void> {
+  // Borrado en cascada de TODA la PHI del paciente (citas, consentimientos, SOAP y
+  // versiones), no solo la fila patients — derecho a eliminación (Ley 21.719). El
+  // RPC verifica que el paciente pertenece al profesional autenticado.
   await withRetry(async () => {
-    const { error } = await supabase.from('patients').delete().eq('id', id);
+    const { error } = await supabase.rpc('delete_patient_cascade', { p_id: id });
     if (error) throw error;
   });
 }
