@@ -413,7 +413,10 @@ const ClinicalRecord: React.FC = () => {
 
     const sections: string[] = [
       `═══ DATOS DEL PACIENTE ═══`,
-      `Nombre: ${personalData.name} | Edad: ${personalData.age} años | RUT: ${personalData.rut}`,
+      // Privacidad (Ley 21.719): NO enviamos identidad directa (nombre/RUT) al
+      // asistente de IA. Se usa solo edad/sexo, suficiente para el razonamiento
+      // clínico. Refiérete al paciente de forma genérica ("el/la paciente").
+      `Paciente: ${safePatient.gender || 'sexo no registrado'}, ${personalData.age || '—'} años (identidad omitida por privacidad)`,
       `Diagnóstico: ${personalData.diagnoses || 'No registrado'}`,
       `Previsión: ${personalData.prevision || '—'} | Última visita: ${safePatient.lastVisit || 'No registrada'}`,
       '',
@@ -480,7 +483,7 @@ const ClinicalRecord: React.FC = () => {
     'Buscar Guía Clínica':
       'Busca en internet la guía clínica o protocolo más reciente para este caso. Prioriza fuentes oficiales (MINSAL Chile, GPC, NICE, UpToDate). Reporta el título, año, recomendación principal y el enlace fuente.',
     'Generar Informe Formal':
-      'Genera un Informe Clínico Profesional completo con el siguiente formato:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\nUsa tono formal y técnico, listo para imprimir. Sin markdown complejo.',
+      'Genera un Informe Clínico Profesional completo. NO incluyas nombre ni RUT del paciente (no los tienes y la identificación se adjunta por separado); refiérete a "el/la paciente". Formato:\n1. RESUMEN CLÍNICO Y DIAGNÓSTICO\n2. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n3. PLAN DE TRATAMIENTO Y PROYECCIÓN\n4. OBSERVACIONES ADICIONALES\nUsa tono formal y técnico, listo para imprimir. Sin markdown complejo.',
     'Consulta': '',
   };
 
@@ -553,7 +556,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
       const sanitize = (s: string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const prompt = feedback
         ? `Modifica el siguiente informe basándote en el comentario del profesional:\n<comentario>${sanitize(feedback)}</comentario>\n\nINFORME ANTERIOR:\n${reportContent}\n\nDATOS DEL PACIENTE:\n${clinicalContext}`
-        : `Genera un Informe Clínico Profesional completo para el paciente ${sanitize(personalData.name)}.\n\nEstructura obligatoria:\n1. IDENTIFICACIÓN DEL PACIENTE\n2. RESUMEN CLÍNICO Y DIAGNÓSTICO\n3. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n4. PLAN DE TRATAMIENTO Y PROYECCIÓN\n5. OBSERVACIONES ADICIONALES\n\nDATOS CLÍNICOS:\n${clinicalContext}`;
+        : `Genera un Informe Clínico Profesional completo. NO incluyas nombre ni RUT (no los tienes y la identificación se adjunta por separado); refiérete a "el/la paciente".\n\nEstructura obligatoria:\n1. RESUMEN CLÍNICO Y DIAGNÓSTICO\n2. HALLAZGOS CLÍNICOS Y EVOLUCIÓN\n3. PLAN DE TRATAMIENTO Y PROYECCIÓN\n4. OBSERVACIONES ADICIONALES\n\nDATOS CLÍNICOS:\n${clinicalContext}`;
 
       const { data: { session: _sess2 } } = await supabase.auth.getSession();
       const _authH2 = _sess2?.access_token ? { Authorization: `Bearer ${_sess2.access_token}` } : {};
@@ -678,7 +681,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         .map(([k, v]) => `${k}: ${v}°`)
         .join(', ');
 
-      const prompt = `Analiza las ${analysisImages.length} fotografías clínicas del paciente ${personalData.name}.
+      const prompt = `Analiza las ${analysisImages.length} fotografías clínicas del/de la paciente (identidad omitida por privacidad).
 
 Tipo de análisis solicitado: ${analysisType}
 ${kiAnthro.weight ? `Peso: ${kiAnthro.weight} kg` : ''}${kiAnthro.height ? `, Talla: ${kiAnthro.height} cm` : ''}${kiImc ? `, IMC: ${kiImc}` : ''}
