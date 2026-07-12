@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
 import { supabase } from '../supabaseClient';
 import { trackProRegistration, trackSubscriptionClick } from '../analytics';
+import { resizeImageDataUrl } from '../lib/imageResize';
 
 const CHILEAN_CITIES = [
   'Antofagasta','Arica','Calama','Castro','Chillán','Concepción',
@@ -388,7 +389,7 @@ const ProfessionalRegistration: React.FC = () => {
                     </div>
                     <label className="absolute -bottom-1.5 -right-1.5 w-8 h-8 bg-teal-500 text-white rounded-xl flex items-center justify-center cursor-pointer shadow-lg border-2 border-white hover:scale-110 transition-transform">
                       <span className="material-icons-round text-sm">photo_camera</span>
-                      <input type="file" onChange={e=>{const f=e.target.files?.[0];if(f){const r=new FileReader();r.onload=ev=>setForm(fm=>({...fm,avatar:ev.target?.result as string}));r.readAsDataURL(f);}}} className="hidden" accept="image/*"/>
+                      <input type="file" onChange={e=>{const f=e.target.files?.[0];if(f){resizeImageDataUrl(f,300,0.85).then(url=>setForm(fm=>({...fm,avatar:url}))).catch(()=>setError('No se pudo procesar la imagen. Prueba con otra.'));}}} className="hidden" accept="image/*"/>
                     </label>
                   </div>
                   <div><p className="font-bold text-slate-700 text-sm">Foto de perfil</p><p className="text-xs text-slate-400">Opcional</p></div>
