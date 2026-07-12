@@ -15,6 +15,7 @@ interface jsPDFInstance {
   setFontSize(size: number): void;
   setTextColor(r: number, g: number, b: number): void;
   setDrawColor(r: number, g: number, b: number): void;
+  setLineWidth(width: number): void;
   setFillColor(r: number, g: number, b: number): void;
   rect(x: number, y: number, w: number, h: number, style?: string): void;
   line(x1: number, y1: number, x2: number, y2: number): void;
@@ -301,29 +302,37 @@ async function ensureJsPDF(): Promise<void> {
 }
 
 function drawMembrete(doc: jsPDFInstance, W: number, MARGIN: number, rightText: string): void {
+  // Banda de marca superior + fino filete de acento para dar aire y jerarquía.
   doc.setFillColor(0, 168, 158);
-  doc.rect(0, 0, W, 28, 'F');
+  doc.rect(0, 0, W, 26, 'F');
+  doc.setFillColor(0, 126, 119);
+  doc.rect(0, 26, W, 1.2, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
+  doc.setFontSize(15);
   doc.setTextColor(255, 255, 255);
-  doc.text('Clínica Mas Life', MARGIN, 14);
+  doc.text('Clínica Mas Life', MARGIN, 13);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text('clinicamaslife.cl · Plataforma de Gestión Clínica', MARGIN, 21);
-  doc.setFontSize(7.5);
-  doc.text(rightText, W - MARGIN, 17, { align: 'right' });
+  doc.setTextColor(224, 242, 241);
+  doc.text('clinicamaslife.cl · Plataforma de Gestión Clínica', MARGIN, 19.5);
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text(rightText, W - MARGIN, 15.5, { align: 'right' });
 }
 
 function drawFooters(doc: jsPDFInstance, W: number, pro: ProfessionalProfile): void {
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
-    doc.setFontSize(7);
-    doc.setTextColor(148, 163, 184);
-    doc.text(
-      `Clínica Mas Life · ${pro.name} · ${pro.specialty}   Página ${p} de ${total}`,
-      W / 2, 290, { align: 'center' }
-    );
+    // Filete separador sobre el pie para cerrar la caja de contenido.
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.line(18, 286, W - 18, 286);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(120, 132, 150);
+    doc.text(`Clínica Mas Life · ${pro.name} · ${pro.specialty}`, 18, 291);
+    doc.text(`Página ${p} de ${total}`, W - 18, 291, { align: 'right' });
   }
 }
 
@@ -403,23 +412,29 @@ function drawAutoSignature(
 }
 
 function drawSectionHeader(doc: jsPDFInstance, label: string, margin: number, y: number, colW: number): number {
+  // Barra de sección con acento teal a la izquierda para una jerarquía clara.
+  const h = 8.5;
   doc.setFillColor(241, 245, 249);
-  doc.rect(margin, y, colW, 8, 'F');
+  doc.rect(margin, y, colW, h, 'F');
+  doc.setFillColor(0, 168, 158);
+  doc.rect(margin, y, 1.6, h, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(30, 41, 59);
-  doc.text(label, margin + 4, y + 5.5);
-  return y + 10;
+  doc.setFontSize(8.5);
+  doc.setTextColor(15, 94, 89);
+  doc.text(String(label).toUpperCase(), margin + 5, y + 5.8, { charSpace: 0.4 } as any);
+  return y + h + 3;
 }
 
-function drawField(doc: jsPDFInstance, label: string, value: string, x: number, y: number): void {
+// Campo etiqueta:valor. Ancho de etiqueta configurable; el valor se ajusta si es largo.
+function drawField(doc: jsPDFInstance, label: string, value: string, x: number, y: number, labelW = 32): void {
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
-  doc.text(label + ':', x, y);
+  doc.text(label, x, y);
   doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
   doc.setTextColor(30, 41, 59);
-  doc.text(value || '—', x + 28, y);
+  doc.text(value || '—', x + labelW, y);
 }
 
 // ── FICHA CLÍNICA DEL PACIENTE ────────────────────────────────────────────────
@@ -1070,13 +1085,14 @@ export async function exportReportToPDF(
   y = 36;
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(15);
   doc.setTextColor(15, 23, 42);
-  doc.text('INFORME CLÍNICO', MARGIN, y);
-  y += 5;
+  doc.text('INFORME CLÍNICO', MARGIN, y, { charSpace: 0.3 } as any);
+  y += 5.5;
   doc.setDrawColor(0, 168, 158);
+  doc.setLineWidth(0.5);
   doc.line(MARGIN, y, W - MARGIN, y);
-  y += 6;
+  y += 7;
 
   // Registro de cambios (plantilla unificada)
   y = drawDocMeta(doc, MARGIN, COL, y, {
@@ -1098,33 +1114,37 @@ export async function exportReportToPDF(
     ['Fecha informe', dateStr],
   ];
   for (let i = 0; i < idFields.length; i += 2) {
-    drawField(doc, idFields[i][0], idFields[i][1], MARGIN + 2, y);
-    if (idFields[i + 1]) drawField(doc, idFields[i + 1][0], idFields[i + 1][1], MARGIN + 2 + half, y);
-    y += 5.5;
+    drawField(doc, idFields[i][0], idFields[i][1], MARGIN + 2, y, 26);
+    if (idFields[i + 1]) drawField(doc, idFields[i + 1][0], idFields[i + 1][1], MARGIN + 2 + half, y, 26);
+    y += 6;
   }
-  y += 4;
+  y += 5;
 
-  const allLines = doc.splitTextToSize(content, COL);
-  for (const line of allLines) {
-    if (y + 5 > 268) {
-      doc.addPage();
-      y = MARGIN;
-    }
-    const isHeader = /^[0-9]+\./.test(line.trim()) || line.trim().toUpperCase() === line.trim() && line.trim().length > 4;
+  // Cuerpo del informe: interlineado holgado y jerarquía entre encabezados de
+  // sección (numerados o en mayúsculas) y texto corrido, para lectura clínica.
+  const allLines: string[] = doc.splitTextToSize(content, COL);
+  for (const rawLine of allLines) {
+    const line = rawLine;
+    const trimmed = line.trim();
+    const isHeader = /^[0-9]+[.)]/.test(trimmed) || (trimmed.toUpperCase() === trimmed && trimmed.length > 4 && trimmed.length < 60);
+    if (y + (isHeader ? 9 : 5.4) > 276) { doc.addPage(); y = MARGIN + 2; }
     if (isHeader) {
+      y += 2; // aire antes del encabezado de sección
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(10.5);
+      doc.setTextColor(15, 94, 89);
+      doc.text(trimmed, MARGIN, y);
+      y += 6.4;
     } else {
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(9.5);
       doc.setTextColor(51, 65, 85);
+      doc.text(line, MARGIN, y);
+      y += trimmed === '' ? 3 : 5.4;
     }
-    doc.text(line, MARGIN, y);
-    y += isHeader ? 5.5 : 4.8;
   }
 
-  y += 6;
+  y += 8;
   if (y + 42 > 268) { doc.addPage(); y = MARGIN; }
   drawAutoSignature(doc, professional, MARGIN, COL, y);
 
