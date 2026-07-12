@@ -323,15 +323,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const normalizedRut = String(patient_rut).replace(/\./g, '').replace(/-/g, '').toLowerCase().trim();
+    // Validar formato RUT chileno (7-8 dígitos + dígito verificador). Esto, además de
+    // ser correcto, impide inyección de operadores PostgREST (comas/puntos) en el filtro.
+    if (!/^\d{7,8}[0-9k]$/.test(normalizedRut)) {
+      return res.status(400).json({ error: 'RUT inválido.' });
+    }
+    // Traer los RUT de las citas del profesional y comparar NORMALIZADO en JS (los
+    // pacientes web guardan el rut sin puntos/guiones; el profesional puede haberlo
+    // guardado con formato). Nunca se interpola el valor del usuario en el filtro.
     const { data: appointments } = await supabase
       .from('appointments')
-      .select('id')
+      .select('patient_rut')
       .eq('professional_id', professional_id)
-      .or(`patient_rut.ilike.${normalizedRut},patient_rut.ilike.${String(patient_rut).trim()}`)
       .in('status', ['Confirmado', 'Completado'])
-      .limit(1);
+      .not('patient_rut', 'is', null);
 
-    const isVerified = !!(appointments && appointments.length > 0);
+    const isVerified = !!(appointments || []).some(a =>
+      String(a.patient_rut).replace(/[.\-\s]/g, '').toLowerCase() === normalizedRut
+    );
 
     if (!isVerified) {
       return res.status(403).json({

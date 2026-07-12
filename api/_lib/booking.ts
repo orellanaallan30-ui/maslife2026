@@ -14,6 +14,7 @@ const TIME_RE = /^\d{2}:\d{2}$/;
 export interface BookingInput {
   professionalId: string;
   patientName: string;
+  patientRut?: string;
   patientPhone?: string;
   patientEmail?: string;
   serviceName: string;
@@ -168,6 +169,9 @@ export async function insertBooking(
     id,
     professional_id: prepared.pro.id,
     patient_name: String(input.patientName).trim().slice(0, 120),
+    // Guardar el RUT permite que el paciente web pueda calificar después (submit-review
+    // verifica por patient_rut). Se guarda normalizado (sin puntos/guiones).
+    patient_rut: input.patientRut ? String(input.patientRut).replace(/[.\-\s]/g, '').toLowerCase().slice(0, 20) : null,
     patient_phone: input.patientPhone ? String(input.patientPhone).slice(0, 30) : null,
     patient_email: input.patientEmail ? String(input.patientEmail).slice(0, 200) : null,
     doctor_name: prepared.pro.name,
@@ -237,18 +241,35 @@ export async function releaseBooking(id: string): Promise<void> {
 }
 
 /**
- * Elimina "holds" de pago vencidos: citas Pendiente/Pendiente de origen web con
- * más de 5 minutos. Libera cupos de pacientes que abandonaron el checkout.
+ * Elimina "holds" de pago vencidos, PROTEGIENDO los pagos en curso.
+ * - Sin checkout iniciado (mp_preference_id NULL): abandono temprano → liberar a los 10 min.
+ * - Con checkout iniciado (mp_preference_id presente): el paciente está pagando en MP y
+ *   puede tardar (tarjeta, 3-D Secure, transferencia) → NO tocar hasta 45 min, para no
+ *   borrar una reserva que se está pagando (antes se borraba a los 5 min → el paciente
+ *   pagaba y quedaba sin cita).
  */
 export async function releaseStaleHolds(professionalId: string): Promise<void> {
-  const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-  const { error } = await supabase
+  const base = supabase
+    .from('appointments')
+    .delete()
+    .eq('professional_id', professionalId)
+    .eq('status', 'Pendiente')
+    .eq('payment_status', 'Pendiente')
+    .eq('booking_source', 'web');
+
+  const cutoffEarly = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const { error: e1 } = await base.is('mp_preference_id', null).lt('created_at', cutoffEarly);
+  if (e1) console.error('[booking] stale-hold cleanup (sin checkout) error:', e1.message);
+
+  const cutoffLate = new Date(Date.now() - 45 * 60 * 1000).toISOString();
+  const { error: e2 } = await supabase
     .from('appointments')
     .delete()
     .eq('professional_id', professionalId)
     .eq('status', 'Pendiente')
     .eq('payment_status', 'Pendiente')
     .eq('booking_source', 'web')
-    .lt('created_at', cutoff);
-  if (error) console.error('[booking] stale-hold cleanup error:', error.message);
+    .not('mp_preference_id', 'is', null)
+    .lt('created_at', cutoffLate);
+  if (e2) console.error('[booking] stale-hold cleanup (checkout vencido) error:', e2.message);
 }

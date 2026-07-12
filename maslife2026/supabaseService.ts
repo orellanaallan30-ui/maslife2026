@@ -263,11 +263,20 @@ export async function getPatients(proId: string): Promise<Patient[]> {
 }
 
 export async function softDeletePatient(id: string): Promise<void> {
-  const { error } = await supabase
-    .from('patients')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id);
-  if (error) throw error;
+  await withRetry(async () => {
+    const { error } = await supabase
+      .from('patients')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
+  });
+}
+
+export async function restorePatient(id: string): Promise<void> {
+  await withRetry(async () => {
+    const { error } = await supabase.from('patients').update({ deleted_at: null }).eq('id', id);
+    if (error) throw error;
+  });
 }
 
 export async function savePatient(patient: Patient, proId: string): Promise<void> {
@@ -278,8 +287,10 @@ export async function savePatient(patient: Patient, proId: string): Promise<void
 }
 
 export async function deletePatient(id: string): Promise<void> {
-  const { error } = await supabase.from('patients').delete().eq('id', id);
-  if (error) throw error;
+  await withRetry(async () => {
+    const { error } = await supabase.from('patients').delete().eq('id', id);
+    if (error) throw error;
+  });
 }
 
 // ── Citas ─────────────────────────────────────────────────────
@@ -538,18 +549,20 @@ export async function deleteBlocksByRecurrence(
   blockId: string,
   blockDate: string
 ): Promise<void> {
-  if (mode === 'single') {
-    const { error } = await supabase.from('appointments').delete().eq('id', blockId);
-    if (error) throw error;
-  } else if (mode === 'future') {
-    const { error } = await supabase.from('appointments').delete()
-      .eq('recurrence_id', recurrenceId).gte('date', blockDate);
-    if (error) throw error;
-  } else {
-    const { error } = await supabase.from('appointments').delete()
-      .eq('recurrence_id', recurrenceId);
-    if (error) throw error;
-  }
+  await withRetry(async () => {
+    if (mode === 'single') {
+      const { error } = await supabase.from('appointments').delete().eq('id', blockId);
+      if (error) throw error;
+    } else if (mode === 'future') {
+      const { error } = await supabase.from('appointments').delete()
+        .eq('recurrence_id', recurrenceId).gte('date', blockDate);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from('appointments').delete()
+        .eq('recurrence_id', recurrenceId);
+      if (error) throw error;
+    }
+  });
 }
 
 // ── Reseñas ───────────────────────────────────────────────────

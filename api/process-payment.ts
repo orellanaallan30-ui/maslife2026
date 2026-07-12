@@ -143,6 +143,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         cause: prefData.cause,
       });
     }
+    // Marcar la reserva como "checkout iniciado": protege la fila de releaseStaleHolds
+    // durante la ventana de pago (el paciente puede tardar en pagar en MP).
+    if (prefData.id) {
+      await supabase.from('appointments').update({ mp_preference_id: String(prefData.id) }).eq('id', appointmentId).then(() => null, () => null);
+    }
     return res.json({
       init_point: prefData.init_point,
       preference_id: prefData.id,

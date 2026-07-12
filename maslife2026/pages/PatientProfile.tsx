@@ -62,6 +62,10 @@ const PatientProfile: React.FC = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  // Cuando el retorno de MercadoPago no pudo verificar el pago (o se perdió el
+  // contexto del pago), NO afirmamos "reserva exitosa": mostramos estado "en
+  // verificación" para no engañar al paciente que pagó.
+  const [paymentPending, setPaymentPending] = useState(false);
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [rating, setRating] = useState<{ avg: number; count: number }>({ avg: 0, count: 0 });
@@ -313,9 +317,13 @@ const PatientProfile: React.FC = () => {
           }).catch(() => {});
         }
         if (confirmed) trackBookingConfirmed(pending.notify?.price);
+        // Si había un pago que no se pudo confirmar en el retorno, marcar pendiente
+        // (el webhook de MP concilia; el paciente ve "verificando" en vez de "exitosa").
+        if (pending.appointmentId && !confirmed) setPaymentPending(true);
         setIsConfirmed(true);
       } catch (e) {
         console.error('[checkout-pro] retorno', e);
+        setPaymentPending(true);
         setIsConfirmed(true);
       }
     })();
@@ -377,6 +385,7 @@ const PatientProfile: React.FC = () => {
           action: 'book',
           professionalId: doctor.id,
           patientName: newApp.patientName,
+          patientRut: patientData.rut,
           patientPhone: newApp.patientPhone,
           patientEmail: newApp.patientEmail,
           serviceName: newApp.serviceName,
@@ -461,6 +470,7 @@ const PatientProfile: React.FC = () => {
           booking: {
             professionalId: doctor.id,
             patientName: patientData.name,
+            patientRut: patientData.rut,
             patientPhone: patientData.phone,
             patientEmail: patientData.email || undefined,
             serviceName: selectedService!.name,
@@ -576,11 +586,13 @@ const PatientProfile: React.FC = () => {
 
           {/* Header centrado */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-5 border-4 border-white shadow-lg">
-              <span className="material-icons-round text-5xl">check_circle</span>
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-5 border-4 border-white shadow-lg ${paymentPending ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'}`}>
+              <span className="material-icons-round text-5xl">{paymentPending ? 'schedule' : 'check_circle'}</span>
             </div>
-            <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-2">¡Reserva Exitosa!</h2>
-            <p className="text-slate-500 font-bold max-w-lg">Tu hora ha quedado agendada correctamente en el sistema del profesional.</p>
+            <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-2">{paymentPending ? 'Estamos confirmando tu pago' : '¡Reserva Exitosa!'}</h2>
+            <p className="text-slate-500 font-bold max-w-lg">{paymentPending
+              ? 'Tu hora quedó registrada. Estamos verificando el pago con MercadoPago; recibirás la confirmación por correo en unos minutos. Si no llega, contacta al profesional con tu comprobante.'
+              : 'Tu hora ha quedado agendada correctamente en el sistema del profesional.'}</p>
           </div>
 
           {/* ── RESPONSIVE: columna única mobile, dos columnas lg:desktop ── */}

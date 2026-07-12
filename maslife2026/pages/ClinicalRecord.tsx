@@ -348,7 +348,9 @@ const ClinicalRecord: React.FC = () => {
 
   const [soap, setSoap] = useState({ subjective: '', objective: '', assessment: '', plan: '', ...((safePatient.soap as any) || {}) });
 
-  const [goals, setGoals] = useState<TherapeuticGoal[]>([]);
+  // Rehidratar desde la ficha guardada: si no, el autosave sobrescribe con [] y
+  // borra los objetivos existentes (misma clase de bug que antecedentes).
+  const [goals, setGoals] = useState<TherapeuticGoal[]>((safePatient.goals as TherapeuticGoal[]) || []);
 
   const [sessionLogs, setSessionLogs] = useState<SessionLog[]>(safePatient.sessionLogs || [
     { id: 'sl1', date: '2024-05-10', note: 'Sesión de evaluación inicial.' }
@@ -1012,7 +1014,15 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const fileList = Array.from(e.target.files);
+      // Cap por archivo: los adjuntos se guardan como base64 dentro de la fila del
+      // paciente. Un archivo enorme puede hacer fallar el guardado de TODA la ficha
+      // (perdiendo el resto de lo editado). Límite conservador de 4 MB por archivo.
+      const MAX_MB = 4;
       fileList.forEach((file: any) => {
+        if (file.size > MAX_MB * 1024 * 1024) {
+          toast.error(`"${file.name}" pesa ${(file.size / 1048576).toFixed(1)} MB. Máximo ${MAX_MB} MB por archivo (comprímelo o súbelo dividido).`);
+          return;
+        }
         const reader = new FileReader();
         reader.onload = (event) => {
           if (event.target?.result) {

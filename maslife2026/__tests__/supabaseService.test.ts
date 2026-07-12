@@ -462,9 +462,12 @@ describe('deletePatient', () => {
     expect(builder.eq).toHaveBeenCalledWith('id', 'pat-1');
   });
 
-  it('lanza el error de Supabase si delete falla', async () => {
+  it('lanza el error de Supabase si delete falla (tras reintentos)', async () => {
     const dbError = { message: 'Delete failed' };
-    vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ error: dbError }));
+    vi.mocked(supabase.from)
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }))
+      .mockReturnValueOnce(makeBuilder({ error: dbError }));
 
     await expect(deletePatient('pat-1')).rejects.toEqual(dbError);
   });

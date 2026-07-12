@@ -391,7 +391,13 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } else {
       setAppointments(prev => prev.filter(a => a.recurrenceId !== recurrenceId));
     }
-    await deleteBlocksByRecurrence(recurrenceId, mode, blockId, blockDate);
+    // Nunca silencioso: si el borrado en la nube falla, los bloqueos reaparecen al
+    // recargar → avisar al profesional en vez de fingir que se eliminaron.
+    try {
+      await deleteBlocksByRecurrence(recurrenceId, mode, blockId, blockDate);
+    } catch (err) {
+      notifyWriteError(err, '⚠️ Los bloqueos NO se eliminaron en el servidor: reaparecerán al recargar. Intenta de nuevo.');
+    }
   };
 
   const addNotification = (title: string, type: 'appointment' | 'payment' | 'system') => {
