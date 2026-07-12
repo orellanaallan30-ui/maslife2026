@@ -110,7 +110,13 @@ const Charlas: React.FC = () => {
     });
     setSubmitting(false);
     if (err) {
-      setError('Ocurrió un error. Intenta de nuevo.');
+      // 23505 = ya inscrito (índice único por charla + email): tratarlo como éxito
+      // amable en vez de un error genérico, y no duplicar la inscripción.
+      if ((err as { code?: string }).code === '23505') {
+        setSuccess(true);
+      } else {
+        setError('Ocurrió un error. Intenta de nuevo.');
+      }
     } else {
       setSuccess(true);
     }

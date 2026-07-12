@@ -296,6 +296,7 @@ const PatientProfile: React.FC = () => {
         // de redirigir). Aquí solo verificamos el pago contra MercadoPago en el
         // servidor — los parámetros de la URL son falsificables, el pago real no.
         let confirmed = false;
+        let shouldNotify = true;
         if (pending.appointmentId && paymentId) {
           try {
             const resp = await fetch('/api/book-appointment', {
@@ -303,13 +304,17 @@ const PatientProfile: React.FC = () => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ action: 'confirm', appointmentId: pending.appointmentId, paymentId }),
             });
-            confirmed = (await resp.json())?.confirmed === true;
+            const cd = await resp.json();
+            confirmed = cd?.confirmed === true;
+            // El servidor indica si ESTE cliente debe enviar los correos (claim).
+            // Si es false, el webhook ya se encargará → no duplicar.
+            shouldNotify = cd?.shouldNotify !== false;
           } catch (e) { console.error('[checkout-pro] confirmación', e); }
         }
         // Notificar a profesional y paciente (el correo del pro se resuelve en el
-        // servidor por professionalId; el .ics va adjunto). El webhook concilia
-        // la cita si la confirmación falló.
-        if (pending.notify) {
+        // servidor por professionalId; el .ics va adjunto). El webhook concilia y
+        // notifica si la confirmación del cliente falló (respaldo idempotente).
+        if (pending.notify && shouldNotify) {
           fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

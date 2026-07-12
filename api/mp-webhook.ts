@@ -64,6 +64,51 @@ async function notifyAdminOrphanPreapproval(payerEmail: string, mpStatus: string
   }
 }
 
+// Envía los correos de confirmación/comprobante de una cita pagada, pero SOLO si
+// nadie los envió aún (claim atómico sobre notified_at). Respaldo para el caso en
+// que el paciente pagó y no volvió del checkout. Best-effort: nunca rompe el webhook.
+async function sendBookingEmailsIfUnclaimed(apt: Record<string, any>): Promise<void> {
+  try {
+    // Claim atómico: solo un proceso (cliente o webhook) envía los correos.
+    const { data: claimed } = await supabase
+      .from('appointments')
+      .update({ notified_at: new Date().toISOString() })
+      .eq('id', apt.id)
+      .is('notified_at', null)
+      .select('id')
+      .maybeSingle();
+    if (!claimed) return; // el cliente ya notificó
+
+    const { data: pro } = await supabase
+      .from('professionals')
+      .select('email, name')
+      .eq('id', apt.professional_id)
+      .maybeSingle();
+    if (!pro?.email) return;
+
+    const base = (process.env.PUBLIC_BASE_URL || 'https://clinicamaslife.cl').replace(/\/$/, '');
+    await fetch(`${base}/api/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: pro.email,
+        professionalName: apt.doctor_name || pro.name,
+        patientName: apt.patient_name,
+        patientEmail: apt.patient_email || undefined,
+        serviceName: apt.service_name,
+        date: apt.date,
+        time: apt.time,
+        type: apt.type,
+        duration: apt.duration,
+        price: apt.payment_amount,
+        isReceipt: true,
+      }),
+    }).catch(e => console.error('[mp-webhook] notify falló:', e));
+  } catch (e) {
+    console.error('[mp-webhook] sendBookingEmailsIfUnclaimed error:', e);
+  }
+}
+
 function validateSignature(req: VercelRequest, secret: string): boolean {
   try {
     const xSignature = req.headers['x-signature'] as string;
@@ -144,7 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             })
             .eq('id', ref)
             .eq('payment_status', 'Pendiente')
-            .select('id, professional_id, patient_name, service_name');
+            .select('id, professional_id, patient_name, patient_email, doctor_name, service_name, date, time, type, duration, payment_amount, notified_at');
 
           if (error) {
             console.error('[mp-webhook] reconcile error:', error.message);
@@ -163,6 +208,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
             if (txErr) console.error('[mp-webhook] transaction insert error:', txErr.message);
             await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, matched_professional_id: apt.professional_id, outcome: 'matched_updated', detail: `cita ${ref}` });
+            // Respaldo de correos: si el cliente no volvió del checkout (localStorage
+            // perdido), nadie habría notificado. Reclamamos el envío atómicamente
+            // (notified_at) para no duplicar con el cliente, y enviamos vía /api/notify.
+            await sendBookingEmailsIfUnclaimed(apt);
           } else {
             await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, outcome: 'ignored_status', detail: 'cita no pendiente o ref no aprobada' });
           }

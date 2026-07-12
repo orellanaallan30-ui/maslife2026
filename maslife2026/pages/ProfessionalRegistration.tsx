@@ -74,6 +74,8 @@ const ProfessionalRegistration: React.FC = () => {
     if (!form.name.trim())  { setError('Ingresa tu nombre.'); return; }
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { setError('Email inválido.'); return; }
     if (!pwChecks.length)   { setError('La contraseña debe tener al menos 8 caracteres.'); return; }
+    if (!pwChecks.upper)    { setError('La contraseña debe incluir al menos una mayúscula.'); return; }
+    if (!pwChecks.number)   { setError('La contraseña debe incluir al menos un número.'); return; }
     if (!pwChecks.match)    { setError('Las contraseñas no coinciden.'); return; }
     if (!form.specialty.trim()) { setError('Ingresa tu especialidad.'); return; }
     if (form.city === 'Otra ciudad' && !form.customCity.trim()) { setError('Ingresa el nombre de tu ciudad.'); return; }

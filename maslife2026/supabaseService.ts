@@ -310,13 +310,22 @@ export async function saveAppointment(app: Appointment): Promise<void> {
   syncToGoogleCalendar('upsert', app).catch(() => null);
 }
 
-export async function deleteAppointment(id: string, googleEventId?: string): Promise<void> {
+export async function deleteAppointment(id: string): Promise<void> {
+  // Capturar el evento de Google ANTES de borrar la fila: si se borra primero, el
+  // sync de eliminación no sabría qué evento quitar y quedaría un evento fantasma
+  // en el Google Calendar del profesional.
+  let googleEventId: string | undefined;
+  try {
+    const { data } = await supabase.from('appointments').select('google_event_id').eq('id', id).maybeSingle();
+    googleEventId = (data?.google_event_id as string) || undefined;
+  } catch { /* no bloquear el borrado por esto */ }
+
   await withRetry(async () => {
     const { error } = await supabase.from('appointments').delete().eq('id', id);
     if (error) throw error;
   });
-  // Sync deletion to Google Calendar (fire-and-forget)
-  syncToGoogleCalendar('delete', { id, googleEventId } as any).catch(() => null);
+  // Sync deletion to Google Calendar (fire-and-forget) solo si había evento.
+  if (googleEventId) syncToGoogleCalendar('delete', { id, googleEventId } as any).catch(() => null);
 }
 
 async function syncToGoogleCalendar(action: 'upsert' | 'delete', appointment: Partial<Appointment> & { id: string }): Promise<void> {
