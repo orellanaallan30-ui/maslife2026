@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProfessionalProfile, Service } from '../types';
 import { useClinic } from '../ClinicContext';
 import { saveProfessional, getProfessionalBySlugOrId } from '../supabaseService';
+import { resizeImageDataUrl } from '../lib/imageResize';
 import { supabase } from '../supabaseClient';
 
 const Settings: React.FC = () => {
@@ -152,17 +153,19 @@ const Settings: React.FC = () => {
     if (!profile?.id) return;
     setIsDeleting(true);
     try {
-      await supabase.from('appointments').delete().eq('professional_id', profile.id);
-      await supabase.from('patients').delete().eq('professional_id', profile.id);
-      await supabase.from('transactions').delete().eq('professional_id', profile.id);
-      await supabase.from('professionals').delete().eq('id', profile.id);
+      // Un solo borrado atómico: appointments, patients, transactions, consentimientos,
+      // reseñas, secrets, firmas y soap tienen ON DELETE CASCADE hacia professionals,
+      // así que se eliminan en cascada. Antes eran 4 deletes secuenciales que podían
+      // dejar la cuenta a medias si uno fallaba.
+      const { error } = await supabase.from('professionals').delete().eq('id', profile.id);
+      if (error) throw error;
       await supabase.auth.signOut();
       navigate('/');
     } catch (err) {
       console.error('[deleteAccount]', err);
       setIsDeleting(false);
       setShowDeleteModal(false);
-      alert('Ocurrió un error. Escribe a soporte@maslife.cl para solicitar la eliminación manualmente.');
+      alert('No se pudo eliminar la cuenta (nada fue borrado). Intenta de nuevo o escribe a soporte@maslife.cl.');
     }
   };
 
@@ -292,20 +295,18 @@ const Settings: React.FC = () => {
   const handleServiceImageChange = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen es demasiado grande. Máximo 5 MB.');
+      if (file.size > 10 * 1024 * 1024) {
+        alert('La imagen es demasiado grande. Máximo 10 MB.');
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const result = ev.target?.result as string;
+      // Redimensionar+comprimir para no guardar la imagen cruda en la fila del pro.
+      resizeImageDataUrl(file, 600, 0.82).then(result => {
         if (isEdit && editingService) {
           setEditingService(prev => prev ? { ...prev, image: result } : null);
         } else {
           setNewService(prev => ({ ...prev, image: result }));
         }
-      };
-      reader.readAsDataURL(file);
+      }).catch(() => alert('No se pudo procesar la imagen. Prueba con otra.'));
     }
   };
 
@@ -337,26 +338,9 @@ const Settings: React.FC = () => {
         e.target.value = '';
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX = 300;
-          let w = img.width, h = img.height;
-          if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
-          else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext('2d')!;
-          ctx.fillStyle = '#ffffff'; // evita marco negro en PNG/HEIC con transparencia al convertir a JPEG
-          ctx.fillRect(0, 0, w, h);
-          ctx.drawImage(img, 0, 0, w, h);
-          handleUpdate({ avatar: canvas.toDataURL('image/jpeg', 0.85) });
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      resizeImageDataUrl(file, 300, 0.85)
+        .then(url => handleUpdate({ avatar: url }))
+        .catch(() => alert('No se pudo procesar la imagen. Prueba con otra.'));
     }
   };
 

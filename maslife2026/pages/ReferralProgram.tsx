@@ -58,12 +58,22 @@ const ReferralProgram: React.FC = () => {
       const namePrefix = (loggedPro.name || '')
         .normalize('NFD').replace(/[̀-ͯ]/g, '')
         .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4).padEnd(4, 'X');
-      const code = namePrefix + loggedPro.id.replace(/-/g, '').slice(0, 4).toUpperCase();
-      const { error } = await supabase
-        .from('professionals')
-        .update({ referral_code: code })
-        .eq('id', loggedPro.id);
-      if (!error) setLoggedPro({ ...loggedPro, referralCode: code });
+      const rand = () => Math.random().toString(36).slice(2, 6).toUpperCase();
+      // Reintenta ante colisión de código (índice único): primer intento
+      // determinista, luego con sufijo aleatorio. Avisa si no lo logra.
+      let saved = false;
+      for (let attempt = 0; attempt < 4 && !saved; attempt++) {
+        const code = attempt === 0
+          ? namePrefix + loggedPro.id.replace(/-/g, '').slice(0, 4).toUpperCase()
+          : namePrefix + rand();
+        const { error } = await supabase
+          .from('professionals')
+          .update({ referral_code: code })
+          .eq('id', loggedPro.id);
+        if (!error) { setLoggedPro({ ...loggedPro, referralCode: code }); saved = true; }
+        else if ((error as { code?: string }).code !== '23505') break; // error no de colisión → cortar
+      }
+      if (!saved) alert('No se pudo generar tu código ahora. Intenta de nuevo en un momento.');
     } finally {
       setIsGenerating(false);
     }

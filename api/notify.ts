@@ -166,7 +166,10 @@ function professionalNewBookingHtml(p: { professionalName: string; patientName: 
   });
 }
 
-function patientConfirmationHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; type: string }) {
+function patientConfirmationHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; type: string; price?: number }) {
+  const paidRow = p.price && p.price > 0
+    ? tableRow('Pagado', `$${Number(p.price).toLocaleString('es-CL')}`)
+    : '';
   return emailShell({
     kicker: 'Cita confirmada',
     title: '¡Tu cita está confirmada!',
@@ -181,6 +184,7 @@ function patientConfirmationHtml(p: { patientName: string; doctorName: string; s
           ${tableRow('Fecha', p.date)}
           ${tableRow('Hora', p.time)}
           ${tableRow('Modalidad', p.type || 'Presencial')}
+          ${paidRow}
         </table>
       </div>
       <p style="color:#64748b;font-size:13px;margin:0 0 6px;">Adjuntamos un archivo de calendario (.ics) para agregar la cita a Google Calendar, Apple Calendar u Outlook con un clic.</p>
@@ -642,7 +646,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else {
         sends.push(sendEmail(RESEND_API_KEY, FROM, patientEmail,
           `Tu cita ha sido confirmada – ${subjService}`,
-          patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type }),
+          patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type, price }),
           canInvite ? buildInvite(patientName, patientEmail) : undefined
         ));
       }
