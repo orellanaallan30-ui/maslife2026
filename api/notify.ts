@@ -272,24 +272,48 @@ function charlaBlastHtml(nombre: string, asunto: string, mensaje: string): strin
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CORS restringido al sitio (las llamadas legítimas son same-origin). Antes había
+  // un segundo header con '*' que lo pisaba y convertía este endpoint en un relay
+  // de correo abierto (phishing con la marca vía Resend).
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Reward referral: credit referrer $1,000 and give referred +30 days
+  // Rate-limit GLOBAL por IP, antes de CUALQUIER acción (antes solo cubría el flujo
+  // principal; rating-request/pro-welcome/reward-referral se lo saltaban). Frena el
+  // abuso del endpoint como relay de correo.
+  if (!checkRateLimit(req.headers, 20, 60 * 60 * 1000)) {
+    return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en una hora.' });
+  }
+
+  // Reward referral: acredita $1.000 al referidor, UNA sola vez por referido y solo
+  // si el referido realmente fue referido por ese referidor. Antes: sin validación
+  // ni idempotencia → cualquiera con 2 UUIDs inflaba el crédito en bucle.
   if (req.body?.action === 'reward-referral') {
     const { referrer_id, referred_id } = req.body || {};
     if (!referrer_id || !referred_id) {
       return res.status(400).json({ error: 'referrer_id y referred_id requeridos' });
     }
+    if (referrer_id === referred_id) return res.status(400).json({ error: 'Referido inválido' });
 
-    // Validate both IDs exist
+    const { data: referred } = await supabase.from('professionals')
+      .select('id, referred_by, referral_reward_claimed').eq('id', referred_id).single();
     const { data: referrer } = await supabase.from('professionals').select('id').eq('id', referrer_id).single();
-    const { data: referred } = await supabase.from('professionals').select('id').eq('id', referred_id).single();
     if (!referrer || !referred) return res.status(404).json({ error: 'Profesional no encontrado' });
+    // El referido debe declarar a ESTE referidor y no haber sido recompensado antes.
+    if ((referred as any).referred_by !== referrer_id) {
+      return res.status(403).json({ error: 'El referido no corresponde a este referidor' });
+    }
+    // Idempotencia atómica: marca claimed pasando de false→true; si 0 filas, ya se pagó.
+    const { data: claimedRows } = await supabase.from('professionals')
+      .update({ referral_reward_claimed: true })
+      .eq('id', referred_id).eq('referral_reward_claimed', false)
+      .select('id');
+    if (!claimedRows || claimedRows.length === 0) {
+      return res.status(200).json({ rewarded: false, reason: 'ya recompensado' });
+    }
 
     // Recompensa SOLO al referidor: $1.000 de descuento en su próxima facturación.
     // El referido nuevo recibe únicamente los 30 días de prueba estándar
@@ -568,10 +592,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('[client-error] cuerpo no parseable');
     }
     return res.status(200).json({ logged: true });
-  }
-
-  if (!checkRateLimit(req.headers, 20, 60 * 60 * 1000)) {
-    return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en una hora.' });
   }
 
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
