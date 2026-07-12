@@ -134,8 +134,25 @@ export const ConsentSendPanel: React.FC<{
 }> = ({ patient, loggedPro, existingConsent, onSent }) => {
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [revokedLocal, setRevokedLocal] = useState(false);
 
   const consentText = CONSENT_TEMPLATES[loggedPro.specialty] || DEFAULT_TEMPLATE;
+
+  // Retiro del consentimiento (Ley 21.719: el titular puede retirarlo en cualquier
+  // momento). Lo registra el profesional a solicitud del paciente. La lectura de
+  // consentimiento solo cuenta 'ACCEPTED', así que REVOKED reactiva el aviso.
+  const handleRevoke = async () => {
+    if (!existingConsent?.id) return;
+    if (!window.confirm('¿Registrar el retiro del consentimiento de este paciente? La ficha volverá a marcar "sin consentimiento".')) return;
+    const { error } = await supabase.from('informed_consents')
+      .update({ status: 'REVOKED' }).eq('id', existingConsent.id);
+    if (error) { alert('No se pudo registrar el retiro. Intenta de nuevo.'); return; }
+    void auditService.log({
+      userId: loggedPro.id, userName: loggedPro.name,
+      action: 'CONSENT_REVOKE', resourceId: existingConsent.id, resourceType: 'consent',
+    });
+    setRevokedLocal(true);
+  };
 
   const handleSend = async () => {
     setIsSending(true);
@@ -187,17 +204,35 @@ export const ConsentSendPanel: React.FC<{
     }
   };
 
+  if (revokedLocal || existingConsent?.status === 'REVOKED') {
+    return (
+      <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-4 flex items-center gap-3">
+        <span className="material-icons-round text-slate-400 text-2xl">block</span>
+        <div>
+          <p className="font-black text-slate-700">Consentimiento retirado</p>
+          <p className="text-xs text-slate-500">El paciente retiró su consentimiento. Puedes enviar uno nuevo si lo requiere.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (existingConsent?.status === 'ACCEPTED') {
     return (
-      <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
-        <span className="material-icons-round text-emerald-500 text-2xl">task_alt</span>
-        <div>
-          <p className="font-black text-emerald-800">Consentimiento Aceptado</p>
-          <p className="text-xs text-emerald-600">
-            {new Date(existingConsent.acceptedAt!).toLocaleString('es-CL')}
-            {existingConsent.ipAddress && ` · IP: ${existingConsent.ipAddress}`}
-          </p>
+      <div className="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-4 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <span className="material-icons-round text-emerald-500 text-2xl">task_alt</span>
+          <div>
+            <p className="font-black text-emerald-800">Consentimiento Aceptado</p>
+            <p className="text-xs text-emerald-600">
+              {new Date(existingConsent.acceptedAt!).toLocaleString('es-CL')}
+              {existingConsent.ipAddress && ` · IP: ${existingConsent.ipAddress}`}
+            </p>
+          </div>
         </div>
+        <button onClick={handleRevoke}
+          className="text-[11px] font-bold text-slate-400 hover:text-rose-500 underline transition-colors">
+          Registrar retiro
+        </button>
       </div>
     );
   }

@@ -62,6 +62,7 @@ export type AuditAction =
   | 'SOAP_EXPORT_PDF'
   | 'CONSENT_SEND'
   | 'CONSENT_ACCEPT'
+  | 'CONSENT_REVOKE'
   | 'PATIENT_CREATE'
   | 'PATIENT_UPDATE'
   | 'PATIENT_VIEW'
@@ -93,7 +94,7 @@ export interface ProfessionalSignature {
 
 // ── CONSENTIMIENTO INFORMADO ─────────────────────────────────
 
-export type ConsentStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+export type ConsentStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'REVOKED';
 
 export interface InformedConsent {
   id: string;
