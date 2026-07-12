@@ -502,8 +502,16 @@ const Settings: React.FC = () => {
                         const updated = { ...localProfile, isPublic: newIsPublic };
                         setLocalProfile(updated);
                         onSave(updated);
-                        setShowSavedMsg(true);
-                        setTimeout(() => setShowSavedMsg(false), 2000);
+                        // Persistir en la BD: si no, tras recargar el perfil vuelve a
+                        // ser público (problema de privacidad).
+                        saveProfessional(updated).then(() => {
+                          setShowSavedMsg(true);
+                          setTimeout(() => setShowSavedMsg(false), 2000);
+                        }).catch(err => {
+                          setLocalProfile(localProfile); // revertir el switch visualmente
+                          onSave(localProfile);
+                          addNotification(`⚠️ No se pudo cambiar la visibilidad del perfil en el servidor. Intenta de nuevo. (${err?.message || 'error'})`, 'appointment');
+                        });
                       }}
                       className={`w-14 h-8 rounded-full relative transition-all shrink-0 ${localProfile.isPublic !== false ? 'bg-teal-500' : 'bg-slate-300'}`}
                     >

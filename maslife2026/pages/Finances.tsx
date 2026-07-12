@@ -28,8 +28,9 @@ const Finances: React.FC = () => {
   const onAddTransaction = (t: Transaction) => addManualTransaction(t);
   const onDeleteTransaction = (id: string) => deleteManualTransaction(id);
   const onReset = async () => {
-    // Delete each appointment and manual transaction from Supabase so they don't come back on refresh
-    appointments.forEach(a => deleteAppointment(a.id));
+    // Reinicia SOLO los ingresos/gastos manuales digitados aquí. NUNCA toca las
+    // citas: son la agenda clínica (borrarlas dejaba a pacientes sin cita y liberaba
+    // horarios para doble reserva). Las citas se gestionan desde la Agenda.
     manualTransactions.forEach(t => deleteManualTransaction(t.id));
   };
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
@@ -451,14 +452,14 @@ const Finances: React.FC = () => {
               <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <span className="material-icons-round text-3xl">warning</span>
               </div>
-              <h3 className="text-xl font-black text-slate-900 text-center mb-2">¿Reiniciar Historial Clínico?</h3>
-              <p className="text-slate-500 text-sm text-center mb-10 leading-relaxed font-medium">Esta acción eliminará todas las citas registradas y los ingresos/gastos manuales digitados. No se puede deshacer.</p>
+              <h3 className="text-xl font-black text-slate-900 text-center mb-2">¿Reiniciar ingresos y gastos manuales?</h3>
+              <p className="text-slate-500 text-sm text-center mb-10 leading-relaxed font-medium">Se eliminarán solo los ingresos y gastos que digitaste manualmente en Finanzas. <strong>Tus citas y tu agenda NO se tocan.</strong> Esta acción no se puede deshacer.</p>
               <div className="flex gap-4">
                 <button onClick={() => setShowConfirmReset(false)} className="flex-1 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Cancelar</button>
                 <button
                   onClick={() => { onReset(); setShowConfirmReset(false); }}
                   className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-rose-600/20 transition-all hover:bg-rose-700"
-                >REINICIAR TODO</button>
+                >REINICIAR</button>
               </div>
             </div>
           </div>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile } from '../types';
+import { updatePassword, saveProfessional } from '../supabaseService';
 
 interface PasswordSetupProps {
   profile: ProfessionalProfile;
@@ -13,10 +14,13 @@ const PasswordSetup: React.FC<PasswordSetupProps> = ({ profile, onComplete }) =>
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setError('');
     if (newPassword.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres.');
       return;
@@ -26,19 +30,35 @@ const PasswordSetup: React.FC<PasswordSetupProps> = ({ profile, onComplete }) =>
       return;
     }
 
+    setIsSaving(true);
+    // 1) Cambiar la contraseña REAL en Supabase Auth (antes solo se guardaba en
+    //    estado local → la nueva clave nunca funcionaba y el login quedaba en loop).
+    const { error: pwErr } = await updatePassword(newPassword);
+    if (pwErr) {
+      setError(pwErr + ' Vuelve a iniciar sesión e inténtalo de nuevo.');
+      setIsSaving(false);
+      return;
+    }
+
+    // 2) Limpiar needs_password_reset en la BD para no volver a caer aquí.
     const updatedProfile: ProfessionalProfile = {
       ...profile,
-      password: newPassword,
       tempCode: undefined,
       needsPasswordReset: false,
-      isVerified: true
+      isVerified: true,
     };
+    try {
+      await saveProfessional(updatedProfile);
+    } catch {
+      // La clave YA se cambió; si el flag no se limpia, se reintenta el próximo login.
+      // No bloqueamos el acceso por esto.
+    }
 
     setIsSuccess(true);
     setTimeout(() => {
       onComplete(updatedProfile);
       navigate('/pro/dashboard');
-    }, 2500);
+    }, 2000);
   };
 
   return (
@@ -95,7 +115,7 @@ const PasswordSetup: React.FC<PasswordSetupProps> = ({ profile, onComplete }) =>
 
               {error && <p className="text-rose-500 text-xs font-black text-center uppercase tracking-widest">{error}</p>}
 
-              <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all active:scale-95">ESTABLECER Y ENTRAR</button>
+              <button type="submit" disabled={isSaving} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-60">{isSaving ? 'GUARDANDO…' : 'ESTABLECER Y ENTRAR'}</button>
             </form>
           ) : (
             <div className="text-center py-12 animate-in zoom-in-95 duration-700">

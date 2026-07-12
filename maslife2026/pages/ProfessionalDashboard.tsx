@@ -8,13 +8,16 @@ import { supabase } from '../supabaseClient';
 const ProfessionalDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { appointments, manualTransactions, loggedPro } = useClinic();
-
-  if (!loggedPro) return <Navigate to="/pro/login" />;
+  // Nota: NO retornar temprano aquí. Todos los hooks deben ejecutarse siempre
+  // (si la sesión expira, loggedPro pasa a null en un re-render; un return antes
+  // de los hooks rompería las reglas de Hooks → pantalla en blanco). El guard va
+  // DESPUÉS de todos los hooks, justo antes del render.
 
   // Verificar estado de suscripción desde el servidor (no confiar solo en localStorage)
   const [serverSubStatus, setServerSubStatus] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!loggedPro) return;
     void Promise.resolve(
       supabase
         .from('professionals')
@@ -28,10 +31,10 @@ const ProfessionalDashboard: React.FC = () => {
       // Sin conexión: usar estado local como fallback
       setServerSubStatus(loggedPro.subscriptionStatus);
     });
-  }, [loggedPro.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // El estado del servidor tiene precedencia; fallback al local mientras carga
-  const isPaused = (serverSubStatus ?? loggedPro.subscriptionStatus) === 'paused';
+  const isPaused = (serverSubStatus ?? loggedPro?.subscriptionStatus) === 'paused';
 
   const [linkCopied, setLinkCopied] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -44,14 +47,15 @@ const ProfessionalDashboard: React.FC = () => {
   // Bienvenida (solo primer ingreso, por profesional)
   const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => {
+    if (!loggedPro) return;
     if (!localStorage.getItem(`maslife_welcome_seen_${loggedPro.id}`)) setShowWelcome(true);
-  }, [loggedPro.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const dismissWelcome = () => {
-    localStorage.setItem(`maslife_welcome_seen_${loggedPro.id}`, '1');
+    if (loggedPro) localStorage.setItem(`maslife_welcome_seen_${loggedPro.id}`, '1');
     setShowWelcome(false);
   };
 
-  const bookingLink = `${window.location.origin}/p/${loggedPro.slug || loggedPro.id}`;
+  const bookingLink = `${window.location.origin}/p/${loggedPro?.slug || loggedPro?.id || ''}`;
 
   const handleCopyBookingLink = useCallback(() => {
     navigator.clipboard.writeText(bookingLink).then(() => {
@@ -71,11 +75,14 @@ const ProfessionalDashboard: React.FC = () => {
 
   const handleShareBookingLink = useCallback(() => {
     if (navigator.share) {
-      navigator.share({ title: `Agenda con ${loggedPro.name}`, text: '¡Agenda tu hora conmigo!', url: bookingLink });
+      navigator.share({ title: `Agenda con ${loggedPro?.name || ''}`, text: '¡Agenda tu hora conmigo!', url: bookingLink });
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(`¡Hola! Puedes agendar una cita conmigo directamente aquí: ${bookingLink}`)}`, '_blank');
     }
-  }, [bookingLink, loggedPro.name]);
+  }, [bookingLink, loggedPro?.name]);
+
+  // Guard tras TODOS los hooks: si la sesión expiró, redirigir limpio al login.
+  if (!loggedPro) return <Navigate to="/pro/login" />;
 
   const profileComplete = !!(loggedPro.slug && loggedPro.specialty && loggedPro.services?.length > 0);
   const MP_SUBSCRIPTION_LINK = import.meta.env.VITE_GLOBAL_SUBSCRIPTION_LINK || "https://www.mercadopago.cl/subscriptions/checkout?preapproval_plan_id=e7c9a9a7adc24dee8c1f7fb78bdbdc67";

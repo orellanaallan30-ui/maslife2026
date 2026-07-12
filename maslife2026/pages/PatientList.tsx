@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Patient } from '../types';
 import { useClinic } from '../ClinicContext';
-import { softDeletePatient } from '../supabaseService';
+import { softDeletePatient, restorePatient, deletePatient } from '../supabaseService';
 
 type ViewMode = 'activos' | 'archivados' | 'fichas';
 
@@ -13,7 +13,13 @@ function daysUntilPermanentDeletion(deletedAt: string): number {
 
 const PatientList: React.FC = () => {
   const navigate = useNavigate();
-  const { patients, setPatients: setContextPatients, loggedPro, logout, addPatient } = useClinic();
+  const { patients, setPatients: setContextPatients, loggedPro, logout, addPatient, updatePatient, addNotification } = useClinic();
+
+  // Cambia el estado clínico del paciente Y lo persiste (antes solo mutaba estado
+  // local → revertía al recargar). updatePatient ya notifica si el guardado falla.
+  const changePatientStatus = (p: Patient, newStatus: string) => {
+    updatePatient({ ...p, status: newStatus as Patient['status'] });
+  };
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,7 +68,9 @@ const PatientList: React.FC = () => {
 
     const patientToAdd: Patient = {
       ...newPatient,
-      id: Math.random().toString(36).substr(2, 9),
+      // patients.id es UUID en la BD: un id aleatorio base36 la rechaza (22P02) y
+      // el paciente quedaría solo en local. Usar UUID válido.
+      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
       age: 0,
       gender: 'No especificado',
       archived: false,
@@ -84,19 +92,32 @@ const PatientList: React.FC = () => {
     try {
       await softDeletePatient(id);
       setContextPatients(prev => prev.map(p => p.id === id ? { ...p, deletedAt: now } : p));
-    } catch {
-      // silent — local state still shows deletion pending
-      setContextPatients(prev => prev.map(p => p.id === id ? { ...p, deletedAt: now } : p));
+    } catch (err) {
+      // No mutar el estado local si el servidor no lo aceptó: evita mostrar como
+      // eliminado algo que sigue vivo en la BD.
+      addNotification(`⚠️ No se pudo archivar la ficha en el servidor. Intenta de nuevo. (${(err as Error)?.message || 'error'})`, 'appointment');
     }
     setDeleteConfirm(null);
   };
 
   const handleRestorePatient = async (id: string) => {
     try {
-      const { supabase } = await import('../supabaseClient');
-      await supabase.from('patients').update({ deleted_at: null }).eq('id', id);
-    } catch { /* ignore */ }
-    setContextPatients(prev => prev.map(p => p.id === id ? { ...p, deletedAt: undefined } : p));
+      await restorePatient(id);
+      setContextPatients(prev => prev.map(p => p.id === id ? { ...p, deletedAt: undefined } : p));
+    } catch (err) {
+      addNotification(`⚠️ No se pudo restaurar la ficha en el servidor. Intenta de nuevo. (${(err as Error)?.message || 'error'})`, 'appointment');
+    }
+  };
+
+  // Borrado permanente REAL (vista Activos): elimina la fila en Supabase, no solo local.
+  const handleHardDelete = async (id: string) => {
+    try {
+      await deletePatient(id);
+      setContextPatients(prev => prev.filter(pat => pat.id !== id));
+    } catch (err) {
+      addNotification(`⚠️ El paciente NO se eliminó en el servidor: seguirá apareciendo. Intenta de nuevo. (${(err as Error)?.message || 'error'})`, 'appointment');
+    }
+    setDeleteConfirm(null);
   };
 
   const deletingPatient = patients.find(p => p.id === deleteConfirm);
@@ -356,10 +377,7 @@ const PatientList: React.FC = () => {
                           <td className="px-6 py-4 text-center">
                             <select
                               value={p.status || 'Evaluación'}
-                              onChange={(e) => {
-                                const newStatus = e.target.value;
-                                setContextPatients(prev => prev.map(pat => pat.id === p.id ? { ...pat, status: newStatus } : pat));
-                              }}
+                              onChange={(e) => changePatientStatus(p, e.target.value)}
                               className={`text-[10px] font-bold uppercase tracking-wider border-none px-3 py-2 rounded-lg cursor-pointer transition-colors outline-none ${
                                 p.status === 'De alta' ? 'bg-emerald-50 text-emerald-600' :
                                 p.status === 'En sesiones' ? 'bg-blue-50 text-blue-600' :
@@ -432,10 +450,7 @@ const PatientList: React.FC = () => {
                       </div>
                       <select
                         value={p.status || 'Evaluación'}
-                        onChange={(e) => {
-                          const newStatus = e.target.value;
-                          setContextPatients(prev => prev.map(pat => pat.id === p.id ? { ...pat, status: newStatus } : pat));
-                        }}
+                        onChange={(e) => changePatientStatus(p, e.target.value)}
                         className={`text-[9px] font-bold uppercase tracking-wider border-none px-2.5 py-1.5 rounded-lg cursor-pointer outline-none shrink-0 ${
                           p.status === 'De alta' ? 'bg-emerald-50 text-emerald-600' :
                           p.status === 'En sesiones' ? 'bg-blue-50 text-blue-600' :
@@ -537,8 +552,7 @@ const PatientList: React.FC = () => {
                     if (viewMode === 'fichas') {
                       handleSoftDelete(deleteConfirm);
                     } else {
-                      setContextPatients(prev => prev.filter(pat => pat.id !== deleteConfirm));
-                      setDeleteConfirm(null);
+                      handleHardDelete(deleteConfirm);
                     }
                   }}
                   className="flex-1 py-3 bg-rose-500 text-white rounded-xl font-bold text-sm hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20"
