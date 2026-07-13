@@ -5,7 +5,9 @@ import { useParams } from 'react-router-dom';
 import { ConsentAcceptPage as ConsentAcceptPageComponent } from '../components/ConsentFlow';
 
 const ConsentAcceptPage: React.FC = () => {
-  const { consentId } = useParams<{ consentId: string }>();
+  // La ruta define el parámetro como :id (App.tsx). Antes se leía 'consentId',
+  // que siempre era undefined → "ID no especificado" para TODOS los enlaces.
+  const { id: consentId } = useParams<{ id: string }>();
   if (!consentId) return (
     <div className="min-h-screen flex items-center justify-center">
       <p className="text-slate-500">ID de consentimiento no especificado</p>
