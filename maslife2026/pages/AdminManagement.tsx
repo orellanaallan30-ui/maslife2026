@@ -92,10 +92,22 @@ const AdminManagement: React.FC = () => {
 
   useEffect(() => {
     if (!isAdmin) return;
+    // Cargas con aviso si fallan (antes catch vacío → pestaña vacía indistinguible
+    // de "sin datos"; si el token expiró, ahora el admin se entera).
+    const loadTab = async (action: string, apply: (j: any) => void) => {
+      try {
+        const r = await adminFetch('GET', undefined, action);
+        const j = await r.json();
+        if (!r.ok || j.error) throw new Error(j.error || 'Error');
+        apply(j);
+      } catch {
+        showToast('❌ No se pudieron cargar los datos (¿sesión de admin expirada?).');
+      }
+    };
     if (activeTab === 'charlas') loadCharlas();
-    if (activeTab === 'finance') adminFetch('GET', undefined, 'finance').then(r => r.json()).then(setFinance).catch(() => {});
-    if (activeTab === 'health')  adminFetch('GET', undefined, 'health').then(r => r.json()).then(setHealth).catch(() => {});
-    if (activeTab === 'support') adminFetch('GET', undefined, 'feedback').then(r => r.json()).then(j => setFeedbackList(j.data || [])).catch(() => {});
+    if (activeTab === 'finance') loadTab('finance', setFinance);
+    if (activeTab === 'health')  loadTab('health', setHealth);
+    if (activeTab === 'support') loadTab('feedback', j => setFeedbackList(j.data || []));
   }, [isAdmin, activeTab]);
 
   // Precargar soporte y salud para los contadores de las pestañas
@@ -235,6 +247,8 @@ const AdminManagement: React.FC = () => {
         ? { ...p, subscriptionStatus: next, isSubscribed: isActive, isPublic: !isPausedNext } : p));
       const label = isActive ? '✅ Activo' : isPausedNext ? '⏸️ Pausado' : '⏳ Trial';
       showToast(`${pro.name} → ${label}`);
+    } else {
+      showToast('❌ No se pudo cambiar la suscripción. Intenta de nuevo.');
     }
   };
 
@@ -257,6 +271,8 @@ const AdminManagement: React.FC = () => {
         ? { ...p, subscriptionLink: subLinkModal!.link.trim() } : p));
       showToast(`Link de pago actualizado: ${subLinkModal.pro.name}`);
       setSubLinkModal(null);
+    } else {
+      showToast('❌ No se pudo guardar el link de pago. Intenta de nuevo.');
     }
   };
 
@@ -277,6 +293,8 @@ const AdminManagement: React.FC = () => {
       setAllPros(prev => prev.map(p => p.id === giftModal!.pro.id ? updated : p));
       showToast(`🎁 ${giftModal.pro.name} → +${days} días (hasta ${new Date(newDate + 'T12:00:00').toLocaleDateString('es-CL')})`);
       setGiftModal(null);
+    } else {
+      showToast('❌ No se pudieron regalar los días. Intenta de nuevo.');
     }
   };
 
@@ -298,15 +316,24 @@ const AdminManagement: React.FC = () => {
   // ── Charlas handlers ──
   const loadCharlas = async () => {
     setCharlasLoading(true);
-    const { data: charlas } = await supabase.from('charlas').select('*').order('fecha', { ascending: true });
-    const { data: counts } = await supabase
-      .from('charla_registrations')
-      .select('charla_id')
-      .not('charla_id', 'is', null);
-    const countMap: Record<string, number> = {};
-    (counts || []).forEach((r: { charla_id: string }) => { countMap[r.charla_id] = (countMap[r.charla_id] || 0) + 1; });
-    setCharlasList((charlas || []).map((c: AdminCharla) => ({ ...c, _count: countMap[c.id] || 0 })));
-    setCharlasLoading(false);
+    // Vía el endpoint admin (service role, token verificado). Antes iba por el
+    // cliente del navegador, que la RLS bloqueaba → las charlas no cargaban/guardaban.
+    try {
+      const [cRes, rRes] = await Promise.all([
+        adminFetch('GET', undefined, 'charlas'),
+        adminFetch('GET', undefined, 'charla-regs'),
+      ]);
+      const cJson = await cRes.json();
+      const rJson = await rRes.json().catch(() => ({ data: [] }));
+      if (!cRes.ok || cJson.error) throw new Error(cJson.error || 'Error');
+      const countMap: Record<string, number> = {};
+      (rJson.data || []).forEach((r: { charla_id: string }) => { if (r.charla_id) countMap[r.charla_id] = (countMap[r.charla_id] || 0) + 1; });
+      setCharlasList((cJson.data || []).map((c: AdminCharla) => ({ ...c, _count: countMap[c.id] || 0 })));
+    } catch {
+      showToast('❌ No se pudieron cargar las charlas (revisa tu sesión de admin).');
+    } finally {
+      setCharlasLoading(false);
+    }
   };
 
   const openCharlaForm = (c?: AdminCharla) => {
@@ -326,7 +353,7 @@ const AdminManagement: React.FC = () => {
   const handleSaveCharla = async () => {
     if (!charlaFormData.titulo.trim() || !charlaFormData.fecha || !charlaFormData.hora) return;
     setCharlasSaving(true);
-    const payload = {
+    const payload: Record<string, unknown> = {
       titulo: charlaFormData.titulo.trim(),
       descripcion: charlaFormData.descripcion.trim() || null,
       fecha: charlaFormData.fecha,
@@ -336,42 +363,42 @@ const AdminManagement: React.FC = () => {
       meet_link: charlaFormData.meet_link.trim() || null,
       es_activa: charlaFormData.es_activa,
     };
-    if (editingCharla) {
-      await supabase.from('charlas').update(payload).eq('id', editingCharla.id);
-    } else {
-      await supabase.from('charlas').insert(payload);
-    }
+    if (editingCharla) payload.id = editingCharla.id;
+    // Guardado por el endpoint admin: ahora SÍ verifica el error (antes fingía éxito
+    // aunque la RLS rechazara → la charla nunca se guardaba y "desaparecía").
+    const res = await adminFetch('PATCH', payload, 'charla');
+    const json = await res.json().catch(() => ({}));
     setCharlasSaving(false);
+    if (!res.ok || json.error) { showToast(`❌ No se pudo guardar la charla: ${json.error || 'error'}`); return; }
     setShowCharlaForm(false);
     loadCharlas();
     showToast(editingCharla ? '✅ Charla actualizada' : '✅ Charla creada');
   };
 
   const handleToggleCharla = async (c: AdminCharla) => {
-    await supabase.from('charlas').update({ es_activa: !c.es_activa }).eq('id', c.id);
-    setCharlasList(prev => prev.map(x => x.id === c.id ? { ...x, es_activa: !c.es_activa } : x));
-    showToast(`${!c.es_activa ? '✅ Charla activada' : '⏸️ Charla ocultada'}`);
+    const next = !c.es_activa;
+    const res = await adminFetch('PATCH', { id: c.id, es_activa: next }, 'charla');
+    if (!res.ok) { showToast('❌ No se pudo cambiar el estado de la charla.'); return; }
+    setCharlasList(prev => prev.map(x => x.id === c.id ? { ...x, es_activa: next } : x));
+    showToast(next ? '✅ Charla activada' : '⏸️ Charla ocultada');
   };
 
   const loadRegs = async (c: AdminCharla) => {
     setRegsLoading(true);
-    const { data } = await supabase
-      .from('charla_registrations')
-      .select('*')
-      .eq('charla_id', c.id)
-      .order('created_at', { ascending: false });
-    setSelectedCharlaRegs({ charla: c, regs: (data || []) as AdminReg[] });
+    const res = await adminFetch('GET', undefined, `charla-regs&charlaId=${c.id}`);
+    const json = await res.json().catch(() => ({ data: [] }));
+    setSelectedCharlaRegs({ charla: c, regs: (json.data || []) as AdminReg[] });
     setRegsLoading(false);
   };
 
   const openBlastModal = async (charla: AdminCharla | null) => {
-    // Count recipients
-    let query = supabase.from('charla_registrations').select('id', { count: 'exact', head: true });
-    if (charla) query = query.eq('charla_id', charla.id);
-    const { count } = await query;
+    // Cuenta destinatarios por el MISMO backend que hace el envío (service role),
+    // para no mostrar 0 y bloquear el botón cuando la RLS ocultaba los inscritos.
+    const res = await adminFetch('GET', undefined, charla ? `charla-regs&charlaId=${charla.id}` : 'charla-regs');
+    const json = await res.json().catch(() => ({ count: 0 }));
     setBlastForm({ asunto: charla ? `Recordatorio: ${charla.titulo}` : 'Mensaje de Clínica Mas Life', mensaje: '' });
     setBlastResult(null);
-    setBlastModal({ charla, totalRegs: count || 0 });
+    setBlastModal({ charla, totalRegs: json.count || 0 });
   };
 
   const handleSendBlast = async () => {

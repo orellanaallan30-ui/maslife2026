@@ -260,6 +260,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true });
   }
 
+  // ── Charlas: CRUD desde el panel admin (antes iba por el cliente del navegador,
+  //    que la RLS rechazaba en silencio → las charlas nunca se guardaban). ──
+  if (req.method === 'GET' && req.query.action === 'charlas') {
+    const { data, error } = await supabase.from('charlas').select('*').order('fecha', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ data: data || [] });
+  }
+  if (req.method === 'GET' && req.query.action === 'charla-regs') {
+    const charlaId = req.query.charlaId as string | undefined;
+    let q = supabase.from('charla_registrations').select('*').order('created_at', { ascending: false });
+    if (charlaId) q = q.eq('charla_id', charlaId);
+    const { data, error } = await q;
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ data: data || [], count: (data || []).length });
+  }
+  if (req.method === 'PATCH' && req.query.action === 'charla') {
+    const { id, ...fields } = req.body || {};
+    const allowed = ['titulo', 'descripcion', 'fecha', 'hora', 'duracion_min', 'ponente', 'meet_link', 'es_activa'];
+    const payload: Record<string, unknown> = {};
+    for (const k of allowed) if (k in (fields || {})) payload[k] = (fields as Record<string, unknown>)[k];
+    if (id) {
+      const { error } = await supabase.from('charlas').update(payload).eq('id', id);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ success: true, id });
+    }
+    const { data, error } = await supabase.from('charlas').insert(payload).select('id').single();
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true, id: data?.id });
+  }
+  if (req.method === 'DELETE' && req.query.action === 'charla') {
+    const { id } = req.body || {};
+    if (!id || typeof id !== 'string') return res.status(400).json({ error: 'Missing id' });
+    const { error } = await supabase.from('charlas').delete().eq('id', id);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true });
+  }
+
   if (req.method === 'PATCH') {
     const { id, ...fields } = req.body || {};
     if (!id || typeof id !== 'string') return res.status(400).json({ error: 'Missing id' });
