@@ -21,6 +21,7 @@ interface jsPDFInstance {
   line(x1: number, y1: number, x2: number, y2: number): void;
   text(text: string | string[], x: number, y: number, opts?: object): void;
   splitTextToSize(text: string, maxWidth: number): string[];
+  getTextWidth(text: string): number;
   save(filename: string): string;
   output(type: string): string;
   getNumberOfPages(): number;
@@ -425,6 +426,31 @@ function drawSectionHeader(doc: jsPDFInstance, label: string, margin: number, y:
   return y + h + 3;
 }
 
+// Casilla de selección DIBUJADA (jsPDF core no soporta ☑/☐ Unicode). Cuadro con
+// borde; si está marcada, relleno teal claro + check en dos trazos. Devuelve el
+// ancho total ocupado (casilla + etiqueta) para distribuir en columnas.
+function drawCheckbox(doc: jsPDFInstance, x: number, y: number, checked: boolean, label: string): number {
+  const s = 3.2; // lado de la casilla
+  const top = y - s + 0.6;
+  doc.setDrawColor(148, 163, 184);
+  doc.setLineWidth(0.3);
+  if (checked) {
+    doc.setFillColor(209, 250, 245);
+    doc.rect(x, top, s, s, 'FD');
+    doc.setDrawColor(0, 150, 136);
+    doc.setLineWidth(0.5);
+    doc.line(x + 0.7, top + s / 2, x + s * 0.42, top + s - 0.6);
+    doc.line(x + s * 0.42, top + s - 0.6, x + s - 0.5, top + 0.6);
+  } else {
+    doc.rect(x, top, s, s, 'D');
+  }
+  doc.setFont('helvetica', checked ? 'bold' : 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(checked ? 30 : 100, checked ? 41 : 116, checked ? 59 : 139);
+  doc.text(String(label), x + s + 2, y);
+  return s + 3 + doc.getTextWidth(String(label)) + 4;
+}
+
 // Campo etiqueta:valor. Ancho de etiqueta configurable; el valor se ajusta si es largo.
 function drawField(doc: jsPDFInstance, label: string, value: string, x: number, y: number, labelW = 32): void {
   doc.setFont('helvetica', 'bold');
@@ -563,47 +589,33 @@ export async function exportPatientFichaToPDF(
   }
   y += 2;
 
-  // Signos Vitales
-  if (y + 25 > 265) { doc.addPage(); y = MARGIN; }
-  y = drawSectionHeader(doc, 'SIGNOS VITALES', MARGIN, y, COL);
-  const vitCols = COL / 5;
-  const fmtVit = (v?: number) => (v && v !== 0) ? String(v) : '—';
-  const vitalsRows: [string, string][][] = [
-    [
-      ['FC (LPM)', fmtVit(vitals.heartRate)],
-      ['PA SIS', fmtVit(vitals.systolic)],
-      ['PA DIA', fmtVit(vitals.diastolic)],
-      ['SAT O2 %', fmtVit(vitals.oxygenSaturation)],
-      ['TEMP °C', fmtVit(vitals.temperature)],
-    ],
-    [
-      ['FR (RPM)', fmtVit(vitals.respiratoryRate)],
-      ['PESO KG', fmtVit(vitals.weight)],
-      ['TALLA CM', fmtVit(vitals.height)],
-      ['IMC', fmtVit(vitals.bmi)],
-      ['GLUCOSA', fmtVit(vitals.glucose)],
-    ],
-  ];
-  for (const row of vitalsRows) {
-    // Fila solo si tiene algún dato (la primera siempre se muestra como referencia)
-    const hasData = row.some(([, v]) => v !== '—');
-    if (row === vitalsRows[1] && !hasData) break;
+  // Signos Vitales — fila densa de texto (compacta), solo los registrados.
+  const vit: string[] = [];
+  const add = (v: number | undefined, fn: (n: number) => string) => { if (v && v !== 0) vit.push(fn(v)); };
+  add(vitals.heartRate, n => `FC ${n} lpm`);
+  if ((vitals.systolic && vitals.systolic !== 0) || (vitals.diastolic && vitals.diastolic !== 0))
+    vit.push(`PA ${vitals.systolic || '—'}/${vitals.diastolic || '—'} mmHg`);
+  add(vitals.oxygenSaturation, n => `SatO2 ${n}%`);
+  add(vitals.temperature, n => `T° ${n}°C`);
+  add(vitals.respiratoryRate, n => `FR ${n} rpm`);
+  add(vitals.weight, n => `Peso ${n} kg`);
+  add(vitals.height, n => `Talla ${n} cm`);
+  add(vitals.bmi, n => `IMC ${n}`);
+  add(vitals.glucose, n => `Glucosa ${n} mg/dL`);
+  if (vit.length) {
+    if (y + 18 > 265) { doc.addPage(); y = MARGIN; }
+    y = drawSectionHeader(doc, 'SIGNOS VITALES', MARGIN, y, COL);
+    const vLines: string[] = doc.splitTextToSize(vit.join('   ·   '), COL - 8);
+    const boxH = vLines.length * 5 + 3.5;
     doc.setFillColor(248, 250, 252);
-    doc.rect(MARGIN, y, COL, 16, 'F');
-    row.forEach(([label, val], i) => {
-      const cx = MARGIN + i * vitCols + vitCols / 2;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(100, 116, 139);
-      doc.text(label, cx, y + 5, { align: 'center' });
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.setTextColor(0, 168, 158);
-      doc.text(val, cx, y + 13, { align: 'center' });
-    });
-    y += 18;
+    doc.rect(MARGIN, y - 1, COL, boxH, 'F');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    let vy = y + 3.5;
+    for (const ln of vLines) { doc.text(ln, MARGIN + 4, vy); vy += 5; }
+    y += boxH + 2;
   }
-  y += 2;
 
   // SOAP
   const soapHasContent = Object.values(soap).some(v => v?.trim());
@@ -822,21 +834,34 @@ export async function exportPatientFichaToPDF(
     y += 3;
   }
 
-  // ── Antecedentes mórbidos / quirúrgicos (checkeados) ──
+  // ── Antecedentes como casillas de selección (☑/☐), estilo formulario clínico ──
   const morbidosPdf = ((specialtyData as Record<string, any>)?.morbidos as Array<{ label: string; checked: boolean }>) || [];
   const quirurgicosPdf = ((specialtyData as Record<string, any>)?.quirurgicos as Array<{ label: string; checked: boolean }>) || [];
-  const morbChecked = morbidosPdf.filter(a => a.checked).map(a => a.label);
-  const quirChecked = quirurgicosPdf.filter(a => a.checked).map(a => a.label);
-  if (morbChecked.length || quirChecked.length) {
-    if (y + 18 > 265) { doc.addPage(); y = MARGIN; }
-    y = drawSectionHeader(doc, 'ANTECEDENTES', MARGIN, y, COL);
-    if (morbChecked.length) {
-      drawField(doc, 'Mórbidos', morbChecked.join(', '), MARGIN + 2, y);
-      y += 5.5;
+  const drawChecklist = (items: Array<{ label: string; checked: boolean }>) => {
+    const colW = COL / 3;               // 3 columnas
+    let col = 0;
+    for (const it of items) {
+      if (!it.label?.trim()) continue;
+      if (col === 0 && y + 6 > 265) { doc.addPage(); y = MARGIN; }
+      drawCheckbox(doc, MARGIN + 4 + col * colW, y, !!it.checked, it.label);
+      col++;
+      if (col === 3) { col = 0; y += 6; }
     }
-    if (quirChecked.length) {
-      drawField(doc, 'Quirúrgicos', quirChecked.join(', '), MARGIN + 2, y);
-      y += 5.5;
+    if (col !== 0) y += 6;
+  };
+  if (morbidosPdf.length || quirurgicosPdf.length) {
+    if (y + 20 > 265) { doc.addPage(); y = MARGIN; }
+    y = drawSectionHeader(doc, 'ANTECEDENTES', MARGIN, y, COL);
+    if (morbidosPdf.length) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text('Mórbidos', MARGIN + 2, y); y += 5;
+      drawChecklist(morbidosPdf);
+      y += 1;
+    }
+    if (quirurgicosPdf.length) {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(100, 116, 139);
+      doc.text('Quirúrgicos', MARGIN + 2, y); y += 5;
+      drawChecklist(quirurgicosPdf);
     }
     y += 2;
   }
