@@ -11,6 +11,8 @@ import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
 import { auditService } from '../auditService';
 import BiomechReport, { BiomechReportData } from '../components/BiomechReport';
+import { ConsentSendPanel } from '../components/ConsentFlow';
+import { InformedConsent } from '../types_clinical';
 
 interface Message {
   role: 'user' | 'model';
@@ -154,6 +156,7 @@ const ClinicalRecord: React.FC = () => {
   const [soapVersions, setSoapVersions] = useState<Array<{ saved_at: string; saved_by_name: string; soap_snapshot: Record<string, string> }>>([]);
   const [showVersions, setShowVersions] = useState(false);
   const [consentWarning, setConsentWarning] = useState(false);
+  const [existingConsent, setExistingConsent] = useState<InformedConsent | null>(null);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -391,18 +394,41 @@ const ClinicalRecord: React.FC = () => {
     });
   }, [initialPatient?.id, loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Verificar consentimiento informado (CENS RCE — Ley 20.584)
+  // Verificar consentimiento informado (CENS RCE — Ley 20.584). Cargamos el
+  // consentimiento más reciente (cualquier estado) para poder mostrar el panel de
+  // envío/firma y sincronizar el aviso: solo ACCEPTED lo desactiva.
   useEffect(() => {
     if (!initialPatient?.id || !loggedPro?.id) return;
     supabase
       .from('informed_consents')
-      .select('id')
+      .select('*')
       .eq('patient_id', initialPatient.id)
       .eq('professional_id', loggedPro.id)
-      .eq('status', 'ACCEPTED')
+      .order('created_at', { ascending: false })
       .limit(1)
       .then(({ data, error }) => {
-        if (!error) setConsentWarning(!data || data.length === 0);
+        if (error) return;
+        const row = data && data[0];
+        if (!row) { setExistingConsent(null); setConsentWarning(true); return; }
+        setExistingConsent({
+          id: row.id,
+          patientId: row.patient_id,
+          patientName: row.patient_name,
+          patientEmail: row.patient_email,
+          professionalId: row.professional_id,
+          templateVersion: row.template_version,
+          sentAt: row.created_at,
+          expiresAt: row.expires_at,
+          status: row.status,
+          acceptedAt: row.accepted_at,
+          ipAddress: row.ip_address,
+          deviceInfo: row.device_info,
+          patientSignatureBase64: row.patient_signature_b64,
+          checkboxChecked: row.checkbox_checked,
+          consentText: row.consent_text,
+          verificationCode: row.verification_code,
+        });
+        setConsentWarning(row.status !== 'ACCEPTED');
       });
   }, [initialPatient?.id, loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1294,21 +1320,29 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
         </div>
 
         <div className="max-w-6xl mx-auto p-3 lg:p-6 space-y-4 lg:space-y-10 pb-24 print:p-0">
-          {/* Aviso consentimiento informado — Ley 20.584 / CENS RCE */}
-          {consentWarning && (
-            <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-5 py-4 no-print">
-              <span className="material-icons-round text-amber-500 text-lg shrink-0 mt-0.5">warning</span>
-              <div className="flex-1">
-                <p className="text-xs font-black text-amber-800">Sin consentimiento informado registrado</p>
-                <p className="text-xs text-amber-700 mt-0.5">
-                  Este paciente no tiene consentimiento informado aceptado en el sistema. Puedes obtenerlo desde la lista de pacientes antes de registrar notas clínicas — requerido por Ley 20.584 y CENS RCE.
-                </p>
+          {/* Consentimiento informado — Ley 20.584 / CENS RCE.
+              Aviso + panel para generar/compartir el enlace de firma y ver su estado. */}
+          <div className="no-print space-y-3">
+            {consentWarning && (
+              <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-5 py-4">
+                <span className="material-icons-round text-amber-500 text-lg shrink-0 mt-0.5">warning</span>
+                <div className="flex-1">
+                  <p className="text-xs font-black text-amber-800">Sin consentimiento informado aceptado</p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Este paciente aún no firma su consentimiento informado (requerido por Ley 20.584 y CENS RCE). Genera el enlace aquí abajo y compártelo por WhatsApp — el paciente firma desde su teléfono en 1 minuto.
+                  </p>
+                </div>
               </div>
-              <button onClick={() => setConsentWarning(false)} className="text-amber-400 hover:text-amber-600 shrink-0">
-                <span className="material-icons-round text-sm">close</span>
-              </button>
-            </div>
-          )}
+            )}
+            {loggedPro && initialPatient?.id && (
+              <ConsentSendPanel
+                patient={safePatient}
+                loggedPro={loggedPro}
+                existingConsent={existingConsent}
+                onSent={c => { setExistingConsent(c); setConsentWarning(true); }}
+              />
+            )}
+          </div>
 
           <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 print:border-none print:shadow-none">
             <div className="flex justify-between items-center mb-8">
