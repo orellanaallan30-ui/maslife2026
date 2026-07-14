@@ -135,8 +135,23 @@ export const ConsentSendPanel: React.FC<{
   const [isSending, setIsSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [revokedLocal, setRevokedLocal] = useState(false);
+  const [createdConsent, setCreatedConsent] = useState<InformedConsent | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  const consentText = CONSENT_TEMPLATES[loggedPro.specialty] || DEFAULT_TEMPLATE;
+  // Plantilla breve y clara (la aprobada). Se arma con el nombre y especialidad del
+  // profesional. Las versiones largas por especialidad siguen en CONSENT_TEMPLATES
+  // por si se necesitan a futuro.
+  const consentText = `Yo autorizo a ${loggedPro.name} (${loggedPro.specialty}) a atenderme y a registrar mis datos de salud en Agenda Maslife para mi tratamiento.\n\n• Entiendo en qué consiste mi atención y pude hacer preguntas.\n• Puedo retirar esta autorización cuando quiera.\n• Mis datos se protegen según la Ley 20.584 y la Ley 21.719.`;
+
+  // Enlace para compartir con el paciente (disponible apenas se crea el consentimiento).
+  const activeConsent = createdConsent || (existingConsent?.status === 'PENDING' ? existingConsent : null);
+  const consentLink = activeConsent ? `${window.location.origin}/consent/${activeConsent.id}` : '';
+  const shareWhatsApp = () => {
+    const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de Agenda Maslife. Antes de tu atención necesito tu autorización para atenderte y guardar tu ficha de salud. Es rápido (1 minuto) y firmas desde tu teléfono aquí: ${consentLink}  ¡Gracias!`;
+    const phone = (patient.phone || '').replace(/\D/g, '');
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+  const copyLink = () => { try { navigator.clipboard.writeText(consentLink); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* noop */ } };
 
   // Retiro del consentimiento (Ley 21.719: el titular puede retirarlo en cualquier
   // momento). Lo registra el profesional a solicitud del paciente. La lectura de
@@ -197,8 +212,12 @@ export const ConsentSendPanel: React.FC<{
         details: { patientEmail: patient.email },
       });
 
+      setCreatedConsent(consent);
       onSent(consent);
       setSent(true);
+    } catch (e) {
+      alert('No se pudo generar el consentimiento. Intenta de nuevo.');
+      console.error('[consent] crear', e);
     } finally {
       setIsSending(false);
     }
@@ -239,14 +258,37 @@ export const ConsentSendPanel: React.FC<{
 
   if (sent || existingConsent?.status === 'PENDING') {
     return (
-      <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex items-center gap-3">
-        <span className="material-icons-round text-amber-500 text-2xl">schedule_send</span>
-        <div>
-          <p className="font-black text-amber-800">Consentimiento Enviado — Pendiente de Firma</p>
-          <p className="text-xs text-amber-600">
-            Enviado a {patient.email} · Expira en 72 horas
-          </p>
+      <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="material-icons-round text-amber-500 text-2xl">schedule_send</span>
+          <div>
+            <p className="font-black text-amber-800">Consentimiento pendiente de firma</p>
+            <p className="text-xs text-amber-600">
+              Comparte el enlace con {patient.name || 'el paciente'} · Expira en 72 horas
+            </p>
+          </div>
         </div>
+        {consentLink && (
+          <>
+            <div className="bg-white rounded-xl border border-amber-200 px-3 py-2 mb-3 text-xs text-slate-500 break-all">
+              {consentLink}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={shareWhatsApp}
+                className="flex-1 py-2.5 bg-emerald-500 text-white rounded-xl font-black text-xs
+                  hover:bg-emerald-600 transition-all flex items-center justify-center gap-1.5">
+                <span className="material-icons-round text-base">chat</span>
+                Enviar por WhatsApp
+              </button>
+              <button onClick={copyLink}
+                className="py-2.5 px-4 bg-white border-2 border-amber-200 text-amber-700 rounded-xl font-black text-xs
+                  hover:bg-amber-100 transition-all flex items-center justify-center gap-1.5">
+                <span className="material-icons-round text-base">{copied ? 'check' : 'content_copy'}</span>
+                {copied ? 'Copiado ✓' : 'Copiar link'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     );
   }
@@ -260,7 +302,7 @@ export const ConsentSendPanel: React.FC<{
         <div>
           <p className="font-black text-slate-800">Consentimiento Informado</p>
           <p className="text-xs text-slate-500">
-            Se enviará a {patient.email} · Versión para {loggedPro.specialty}
+            Genera un enlace para que {patient.name || 'el paciente'} firme desde su teléfono
           </p>
         </div>
       </div>
@@ -269,18 +311,15 @@ export const ConsentSendPanel: React.FC<{
       </div>
       <button
         onClick={handleSend}
-        disabled={isSending || !patient.email}
+        disabled={isSending}
         className="w-full py-3 bg-teal-500 text-white rounded-xl font-black text-sm
           hover:bg-teal-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {isSending
-          ? <><span className="material-icons-round text-base animate-pulse">send</span>Enviando...</>
-          : <><span className="material-icons-round text-base">send</span>Enviar Consentimiento</>
+          ? <><span className="material-icons-round text-base animate-pulse">bolt</span>Generando...</>
+          : <><span className="material-icons-round text-base">draw</span>Generar consentimiento</>
         }
       </button>
-      {!patient.email && (
-        <p className="text-xs text-rose-500 mt-2 text-center">El paciente no tiene email registrado</p>
-      )}
     </div>
   );
 };
