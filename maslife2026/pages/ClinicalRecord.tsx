@@ -630,8 +630,6 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         ...(patientObj.specialtyData as Record<string, unknown>),
         // Métricas derivadas de nutrición (calculadas en vivo, no persistidas)
         nutMetrics,
-        // Estado del consentimiento informado para la portada de la ficha
-        consentAccepted: !consentWarning,
       }
     );
   };
