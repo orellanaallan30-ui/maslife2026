@@ -89,7 +89,7 @@ const PatientProfile: React.FC = () => {
   // SEO por perfil: título/descripción/canonical propios + JSON-LD Physician.
   const proSlug = doctor?.slug || doctor?.id || '';
   usePageMeta(doctor ? {
-    title: `Reserva con ${doctor.name} — ${doctor.specialty}${doctor.city ? ` en ${doctor.city}` : ''} | Clínica Mas Life`,
+    title: `Reserva con ${doctor.name} — ${doctor.specialty}${doctor.city ? ` en ${doctor.city}` : ''} | Agenda Maslife`,
     description: `Agenda tu hora online con ${doctor.name}, ${doctor.specialty}${doctor.city ? ` en ${doctor.city}` : ''}. Reserva en línea 24/7, atención presencial u online.`,
     canonicalPath: `/p/${proSlug}`,
     image: doctor.avatar || undefined,
@@ -540,7 +540,7 @@ const PatientProfile: React.FC = () => {
     const dates = `${fmt(startObj)}/${fmt(endObj)}`;
     
     const text = encodeURIComponent(`Atención Médica: ${doctor.name} - ${doctor.specialty}`);
-    const details = encodeURIComponent(`Servicio: ${selectedService.name}\nPaciente: ${patientData.name}\nMotivo: ${patientData.reason}\n\nAgendado vía Clínica Maslife.`);
+    const details = encodeURIComponent(`Servicio: ${selectedService.name}\nPaciente: ${patientData.name}\nMotivo: ${patientData.reason}\n\nAgendado vía Agenda Maslife.`);
     const location = encodeURIComponent(doctor.city || 'Consulta Presencial / Online');
     
     return `https://calendar.google.com/calendar/r/eventedit?text=${text}&dates=${dates}&details=${details}&location=${location}`;

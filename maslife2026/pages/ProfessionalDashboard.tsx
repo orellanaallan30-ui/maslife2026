@@ -231,7 +231,7 @@ const ProfessionalDashboard: React.FC = () => {
                 <span className="material-icons-round" style={{color:'#00B3A4'}}>waving_hand</span>
               </div>
               <div>
-                <h2 className="text-lg font-bold leading-tight" style={{color:'#0B1736'}}>¡Bienvenido/a a Mas Life! 🧡</h2>
+                <h2 className="text-lg font-bold leading-tight" style={{color:'#0B1736'}}>¡Bienvenido/a a Agenda Maslife! 🧡</h2>
                 <p className="text-xs" style={{color:'#7A859F'}}>Tu agenda profesional en 4 pasos</p>
               </div>
             </div>
@@ -449,7 +449,7 @@ const ProfessionalDashboard: React.FC = () => {
               <div className="relative z-10 flex items-center justify-between h-full">
                 <div>
                   <span className="block text-[9px] font-medium uppercase tracking-[0.25em] mb-1" style={{color:'rgba(255,255,255,0.70)'}}>Sistema de Agenda</span>
-                  <h3 className="text-lg font-bold tracking-tight uppercase mb-2">AGENDA MASLIFE</h3>
+                  <h3 className="text-lg font-bold tracking-tight uppercase mb-2">Agenda Maslife</h3>
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(255,255,255,0.20)',border:'1px solid rgba(255,255,255,0.25)'}}>
                     <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:'#22C55E'}}></div>
                     <span className="text-[9px] font-semibold uppercase tracking-[0.2em]">ACTIVO</span>

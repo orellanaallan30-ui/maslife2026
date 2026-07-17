@@ -81,7 +81,7 @@ const PatientPortal: React.FC = () => {
             <span className="material-icons-round text-primary text-lg">local_hospital</span>
           </div>
           <div>
-            <p className="text-sm font-black text-slate-900">Clínica Mas Life</p>
+            <p className="text-sm font-black text-slate-900">Agenda Maslife</p>
             <p className="text-[10px] text-slate-400 uppercase tracking-widest">Portal de Paciente — Solo Lectura</p>
           </div>
         </div>
@@ -155,7 +155,7 @@ const PatientPortal: React.FC = () => {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-400 py-4">
-          Documento generado por Clínica Mas Life · <a href="/privacidad" className="underline hover:text-slate-600">Política de Privacidad</a> · Ley 20.584
+          Documento generado por Agenda Maslife · <a href="/privacidad" className="underline hover:text-slate-600">Política de Privacidad</a> · Ley 20.584
         </p>
       </main>
     </div>

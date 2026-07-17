@@ -320,14 +320,14 @@ const MainHome: React.FC = () => {
     { text: 'Nos costó encontrar la especialista adecuada para su terapia de fonoaudiología. Ha sido un gran alivio para toda la familia, aunque tardamos un poco en coordinarnos al inicio.', name: 'Javier M.', role: 'FAMILIAR DE PACIENTE', stars: 4 },
     { text: 'La atención domiciliaria de kinesiología fue increíble. Puntualidad, profesionalismo y sobre todo mucha empatía durante todo mi proceso de rehabilitación.', name: 'Carolina V.', role: 'PACIENTE KINESIOLOGÍA', stars: 5 },
     { text: 'Recomiendo a cualquiera que necesite atención de salud en casa. El sistema de asignación es muy eficiente y los profesionales son de primer nivel.', name: 'Miguel A.', role: 'PACIENTE GENERAL', stars: 5 },
-    { text: 'Mi terapeuta ocupacional me ayudó a recuperar la independencia después de mi accidente. Eternamente agradecida con Mas Life.', name: 'Patricia L.', role: 'PACIENTE TERAPIA OCUPACIONAL', stars: 5 },
+    { text: 'Mi terapeuta ocupacional me ayudó a recuperar la independencia después de mi accidente. Eternamente agradecida con Clínica Mas Life.', name: 'Patricia L.', role: 'PACIENTE TERAPIA OCUPACIONAL', stars: 5 },
     { text: 'La consulta online fue muy profesional. Cómodo para quienes trabajamos todo el día. Me habría gustado más opciones de horario, pero en general excelente.', name: 'Andrés F.', role: 'PACIENTE ONLINE', stars: 4 },
-    { text: 'Mi hijo de 4 años avanzó mucho más rápido con la fonoaudióloga de Mas Life. La paciencia y dedicación fueron extraordinarias.', name: 'Camila R.', role: 'MADRE DE PACIENTE', stars: 5 },
+    { text: 'Mi hijo de 4 años avanzó mucho más rápido con la fonoaudióloga de Clínica Mas Life. La paciencia y dedicación fueron extraordinarias.', name: 'Camila R.', role: 'MADRE DE PACIENTE', stars: 5 },
     { text: 'El seguimiento por WhatsApp después de cada sesión es un detalle que marca la diferencia. Te sientes acompañado todo el proceso.', name: 'Fernando G.', role: 'PACIENTE KINESIOLOGÍA', stars: 5 },
     { text: 'Probé con varios nutricionistas antes y ninguno entendió mis necesidades como la profesional que me asignaron aquí.', name: 'Valentina M.', role: 'PACIENTE DE NUTRICIÓN', stars: 5 },
     { text: 'La podóloga que me atendió fue muy profesional. Resolvió un problema que arrastraba hace meses en solo 3 sesiones.', name: 'Roberto C.', role: 'PACIENTE PODOLOGÍA', stars: 5 },
     { text: 'Buena plataforma. Reservé en minutos y el profesional llegó puntual a mi domicilio. Quizás falta un poco más de variedad de especialistas en Ovalle.', name: 'Isidora P.', role: 'PACIENTE DOMICILIO', stars: 4 },
-    { text: 'Mi psicólogo de Mas Life me ayudó a manejar el estrés laboral de una forma que nunca imaginé posible. Gracias por existir.', name: 'Diego T.', role: 'PACIENTE PSICOLOGÍA', stars: 5 },
+    { text: 'Mi psicólogo de Clínica Mas Life me ayudó a manejar el estrés laboral de una forma que nunca imaginé posible. Gracias por existir.', name: 'Diego T.', role: 'PACIENTE PSICOLOGÍA', stars: 5 },
     { text: 'Después de la cirugía de rodilla, la rehabilitación domiciliaria fue clave. Los kinesiólogos de +Life son de otro nivel.', name: 'Marcela H.', role: 'PACIENTE POST-QUIRÚRGICO', stars: 5 },
     { text: 'Como persona mayor, valoro mucho que vengan a mi casa. El masajista fue muy respetuoso y profesional con mi tratamiento.', name: 'Jorge V.', role: 'PACIENTE MASOTERAPIA', stars: 5 },
   ];
@@ -661,7 +661,7 @@ const MainHome: React.FC = () => {
               className="font-display font-light leading-[1.3]"
               style={{ fontSize: 'clamp(1.65rem,4.2vw,3.2rem)', letterSpacing: '-.4px', color: '#0f172a' }}
             >
-              {"AgendaMasLife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
+              {"Agenda Maslife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
                 <span key={i} className="word-reveal"> {word}</span>
               ))}
             </div>

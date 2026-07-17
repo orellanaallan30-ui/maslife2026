@@ -525,7 +525,7 @@ const ClinicalRecord: React.FC = () => {
     try {
       const clinicalContext = buildClinicalContext();
       const actionPrompt = ACTION_PROMPTS[action] || '';
-      const systemPrompt = `Eres AgenteMasLife, asistente clínico inteligente integrado en el software MasLife (Chile).
+      const systemPrompt = `Eres AgenteMasLife, asistente clínico inteligente integrado en el software Agenda Maslife (Chile).
 Especialidad del profesional: ${loggedPro?.specialty || 'Salud General'}.
 Fecha actual: ${new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}.
 
@@ -1168,7 +1168,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
     isSavingRef.current = true;
     setIsSaving(true);
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    onUpdatePatient(buildUpdatedPatient());
+    const saved = await onUpdatePatient(buildUpdatedPatient());
 
     // Guardar versión SOAP inmutable (CENS RCE — historial de versiones)
     if (initialPatient?.id && loggedPro?.id && Object.values(soap).some(v => (v as string)?.trim())) {
@@ -1185,10 +1185,12 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
       });
     }
 
-    setIsDirty(false);
-    setAutoSaveStatus('idle');
     isSavingRef.current = false;
     setIsSaving(false);
+    if (!saved) return; // el aviso de error ya lo muestra notifyWriteError; permanecemos en la ficha
+
+    setIsDirty(false);
+    setAutoSaveStatus('idle');
     toast.success(`Ficha de ${personalData.name} guardada correctamente`);
     navigate('/pro/patients');
   };
@@ -1218,7 +1220,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             </div>
             <div className="min-w-0">
               <h1 className="text-sm lg:text-2xl font-black text-slate-900 tracking-tight truncate">{personalData.name}</h1>
-              <p className="text-[10px] lg:text-xs font-bold text-primary uppercase tracking-widest mt-0.5">Paciente Maslife Premium</p>
+              <p className="text-[10px] lg:text-xs font-bold text-primary uppercase tracking-widest mt-0.5">Paciente Agenda Maslife Premium</p>
             </div>
           </div>
           {/* Actions */}
@@ -1293,7 +1295,8 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Guardar */}
             <button
               onClick={handleSaveAttention}
-              className={`p-2.5 lg:px-10 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] border-b-[3px] lg:border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-400 border-b-[3px] lg:border-b-4 border-slate-200 cursor-not-allowed shadow-none'}`}
+              disabled={isSaving || !isDirty}
+              className={`p-2.5 lg:px-10 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] border-b-[3px] lg:border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-400 border-b-[3px] lg:border-b-4 border-slate-200 cursor-not-allowed shadow-none'} disabled:opacity-70`}
             >
               <span className="material-icons-round text-lg">{isSaving ? 'sync' : 'save'}</span>
               <span className="hidden lg:inline">{isSaving ? 'Guardando...' : 'Guardar Ficha'}</span>
@@ -1310,7 +1313,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           <div className="flex justify-between items-end">
             <div>
               <h1 className="text-4xl font-black text-slate-900 mb-2">FICHA CLÍNICA PROFESIONAL</h1>
-              <p className="text-primary font-black tracking-widest uppercase text-sm">MasLife 🧡 Centro de Salud Integral</p>
+              <p className="text-primary font-black tracking-widest uppercase text-sm">Agenda Maslife 🧡 Centro de Salud Integral</p>
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de Emisión</p>
@@ -2633,7 +2636,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           <div className="flex justify-between items-end border-b-4 border-slate-900 pb-8">
             <div>
               <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Informe Clínico</h1>
-              <p className="text-primary font-black uppercase tracking-widest text-xs mt-2 italic">Emitido por Plataforma MasLife 🧡</p>
+              <p className="text-primary font-black uppercase tracking-widest text-xs mt-2 italic">Emitido por Plataforma Agenda Maslife 🧡</p>
             </div>
             <div className="text-right">
               <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Fecha del Documento</p>

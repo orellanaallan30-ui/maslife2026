@@ -27,11 +27,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
         <div className="px-4 lg:px-6 pt-5 pb-3 border-b border-slate-100 flex items-center justify-center lg:justify-start">
           <img
             src="/logo-agenda-online.svg"
-            alt="Agenda Online"
+            alt="Agenda Maslife"
             className="h-10 w-auto object-contain"
             onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }}
           />
-          <span className="hidden text-lg font-extrabold tracking-tight text-slate-900">Agenda</span>
+          <span className="hidden text-lg font-extrabold tracking-tight text-slate-900">Agenda Maslife</span>
         </div>
 
         <nav className="flex-1 p-3 lg:p-4 space-y-1">
@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
             <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">Soporte Médico</p>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">¿Necesitas ayuda técnica?</p>
             <button
-              onClick={() => window.open('https://wa.me/56965329974?text=Hola,%20necesito%20soporte%20t%C3%A9cnico%20con%20la%20plataforma%20Maslife', '_blank')}
+              onClick={() => window.open('https://wa.me/56965329974?text=Hola,%20necesito%20soporte%20t%C3%A9cnico%20con%20la%20plataforma%20Agenda%20Maslife', '_blank')}
               className="mt-3 w-full py-3 bg-primary text-white rounded-xl text-[10px] font-bold shadow-lg shadow-primary/20 uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
             >
               Chat Soporte

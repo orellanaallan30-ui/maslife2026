@@ -214,7 +214,7 @@ const Plans: React.FC = () => {
             <div className="space-y-6">
                <div className="flex items-center gap-3">
                   <span className="material-icons-round text-teal-500 text-4xl">medical_services</span>
-                  <span className="text-2xl font-black text-slate-900 tracking-tighter">Mas Life</span>
+                  <span className="text-2xl font-black text-slate-900 tracking-tighter">Clínica Mas Life</span>
                </div>
                <p className="text-slate-500 text-sm font-medium leading-relaxed">
                   Dedicados a transformar la salud domiciliaria y digital con tecnología y empatía humana.
