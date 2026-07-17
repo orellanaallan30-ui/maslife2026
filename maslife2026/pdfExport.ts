@@ -1070,14 +1070,6 @@ export async function exportPatientFichaToPDF(
     y += 3;
   }
 
-  // ── Consentimiento informado ──
-  if ((specialtyData as Record<string, any>)?.consentAccepted !== undefined) {
-    if (y + 8 > 265) { doc.addPage(); y = MARGIN; }
-    const ok = (specialtyData as Record<string, any>).consentAccepted === true;
-    drawField(doc, 'Consentimiento', ok ? 'Aceptado por el paciente' : 'PENDIENTE de aceptación', MARGIN + 2, y);
-    y += 8;
-  }
-
   // Firma auto-generada
   if (y + 42 > 265) { doc.addPage(); y = MARGIN; }
   drawAutoSignature(doc, professional, MARGIN, COL, y);
