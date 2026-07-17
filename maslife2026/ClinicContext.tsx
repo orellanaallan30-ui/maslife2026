@@ -34,7 +34,7 @@ interface ClinicContextType {
   patients: Patient[];
   setPatients: (patients: Patient[] | ((prev: Patient[]) => Patient[])) => void;
   addPatient: (patient: Patient) => void;
-  updatePatient: (patient: Patient) => void;
+  updatePatient: (patient: Patient) => Promise<boolean>;
 
   // Transacciones
   manualTransactions: Transaction[];
@@ -464,13 +464,16 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const updatePatient = (patient: Patient) => {
+  const updatePatient = async (patient: Patient): Promise<boolean> => {
     setPatients(prev => prev.map(old => old.id === patient.id ? patient : old));
-    if (loggedPro) {
-      savePatient(patient, loggedPro.id).catch(err => {
-        console.error('[updatePatient] No se pudo guardar en Supabase:', err?.message || err);
-        notifyWriteError(err, `⚠️ Los cambios de ${patient.name} NO se guardaron en el servidor. Intenta de nuevo.`);
-      });
+    if (!loggedPro) return true;
+    try {
+      await savePatient(patient, loggedPro.id);
+      return true;
+    } catch (err) {
+      console.error('[updatePatient] No se pudo guardar en Supabase:', (err as Error)?.message || err);
+      notifyWriteError(err, `⚠️ Los cambios de ${patient.name} NO se guardaron en el servidor. Intenta de nuevo.`);
+      return false;
     }
   };
 

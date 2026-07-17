@@ -401,7 +401,7 @@ const PatientList: React.FC = () => {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          const msgText = `Hola ${p.name}, le saluda el/la profesional ${loggedPro?.name || ''} de Maslife. Le recuerdo y confirmo su próxima sesión. Quedo atento/a.`;
+                                          const msgText = `Hola ${p.name}, le saluda el/la profesional ${loggedPro?.name || ''} de Agenda Maslife. Le recuerdo y confirmo su próxima sesión. Quedo atento/a.`;
                                           window.open(`https://wa.me/${p.phone.replace(/\D/g, '')}?text=${encodeURIComponent(msgText)}`, '_blank');
                                         }}
                                         className="w-9 h-9 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all"
@@ -476,7 +476,7 @@ const PatientList: React.FC = () => {
                       {!p.archived && p.phone && (
                         <button
                           onClick={() => {
-                            const msgText = `Hola ${p.name}, le saluda ${loggedPro?.name || ''} de Maslife. Le recuerdo su próxima sesión. Quedo atento/a.`;
+                            const msgText = `Hola ${p.name}, le saluda ${loggedPro?.name || ''} de Agenda Maslife. Le recuerdo su próxima sesión. Quedo atento/a.`;
                             window.open(`https://wa.me/${p.phone.replace(/\D/g, '')}?text=${encodeURIComponent(msgText)}`, '_blank');
                           }}
                           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-emerald-50 text-emerald-600 text-xs font-bold hover:bg-emerald-500 hover:text-white transition-all"

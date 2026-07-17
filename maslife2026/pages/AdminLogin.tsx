@@ -128,7 +128,7 @@ const AdminLogin: React.FC = () => {
             <span className="material-icons-round text-primary text-4xl">admin_panel_settings</span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">Core Administration</h1>
-          <p className="text-slate-500 font-bold mt-2 uppercase text-xs tracking-[0.3em]">AgendaMaslife Central Control</p>
+          <p className="text-slate-500 font-bold mt-2 uppercase text-xs tracking-[0.3em]">Agenda Maslife Central Control</p>
         </div>
 
         <div className="bg-slate-900/80 backdrop-blur-2xl p-8 rounded-[3rem] shadow-[0_48px_80px_-16px_rgba(0,0,0,0.5)] border border-white/10 relative space-y-6">

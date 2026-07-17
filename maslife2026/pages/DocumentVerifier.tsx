@@ -76,7 +76,7 @@ const DocumentVerifier: React.FC = () => {
         <div className="bg-teal-500 w-10 h-10 rounded-xl flex items-center justify-center">
           <span className="material-icons-round text-white text-xl">medical_services</span>
         </div>
-        <span className="font-black text-xl text-slate-800">AgendaMaslife</span>
+        <span className="font-black text-xl text-slate-800">Agenda Maslife</span>
       </div>
 
       <div className="w-full max-w-md">
@@ -90,7 +90,7 @@ const DocumentVerifier: React.FC = () => {
               </div>
               <div>
                 <p className="font-black text-white text-lg">Documento Auténtico</p>
-                <p className="text-emerald-100 text-xs">Verificado en la plataforma AgendaMaslife</p>
+                <p className="text-emerald-100 text-xs">Verificado en la plataforma Agenda Maslife</p>
               </div>
             </div>
 
@@ -169,7 +169,7 @@ const DocumentVerifier: React.FC = () => {
             <div className="p-6 text-center">
               <p className="text-slate-600 text-sm mb-4">
                 El código <span className="font-mono font-black text-slate-800">{code}</span> no
-                corresponde a ningún documento válido o activo en AgendaMaslife.
+                corresponde a ningún documento válido o activo en Agenda Maslife.
               </p>
               <div className="bg-rose-50 rounded-2xl p-4 text-left">
                 <p className="text-xs font-black text-rose-700 mb-2">Posibles causas:</p>
@@ -185,7 +185,7 @@ const DocumentVerifier: React.FC = () => {
 
         {/* Footer legal */}
         <p className="text-center text-xs text-slate-400 mt-6 max-w-sm">
-          Sistema de verificación de AgendaMaslife. Los datos clínicos no se muestran públicamente
+          Sistema de verificación de Agenda Maslife. Los datos clínicos no se muestran públicamente
           en cumplimiento de la Ley 20.584 y la Ley 19.628 de Protección de Datos Personales.
         </p>
       </div>

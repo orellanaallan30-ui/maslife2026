@@ -10,7 +10,7 @@ const PatientLanding: React.FC = () => {
 
   const handleWhatsApp = (e: React.FormEvent) => {
     e.preventDefault();
-    const text = `Hola, quiero agendar con AgendaMasLife.\n\n*Nombre:* ${form.name}\n*RUT:* ${form.rut}\n*Dirección:* ${form.address}, ${form.city}\n*Detalles de Consulta:* ${form.details}`;
+    const text = `Hola, quiero agendar con Agenda Maslife.\n\n*Nombre:* ${form.name}\n*RUT:* ${form.rut}\n*Dirección:* ${form.address}, ${form.city}\n*Detalles de Consulta:* ${form.details}`;
     window.open(`https://wa.me/56912345678?text=${encodeURIComponent(text)}`, '_blank');
     setShowAgendar(false);
   };
@@ -26,7 +26,7 @@ const PatientLanding: React.FC = () => {
         <div className="max-w-7xl mx-auto px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24 mb-20 animate-in fade-in slide-in-from-bottom-10 duration-1000">
              <div className="flex-1 text-center lg:text-left">
-                <span className="inline-block py-3 px-8 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-[0.3em] mb-8">Ecosistema Maslife Premium</span>
+                <span className="inline-block py-3 px-8 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-[0.3em] mb-8">Ecosistema Agenda Maslife Premium</span>
                 <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black text-slate-900 leading-[1.05] mb-8 tracking-tight">
                     Encuentra al profesional ideal <br className="hidden md:block"/> para tu <span className="text-primary inline-flex items-center gap-4 relative">bienestar <span className="absolute -bottom-2 left-0 w-full h-3 bg-teal-400/30 -rotate-1 skew-x-12 animate-pulse"></span></span>
                 </h1>
@@ -68,7 +68,7 @@ const PatientLanding: React.FC = () => {
                         <span className="material-icons-round">health_and_safety</span>
                       </div>
                       <div className="pr-4">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Garantía MasLife</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Garantía Agenda Maslife</p>
                         <p className="font-black text-slate-900 text-sm">Clínica Certificada</p>
                       </div>
                     </div>
@@ -157,7 +157,7 @@ const PatientLanding: React.FC = () => {
                       <div className="bg-primary p-3 rounded-2xl">
                           <span className="material-icons-round text-white text-3xl">medical_services</span>
                       </div>
-                      <span className="text-3xl font-black tracking-tighter">AgendaMaslife</span>
+                      <span className="text-3xl font-black tracking-tighter">Agenda Maslife</span>
                   </div>
                   <p className="text-slate-500 text-base leading-relaxed font-medium">Liderando la transformación digital de la salud en Latinoamérica con tecnología y empatía.</p>
                   <div className="flex gap-5">
@@ -205,7 +205,7 @@ const PatientLanding: React.FC = () => {
               </div>
           </div>
           <div className="max-w-7xl mx-auto px-8 mt-40 pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 text-xs font-black text-slate-500 uppercase tracking-[0.3em]">
-              <p>© 2024 AGENDAMASLIFE GLOBAL • SANTIAGO, CHILE</p>
+              <p>© 2024 AGENDA MASLIFE • SANTIAGO, CHILE</p>
               <div className="flex items-center gap-10">
                   <span className="flex items-center gap-3 text-emerald-500"><span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> SERVIDORES ONLINE</span>
                   <span>VERSION 4.2.0-STABLE</span>

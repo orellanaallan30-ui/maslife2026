@@ -121,7 +121,7 @@ const Finances: React.FC = () => {
         <div className="max-w-[1400px] mx-auto space-y-4 md:space-y-10">
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-6">
             <div>
-              <p className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] mb-0.5">AgendaMaslife Finanzas</p>
+              <p className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] mb-0.5">Agenda Maslife Finanzas</p>
               <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">Balance de Gestión Clínica</h1>
             </div>
             <div className="flex items-center gap-2 md:gap-4">
@@ -151,7 +151,7 @@ const Finances: React.FC = () => {
             <div className="flex justify-between items-end">
               <div>
                 <h1 className="text-4xl font-black text-slate-900 mb-2">REPORTE FINANCIERO CLÍNICO</h1>
-                <p className="text-teal-600 font-black tracking-widest uppercase text-sm">MasLife 🧡 Gestión de Balance</p>
+                <p className="text-teal-600 font-black tracking-widest uppercase text-sm">Agenda Maslife 🧡 Gestión de Balance</p>
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de Generación</p>

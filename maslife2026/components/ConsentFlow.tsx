@@ -19,7 +19,7 @@ Yo, el/la abajo firmante, en mi calidad de paciente o representante legal, decla
 
 4. Tengo derecho a retirar este consentimiento en cualquier momento sin expresión de causa y sin que ello afecte la calidad de mi atención.
 
-5. Autorizo al profesional a registrar mis datos clínicos en el sistema de gestión AgendaMaslife para fines terapéuticos, de acuerdo con la Ley 20.584 sobre Derechos y Deberes del Paciente.
+5. Autorizo al profesional a registrar mis datos clínicos en el sistema de gestión Agenda Maslife para fines terapéuticos, de acuerdo con la Ley 20.584 sobre Derechos y Deberes del Paciente.
 
 6. He podido formular preguntas sobre mi tratamiento y estas han sido respondidas satisfactoriamente.
   `.trim(),
@@ -349,7 +349,7 @@ export const ConsentAcceptPage: React.FC<{ consentId: string }> = ({ consentId }
   }, [consentId]);
 
   const handleAccept = async () => {
-    if (!consent || !checked) return;
+    if (!consent || !checked || !signatureBase64) return;
     setSubmitting(true);
     try {
       let ip = 'UNKNOWN';
@@ -447,6 +447,9 @@ export const ConsentAcceptPage: React.FC<{ consentId: string }> = ({ consentId }
             Dibuja tu firma en el recuadro (con el dedo o mouse)
           </p>
           <SignatureCanvas onCapture={setSignatureBase64} />
+          {checked && !signatureBase64 && (
+            <p className="text-xs text-amber-600 mt-2">Dibuja tu firma para continuar.</p>
+          )}
         </div>
 
         {/* Checkbox y aceptación */}
@@ -468,7 +471,7 @@ export const ConsentAcceptPage: React.FC<{ consentId: string }> = ({ consentId }
 
         <button
           onClick={handleAccept}
-          disabled={!checked || submitting}
+          disabled={!checked || !signatureBase64 || submitting}
           className="w-full py-4 bg-teal-500 text-white rounded-2xl font-black text-base
             hover:bg-teal-600 transition-all disabled:opacity-50 shadow-xl shadow-teal-500/20
             flex items-center justify-center gap-2"

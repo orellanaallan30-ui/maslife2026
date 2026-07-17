@@ -106,7 +106,7 @@ const PatientResults: React.FC = () => {
         {/* Header con logo Agenda Online */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-4">
-            <img src={logoAgenda} alt="Agenda Online ClinicaMaslife" className="h-10 w-auto object-contain" />
+            <img src={logoAgenda} alt="Agenda Maslife" className="h-10 w-auto object-contain" />
             <div>
               {/* ── RESPONSIVE: base=mobile  lg:=desktop ── */}
               <h2 className="text-lg lg:text-2xl font-extrabold text-slate-900 tracking-tight">Especialistas Disponibles</h2>
