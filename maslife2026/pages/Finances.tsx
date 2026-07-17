@@ -119,7 +119,7 @@ const Finances: React.FC = () => {
     <div className="flex-1 flex flex-col min-h-0 w-full">
       <main className="flex-1 min-h-0 overflow-y-auto bg-slate-50 custom-scrollbar p-4 md:p-10 pb-24 md:pb-10">
         <div className="max-w-[1400px] mx-auto space-y-4 md:space-y-10">
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-6">
+          <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-6">
             <div>
               <p className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] mb-0.5">Agenda Maslife Finanzas</p>
               <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">Balance de Gestión Clínica</h1>
@@ -275,7 +275,7 @@ const Finances: React.FC = () => {
           {mpExpanded && (
             <div className="mt-3 bg-white rounded-3xl md:rounded-[3rem] border border-slate-100 shadow-[0_48px_100px_-20px_rgba(0,158,227,0.12)] overflow-hidden">
               {/* Header */}
-              <div className="p-5 md:p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-[#009ee3]/5 to-white">
+              <div className="p-5 md:p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-gradient-to-r from-[#009ee3]/5 to-white">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-[#009ee3] flex items-center justify-center shadow-lg shadow-[#009ee3]/30">
                     <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white"><path d="M12 0C5.374 0 0 5.373 0 12c0 6.628 5.374 12 12 12 6.628 0 12-5.372 12-12C24 5.373 18.628 0 12 0zm5.49 8.444l-2.18 9.778a.42.42 0 01-.41.322h-1.638a.42.42 0 01-.418-.322l-1.084-4.626-1.083 4.626a.42.42 0 01-.418.322H8.62a.42.42 0 01-.41-.322L5.98 8.444a.42.42 0 01.41-.516h1.638c.2 0 .373.139.41.335l1.196 5.692 1.192-5.692a.42.42 0 01.41-.335h1.527c.2 0 .373.139.41.335l1.192 5.692 1.196-5.692a.42.42 0 01.41-.335h1.519a.42.42 0 01.41.516z"/></svg>

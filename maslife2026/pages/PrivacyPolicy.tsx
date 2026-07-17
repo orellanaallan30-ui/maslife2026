@@ -6,7 +6,7 @@ const PrivacyPolicy: React.FC = () => {
   const updated = '12 de julio de 2026';
 
   return (
-    <div className="min-h-screen bg-white font-sans text-slate-800">
+    <div className="min-h-full bg-white font-sans text-slate-800">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-100 px-6 py-4 flex items-center justify-between">
         <button onClick={() => navigate('/')} className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors">

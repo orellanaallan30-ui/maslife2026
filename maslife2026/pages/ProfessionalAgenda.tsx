@@ -394,7 +394,7 @@ const ProfessionalAgenda: React.FC = () => {
                 </div>
 
                {/* Stat chips — fila horizontal scrollable */}
-               <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 md:mx-0 md:px-0 md:grid md:grid-cols-4">
+               <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 lg:mx-0 lg:px-0 lg:grid lg:grid-cols-4">
                   {[
                     { icon: 'event', label: 'Citas hoy', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').length },
                     { icon: 'check_circle', label: 'Confirmadas', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status === 'Confirmado').length },
@@ -503,7 +503,7 @@ const ProfessionalAgenda: React.FC = () => {
                          </div>
                      </div>
                   ) : (
-                     <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+                     <div className="p-8 grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-10">
                         {Array.from({ length: 12 }, (_, monthIdx) => {
                            const monthDate = new Date(currentDate.getFullYear(), monthIdx, 1);
                            const lastDayOfMonth = new Date(currentDate.getFullYear(), monthIdx + 1, 0).getDate();

@@ -399,7 +399,7 @@ const ProfessionalDashboard: React.FC = () => {
           </div>
 
           {/* ── Stats Grid ── */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
 
             {/* Pacientes Hoy */}
             <div className="rounded-2xl p-4 flex flex-col justify-between transition-all hover:-translate-y-0.5 group cursor-default"

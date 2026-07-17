@@ -995,7 +995,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           + Agregar campo
         </button>
         {fields.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {fields.map((cf, idx) => (
               <div key={idx} className="space-y-1 group/cf animate-in slide-in-from-left-4 duration-300">
                 <div className="flex items-center gap-1">
@@ -1433,7 +1433,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Datos Antropométricos</h3>
               {renderSectionFields('ki-antropometria')}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                   { label: 'Peso (kg)', key: 'weight', placeholder: '70' },
                   { label: 'Talla (cm)', key: 'height', placeholder: '170' },
@@ -1472,7 +1472,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Evaluación Postural Estructurada</h3>
               {renderSectionFields('ki-postural')}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 {([
                   { label: 'Plomada Sagital', key: 'plomadaSag', options: ['Normal','Hiperlordosis lumbar','Inversión lumbar','Hipercifosis dorsal','Rectificación lumbar','Cabeza adelantada'] },
                   { label: 'Plomada Frontal', key: 'plomadaFront', options: ['Normal','Escoliosis dextro-convexa','Escoliosis levo-convexa','Inclinación lateral Der.','Inclinación lateral Izq.'] },
@@ -1511,7 +1511,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Rango de Movimiento (ROM) en grados</h3>
               {renderSectionFields('ki-rom')}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {romDefs.map((def, idx) => (
                   <div key={def.id} className="space-y-1 group/rom">
                     <div className="flex items-center gap-1">
@@ -1629,7 +1629,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               {testDefs.length === 0 ? (
                 <p className="text-xs text-slate-400 italic py-2">Escoge la zona afectada del paciente para ver los tests recomendados, o agrega uno propio.</p>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                   {testDefs.map(test => (
                     <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-200 group/test">
                       <div className="flex items-center gap-1 mb-2">
@@ -1923,7 +1923,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Tests Especiales comparativos */}
             <div>
               <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Tests Especiales</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                 {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => {
                   const t1 = kiData.initial.tests[test];
                   const t2 = kiData.final.tests[test];
@@ -1957,7 +1957,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           </>)}
 
           {/* ── Signos Vitales ─────────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             {[
               { l: 'FC (LPM)', k: 'heartRate', c: 'text-rose-500' },
               { l: 'SIS (MMHG)', k: 'systolic', c: 'text-primary' },
@@ -2019,7 +2019,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* Resultados calculados */}
             {nutMetrics ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { l: 'IMC',             val: nutMetrics.bmi,           unit: 'kg/m²', sub: nutMetrics.bmiClassification.label,  col: nutMetrics.bmiClassification.color },
                   { l: 'TMB (Mifflin)',   val: nutMetrics.bmr,           unit: 'kcal/día', sub: 'Tasa metabólica basal',          col: 'text-primary' },
@@ -2047,7 +2047,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               </h3>
 
               {/* Inputs de porcentajes */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
                   { l: 'Masa Grasa (%)',    v: nutMasaGrasaPct,    set: (n: number) => { setNutMasaGrasaPct(n);    setIsDirtyTrue(); } },
                   { l: 'Masa Adiposa (%)',  v: nutMasaAdiposaPct,  set: (n: number) => { setNutMasaAdiposaPct(n);  setIsDirtyTrue(); } },
@@ -2065,7 +2065,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
               {/* Cards calculadas (kg e Índice Muscular Óseo) */}
               {(nutMasaGrasaPct > 0 || nutMasaMuscularPct > 0) && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     { l: 'Masa Grasa',      val: nutMasaGrasaKg,       unit: 'kg', col: 'text-rose-500' },
                     { l: 'Masa Adiposa',    val: nutMasaAdiposaKg,     unit: 'kg', col: 'text-orange-500' },
@@ -2341,7 +2341,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             </div>
             {renderSectionFields('documentos')}
             {files.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {files.map(file => (
                   <div key={file.id} className="p-6 rounded-[2rem] bg-slate-50/80 shadow-sm border border-slate-200 flex items-center gap-4 group hover:bg-white hover:shadow-xl transition-all relative cursor-pointer">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${file.type === 'pdf' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-blue-50 text-blue-500 border border-blue-100'}`}>

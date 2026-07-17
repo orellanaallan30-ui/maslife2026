@@ -183,7 +183,7 @@ const BiomechReport: React.FC<Props> = ({ report, images, patientName, rom, romD
               </div>
             )}
             {/* Métricas con medidor */}
-            <div className={`${validImages.length > 0 ? 'lg:col-span-3' : 'lg:col-span-5'} grid grid-cols-1 md:grid-cols-2 gap-4 content-start`}>
+            <div className={`${validImages.length > 0 ? 'lg:col-span-3' : 'lg:col-span-5'} grid grid-cols-1 lg:grid-cols-2 gap-4 content-start`}>
               {(report.metricas || []).map((m, i) => (
                 <div key={i} className="bg-slate-900 rounded-3xl border border-slate-800 p-5">
                   <div className="flex items-start justify-between gap-3">
@@ -243,7 +243,7 @@ const BiomechReport: React.FC<Props> = ({ report, images, patientName, rom, romD
 
         {/* ══ ROM (calculado local desde la ficha) ══ */}
         {tab === 'ROM' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {romEntries.map(r => (
               <div key={r.key} className="bg-slate-900 rounded-3xl border border-slate-800 p-5">
                 <div className="flex items-center justify-between mb-2">
@@ -264,7 +264,7 @@ const BiomechReport: React.FC<Props> = ({ report, images, patientName, rom, romD
 
         {/* ══ ANTROPOMETRÍA ══ */}
         {tab === 'ANTROPOMETRÍA' && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {[
               { l: 'Peso', v: anthro.weight, u: 'kg' },
               { l: 'Talla', v: anthro.height, u: 'cm' },
