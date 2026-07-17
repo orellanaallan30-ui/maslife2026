@@ -124,14 +124,14 @@ const AdminLogin: React.FC = () => {
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-10 animate-in fade-in slide-in-from-top-6 duration-700">
-          <div className="bg-slate-900 border border-white/10 w-20 h-20 rounded-[2rem] flex items-center justify-center shadow-2xl mx-auto mb-6">
+          <div className="bg-slate-900 border border-white/10 w-20 h-20 rounded-blob-md flex items-center justify-center shadow-2xl mx-auto mb-6">
             <span className="material-icons-round text-primary text-4xl">admin_panel_settings</span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">Core Administration</h1>
           <p className="text-slate-500 font-bold mt-2 uppercase text-xs tracking-[0.3em]">Agenda Maslife Central Control</p>
         </div>
 
-        <div className="bg-slate-900/80 backdrop-blur-2xl p-8 rounded-[3rem] shadow-[0_48px_80px_-16px_rgba(0,0,0,0.5)] border border-white/10 relative space-y-6">
+        <div className="bg-slate-900/80 backdrop-blur-2xl p-8 rounded-blob-xl shadow-[0_48px_80px_-16px_rgba(0,0,0,0.5)] border border-white/10 relative space-y-6">
 
           {/* Verificando la sesión al entrar (acceso automático) */}
           {autoChecking && (
@@ -237,7 +237,7 @@ const AdminLogin: React.FC = () => {
 
             <button
               type="submit"
-              className="group w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
+              className="group w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
             >
               Autenticar Sistema
               <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">security</span>

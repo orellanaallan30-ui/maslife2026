@@ -165,7 +165,7 @@ const ProLanding: React.FC = () => {
       {/* ═══════════ PRECIO ═══════════ */}
       <section className="relative px-[6vw] py-[9vh]" style={{ background: 'linear-gradient(180deg,#f0f9ff,#ffffff)' }}>
         <div className="max-w-lg mx-auto">
-          <div className="bg-white rounded-[2rem] border-2 border-sky-200 shadow-xl overflow-hidden">
+          <div className="bg-white rounded-blob-md border-2 border-sky-200 shadow-xl overflow-hidden">
             <div className="p-8 text-white text-center" style={{ background: GRAD }}>
               <p className="font-outfit font-bold uppercase tracking-widest text-xs opacity-90 mb-2">Plan Pro</p>
               <div className="flex items-baseline justify-center gap-1">

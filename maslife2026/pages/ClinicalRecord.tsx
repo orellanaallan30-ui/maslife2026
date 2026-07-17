@@ -1029,7 +1029,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   value={cf.value}
                   onChange={e => updateSectionField(section, idx, 'value', e.target.value)}
                   placeholder="Valor..."
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
+                  className="w-full bg-white shadow-input-inset border rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
                   style={{ borderColor: cf.color ? `${cf.color}66` : '#cbd5e1' }}
                 />
               </div>
@@ -1296,13 +1296,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <button
               onClick={handleSaveAttention}
               disabled={isSaving || !isDirty}
-              className={`p-2.5 lg:px-10 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] border-b-[3px] lg:border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-400 border-b-[3px] lg:border-b-4 border-slate-200 cursor-not-allowed shadow-none'} disabled:opacity-70`}
+              className={`p-2.5 lg:px-10 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-emerald-500/50 border-b-[3px] lg:border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-400 border-b-[3px] lg:border-b-4 border-slate-200 cursor-not-allowed shadow-none'} disabled:opacity-70`}
             >
               <span className="material-icons-round text-lg">{isSaving ? 'sync' : 'save'}</span>
               <span className="hidden lg:inline">{isSaving ? 'Guardando...' : 'Guardar Ficha'}</span>
             </button>
             {/* AI Agent */}
-            <button onClick={() => setShowAiPanel(true)} className="p-2.5 lg:px-10 lg:py-5 bg-primary text-white rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 border-b-[3px] lg:border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] hover:brightness-110 transition-all">
+            <button onClick={() => setShowAiPanel(true)} className="p-2.5 lg:px-10 lg:py-5 bg-primary text-white rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 border-b-[3px] lg:border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 shadow-cta hover:brightness-110 transition-all">
               <span className="material-icons-round text-lg">auto_awesome</span>
               <span className="hidden lg:inline">AgenteMasLife</span>
             </button>
@@ -1347,7 +1347,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             )}
           </div>
 
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 print:border-none print:shadow-none">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 print:border-none print:shadow-none">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Identificación del Paciente</h2>
               <button onClick={addCustomField} className="text-xs font-black text-primary bg-primary/5 px-6 py-3 rounded-xl no-print hover:bg-primary/10 transition-all">+ AGREGAR CAMPO</button>
@@ -1367,7 +1367,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     type={f.t || 'text'}
                     value={f.val}
                     onChange={e => { setPersonalData({ ...personalData, [f.k]: f.t === 'number' ? Number(e.target.value) : e.target.value }); setIsDirtyTrue(); }}
-                    className={`w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700`}
+                    className={`w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700`}
                   />
                 </div>
               ))}
@@ -1388,7 +1388,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <input
                     value={cf.value}
                     onChange={e => { updateCustomField(idx, 'value', e.target.value); setIsDirtyTrue(); }}
-                    className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
+                    className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
                   />
                 </div>
               ))}
@@ -1418,7 +1418,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           {kiEvalTab !== 'compare' && (<>
           {/* ── Evaluación Kinesiológica ──────────────────────────────────── */}
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 overflow-hidden relative space-y-10">
             {/* Header */}
             <div className="flex flex-wrap justify-between items-start gap-4">
               <div>
@@ -1448,7 +1448,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       value={(kiAnthro as any)[key]}
                       onChange={e => { setKiAnthro(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
                       placeholder={placeholder}
-                      className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                      className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
                     />
                   </div>
                 ))}
@@ -1487,7 +1487,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     <select
                       value={(kiPostural as any)[key]}
                       onChange={e => { setKiPostural(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
-                      className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 appearance-none"
+                      className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 appearance-none"
                     >
                       <option value="">— Sin evaluar —</option>
                       {options.map(o => <option key={o} value={o}>{o}</option>)}
@@ -1502,7 +1502,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   onChange={e => { setKiPostural(p => ({ ...p, observations: e.target.value })); setIsDirtyTrue(); }}
                   rows={2}
                   placeholder="Observaciones adicionales del análisis postural..."
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 resize-none"
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 resize-none"
                 />
               </div>
             </div>
@@ -1554,7 +1554,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         value={kiRom[def.id] || ''}
                         onChange={e => { setKiRom(p => ({ ...p, [def.id]: e.target.value })); setIsDirtyTrue(); }}
                         placeholder={def.normal}
-                        className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border rounded-2xl py-3 px-3 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                        className="w-full bg-white shadow-input-inset border rounded-2xl py-3 px-3 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
                         style={{ borderColor: def.color ? `${def.color}66` : '#cbd5e1' }}
                       />
                       <span className="text-xs font-black text-slate-400">°</span>
@@ -1614,7 +1614,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     onChange={e => setCustomTestName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { addTest(customTestName); setCustomTestName(''); } }}
                     placeholder="Agregar otro test (nombre propio)..."
-                    className="flex-1 bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                    className="flex-1 bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
                   />
                   <button
                     onClick={() => { addTest(customTestName); setCustomTestName(''); }}
@@ -1669,7 +1669,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           </section>
 
           {/* ── Análisis Biomecánico con IA (fotos + resultado) ── */}
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 overflow-hidden relative">
             <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
               <div>
                 <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
@@ -1691,7 +1691,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     <div key={label} className="space-y-1">
                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">{label}</p>
                       {analysisImages[idx] ? (
-                        <div className="relative aspect-square rounded-[2rem] overflow-hidden border-4 border-slate-50 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
+                        <div className="relative aspect-square rounded-blob-md overflow-hidden border-4 border-slate-50 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
                           <img src={analysisImages[idx]} className="w-full h-full object-cover" alt={label} />
                           <div className="absolute inset-0 bg-black/40 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                             <button onClick={e => { e.stopPropagation(); uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="w-8 h-8 bg-white text-slate-700 rounded-lg flex items-center justify-center shadow-xl no-print" title="Reemplazar">
@@ -1703,7 +1703,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                           </div>
                         </div>
                       ) : (
-                        <button onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="aspect-square w-full rounded-[2rem] border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-300 hover:border-primary hover:text-primary transition-all no-print group">
+                        <button onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="aspect-square w-full rounded-blob-md border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-300 hover:border-primary hover:text-primary transition-all no-print group">
                           <span className="material-icons-round text-3xl group-hover:scale-110 transition-transform">add_a_photo</span>
                           <span className="text-[9px] font-black uppercase tracking-widest">Cargar</span>
                         </button>
@@ -1716,7 +1716,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <button
                   onClick={runAdvancedAnalysis}
                   disabled={isAnalyzing || analysisImages.filter(Boolean).length === 0}
-                  className="w-full py-6 bg-slate-900 border-b-4 border-slate-800 text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:border-b-4 no-print"
+                  className="w-full py-6 bg-slate-900 border-b-4 border-slate-800 text-white rounded-blob-md font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-pop active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:border-b-4 no-print"
                 >
                   <span className={`material-icons-round ${isAnalyzing ? 'animate-spin' : ''}`}>{isAnalyzing ? 'sync' : 'biotech'}</span>
                   {isAnalyzing ? 'Procesando imágenes con IA...' : `Ejecutar Análisis ${analysisType}`}
@@ -1726,14 +1726,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   onClick={() => setShowBiomechReport(true)}
                   disabled={!biomechReport}
                   title={biomechReport ? 'Ver informe biomecánico visual' : 'Ejecuta primero un análisis con IA'}
-                  className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-500 border-b-4 border-amber-600 text-slate-950 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-[0_10px_30px_-10px_rgba(245,158,11,0.5)] active:border-b-0 active:translate-y-1 hover:brightness-105 transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4 no-print"
+                  className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-500 border-b-4 border-amber-600 text-slate-950 rounded-blob-md font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-amber-500/50 active:border-b-0 active:translate-y-1 hover:brightness-105 transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4 no-print"
                 >
                   <span className="material-icons-round">insights</span>
                   Informe Visual — Postura · Simetrías · ROM
                 </button>
               </div>
 
-              <div className="bg-slate-50 rounded-xl lg:rounded-[2.5rem] p-4 lg:p-10 border border-slate-100 min-h-[200px] lg:min-h-[350px] flex flex-col shadow-inner relative">
+              <div className="bg-slate-50 rounded-xl lg:rounded-blob-lg p-4 lg:p-10 border border-slate-100 min-h-[200px] lg:min-h-[350px] flex flex-col shadow-inner relative">
                 <div className="flex items-center justify-between mb-8">
                   <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Informe IA Estructurado</h4>
                   {analysisResult && (
@@ -1760,7 +1760,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           {/* ── Vista Comparativa EV1 vs EV2 ─────────────────────────────── */}
           {kiEvalTab === 'compare' && (
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 overflow-hidden relative space-y-10">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 overflow-hidden relative space-y-10">
             <div>
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-slate-800 pl-4">Comparación EV1 vs EV2</h2>
               <p className="text-xs font-bold text-slate-500 uppercase mt-2 tracking-widest pl-5">Evolución kinesiológica del paciente</p>
@@ -1965,7 +1965,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               { l: 'Sat O2 (%)', k: 'oxygenSaturation', c: 'text-teal-500' },
               { l: 'Temp (°C)', k: 'temperature', c: 'text-amber-500' }
             ].map(v => (
-              <div key={v.k} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] text-center group hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div key={v.k} className="bg-white p-8 rounded-blob-lg border border-slate-100 shadow-section text-center group hover:-translate-y-1 hover:shadow-xl transition-all">
                 <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">{v.l}</p>
                 <input type="number" value={(vitals as any)[v.k]} onChange={e => { setVitals({ ...vitals, [v.k]: Number(e.target.value) }); setIsDirtyTrue(); }} className={`w-full bg-transparent border-none p-0 text-4xl font-black ${v.c} text-center focus:ring-0`} />
               </div>
@@ -1973,7 +1973,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           </div>
 
           {specialtyKey === 'nutricion' && (
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-10">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-10">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
             {renderSectionFields('nutricion')}
 
@@ -1988,7 +1988,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <div key={f.l} className="space-y-2">
                   <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                   <input type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
+                    className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                 </div>
               ))}
             </div>
@@ -2009,7 +2009,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <div className="space-y-3">
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Nivel de Actividad Física</label>
                 <select value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
                   {(Object.entries(ACTIVITY_FACTORS) as [ActivityLevel, { label: string; factor: number }][]).map(([k, v]) => (
                     <option key={k} value={k}>{v.label}</option>
                   ))}
@@ -2026,7 +2026,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   { l: 'GET',             val: nutMetrics.totalCalories,  unit: 'kcal/día', sub: 'Gasto energético total',         col: 'text-teal-500' },
                   { l: 'Rel. C/C',        val: nutMetrics.whr || '—',     unit: '',      sub: nutMetrics.whrClassification.label, col: nutMetrics.whrClassification.color },
                 ].map(card => (
-                  <div key={card.l} className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 text-center shadow-inner">
+                  <div key={card.l} className="bg-slate-50 rounded-blob-md p-8 border border-slate-100 text-center shadow-inner">
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3">{card.l}</p>
                     <p className={`text-3xl font-black ${card.col}`}>{card.val}</p>
                     {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
@@ -2035,7 +2035,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 bg-slate-50 rounded-[2rem] border border-dashed border-slate-200 text-slate-400 text-sm font-bold">
+              <div className="text-center py-8 bg-slate-50 rounded-blob-md border border-dashed border-slate-200 text-slate-400 text-sm font-bold">
                 Ingresa peso y talla para calcular automáticamente IMC, TMB y GET
               </div>
             )}
@@ -2058,7 +2058,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <div key={f.l} className="space-y-2">
                     <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                     <input type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
+                      className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                   </div>
                 ))}
               </div>
@@ -2072,7 +2072,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     { l: 'Masa Muscular',   val: nutMasaMuscularKg,    unit: 'kg', col: 'text-emerald-600' },
                     { l: 'Índ. Musc. Óseo',val: nutIndiceMuscularOseo, unit: '',  col: 'text-blue-600' },
                   ].map(card => (
-                    <div key={card.l} className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100 text-center shadow-inner">
+                    <div key={card.l} className="bg-slate-50 rounded-blob-md p-6 border border-slate-100 text-center shadow-inner">
                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">{card.l}</p>
                       <p className={`text-2xl font-black ${card.col}`}>{card.val || '—'}</p>
                       {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
@@ -2159,13 +2159,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
                 <textarea value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Reducir peso corporal 5 kg en 3 meses, normalizar glicemia..."
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Suplementación Indicada</label>
                 <textarea value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Vitamina D 2000 UI/día, Omega-3 1g/día..."
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
             </div>
 
@@ -2180,7 +2180,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <span className="material-icons-round text-sm">add</span> Agregar fila
                 </button>
               </div>
-              <div className="overflow-x-auto rounded-[2rem] border border-slate-200">
+              <div className="overflow-x-auto rounded-blob-md border border-slate-200">
                 <table className="w-full text-sm">
                   <thead className="bg-emerald-50 border-b border-slate-200">
                     <tr>
@@ -2227,7 +2227,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           )}
 
           {specialtyKey === 'psicologia' && (
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200 space-y-8">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-8">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
             {renderSectionFields('psicologia')}
 
@@ -2251,13 +2251,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
                 <textarea value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Diagnósticos previos, hospitalizaciones, intentos de autolesión, medicación psiquiátrica..."
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
                 <textarea value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Ej: TCC — reestructuración cognitiva de pensamientos automáticos negativos. EMDR fase 3..."
-                  className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
             </div>
 
@@ -2266,7 +2266,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivo Próxima Sesión</label>
               <textarea value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
-                className="w-full bg-white shadow-[inset_0_2px_6px_rgba(0,0,0,0.07)] border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
             </div>
           </section>
           )}
@@ -2275,7 +2275,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10">
             <div className="lg:col-span-2">{renderSectionFields('soap')}</div>
             {(SOAP_LABELS[specialtyKey] || SOAP_LABELS.kinesiologia).map(f => (
-              <div key={f.k} className="bg-white rounded-[3rem] border border-slate-200 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div key={f.k} className="bg-white rounded-blob-xl border border-slate-200 shadow-section overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
                 <div className="px-10 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl ${f.bg} text-white flex items-center justify-center font-black text-sm shadow-sm`}>{f.c}</div>
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800">{f.l}</h4>
@@ -2290,17 +2290,17 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             ))}
           </section>
 
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200">
             <div className="flex justify-between items-center mb-10">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Objetivos del Tratamiento</h2>
-              <button onClick={addGoal} className="text-[10px] bg-teal-500 text-white shadow-[0_10px_30px_-10px_rgba(20,184,166,0.5)] border-b-4 border-teal-700 px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all no-print flex items-center gap-2">
+              <button onClick={addGoal} className="text-[10px] bg-teal-500 text-white shadow-teal-500/50 border-b-4 border-teal-700 px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all no-print flex items-center gap-2">
                 <span className="material-icons-round text-sm">add</span> NUEVO OBJETIVO
               </button>
             </div>
             {renderSectionFields('objetivos')}
             <div className="space-y-8">
               {goals.map((obj) => (
-                <div key={obj.id} className="p-8 rounded-[2rem] bg-slate-50/50 border border-slate-100 relative print:bg-white animate-in zoom-in-95 group">
+                <div key={obj.id} className="p-8 rounded-blob-md bg-slate-50/50 border border-slate-100 relative print:bg-white animate-in zoom-in-95 group">
                   <button onClick={() => { setGoals(goals.filter(g => g.id !== obj.id)); setIsDirtyTrue(); }} className="absolute top-8 right-8 text-slate-300 hover:text-rose-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 no-print transition-all"><span className="material-icons-round">delete</span></button>
                   <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 items-start">
                     <div className="flex-1 w-full space-y-2">
@@ -2309,7 +2309,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         <div className={`h-full ${obj.color} transition-all duration-700 shadow-sm`} style={{ width: `${obj.progress}%` }}></div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-6 bg-white p-5 rounded-[2rem] shadow-sm no-print border border-slate-100">
+                    <div className="flex items-center gap-6 bg-white p-5 rounded-blob-md shadow-sm no-print border border-slate-100">
                       <button onClick={() => { setGoals(goals.map(g => g.id === obj.id ? { ...g, progress: Math.max(0, g.progress - 10) } : g)); setIsDirtyTrue(); }} className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 text-slate-500 font-black hover:bg-slate-100 shadow-sm active:scale-95 transition-all">-</button>
                       <span className="text-2xl font-black text-primary w-16 text-center">{obj.progress}%</span>
                       <button onClick={() => { setGoals(goals.map(g => g.id === obj.id ? { ...g, progress: Math.min(100, g.progress + 10) } : g)); setIsDirtyTrue(); }} className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 text-slate-500 font-black hover:bg-slate-100 shadow-sm active:scale-95 transition-all">+</button>
@@ -2320,7 +2320,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             </div>
           </section>
 
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200">
             <div className="flex justify-between items-center mb-10">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Documentos y Exámenes</h2>
               <button
@@ -2343,7 +2343,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {files.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {files.map(file => (
-                  <div key={file.id} className="p-6 rounded-[2rem] bg-slate-50/80 shadow-sm border border-slate-200 flex items-center gap-4 group hover:bg-white hover:shadow-xl transition-all relative cursor-pointer">
+                  <div key={file.id} className="p-6 rounded-blob-md bg-slate-50/80 shadow-sm border border-slate-200 flex items-center gap-4 group hover:bg-white hover:shadow-xl transition-all relative cursor-pointer">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${file.type === 'pdf' ? 'bg-rose-50 text-rose-500 border border-rose-100' : 'bg-blue-50 text-blue-500 border border-blue-100'}`}>
                       <span className="material-icons-round text-2xl">
                         {file.type === 'pdf' ? 'picture_as_pdf' : 'image'}
@@ -2365,14 +2365,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 ))}
               </div>
             ) : (
-              <div className="text-center py-20 bg-slate-50/50 rounded-[2.5rem] border border-dashed border-slate-200">
+              <div className="text-center py-20 bg-slate-50/50 rounded-blob-lg border border-dashed border-slate-200">
                 <span className="material-icons-round text-5xl text-slate-300 mb-4 block">folder_open</span>
                 <p className="text-slate-400 font-bold text-sm tracking-wide">No hay documentos adjuntos para este paciente.</p>
               </div>
             )}
           </section>
 
-          <section className="bg-white rounded-2xl lg:rounded-[3rem] p-4 lg:p-10 shadow-[0_8px_32px_-4px_rgba(15,23,42,0.10)] border border-slate-200">
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200">
             <div className="flex justify-between items-center mb-10">
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Bitácora de Evolución</h2>
               <button onClick={addSessionLog} className="text-[10px] bg-white border-b-4 border-slate-200 text-primary shadow-sm px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:bg-slate-50 transition-all no-print flex items-center gap-2">
@@ -2387,7 +2387,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <div className="shrink-0 w-[116px] text-right pt-2">
                     <input type="date" value={log.date} onChange={e => { setSessionLogs(sessionLogs.map(s => s.id === log.id ? { ...s, date: e.target.value } : s)); setIsDirtyTrue(); }} className="text-[10px] font-black text-primary uppercase bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 text-center print:bg-transparent shadow-sm" />
                   </div>
-                  <div className="flex-1 bg-slate-50/80 shadow-inner rounded-xl lg:rounded-[2rem] p-4 lg:p-10 border border-slate-200 relative print:bg-white group-hover:bg-white group-hover:shadow-[0_20px_40px_-15px_rgba(19,91,236,0.1)] transition-all">
+                  <div className="flex-1 bg-slate-50/80 shadow-inner rounded-xl lg:rounded-blob-md p-4 lg:p-10 border border-slate-200 relative print:bg-white group-hover:bg-white group-hover:shadow-[0_20px_40px_-15px_rgba(19,91,236,0.1)] transition-all">
                     <button onClick={() => { setSessionLogs(sessionLogs.filter(s => s.id !== log.id)); setIsDirtyTrue(); }} className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white text-slate-300 hover:text-rose-500 hover:shadow-md border border-slate-100 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 no-print transition-all flex items-center justify-center">
                       <span className="material-icons-round text-sm">delete</span>
                     </button>
@@ -2438,7 +2438,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
         <div className="fixed bottom-10 right-10 z-50 no-print flex flex-col items-end gap-4 animate-in slide-in-from-bottom-10 duration-700">
           <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full border border-slate-200 shadow-2xl flex items-center gap-4">
-            <div className={`w-3 h-3 ${(import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.7)]' : 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.7)]'} rounded-full animate-pulse`}></div>
+            <div className={`w-3 h-3 ${(import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? 'bg-emerald-500 shadow-emerald-500/70' : 'bg-rose-500 shadow-rose-500/70'} rounded-full animate-pulse`}></div>
             <p className="text-xs font-black text-slate-500 uppercase tracking-[0.25em]">
               {(import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? 'IA AgenteMasLife Conectada' : 'IA AgenteMasLife Offline'}
             </p>
@@ -2447,7 +2447,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
       </main>
 
       {showAiPanel && (
-        <div className="fixed top-[100px] right-8 w-[450px] h-[calc(100vh-150px)] max-h-[800px] bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] z-[100] flex flex-col rounded-[3rem] border border-slate-200/60 animate-in slide-in-from-right-10 duration-500 overflow-hidden no-print">
+        <div className="fixed top-[100px] right-8 w-[450px] h-[calc(100vh-150px)] max-h-[800px] bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] z-[100] flex flex-col rounded-blob-xl border border-slate-200/60 animate-in slide-in-from-right-10 duration-500 overflow-hidden no-print">
           <div className="bg-slate-900 px-8 py-8 text-white flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
@@ -2528,7 +2528,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
       {/* Modal del Informe Formal */}
       {isReportModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6 no-print">
-          <div className="bg-white w-full max-w-4xl h-[85vh] rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="bg-white w-full max-w-4xl h-[85vh] rounded-blob-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
               <div>
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Informe Clínico Inteligente</h3>
@@ -2560,7 +2560,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <textarea
                   value={reportContent}
                   onChange={e => setReportContent(e.target.value)}
-                  className="w-full h-full bg-white border border-slate-200 rounded-[2rem] p-12 text-sm font-medium leading-relaxed text-slate-700 shadow-inner focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none resize-none overflow-y-auto"
+                  className="w-full h-full bg-white border border-slate-200 rounded-blob-md p-12 text-sm font-medium leading-relaxed text-slate-700 shadow-inner focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none resize-none overflow-y-auto"
                 />
               )}
             </div>
@@ -2590,7 +2590,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
       {/* Modal de Orden Profesional */}
       {showOrdenModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-10 space-y-6 animate-in zoom-in-95 duration-300">
+          <div className="bg-white w-full max-w-2xl rounded-blob-lg shadow-2xl p-10 space-y-6 animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">

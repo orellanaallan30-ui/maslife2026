@@ -88,7 +88,7 @@ const Plans: React.FC = () => {
         {/* SELECTOR DE MODALIDAD */}
         {/* ── RESPONSIVE: selector modalidad — centrado mobile, izquierda lg:desktop ── */}
         <div className="flex justify-center lg:justify-start">
-           <div className="bg-white p-2 rounded-[2.5rem] border border-slate-100 shadow-xl flex gap-2">
+           <div className="bg-white p-2 rounded-blob-lg border border-slate-100 shadow-xl flex gap-2">
               {[
                 { id: 'domicilio', label: 'Domiciliaria', icon: 'home' },
                 { id: 'online', label: 'Online', icon: 'videocam' },
@@ -97,7 +97,7 @@ const Plans: React.FC = () => {
                 <button 
                   key={m.id}
                   onClick={() => setModality(m.id as any)}
-                  className={`flex items-center gap-3 px-8 py-4 rounded-[1.8rem] text-xs font-black uppercase tracking-widest transition-all ${modality === m.id ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/20' : 'text-slate-500 hover:bg-slate-50'}`}
+                  className={`flex items-center gap-3 px-8 py-4 rounded-blob-sm text-xs font-black uppercase tracking-widest transition-all ${modality === m.id ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/20' : 'text-slate-500 hover:bg-slate-50'}`}
                 >
                   <span className="material-icons-round text-lg">{m.icon}</span>
                   {m.label}
@@ -109,7 +109,7 @@ const Plans: React.FC = () => {
         {/* GRID DE PLANES */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pt-12">
            {plans.map((plan) => (
-             <div key={plan.id} className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all flex flex-col">
+             <div key={plan.id} className="bg-white p-10 rounded-blob-xl border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all flex flex-col">
                 <div className={`${plan.color} w-14 h-14 rounded-2xl flex items-center justify-center mb-8`}>
                    <span className="material-icons-round text-2xl">{plan.icon}</span>
                 </div>
@@ -132,7 +132,7 @@ const Plans: React.FC = () => {
                    </div>
                    <button 
                      onClick={() => navigate('/patient/search')}
-                     className="w-full py-5 bg-teal-500 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-teal-500/10 hover:brightness-110 active:scale-95 transition-all"
+                     className="w-full py-5 bg-teal-500 text-white rounded-blob-sm font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-teal-500/10 hover:brightness-110 active:scale-95 transition-all"
                    >
                      Seleccionar Plan
                    </button>
@@ -141,7 +141,7 @@ const Plans: React.FC = () => {
            ))}
 
            {/* PLAN A MEDIDA */}
-           <div className="bg-teal-50/50 p-10 rounded-[3rem] border-2 border-dashed border-teal-200 flex flex-col items-center justify-center text-center space-y-8">
+           <div className="bg-teal-50/50 p-10 rounded-blob-xl border-2 border-dashed border-teal-200 flex flex-col items-center justify-center text-center space-y-8">
               <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-teal-500">
                 <span className="material-icons-round text-4xl">architecture</span>
               </div>
@@ -151,7 +151,7 @@ const Plans: React.FC = () => {
                   ¿No encuentras lo que buscas? Diseñamos un plan exclusivo para tus necesidades.
                 </p>
               </div>
-              <button className="w-full py-5 bg-white text-slate-900 border border-slate-200 rounded-[1.8rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-slate-50 transition-all">
+              <button className="w-full py-5 bg-white text-slate-900 border border-slate-200 rounded-blob-sm font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-slate-50 transition-all">
                 Hablar con un Ejecutivo
               </button>
            </div>
@@ -188,13 +188,13 @@ const Plans: React.FC = () => {
            </div>
 
            <div className="flex-1 relative">
-              <div className="absolute -inset-10 bg-teal-500/10 rounded-[5rem] blur-3xl opacity-50"></div>
+              <div className="absolute -inset-10 bg-teal-500/10 rounded-blob-4xl blur-3xl opacity-50"></div>
               <img 
                 src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800" 
-                className="relative rounded-[4rem] shadow-2xl border-[16px] border-white w-full object-cover aspect-video" 
+                className="relative rounded-blob-3xl shadow-2xl border-[16px] border-white w-full object-cover aspect-video" 
                 alt="Personal de salud"
               />
-              <div className="absolute -bottom-10 -right-10 bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 hidden lg:block">
+              <div className="absolute -bottom-10 -right-10 bg-white p-8 rounded-blob-lg shadow-2xl border border-slate-100 hidden lg:block">
                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">Pacientes Felices</p>
                  <div className="flex items-center gap-3">
                     <span className="text-4xl font-black text-slate-900 tracking-tighter">15k+</span>
