@@ -1362,8 +1362,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 { label: 'Teléfono', val: personalData.phone, k: 'phone' }
               ].map(f => (
                 <div key={f.k} className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{f.label}</label>
+                  <label htmlFor={`personal-${f.k}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{f.label}</label>
                   <input
+                    id={`personal-${f.k}`}
                     type={f.t || 'text'}
                     value={f.val}
                     onChange={e => { setPersonalData({ ...personalData, [f.k]: f.t === 'number' ? Number(e.target.value) : e.target.value }); setIsDirtyTrue(); }}
@@ -1394,8 +1395,8 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               ))}
 
               <div className="lg:col-span-3 space-y-2">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Diagnóstico Principal</label>
-                <input value={personalData.diagnoses} onChange={e => { setPersonalData({ ...personalData, diagnoses: e.target.value }); setIsDirtyTrue(); }} className="w-full bg-primary/5 text-primary shadow-inner border border-primary/20 rounded-2xl py-5 px-6 font-black text-lg print:bg-white" placeholder="Ej: Esguince de tobillo grado II..." />
+                <label htmlFor="dx-diagnoses" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Diagnóstico Principal</label>
+                <input id="dx-diagnoses" value={personalData.diagnoses} onChange={e => { setPersonalData({ ...personalData, diagnoses: e.target.value }); setIsDirtyTrue(); }} className="w-full bg-primary/5 text-primary shadow-inner border border-primary/20 rounded-2xl py-5 px-6 font-black text-lg print:bg-white" placeholder="Ej: Esguince de tobillo grado II..." />
               </div>
             </div>
           </section>
@@ -1442,8 +1443,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   { label: 'Long. MMII Izq. (cm)', key: 'legL', placeholder: '88' },
                 ].map(({ label, key, placeholder }) => (
                   <div key={key} className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
+                    <label htmlFor={`ki-anthro-${key}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
                     <input
+                      id={`ki-anthro-${key}`}
                       type="number"
                       value={(kiAnthro as any)[key]}
                       onChange={e => { setKiAnthro(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
@@ -1483,8 +1485,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   { label: 'Pies', key: 'feet', options: ['Normal','Pronación bilateral','Supinación bilateral','Pie plano bilateral','Pie cavo bilateral','Pronación unilateral Der.','Pronación unilateral Izq.'] },
                 ] as { label: string; key: keyof typeof kiPostural; options: string[] }[]).map(({ label, key, options }) => (
                   <div key={key} className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
+                    <label htmlFor={`ki-postural-${String(key)}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
                     <select
+                      id={`ki-postural-${String(key)}`}
                       value={(kiPostural as any)[key]}
                       onChange={e => { setKiPostural(p => ({ ...p, [key]: e.target.value })); setIsDirtyTrue(); }}
                       className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700 appearance-none"
@@ -1496,8 +1499,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 ))}
               </div>
               <div className="mt-3 space-y-1">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Observaciones Posturales</label>
+                <label htmlFor="ki-postural-observations" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Observaciones Posturales</label>
                 <textarea
+                  id="ki-postural-observations"
                   value={kiPostural.observations}
                   onChange={e => { setKiPostural(p => ({ ...p, observations: e.target.value })); setIsDirtyTrue(); }}
                   rows={2}
@@ -1984,10 +1988,10 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 { l: 'Talla (cm)',       v: nutTalla,   set: (n: number) => { setNutTalla(n);   setIsDirtyTrue(); } },
                 { l: 'Circ. Cintura (cm)', v: nutCintura, set: (n: number) => { setNutCintura(n); setIsDirtyTrue(); } },
                 { l: 'Circ. Cadera (cm)', v: nutCadera,  set: (n: number) => { setNutCadera(n);  setIsDirtyTrue(); } },
-              ].map(f => (
+              ].map((f, idx) => (
                 <div key={f.l} className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
-                  <input type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
+                  <label htmlFor={`nut-antropo-${idx}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
+                  <input id={`nut-antropo-${idx}`} type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
                     className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                 </div>
               ))}
@@ -2007,8 +2011,8 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 </div>
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Nivel de Actividad Física</label>
-                <select value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
+                <label htmlFor="nut-activity-level" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Nivel de Actividad Física</label>
+                <select id="nut-activity-level" value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
                   {(Object.entries(ACTIVITY_FACTORS) as [ActivityLevel, { label: string; factor: number }][]).map(([k, v]) => (
                     <option key={k} value={k}>{v.label}</option>
@@ -2054,10 +2058,10 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   { l: 'Masa Muscular (%)', v: nutMasaMuscularPct, set: (n: number) => { setNutMasaMuscularPct(n); setIsDirtyTrue(); } },
                   { l: 'Sum. 6 Pliegues (mm)', v: nutSum6Pliegues, set: (n: number) => { setNutSum6Pliegues(n); setIsDirtyTrue(); } },
                   { l: 'Sum. 8 Pliegues (mm)', v: nutSum8Pliegues, set: (n: number) => { setNutSum8Pliegues(n); setIsDirtyTrue(); } },
-                ].map(f => (
+                ].map((f, idx) => (
                   <div key={f.l} className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
-                    <input type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
+                    <label htmlFor={`nut-composicion-${idx}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
+                    <input id={`nut-composicion-${idx}`} type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
                       className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                   </div>
                 ))}
@@ -2156,14 +2160,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Objetivos nutricionales */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
-                <textarea value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
+                <label htmlFor="nut-goals" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
+                <textarea id="nut-goals" value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Reducir peso corporal 5 kg en 3 meses, normalizar glicemia..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Suplementación Indicada</label>
-                <textarea value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
+                <label htmlFor="nut-supplements" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Suplementación Indicada</label>
+                <textarea id="nut-supplements" value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Vitamina D 2000 UI/día, Omega-3 1g/día..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
@@ -2234,10 +2238,10 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Escala de ánimo */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
+                <label htmlFor="psych-mood-range" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
                 <span className={`text-3xl font-black ${psychMood <= 3 ? 'text-rose-500' : psychMood <= 6 ? 'text-amber-500' : 'text-emerald-500'}`}>{psychMood}/10</span>
               </div>
-              <input type="range" min={0} max={10} step={1} value={psychMood}
+              <input id="psych-mood-range" type="range" min={0} max={10} step={1} value={psychMood}
                 onChange={e => { setPsychMood(Number(e.target.value)); setIsDirtyTrue(); }}
                 className="w-full accent-violet-500 h-3 rounded-full" />
               <div className="flex justify-between text-[10px] font-black text-slate-600 uppercase tracking-widest">
@@ -2248,14 +2252,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Antecedentes psiquiátricos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
-                <textarea value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
+                <label htmlFor="psych-history" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
+                <textarea id="psych-history" value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Diagnósticos previos, hospitalizaciones, intentos de autolesión, medicación psiquiátrica..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
-                <textarea value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
+                <label htmlFor="psych-intervention" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
+                <textarea id="psych-intervention" value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Ej: TCC — reestructuración cognitiva de pensamientos automáticos negativos. EMDR fase 3..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
@@ -2263,8 +2267,8 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* Objetivo próxima sesión */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivo Próxima Sesión</label>
-              <textarea value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
+              <label htmlFor="psych-next-objective" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivo Próxima Sesión</label>
+              <textarea id="psych-next-objective" value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
                 className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
             </div>
