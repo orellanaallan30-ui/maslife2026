@@ -215,7 +215,7 @@ const ProfessionalDashboard: React.FC = () => {
             </div>
             <h2 className="text-xl font-bold text-[#0B1736] tracking-tight mb-2">Agenda Suspendida</h2>
             <p className="text-[#7A859F] text-sm mb-6 leading-relaxed">Regulariza tu suscripción para recibir pacientes.</p>
-            <a href={mpLinkWithBack} className="w-full py-3.5 bg-[#00B3A4] text-white rounded-2xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-[#00B3A4]/30 flex items-center justify-center gap-2 transition-all hover:bg-[#00a093]">
+            <a href={mpLinkWithBack} className="w-full py-3.5 bg-[#00B3A4] text-white rounded-2xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-primary/30 flex items-center justify-center gap-2 transition-all hover:bg-[#00a093]">
               Pagar Suscripción <span className="material-icons-round text-base">payment</span>
             </a>
           </div>

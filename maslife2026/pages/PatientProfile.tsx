@@ -899,8 +899,9 @@ const PatientProfile: React.FC = () => {
                             </div>
 
                             <div>
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu nombre</label>
+                              <label htmlFor="review-name" className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu nombre</label>
                               <input
+                                id="review-name"
                                 value={reviewName}
                                 onChange={e => setReviewName(e.target.value)}
                                 placeholder="Ej: María G."
@@ -909,8 +910,9 @@ const PatientProfile: React.FC = () => {
                             </div>
 
                             <div>
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu RUT (para verificar que fuiste atendido/a)</label>
+                              <label htmlFor="review-rut" className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu RUT (para verificar que fuiste atendido/a)</label>
                               <input
+                                id="review-rut"
                                 value={reviewRut}
                                 onChange={e => setReviewRut(e.target.value)}
                                 placeholder="Ej: 12.345.678-9"
@@ -920,8 +922,9 @@ const PatientProfile: React.FC = () => {
                             </div>
 
                             <div>
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Comentario (opcional)</label>
+                              <label htmlFor="review-comment" className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Comentario (opcional)</label>
                               <textarea
+                                id="review-comment"
                                 value={reviewComment}
                                 onChange={e => setReviewComment(e.target.value)}
                                 placeholder="Cuéntanos tu experiencia..."
@@ -1098,42 +1101,42 @@ const PatientProfile: React.FC = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre Completo *</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Juan Pérez" value={patientData.name} onChange={e => setPatientData({ ...patientData, name: e.target.value })} />
+                    <label htmlFor="booking-name" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre Completo *</label>
+                    <input id="booking-name" className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Juan Pérez" value={patientData.name} onChange={e => setPatientData({ ...patientData, name: e.target.value })} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">RUT *</label>
-                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.rut ? 'border-rose-400' : 'border-slate-200'}`} placeholder="Ej: 12.345.678-9" value={patientData.rut} onChange={e => setPatientData({ ...patientData, rut: e.target.value })} />
+                    <label htmlFor="booking-rut" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">RUT *</label>
+                    <input id="booking-rut" className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.rut ? 'border-rose-400' : 'border-slate-200'}`} placeholder="Ej: 12.345.678-9" value={patientData.rut} onChange={e => setPatientData({ ...patientData, rut: e.target.value })} />
                     {formErrors.rut && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.rut}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Motivo de consulta / Diagnóstico *</label>
-                    <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[100px]" placeholder="Cuenta brevemente qué necesitas para que el profesional se prepare..." value={patientData.reason} onChange={e => setPatientData({ ...patientData, reason: e.target.value })} />
+                    <label htmlFor="booking-reason" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Motivo de consulta / Diagnóstico *</label>
+                    <textarea id="booking-reason" className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[100px]" placeholder="Cuenta brevemente qué necesitas para que el profesional se prepare..." value={patientData.reason} onChange={e => setPatientData({ ...patientData, reason: e.target.value })} />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Celular *</label>
-                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.phone ? 'border-rose-400' : 'border-slate-200'}`} placeholder="+56 9 1234 5678" value={patientData.phone} onChange={e => setPatientData({ ...patientData, phone: e.target.value })} />
+                    <label htmlFor="booking-phone" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Celular *</label>
+                    <input id="booking-phone" className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.phone ? 'border-rose-400' : 'border-slate-200'}`} placeholder="+56 9 1234 5678" value={patientData.phone} onChange={e => setPatientData({ ...patientData, phone: e.target.value })} />
                     {formErrors.phone && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.phone}</p>}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Correo Electrónico *</label>
-                    <input className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.email ? 'border-rose-400' : 'border-slate-200'}`} type="email" placeholder="correo@ejemplo.com" value={patientData.email} onChange={e => setPatientData({ ...patientData, email: e.target.value })} />
+                    <label htmlFor="booking-email" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Correo Electrónico *</label>
+                    <input id="booking-email" className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all ${formErrors.email ? 'border-rose-400' : 'border-slate-200'}`} type="email" placeholder="correo@ejemplo.com" value={patientData.email} onChange={e => setPatientData({ ...patientData, email: e.target.value })} />
                     {formErrors.email && <p className="text-rose-500 text-xs font-bold ml-1">{formErrors.email}</p>}
                   </div>
                   <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Ciudad *</label>
-                    <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Santiago" value={patientData.city} onChange={e => setPatientData({ ...patientData, city: e.target.value })} />
+                    <label htmlFor="booking-city" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Ciudad *</label>
+                    <input id="booking-city" className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Santiago" value={patientData.city} onChange={e => setPatientData({ ...patientData, city: e.target.value })} />
                   </div>
                   
                   {selectedModality === 'home' && (
                     <>
                       <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Dirección (Calle) *</label>
-                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Av. Principal 123" value={patientData.address} onChange={e => setPatientData({ ...patientData, address: e.target.value })} />
+                        <label htmlFor="booking-address" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Dirección (Calle) *</label>
+                        <input id="booking-address" className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Av. Principal 123" value={patientData.address} onChange={e => setPatientData({ ...patientData, address: e.target.value })} />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Número Ext / Depto *</label>
-                        <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Depto 40" value={patientData.houseNumber} onChange={e => setPatientData({ ...patientData, houseNumber: e.target.value })} />
+                        <label htmlFor="booking-house-number" className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Número Ext / Depto *</label>
+                        <input id="booking-house-number" className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Depto 40" value={patientData.houseNumber} onChange={e => setPatientData({ ...patientData, houseNumber: e.target.value })} />
                       </div>
                     </>
                   )}

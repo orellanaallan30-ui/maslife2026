@@ -106,6 +106,8 @@ const SignatureCanvas: React.FC<{ onCapture: (base64: string) => void }> = ({ on
         ref={canvasRef}
         width={400}
         height={120}
+        role="img"
+        aria-label="Área de firma digital. Dibuja tu firma con el dedo o el mouse."
         className="w-full border-2 border-dashed border-slate-300 rounded-xl bg-slate-50
           touch-none cursor-crosshair"
         onMouseDown={startDraw}

@@ -1008,19 +1008,19 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   />
                   <div className="flex items-center shrink-0 opacity-30 group-hover/cf:opacity-100 focus-within:opacity-100 transition-all no-print">
                     <button onClick={() => moveSectionField(section, idx, -1)} disabled={idx === 0} title="Subir"
-                      className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
                       <span className="material-icons-round text-xs">arrow_upward</span>
                     </button>
                     <button onClick={() => moveSectionField(section, idx, 1)} disabled={idx === fields.length - 1} title="Bajar"
-                      className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
                       <span className="material-icons-round text-xs">arrow_downward</span>
                     </button>
                     <button onClick={() => updateSectionField(section, idx, 'color', cycleFieldColor(cf.color))} title="Cambiar color"
-                      className="w-5 h-5 flex items-center justify-center">
+                      className="w-6 h-6 flex items-center justify-center">
                       <span className="w-3 h-3 rounded-full inline-block border border-slate-300" style={{ background: cf.color || '#94a3b8' }} />
                     </button>
                     <button onClick={() => removeSectionField(section, idx)} title="Eliminar"
-                      className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-rose-500">
+                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-500">
                       <span className="material-icons-round text-xs">delete</span>
                     </button>
                   </div>
@@ -1381,7 +1381,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       placeholder="Etiqueta (ej: Deporte)..."
                       className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
                     />
-                    <button onClick={() => { removeCustomField(idx); setIsDirtyTrue(); }} className="opacity-0 group-hover:opacity-100 text-rose-500 no-print transition-all">
+                    <button onClick={() => { removeCustomField(idx); setIsDirtyTrue(); }} className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-rose-500 no-print transition-all">
                       <span className="material-icons-round text-xs">delete</span>
                     </button>
                   </div>
@@ -1531,19 +1531,19 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       <span className="text-[10px] font-black text-slate-400 shrink-0">°)</span>
                       <div className="flex items-center shrink-0 opacity-30 group-hover/rom:opacity-100 focus-within:opacity-100 transition-all no-print">
                         <button onClick={() => moveRomDef(def.id, -1)} disabled={idx === 0} title="Subir"
-                          className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                          className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
                           <span className="material-icons-round text-xs">arrow_upward</span>
                         </button>
                         <button onClick={() => moveRomDef(def.id, 1)} disabled={idx === romDefs.length - 1} title="Bajar"
-                          className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                          className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
                           <span className="material-icons-round text-xs">arrow_downward</span>
                         </button>
                         <button onClick={() => updateRomDef(def.id, { color: cycleFieldColor(def.color) })} title="Cambiar color"
-                          className="w-5 h-5 flex items-center justify-center">
+                          className="w-6 h-6 flex items-center justify-center">
                           <span className="w-3 h-3 rounded-full inline-block border border-slate-300" style={{ background: def.color || '#94a3b8' }} />
                         </button>
                         <button onClick={() => removeRomDef(def.id)} title="Eliminar"
-                          className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-rose-500">
+                          className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-500">
                           <span className="material-icons-round text-xs">delete</span>
                         </button>
                       </div>
@@ -1641,7 +1641,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         <button
                           onClick={() => removeTest(test)}
                           title="Quitar test"
-                          className="shrink-0 w-5 h-5 flex items-center justify-center text-slate-300 hover:text-rose-500 opacity-40 group-hover/test:opacity-100 transition-all no-print"
+                          className="shrink-0 w-6 h-6 flex items-center justify-center text-slate-300 hover:text-rose-500 opacity-100 lg:opacity-40 lg:group-hover/test:opacity-100 transition-all no-print"
                         >
                           <span className="material-icons-round text-xs">close</span>
                         </button>
@@ -1693,7 +1693,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       {analysisImages[idx] ? (
                         <div className="relative aspect-square rounded-[2rem] overflow-hidden border-4 border-slate-50 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
                           <img src={analysisImages[idx]} className="w-full h-full object-cover" alt={label} />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+                          <div className="absolute inset-0 bg-black/40 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                             <button onClick={e => { e.stopPropagation(); uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="w-8 h-8 bg-white text-slate-700 rounded-lg flex items-center justify-center shadow-xl no-print" title="Reemplazar">
                               <span className="material-icons-round text-sm">refresh</span>
                             </button>
@@ -2301,7 +2301,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <div className="space-y-8">
               {goals.map((obj) => (
                 <div key={obj.id} className="p-8 rounded-[2rem] bg-slate-50/50 border border-slate-100 relative print:bg-white animate-in zoom-in-95 group">
-                  <button onClick={() => { setGoals(goals.filter(g => g.id !== obj.id)); setIsDirtyTrue(); }} className="absolute top-8 right-8 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 no-print transition-all"><span className="material-icons-round">delete</span></button>
+                  <button onClick={() => { setGoals(goals.filter(g => g.id !== obj.id)); setIsDirtyTrue(); }} className="absolute top-8 right-8 text-slate-300 hover:text-rose-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 no-print transition-all"><span className="material-icons-round">delete</span></button>
                   <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 items-start">
                     <div className="flex-1 w-full space-y-2">
                       <input value={obj.name} onChange={e => { setGoals(goals.map(g => g.id === obj.id ? { ...g, name: e.target.value } : g)); setIsDirtyTrue(); }} className="w-full bg-transparent border-none p-0 text-2xl font-black text-slate-800 focus:ring-0" />
@@ -2357,7 +2357,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     </div>
                     <button
                       onClick={() => removeFile(file.id)}
-                      className="w-10 h-10 rounded-xl bg-white text-rose-500 opacity-0 group-hover:opacity-100 shadow-md border border-slate-100 flex items-center justify-center no-print transition-all absolute right-4 hover:bg-rose-50"
+                      className="w-10 h-10 rounded-xl bg-white text-rose-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 shadow-md border border-slate-100 flex items-center justify-center no-print transition-all absolute right-4 hover:bg-rose-50"
                     >
                       <span className="material-icons-round text-sm">delete</span>
                     </button>
@@ -2388,7 +2388,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     <input type="date" value={log.date} onChange={e => { setSessionLogs(sessionLogs.map(s => s.id === log.id ? { ...s, date: e.target.value } : s)); setIsDirtyTrue(); }} className="text-[10px] font-black text-primary uppercase bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 text-center print:bg-transparent shadow-sm" />
                   </div>
                   <div className="flex-1 bg-slate-50/80 shadow-inner rounded-xl lg:rounded-[2rem] p-4 lg:p-10 border border-slate-200 relative print:bg-white group-hover:bg-white group-hover:shadow-[0_20px_40px_-15px_rgba(19,91,236,0.1)] transition-all">
-                    <button onClick={() => { setSessionLogs(sessionLogs.filter(s => s.id !== log.id)); setIsDirtyTrue(); }} className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white text-slate-300 hover:text-rose-500 hover:shadow-md border border-slate-100 opacity-0 group-hover:opacity-100 no-print transition-all flex items-center justify-center">
+                    <button onClick={() => { setSessionLogs(sessionLogs.filter(s => s.id !== log.id)); setIsDirtyTrue(); }} className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white text-slate-300 hover:text-rose-500 hover:shadow-md border border-slate-100 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 no-print transition-all flex items-center justify-center">
                       <span className="material-icons-round text-sm">delete</span>
                     </button>
                     <textarea value={log.note} onChange={e => { setSessionLogs(sessionLogs.map(s => s.id === log.id ? { ...s, note: e.target.value } : s)); setIsDirtyTrue(); }} className="w-full bg-transparent border-none p-0 text-sm font-bold text-slate-600 focus:ring-0 resize-none h-24 leading-relaxed placeholder:text-slate-400" placeholder="Registrar evolución de la sesión..." />
