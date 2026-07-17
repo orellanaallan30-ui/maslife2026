@@ -34,7 +34,7 @@ const PatientLanding: React.FC = () => {
                     Reserva citas médicas en segundos. Agenda tu visita o contacta a un ejecutivo clínico directamente. 100% online y seguro.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6">
-                   <button onClick={() => setShowAgendar(true)} className="group relative w-full sm:w-auto px-10 py-5 rounded-2xl bg-slate-900 text-white font-black text-xs md:text-sm uppercase tracking-[0.15em] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border-b-4 border-slate-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-4">
+                   <button onClick={() => setShowAgendar(true)} className="group relative w-full sm:w-auto px-10 py-5 rounded-2xl bg-slate-900 text-white font-black text-xs md:text-sm uppercase tracking-[0.15em] shadow-pop border-b-4 border-slate-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-4">
                       <span>Agendar Atención</span>
                       <span className="material-icons-round text-lg group-hover:rotate-12 transition-transform">event_available</span>
                    </button>
@@ -46,11 +46,11 @@ const PatientLanding: React.FC = () => {
              </div>
              
              <div className="flex-1 w-full max-w-lg mx-auto relative perspective-1000 group">
-               <div className="absolute inset-0 bg-gradient-to-tr from-primary to-teal-200 rounded-[3rem] transform rotate-3 scale-105 blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-700 animate-pulse"></div>
-               <div className="relative bg-white p-4 rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-slate-100 overflow-hidden transform transition-all group-hover:-translate-y-4 hover:rotate-1 duration-700">
-                 <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=800" alt="Médico Especialista" className="w-full aspect-[4/5] object-cover rounded-[2.5rem] group-hover:scale-105 transition-transform duration-1000" />
-                 
-                 <div className="absolute bottom-8 -left-6 bg-white p-5 rounded-[2rem] shadow-2xl border border-slate-100 animate-bounce [animation-duration:3s]">
+               <div className="absolute inset-0 bg-gradient-to-tr from-primary to-teal-200 rounded-blob-xl transform rotate-3 scale-105 blur-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-700 animate-pulse"></div>
+               <div className="relative bg-white p-4 rounded-blob-xl shadow-card-ambient-dark border border-slate-100 overflow-hidden transform transition-all group-hover:-translate-y-4 hover:rotate-1 duration-700">
+                 <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=800" alt="Médico Especialista" className="w-full aspect-[4/5] object-cover rounded-blob-lg group-hover:scale-105 transition-transform duration-1000" />
+
+                 <div className="absolute bottom-8 -left-6 bg-white p-5 rounded-blob-md shadow-2xl border border-slate-100 animate-bounce [animation-duration:3s]">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/30">
                         <span className="material-icons-round">volunteer_activism</span>
@@ -62,7 +62,7 @@ const PatientLanding: React.FC = () => {
                     </div>
                  </div>
 
-                 <div className="absolute top-10 -right-6 bg-white p-5 rounded-[2rem] shadow-2xl border border-slate-100 hidden sm:block animate-bounce [animation-delay:1.5s] [animation-duration:4s]">
+                 <div className="absolute top-10 -right-6 bg-white p-5 rounded-blob-md shadow-2xl border border-slate-100 hidden sm:block animate-bounce [animation-delay:1.5s] [animation-duration:4s]">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
                         <span className="material-icons-round">health_and_safety</span>
@@ -88,8 +88,8 @@ const PatientLanding: React.FC = () => {
                 { val: '24/7', label: 'Reserva Inmediata', icon: 'schedule', color: 'text-amber-500' },
                 { val: '4.9/5', label: 'Calificación Media', icon: 'stars', color: 'text-indigo-500' },
               ].map((s, i) => (
-                <div key={i} className="bg-white p-12 rounded-[3.5rem] border border-slate-100 shadow-sm text-center group hover:shadow-2xl transition-all">
-                  <div className={`w-16 h-16 mx-auto mb-8 rounded-[1.8rem] bg-slate-50 flex items-center justify-center ${s.color} group-hover:scale-110 transition-transform`}>
+                <div key={i} className="bg-white p-12 rounded-blob-2xl border border-slate-100 shadow-sm text-center group hover:shadow-2xl transition-all">
+                  <div className={`w-16 h-16 mx-auto mb-8 rounded-blob-sm bg-slate-50 flex items-center justify-center ${s.color} group-hover:scale-110 transition-transform`}>
                      <span className="material-icons-round text-4xl">{s.icon}</span>
                   </div>
                   <div className="text-5xl font-black text-slate-900 mb-3 tracking-tighter">{s.val}</div>
@@ -126,15 +126,15 @@ const PatientLanding: React.FC = () => {
                           ))}
                       </div>
 
-                      <button className="bg-slate-900 text-white px-14 py-8 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-800 transition-all flex items-center gap-5">
+                      <button className="bg-slate-900 text-white px-14 py-8 rounded-blob-lg font-black text-sm uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-800 transition-all flex items-center gap-5">
                           COMENZAR AHORA
                           <span className="material-icons-round text-xl">rocket_launch</span>
                       </button>
                   </div>
                   <div className="flex-1 relative">
-                      <div className="absolute -inset-6 bg-primary/10 rounded-[5rem] blur-3xl opacity-30 animate-pulse"></div>
-                      <img className="relative rounded-[4rem] shadow-2xl border-[16px] border-white object-cover aspect-[4/5] w-full" src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800" alt="Health App" />
-                      <div className="absolute -bottom-12 -left-12 bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100 hidden md:block animate-bounce">
+                      <div className="absolute -inset-6 bg-primary/10 rounded-blob-4xl blur-3xl opacity-30 animate-pulse"></div>
+                      <img className="relative rounded-blob-3xl shadow-2xl border-[16px] border-white object-cover aspect-[4/5] w-full" src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800" alt="Health App" />
+                      <div className="absolute -bottom-12 -left-12 bg-white p-10 rounded-blob-xl shadow-2xl border border-slate-100 hidden md:block animate-bounce">
                          <div className="flex items-center gap-5">
                             <div className="w-14 h-14 bg-emerald-500 rounded-2xl flex items-center justify-center text-white">
                                <span className="material-icons-round text-3xl">check_circle</span>
@@ -190,13 +190,13 @@ const PatientLanding: React.FC = () => {
                   <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-12 text-primary">Contacto</h4>
                   <ul className="space-y-8 text-slate-500 text-base font-bold">
                       <li className="flex items-center gap-5">
-                        <span className="w-12 h-12 rounded-[1.2rem] bg-white/5 flex items-center justify-center text-primary">
+                        <span className="w-12 h-12 rounded-blob-xs bg-white/5 flex items-center justify-center text-primary">
                           <span className="material-icons-round text-xl">email</span>
                         </span>
                         hola@agendamaslife.com
                       </li>
                       <li className="flex items-center gap-5">
-                        <span className="w-12 h-12 rounded-[1.2rem] bg-white/5 flex items-center justify-center text-primary">
+                        <span className="w-12 h-12 rounded-blob-xs bg-white/5 flex items-center justify-center text-primary">
                           <span className="material-icons-round text-xl">phone</span>
                         </span>
                         +56 9 1234 5678
@@ -216,7 +216,7 @@ const PatientLanding: React.FC = () => {
       {showAgendar && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 sm:p-10 no-print">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAgendar(false)}></div>
-          <div className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
+          <div className="relative w-full max-w-lg bg-white rounded-blob-xl shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 slide-in-from-bottom-10 duration-500">
              <div className="px-10 py-8 bg-slate-900 text-white flex justify-between items-center shrink-0 relative overflow-hidden flex-wrap gap-4">
                <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
                <div className="relative z-10 flex-1">
@@ -255,7 +255,7 @@ const PatientLanding: React.FC = () => {
                  <textarea required value={form.details} onChange={e => setForm({...form, details: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all resize-none h-28" placeholder="Cuéntanos brevemente qué necesitas..." />
                </div>
                
-               <button type="submit" className="mt-4 w-full py-5 rounded-2xl bg-emerald-500 text-white font-black text-sm uppercase tracking-[0.2em] shadow-[0_10px_20px_-10px_rgba(16,185,129,0.5)] border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3">
+               <button type="submit" className="mt-4 w-full py-5 rounded-2xl bg-emerald-500 text-white font-black text-sm uppercase tracking-[0.2em] shadow-success-pop border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3">
                  <span className="material-icons-round">send</span>
                  Solicitar por WhatsApp
                </button>

@@ -693,13 +693,13 @@ const AdminManagement: React.FC = () => {
                             <div className="flex justify-end gap-1.5 flex-wrap">
                               {/* Link suscripción */}
                               <button onClick={() => setSubLinkModal({ pro, link: pro.subscriptionLink || '' })}
-                                title="Link de pago"
+                                title="Link de pago" aria-label="Link de pago"
                                 className={`p-2 rounded-xl border transition-all text-xs ${pro.subscriptionLink ? 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-sky-500 hover:text-white'}`}>
                                 <span className="material-icons-round text-sm">link</span>
                               </button>
                               {/* Regalar días */}
                               <button onClick={() => setGiftModal({ pro, days: '30' })}
-                                title="Regalar días de trial"
+                                title="Regalar días de trial" aria-label="Regalar días de trial"
                                 className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-violet-500 hover:text-white transition-all border border-slate-200">
                                 <span className="material-icons-round text-sm">card_giftcard</span>
                               </button>
@@ -708,6 +708,7 @@ const AdminManagement: React.FC = () => {
                                 onClick={() => sendPasswordReset(pro)}
                                 disabled={resetSent[pro.id] === 'loading' || resetSent[pro.id] === 'sent'}
                                 title={resetSent[pro.id] === 'sent' ? 'Email enviado' : 'Enviar reset de contraseña'}
+                                aria-label={resetSent[pro.id] === 'sent' ? 'Email enviado' : 'Enviar reset de contraseña'}
                                 className={`p-2 rounded-xl border transition-all ${
                                   resetSent[pro.id] === 'sent'   ? 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30 cursor-default'
                                   : resetSent[pro.id] === 'error' ? 'bg-rose-500/20 text-rose-600 border-rose-500/30'
@@ -719,7 +720,7 @@ const AdminManagement: React.FC = () => {
                               </button>
                               {/* Activar */}
                               {pro.subscriptionStatus !== 'active' && (
-                                <button onClick={() => setSubStatus(pro, 'active')} title="Activar suscripción"
+                                <button onClick={() => setSubStatus(pro, 'active')} title="Activar suscripción" aria-label="Activar suscripción"
                                   disabled={loadingIds.has(pro.id)}
                                   className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white transition-all border border-slate-200 disabled:opacity-50">
                                   <span className="material-icons-round text-sm">play_arrow</span>
@@ -727,20 +728,21 @@ const AdminManagement: React.FC = () => {
                               )}
                               {/* Pausar */}
                               {pro.subscriptionStatus !== 'paused' && (
-                                <button onClick={() => setSubStatus(pro, 'paused')} title="Pausar (oculta perfil)"
+                                <button onClick={() => setSubStatus(pro, 'paused')} title="Pausar (oculta perfil)" aria-label="Pausar (oculta perfil)"
                                   disabled={loadingIds.has(pro.id)}
                                   className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-amber-500 hover:text-white transition-all border border-slate-200 disabled:opacity-50">
                                   <span className="material-icons-round text-sm">pause</span>
                                 </button>
                               )}
                               {/* Desactivar */}
-                              <button onClick={() => handleReject(pro)} title="Desactivar aprobación"
+                              <button onClick={() => handleReject(pro)} title="Desactivar aprobación" aria-label="Desactivar aprobación"
                                 className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-amber-600 hover:text-white transition-all border border-slate-200">
                                 <span className="material-icons-round text-sm">block</span>
                               </button>
                               {/* Free pass / Exento */}
                               <button onClick={() => handleToggleExempt(pro)}
                                 title={pro.subscriptionExempt ? 'Quitar free pass' : 'Dar free pass (exento de pago)'}
+                                aria-label={pro.subscriptionExempt ? 'Quitar free pass' : 'Dar free pass (exento de pago)'}
                                 disabled={loadingIds.has(pro.id)}
                                 className={`p-2 rounded-xl border transition-all disabled:opacity-50 ${
                                   pro.subscriptionExempt
@@ -754,6 +756,7 @@ const AdminManagement: React.FC = () => {
                                 title={pro.isVerified
                                   ? `Verificado — SIS: ${pro.sisCode || 's/i'} · RUT: ${pro.rut || 's/i'} (clic para quitar)`
                                   : `Otorgar insignia de verificado — SIS: ${pro.sisCode || 's/i'} · RUT: ${pro.rut || 's/i'}`}
+                                aria-label={pro.isVerified ? 'Quitar insignia de verificado' : 'Otorgar insignia de verificado'}
                                 disabled={loadingIds.has(pro.id)}
                                 className={`p-2 rounded-xl border transition-all disabled:opacity-50 ${
                                   pro.isVerified
@@ -765,6 +768,7 @@ const AdminManagement: React.FC = () => {
                               {/* Nota base (estrellas) */}
                               <button onClick={() => setSeedModal({ pro, rating: String(pro.seedRating ?? 0), count: String(pro.seedRatingCount ?? 0) })}
                                 title={`Nota base: ${pro.seedRating ?? 0} (${pro.seedRatingCount ?? 0} reseñas)`}
+                                aria-label={`Nota base: ${pro.seedRating ?? 0} (${pro.seedRatingCount ?? 0} reseñas)`}
                                 className={`p-2 rounded-xl border transition-all ${
                                   (pro.seedRating ?? 0) > 0
                                     ? 'bg-amber-500/20 text-amber-600 border-amber-500/30 hover:bg-amber-500 hover:text-white'
@@ -773,7 +777,7 @@ const AdminManagement: React.FC = () => {
                                 <span className="material-icons-round text-sm">star</span>
                               </button>
                               {/* Eliminar */}
-                              <button onClick={() => handleDelete(pro)} title="Eliminar permanentemente"
+                              <button onClick={() => handleDelete(pro)} title="Eliminar permanentemente" aria-label="Eliminar permanentemente"
                                 className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-rose-500 hover:text-white transition-all border border-slate-200">
                                 <span className="material-icons-round text-sm">delete</span>
                               </button>

@@ -394,15 +394,15 @@ const ProfessionalRegistration: React.FC = () => {
                   </div>
                   <div><p className="font-bold text-slate-700 text-sm">Foto de perfil</p><p className="text-xs text-slate-400">Opcional</p></div>
                 </div>
-                <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Nombre completo *</label>
-                  <input value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className={inp} placeholder="Ej: María González"/></div>
-                <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Email *</label>
-                  <input type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} className={inp} placeholder="correo@ejemplo.com" autoComplete="username"/></div>
+                <div><label htmlFor="reg-name" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Nombre completo *</label>
+                  <input id="reg-name" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className={inp} placeholder="Ej: María González"/></div>
+                <div><label htmlFor="reg-email" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Email *</label>
+                  <input id="reg-email" type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} className={inp} placeholder="correo@ejemplo.com" autoComplete="username"/></div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Contraseña *</label>
-                    <input type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} className={inp} placeholder="Mín. 8 caracteres" autoComplete="new-password"/></div>
-                  <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Confirmar contraseña *</label>
-                    <input type="password" value={form.confirm} onChange={e=>setForm(f=>({...f,confirm:e.target.value}))} className={inp} placeholder="Repite la contraseña" autoComplete="new-password"/></div>
+                  <div><label htmlFor="reg-password" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Contraseña *</label>
+                    <input id="reg-password" type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} className={inp} placeholder="Mín. 8 caracteres" autoComplete="new-password"/></div>
+                  <div><label htmlFor="reg-confirm" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Confirmar contraseña *</label>
+                    <input id="reg-confirm" type="password" value={form.confirm} onChange={e=>setForm(f=>({...f,confirm:e.target.value}))} className={inp} placeholder="Repite la contraseña" autoComplete="new-password"/></div>
                 </div>
                 {form.password&&(
                   <div className="grid grid-cols-2 gap-1.5">
@@ -413,8 +413,8 @@ const ProfessionalRegistration: React.FC = () => {
                     ))}
                   </div>
                 )}
-                <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Especialidad *</label>
-                  <select value={form.specialty} onChange={e=>setForm(f=>({...f,specialty:e.target.value}))} className={inp}>
+                <div><label htmlFor="reg-specialty" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Especialidad *</label>
+                  <select id="reg-specialty" value={form.specialty} onChange={e=>setForm(f=>({...f,specialty:e.target.value}))} className={inp}>
                     <option value="">— Selecciona tu especialidad —</option>
                     <option value="Kinesiología y Rehabilitación">Kinesiología y Rehabilitación</option>
                     <option value="Nutrición y Dietética">Nutrición y Dietética</option>
@@ -429,8 +429,8 @@ const ProfessionalRegistration: React.FC = () => {
                     <option value="Otra Especialidad">Otra Especialidad</option>
                   </select></div>
                 <div>
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Ciudad *</label>
-                  <select value={form.city} onChange={e=>setForm(f=>({...f,city:e.target.value}))} className={inp}>
+                  <label htmlFor="reg-city" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Ciudad *</label>
+                  <select id="reg-city" value={form.city} onChange={e=>setForm(f=>({...f,city:e.target.value}))} className={inp}>
                     {CHILEAN_CITIES.map(c=><option key={c} value={c}>{c}</option>)}
                   </select>
                   {form.city==='Otra ciudad'&&(
@@ -440,8 +440,8 @@ const ProfessionalRegistration: React.FC = () => {
                 </div>
                 {/* Código SIS (opcional) — habilita la insignia de verificado */}
                 <div>
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">N° registro Superintendencia de Salud (SIS)</label>
-                  <input value={form.sisCode} onChange={e=>setForm(f=>({...f,sisCode:e.target.value}))} className={inp} placeholder="Opcional — para tu insignia de verificado"/>
+                  <label htmlFor="reg-sis-code" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">N° registro Superintendencia de Salud (SIS)</label>
+                  <input id="reg-sis-code" value={form.sisCode} onChange={e=>setForm(f=>({...f,sisCode:e.target.value}))} className={inp} placeholder="Opcional — para tu insignia de verificado"/>
                   <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed flex items-start gap-1">
                     <span className="material-icons-round text-xs mt-0.5 text-teal-500">verified</span>
                     El administrador revisa tu SIS + RUT para otorgarte la insignia de <strong className="text-slate-500">Profesional Verificado</strong> que aparece junto a tu foto.
@@ -449,8 +449,8 @@ const ProfessionalRegistration: React.FC = () => {
                 </div>
                 {/* Código promocional / referido (opcional) */}
                 <div>
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Código promocional (opcional)</label>
-                  <input value={form.referralCode} onChange={e=>setForm(f=>({...f,referralCode:e.target.value.toUpperCase()}))} className={`${inp} font-mono tracking-widest`} placeholder="Si un colega te invitó, ingrésalo aquí"/>
+                  <label htmlFor="reg-referral-code" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Código promocional (opcional)</label>
+                  <input id="reg-referral-code" value={form.referralCode} onChange={e=>setForm(f=>({...f,referralCode:e.target.value.toUpperCase()}))} className={`${inp} font-mono tracking-widest`} placeholder="Si un colega te invitó, ingrésalo aquí"/>
                   <p className="text-[11px] text-slate-400 mt-1.5">Puedes registrarte sin código. Si tienes uno de referido, ambos reciben beneficios.</p>
                 </div>
                 {error&&<div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2">
@@ -484,10 +484,10 @@ const ProfessionalRegistration: React.FC = () => {
                 </div>
                 <div className="bg-slate-50 rounded-2xl p-5 border-2 border-slate-100 space-y-4">
                   <h4 className="text-sm font-black text-slate-800">Tu primer servicio</h4>
-                  <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Nombre</label>
-                    <input value={form.serviceName} onChange={e=>setForm(f=>({...f,serviceName:e.target.value}))} className={inp} placeholder="Consulta Inicial"/></div>
-                  <div><label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Precio (CLP)</label>
-                    <input type="text" inputMode="numeric" value={form.servicePrice} onChange={e=>setForm(f=>({...f,servicePrice:e.target.value.replace(/\D/g,'')}))} className={inp} placeholder="45000"/></div>
+                  <div><label htmlFor="reg-service-name" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Nombre</label>
+                    <input id="reg-service-name" value={form.serviceName} onChange={e=>setForm(f=>({...f,serviceName:e.target.value}))} className={inp} placeholder="Consulta Inicial"/></div>
+                  <div><label htmlFor="reg-service-price" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Precio (CLP)</label>
+                    <input id="reg-service-price" type="text" inputMode="numeric" value={form.servicePrice} onChange={e=>setForm(f=>({...f,servicePrice:e.target.value.replace(/\D/g,'')}))} className={inp} placeholder="45000"/></div>
                 </div>
                 <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4 flex items-start gap-3">
                   <span className="material-icons-round text-teal-500 text-xl shrink-0 mt-0.5">verified</span>

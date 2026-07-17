@@ -366,7 +366,7 @@ const Settings: React.FC = () => {
                 <button
                   disabled={!hasChanges}
                   onClick={handleSave}
-                  className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${hasChanges ? 'bg-slate-900 text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border-b-4 border-slate-800 active:border-b-0 active:translate-y-1' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
+                  className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${hasChanges ? 'bg-slate-900 text-white shadow-pop border-b-4 border-slate-800 active:border-b-0 active:translate-y-1' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
                 >
                   Guardar Cambios
                 </button>
@@ -398,7 +398,7 @@ const Settings: React.FC = () => {
 
           {activeTab === 'perfil' && (
             <div className="space-y-4 md:space-y-5 animate-in fade-in duration-500">
-              <section className="bg-white rounded-2xl border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] overflow-hidden p-4 md:p-8 flex flex-col lg:flex-row gap-4 md:gap-6">
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-card-ambient overflow-hidden p-4 md:p-8 flex flex-col lg:flex-row gap-4 md:gap-6">
                 <div className="relative group shrink-0 mx-auto lg:mx-0">
                   <img className="w-28 h-28 rounded-2xl object-cover border-4 border-slate-50 shadow-lg" src={localProfile.avatar || "https://picsum.photos/seed/doc/400/400"} alt="Avatar" />
                   <label className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary text-white rounded-xl shadow-lg cursor-pointer hover:scale-110 transition-transform flex items-center justify-center border-2 border-white">
@@ -764,7 +764,7 @@ const Settings: React.FC = () => {
               </section>
 
               {/* ── Google Calendar Sync ── */}
-              <section className="bg-white rounded-2xl border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] p-5 md:p-8 space-y-5">
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-card-ambient p-5 md:p-8 space-y-5">
                 <h3 className="text-base font-black text-black flex items-center gap-3">
                   <span className="material-icons-round text-[#4285F4]">calendar_month</span>
                   Google Calendar
@@ -865,7 +865,7 @@ const Settings: React.FC = () => {
                 </div>
               </section>
 
-              <section className="bg-white rounded-2xl border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] p-5 md:p-8 space-y-5">
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-card-ambient p-5 md:p-8 space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-black text-black flex items-center gap-3">
                     <span className="material-icons-round text-primary">medical_services</span>
@@ -873,7 +873,7 @@ const Settings: React.FC = () => {
                   </h3>
                   <button
                     onClick={() => setShowServiceModal(true)}
-                    className="bg-slate-900 text-white px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] border-b-4 border-slate-800 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
+                    className="bg-slate-900 text-white px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-pop border-b-4 border-slate-800 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
                   >
                     <span className="material-icons-round text-sm">add</span>
                     Nuevo Servicio
@@ -923,7 +923,7 @@ const Settings: React.FC = () => {
                 </div>
               </section>
 
-              <section className="bg-white rounded-2xl border border-slate-100 shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] p-5 md:p-8 space-y-5">
+              <section className="bg-white rounded-2xl border border-slate-100 shadow-card-ambient p-5 md:p-8 space-y-5">
                 <h3 className="text-base font-black text-black flex items-center gap-3">
                   <span className="material-icons-round text-primary">schedule</span>
                   Horarios de Atención Semanal
