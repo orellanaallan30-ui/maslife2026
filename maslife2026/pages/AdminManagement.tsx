@@ -237,30 +237,36 @@ const AdminManagement: React.FC = () => {
   };
 
   const setSubStatus = async (pro: ProfessionalProfile, next: SubscriptionStatus) => {
-    const isActive    = next === 'active';
-    const isPausedNext = next === 'paused';
-    const res = await adminFetch('PATCH', {
-      id: pro.id, subscription_status: next, is_subscribed: isActive, is_public: !isPausedNext,
-    });
-    if (res.ok) {
-      setAllPros(prev => prev.map(p => p.id === pro.id
-        ? { ...p, subscriptionStatus: next, isSubscribed: isActive, isPublic: !isPausedNext } : p));
-      const label = isActive ? '✅ Activo' : isPausedNext ? '⏸️ Pausado' : '⏳ Trial';
-      showToast(`${pro.name} → ${label}`);
-    } else {
-      showToast('❌ No se pudo cambiar la suscripción. Intenta de nuevo.');
-    }
+    setLoading(pro.id, true);
+    try {
+      const isActive    = next === 'active';
+      const isPausedNext = next === 'paused';
+      const res = await adminFetch('PATCH', {
+        id: pro.id, subscription_status: next, is_subscribed: isActive, is_public: !isPausedNext,
+      });
+      if (res.ok) {
+        setAllPros(prev => prev.map(p => p.id === pro.id
+          ? { ...p, subscriptionStatus: next, isSubscribed: isActive, isPublic: !isPausedNext } : p));
+        const label = isActive ? '✅ Activo' : isPausedNext ? '⏸️ Pausado' : '⏳ Trial';
+        showToast(`${pro.name} → ${label}`);
+      } else {
+        showToast('❌ No se pudo cambiar la suscripción. Intenta de nuevo.');
+      }
+    } finally { setLoading(pro.id, false); }
   };
 
   const handleToggleExempt = async (pro: ProfessionalProfile) => {
-    const next = !pro.subscriptionExempt;
-    const res = await adminFetch('PATCH', { id: pro.id, subscription_exempt: next });
-    if (res.ok) {
-      setAllPros(prev => prev.map(p => p.id === pro.id ? { ...p, subscriptionExempt: next } : p));
-      showToast(next ? `🎁 Free pass activado: ${pro.name}` : `🔒 Free pass removido: ${pro.name}`);
-    } else {
-      showToast('❌ Error al actualizar free pass');
-    }
+    setLoading(pro.id, true);
+    try {
+      const next = !pro.subscriptionExempt;
+      const res = await adminFetch('PATCH', { id: pro.id, subscription_exempt: next });
+      if (res.ok) {
+        setAllPros(prev => prev.map(p => p.id === pro.id ? { ...p, subscriptionExempt: next } : p));
+        showToast(next ? `🎁 Free pass activado: ${pro.name}` : `🔒 Free pass removido: ${pro.name}`);
+      } else {
+        showToast('❌ Error al actualizar free pass');
+      }
+    } finally { setLoading(pro.id, false); }
   };
 
   const handleSaveSubLink = async () => {
@@ -458,7 +464,7 @@ const AdminManagement: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full h-full bg-slate-50 overflow-y-auto text-slate-700">
+    <div className="flex-1 min-h-0 w-full h-full bg-slate-50 overflow-y-auto text-slate-700">
 
       {/* Toast */}
       {toast && (
@@ -483,7 +489,7 @@ const AdminManagement: React.FC = () => {
         </div>
 
         {/* ── Stats bar ── */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8">
           {[
             { val: allPros.length,  label: 'Total',     icon: 'groups',          cls: 'text-slate-900' },
             { val: activeCount,     label: 'Activos',   icon: 'verified',        cls: 'text-emerald-600' },
@@ -714,14 +720,16 @@ const AdminManagement: React.FC = () => {
                               {/* Activar */}
                               {pro.subscriptionStatus !== 'active' && (
                                 <button onClick={() => setSubStatus(pro, 'active')} title="Activar suscripción"
-                                  className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white transition-all border border-slate-200">
+                                  disabled={loadingIds.has(pro.id)}
+                                  className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white transition-all border border-slate-200 disabled:opacity-50">
                                   <span className="material-icons-round text-sm">play_arrow</span>
                                 </button>
                               )}
                               {/* Pausar */}
                               {pro.subscriptionStatus !== 'paused' && (
                                 <button onClick={() => setSubStatus(pro, 'paused')} title="Pausar (oculta perfil)"
-                                  className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-amber-500 hover:text-white transition-all border border-slate-200">
+                                  disabled={loadingIds.has(pro.id)}
+                                  className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:bg-amber-500 hover:text-white transition-all border border-slate-200 disabled:opacity-50">
                                   <span className="material-icons-round text-sm">pause</span>
                                 </button>
                               )}
@@ -733,7 +741,8 @@ const AdminManagement: React.FC = () => {
                               {/* Free pass / Exento */}
                               <button onClick={() => handleToggleExempt(pro)}
                                 title={pro.subscriptionExempt ? 'Quitar free pass' : 'Dar free pass (exento de pago)'}
-                                className={`p-2 rounded-xl border transition-all ${
+                                disabled={loadingIds.has(pro.id)}
+                                className={`p-2 rounded-xl border transition-all disabled:opacity-50 ${
                                   pro.subscriptionExempt
                                     ? 'bg-teal-500 text-white border-teal-400 hover:bg-teal-600'
                                     : 'bg-slate-100 text-slate-500 hover:bg-teal-500 hover:text-white border-slate-200'
@@ -745,7 +754,8 @@ const AdminManagement: React.FC = () => {
                                 title={pro.isVerified
                                   ? `Verificado — SIS: ${pro.sisCode || 's/i'} · RUT: ${pro.rut || 's/i'} (clic para quitar)`
                                   : `Otorgar insignia de verificado — SIS: ${pro.sisCode || 's/i'} · RUT: ${pro.rut || 's/i'}`}
-                                className={`p-2 rounded-xl border transition-all ${
+                                disabled={loadingIds.has(pro.id)}
+                                className={`p-2 rounded-xl border transition-all disabled:opacity-50 ${
                                   pro.isVerified
                                     ? 'bg-emerald-500 text-white border-emerald-400 hover:bg-emerald-600'
                                     : 'bg-slate-100 text-slate-500 hover:bg-emerald-500 hover:text-white border-slate-200'
@@ -907,7 +917,7 @@ const AdminManagement: React.FC = () => {
         {/* ── TAB: Salud del sistema ── */}
         {activeTab === 'health' && (
           <div className="space-y-5">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
                 { label: 'Pagos OK', val: health?.outcomeCounts['matched_updated'] || 0, cls: 'text-emerald-600' },
                 { label: 'Sin conciliar', val: health?.outcomeCounts['unmatched'] || 0, cls: 'text-amber-600' },
@@ -1031,7 +1041,7 @@ const AdminManagement: React.FC = () => {
             {/* Desglose suscripciones */}
             <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4">
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Desglose de suscripciones</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
                   { val: allPros.length,  label: 'Total',      color: 'bg-slate-100 text-slate-700' },
                   { val: activeCount,     label: 'Activos',    color: 'bg-emerald-500/15 text-emerald-600' },

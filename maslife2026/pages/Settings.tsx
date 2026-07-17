@@ -348,7 +348,7 @@ const Settings: React.FC = () => {
     <div className="flex-1 flex flex-col min-h-0 w-full bg-slate-50">
       <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 md:p-6">
         <div className="max-w-5xl mx-auto space-y-5 pb-24 md:pb-10">
-          <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
             <div>
               <p className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Configuración Agenda Maslife</p>
               <h1 className="text-2xl font-black tracking-tight text-black">Ajustes de Cuenta</h1>
@@ -503,7 +503,7 @@ const Settings: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre Completo</label>
                       <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" type="text" value={localProfile.name} onChange={e => handleUpdate({ name: e.target.value })} />
@@ -880,7 +880,7 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {localProfile.services.map((service) => (
                     <div key={service.id} className="bg-slate-50 rounded-2xl p-5 border-2 border-slate-200 group hover:border-primary/30 transition-all flex flex-col justify-between relative overflow-hidden">
                       {service.image && (

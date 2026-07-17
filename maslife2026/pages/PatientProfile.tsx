@@ -1032,7 +1032,7 @@ const PatientProfile: React.FC = () => {
                 </div>
                 
                 <p className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4">Horarios del Día</p>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                   {availableDays[selectedDay]?.slots.map((slot) => (
                     <button
                       key={slot.time}
@@ -1096,7 +1096,7 @@ const PatientProfile: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Nombre Completo *</label>
                     <input className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl py-4 px-5 font-black text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all" placeholder="Ej: Juan Pérez" value={patientData.name} onChange={e => setPatientData({ ...patientData, name: e.target.value })} />

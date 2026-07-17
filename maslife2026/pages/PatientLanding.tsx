@@ -81,7 +81,7 @@ const PatientLanding: React.FC = () => {
 
       <section className="py-40 bg-slate-50/50 relative">
         <div className="max-w-7xl mx-auto px-8">
-           <div className="grid grid-cols-1 md:grid-cols-4 gap-14">
+           <div className="grid grid-cols-1 lg:grid-cols-4 gap-14">
               {[
                 { val: '5.000+', label: 'Médicos Verificados', icon: 'verified_user', color: 'text-emerald-500' },
                 { val: '250k+', label: 'Pacientes Felices', icon: 'sentiment_very_satisfied', color: 'text-primary' },
@@ -151,7 +151,7 @@ const PatientLanding: React.FC = () => {
       </section>
 
       <footer className="bg-slate-900 pt-40 pb-20 text-white mt-auto">
-          <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-24">
+          <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-4 gap-24">
               <div className="col-span-1 md:col-span-1 space-y-10">
                   <div className="flex items-center gap-4">
                       <div className="bg-primary p-3 rounded-2xl">
@@ -204,7 +204,7 @@ const PatientLanding: React.FC = () => {
                   </ul>
               </div>
           </div>
-          <div className="max-w-7xl mx-auto px-8 mt-40 pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8 text-xs font-black text-slate-500 uppercase tracking-[0.3em]">
+          <div className="max-w-7xl mx-auto px-8 mt-40 pt-12 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center gap-8 text-xs font-black text-slate-500 uppercase tracking-[0.3em]">
               <p>© 2024 AGENDA MASLIFE • SANTIAGO, CHILE</p>
               <div className="flex items-center gap-10">
                   <span className="flex items-center gap-3 text-emerald-500"><span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> SERVIDORES ONLINE</span>
