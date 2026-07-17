@@ -11,8 +11,8 @@ Rama de feature: `claude/analyze-test-coverage-48A8Z` → merge a `main` para de
 
 ```
 maslife2026/           ← Frontend React (Vite)
-  pages/               ← 24 páginas (.tsx)
-  components/          ← 5 componentes reutilizables
+  pages/               ← 25 páginas (.tsx)
+  components/          ← 6 componentes reutilizables
   ClinicContext.tsx    ← Estado global (pacientes, citas, transacciones)
   supabaseService.ts   ← ORM completo para Supabase
   types.ts             ← Interfaces TypeScript
