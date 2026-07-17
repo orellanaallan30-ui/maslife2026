@@ -127,7 +127,7 @@ const Finances: React.FC = () => {
             <div className="flex items-center gap-2 md:gap-4">
               <button
                 onClick={() => setShowManualModal(true)}
-                className="flex-1 md:flex-none bg-primary text-white px-4 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 hover:brightness-110 flex items-center justify-center gap-2 transition-all shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)]"
+                className="flex-1 md:flex-none bg-primary text-white px-4 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 hover:brightness-110 flex items-center justify-center gap-2 transition-all shadow-cta"
               >
                 <span className="material-icons-round text-base">add_circle</span>
                 <span>NUEVO REGISTRO</span>
@@ -139,7 +139,7 @@ const Finances: React.FC = () => {
                 <span className="material-icons-round text-sm">history_toggle_off</span>
                 <span className="hidden md:inline">REINICIAR</span>
               </button>
-              <button onClick={() => window.print()} className="bg-teal-500 text-white px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-teal-700 active:border-b-0 active:translate-y-1 shadow-[0_10px_30px_-10px_rgba(20,184,166,0.6)] hover:brightness-110 flex items-center gap-1.5 transition-all">
+              <button onClick={() => window.print()} className="bg-teal-500 text-white px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-teal-700 active:border-b-0 active:translate-y-1 shadow-teal-500/60 hover:brightness-110 flex items-center gap-1.5 transition-all">
                 <span className="material-icons-round text-sm">download</span>
                 <span className="hidden md:inline">INFORME</span>
               </button>
@@ -167,7 +167,7 @@ const Finances: React.FC = () => {
               { label: 'Gastos Registrados', val: `$${expensesManual.toLocaleString('es-CL')}`, grow: 'Egresos', icon: 'trending_down', color: 'text-rose-500', bg: 'bg-rose-50' },
               { label: 'Ticket Promedio', val: `$${ticketPromedio.toLocaleString('es-CL')}`, grow: 'Eficiencia', icon: 'analytics', color: 'text-amber-500', bg: 'bg-amber-50' },
             ].map((stat, i) => (
-              <div key={i} className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2.5rem] border border-slate-100 shadow-sm hover:-translate-y-1 hover:shadow-xl transition-all">
+              <div key={i} className="bg-white p-4 md:p-8 rounded-2xl md:rounded-blob-lg border border-slate-100 shadow-sm hover:-translate-y-1 hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between mb-3 md:mb-8">
                   <div className={`w-10 h-10 md:w-16 md:h-16 ${stat.bg} ${stat.color} rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm`}>
                     <span className="material-icons-round text-2xl md:text-4xl">{stat.icon}</span>
@@ -184,7 +184,7 @@ const Finances: React.FC = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-10">
             {/* Se añade min-h para asegurar que Recharts detecte altura siempre */}
-            <div className="lg:col-span-8 bg-white p-5 md:p-12 rounded-2xl md:rounded-[3rem] border border-slate-100 shadow-sm md:shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] relative overflow-hidden min-h-[280px] md:min-h-[450px]">
+            <div className="lg:col-span-8 bg-white p-5 md:p-12 rounded-2xl md:rounded-blob-xl border border-slate-100 shadow-sm md:shadow-card-ambient relative overflow-hidden min-h-[280px] md:min-h-[450px]">
               <div className="flex items-center justify-between mb-5 md:mb-12">
                 <div>
                   <h3 className="font-black text-lg md:text-2xl tracking-tight text-slate-900">Actividad Económica</h3>
@@ -214,7 +214,7 @@ const Finances: React.FC = () => {
               </div>
             </div>
 
-            <div className="lg:col-span-4 bg-white p-5 md:p-12 rounded-2xl md:rounded-[3rem] border border-slate-100 shadow-sm md:shadow-[0_32px_64px_-16px_rgba(19,91,236,0.05)] flex flex-col">
+            <div className="lg:col-span-4 bg-white p-5 md:p-12 rounded-2xl md:rounded-blob-xl border border-slate-100 shadow-sm md:shadow-card-ambient flex flex-col">
               <h3 className="text-base md:text-lg font-black tracking-tight mb-4 md:mb-8 text-slate-900">Últimos Movimientos</h3>
               <div className="flex-1 space-y-4 overflow-y-auto max-h-[350px] custom-scrollbar pr-2">
                 {manualTransactions.length === 0 && appointments.length === 0 && (
@@ -273,7 +273,7 @@ const Finances: React.FC = () => {
           </button>
 
           {mpExpanded && (
-            <div className="mt-3 bg-white rounded-3xl md:rounded-[3rem] border border-slate-100 shadow-[0_48px_100px_-20px_rgba(0,158,227,0.12)] overflow-hidden">
+            <div className="mt-3 bg-white rounded-3xl md:rounded-blob-xl border border-slate-100 shadow-[0_48px_100px_-20px_rgba(0,158,227,0.12)] overflow-hidden">
               {/* Header */}
               <div className="p-5 md:p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-gradient-to-r from-[#009ee3]/5 to-white">
                 <div className="flex items-center gap-3">
@@ -377,7 +377,7 @@ const Finances: React.FC = () => {
         {/* MODAL: REGISTRO MANUAL (INGRESO O GASTO) */}
         {showManualModal && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-100 overflow-hidden max-h-[92dvh] flex flex-col animate-in zoom-in-95 duration-300">
+            <div className="bg-white w-full max-w-lg rounded-blob-lg shadow-modal border border-slate-100 overflow-hidden max-h-[92dvh] flex flex-col animate-in zoom-in-95 duration-300">
               <div className={`p-6 lg:p-10 shrink-0 ${newManual.type === 'Ingreso' ? 'bg-primary' : 'bg-rose-500'} text-white`}>
                 <div className="flex justify-between items-center mb-4 lg:mb-8">
                   <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-white/20 flex items-center justify-center shadow-sm backdrop-blur-md">
@@ -437,7 +437,7 @@ const Finances: React.FC = () => {
                   />
                 </div>
 
-                <button type="submit" className={`w-full py-4 lg:py-5 ${newManual.type === 'Ingreso' ? 'bg-slate-900 border-b-4 border-black' : 'bg-rose-600 border-b-4 border-rose-800'} text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] active:border-b-0 active:translate-y-1 transition-all mt-4 lg:mt-8`}>
+                <button type="submit" className={`w-full py-4 lg:py-5 ${newManual.type === 'Ingreso' ? 'bg-slate-900 border-b-4 border-black' : 'bg-rose-600 border-b-4 border-rose-800'} text-white rounded-blob-md font-black text-[10px] uppercase tracking-[0.2em] shadow-pop active:border-b-0 active:translate-y-1 transition-all mt-4 lg:mt-8`}>
                   CONFIRMAR REGISTRO
                 </button>
               </form>

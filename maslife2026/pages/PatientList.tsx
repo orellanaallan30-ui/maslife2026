@@ -566,7 +566,7 @@ const PatientList: React.FC = () => {
 
         {isModalOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-6 overflow-y-auto">
-            <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 md:p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-100 animate-in zoom-in-95 duration-300">
+            <div className="bg-white w-full max-w-lg rounded-blob-lg p-8 md:p-10 shadow-modal border border-slate-100 animate-in zoom-in-95 duration-300">
               <div className="flex justify-between items-start mb-8">
                 <div>
                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Nuevo Paciente</h3>
@@ -637,7 +637,7 @@ const PatientList: React.FC = () => {
 
                 <div className="pt-6 flex flex-col sm:flex-row gap-4">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-5 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all hidden sm:block">Cancelar</button>
-                  <button type="submit" className="w-full sm:flex-1 py-5 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">Crear Paciente Central</button>
+                  <button type="submit" className="w-full sm:flex-1 py-5 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">Crear Paciente Central</button>
                 </div>
               </form>
             </div>

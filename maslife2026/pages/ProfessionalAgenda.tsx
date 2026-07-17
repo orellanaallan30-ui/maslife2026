@@ -413,7 +413,7 @@ const ProfessionalAgenda: React.FC = () => {
                   ))}
                </div>
 
-               <div className={`bg-white rounded-2xl md:rounded-[3rem] shadow-sm md:shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] border border-slate-100 ${viewMode === 'week' ? 'overflow-x-auto' : 'overflow-hidden'}`}>
+               <div className={`bg-white rounded-2xl md:rounded-blob-xl shadow-sm md:shadow-[0_48px_100px_-20px_rgba(19,91,236,0.1)] border border-slate-100 ${viewMode === 'week' ? 'overflow-x-auto' : 'overflow-hidden'}`}>
                   {viewMode === 'day' ? (
                      <div className="grid grid-cols-1 divide-y-2 divide-slate-100">
                         {hours.map(hour => {
@@ -556,7 +556,7 @@ const ProfessionalAgenda: React.FC = () => {
 
             {isCreateModalOpen && (
                <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-[100] flex items-start justify-center p-6 pt-16 overflow-y-auto">
-                  <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
+                  <div className="bg-white w-full max-w-lg rounded-blob-lg shadow-modal border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
                      <div className="p-8 md:p-10 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start">
                         <div>
                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Agendar Atención</h3>
@@ -696,7 +696,7 @@ const ProfessionalAgenda: React.FC = () => {
                                  };
                                  onAddPatient(newPat);
                                  handleAddAppointment(newPat);
-                              }} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-[0_10px_30px_-10px_rgba(19,91,236,0.6)] border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg">schedule</span> Agendar Cita</button>
+                              }} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg">schedule</span> Agendar Cita</button>
                            </div>
                         )}
 
@@ -839,7 +839,7 @@ const ProfessionalAgenda: React.FC = () => {
                               )}
 
                               <button onClick={handleApplySmartBlock} disabled={blockTimes.length === 0 || blockApplying}
-                                 className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-b-4 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 ${blockTimes.length > 0 && !blockApplying ? 'bg-slate-900 text-white border-slate-800 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}>
+                                 className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-b-4 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 ${blockTimes.length > 0 && !blockApplying ? 'bg-slate-900 text-white border-slate-800 shadow-pop' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}>
                                  {blockApplying
                                     ? <><span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-white rounded-full animate-spin" /> Aplicando...</>
                                     : <><span className="material-icons-round text-lg text-rose-400">block</span>
@@ -856,10 +856,10 @@ const ProfessionalAgenda: React.FC = () => {
             {/* MODAL EDICIÓN */}
             {isEditModalOpen && editingApp && (
                <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[100] flex items-start justify-center p-6 pt-12 overflow-y-auto">
-                  <div className="bg-white w-full max-w-lg rounded-[2.5rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
+                  <div className="bg-white w-full max-w-lg rounded-blob-lg shadow-modal border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
                      <div className={`p-8 md:p-10 ${editingApp.status === 'Bloqueado' ? 'bg-slate-800' : (editingApp.color || 'bg-primary')} text-white relative flex flex-col items-center text-center`}>
                         <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-95"><span className="material-icons-round text-2xl">close</span></button>
-                        <div className="w-20 h-20 rounded-[1.5rem] bg-white/20 flex items-center justify-center font-black text-4xl mb-6 shadow-xl backdrop-blur-md border border-white/20">{editingApp.patientName.charAt(0)}</div>
+                        <div className="w-20 h-20 rounded-blob-2xs bg-white/20 flex items-center justify-center font-black text-4xl mb-6 shadow-xl backdrop-blur-md border border-white/20">{editingApp.patientName.charAt(0)}</div>
                         <h3 className="text-3xl font-black tracking-tight mb-3">{editingApp.patientName}</h3>
                         <div className="flex items-center gap-3 opacity-90 border border-white/20 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm shadow-sm">
                            <span className="material-icons-round text-sm">schedule</span>

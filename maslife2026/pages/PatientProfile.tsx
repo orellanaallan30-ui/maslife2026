@@ -604,7 +604,7 @@ const PatientProfile: React.FC = () => {
           <div className="flex flex-col lg:flex-row gap-6 items-start">
 
             {/* Ticket (capturado por html2canvas) */}
-            <div className="bg-white w-full lg:flex-1 rounded-[2rem] shadow-2xl relative overflow-hidden border border-slate-200" id="receipt-ticket">
+            <div className="bg-white w-full lg:flex-1 rounded-blob-md shadow-2xl relative overflow-hidden border border-slate-200" id="receipt-ticket">
               <div className="absolute top-0 left-0 w-full h-4 bg-emerald-500"></div>
 
               <div className="p-7 pt-10">
@@ -984,7 +984,7 @@ const PatientProfile: React.FC = () => {
                     <button
                       key={s.id}
                       onClick={() => { setSelectedService(s); setSelectedSlot(null); setStep(2); }}
-                      className={`p-6 rounded-[2rem] border-2 text-left transition-all hover:border-primary hover:shadow-lg group ${selectedService?.id === s.id ? 'border-primary bg-primary/5 shadow-lg' : 'border-slate-100 bg-white'}`}
+                      className={`p-6 rounded-blob-md border-2 text-left transition-all hover:border-primary hover:shadow-lg group ${selectedService?.id === s.id ? 'border-primary bg-primary/5 shadow-lg' : 'border-slate-100 bg-white'}`}
                     >
                       <h4 className="font-black text-slate-900 mb-2 group-hover:text-primary transition-colors">{s.name}</h4>
                       <p className="text-xs text-slate-500 font-bold mb-6 line-clamp-3">{s.description}</p>
@@ -1005,7 +1005,7 @@ const PatientProfile: React.FC = () => {
 
             {/* ------------ PASO 2: HORARIO ------------ */}
             {step === 2 && (
-              <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-sm border border-slate-100 animate-in slide-in-from-right-8 duration-300">
+              <div className="bg-white rounded-blob-lg p-8 sm:p-10 shadow-sm border border-slate-100 animate-in slide-in-from-right-8 duration-300">
                 <div className="flex items-center gap-3 mb-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
                      <span className="material-icons-round text-primary text-lg">medical_services</span>
@@ -1021,7 +1021,7 @@ const PatientProfile: React.FC = () => {
                     <button
                       key={i}
                       onClick={() => { setSelectedDay(i); setAvailabilityRefresh(n => n + 1); }}
-                      className={`flex-none w-28 py-5 px-2 rounded-[1.5rem] flex flex-col items-center gap-2 border-2 transition-all relative ${selectedDay === i ? 'border-primary bg-primary shadow-lg shadow-primary/20 text-white' : 'border-slate-100 bg-white text-slate-500 hover:border-primary/50'}`}
+                      className={`flex-none w-28 py-5 px-2 rounded-blob-2xs flex flex-col items-center gap-2 border-2 transition-all relative ${selectedDay === i ? 'border-primary bg-primary shadow-lg shadow-primary/20 text-white' : 'border-slate-100 bg-white text-slate-500 hover:border-primary/50'}`}
                     >
                       <span className={`text-[10px] font-black uppercase tracking-widest ${selectedDay === i ? 'text-white/80' : 'text-slate-400'}`}>{day.name}</span>
                       <span className="text-lg font-black tracking-tighter">{day.label.split(' ')[0]} {day.label.split(' ')[1]}</span>
@@ -1063,7 +1063,7 @@ const PatientProfile: React.FC = () => {
 
             {/* ------------ PASO 3: DATOS PACIENTE ------------ */}
             {step === 3 && (
-              <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 shadow-sm border border-slate-100 animate-in slide-in-from-right-8 duration-300">
+              <div className="bg-white rounded-blob-lg p-8 sm:p-10 shadow-sm border border-slate-100 animate-in slide-in-from-right-8 duration-300">
                 {/* Selector Modalidad */}
                 <div className="mb-8">
                   <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 mb-3 block">Modalidad de Atención</label>
@@ -1157,7 +1157,7 @@ const PatientProfile: React.FC = () => {
 
             {/* ------------ PASO 4: PAGO / SIMULADOR ------------ */}
             {step === 4 && (
-              <div className="bg-white rounded-3xl lg:rounded-[2.5rem] p-4 lg:p-8 shadow-2xl border border-slate-200 animate-in slide-in-from-right-8 duration-300">
+              <div className="bg-white rounded-3xl lg:rounded-blob-lg p-4 lg:p-8 shadow-2xl border border-slate-200 animate-in slide-in-from-right-8 duration-300">
                 
                 {/* Resumen Final Box */}
                 <div className="bg-slate-50 rounded-2xl lg:rounded-3xl p-4 lg:p-8 mb-6 lg:mb-8 border-2 border-slate-100">

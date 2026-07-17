@@ -41,6 +41,7 @@ export default {
       // (rounded-[Xrem]) en la landing pública, ahora nombrados. Sin cambio visual.
       borderRadius: {
         'blob-xs': '1.2rem',
+        'blob-2xs': '1.5rem',
         'blob-sm': '1.8rem',
         'blob-md': '2rem',
         'blob-lg': '2.5rem',
@@ -56,6 +57,18 @@ export default {
         'card-ambient': '0 32px 64px -16px rgba(19,91,236,0.05)',
         'card-ambient-dark': '0 32px 64px -16px rgba(0,0,0,0.2)',
         'success-pop': '0 10px 20px -10px rgba(16,185,129,0.5)',
+        // Sombra interna estándar de todos los campos de formulario de la ficha
+        // clínica (~14 repeticiones sueltas antes de nombrarla).
+        'input-inset': 'inset 0 2px 6px rgba(0,0,0,0.07)',
+        // Sombra estándar de las secciones/tarjetas de la ficha clínica
+        // (~11 repeticiones sueltas antes de nombrarla).
+        section: '0 8px 32px -4px rgba(15,23,42,0.10)',
+        // Sombra azul repetida en botones primarios de acción (CTA) en al menos
+        // 6 archivos distintos — no coincide con `primary` (teal) pero es un
+        // acento consistente y deliberado en toda la plataforma.
+        cta: '0 10px 30px -10px rgba(19,91,236,0.6)',
+        // Sombra estándar de tarjetas de modal (3+ repeticiones sueltas).
+        modal: '0 32px 64px -16px rgba(0,0,0,0.5)',
       },
     },
   },

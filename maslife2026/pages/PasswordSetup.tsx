@@ -69,14 +69,14 @@ const PasswordSetup: React.FC<PasswordSetupProps> = ({ profile, onComplete }) =>
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-10">
-          <div className="bg-indigo-600 w-16 h-16 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-indigo-600/20 mx-auto mb-6">
+          <div className="bg-indigo-600 w-16 h-16 rounded-blob-2xs flex items-center justify-center shadow-2xl shadow-indigo-600/20 mx-auto mb-6">
             <span className="material-icons-round text-white text-3xl">shield</span>
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Activar Mi Cuenta</h1>
           <p className="text-slate-500 font-bold mt-2 tracking-tight">Bienvenido a la red, {profile.name.split(' ')[0]}</p>
         </div>
 
-        <div className="bg-white p-8 md:p-12 rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] border border-slate-100">
+        <div className="bg-white p-8 md:p-12 rounded-blob-xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] border border-slate-100">
           {!isSuccess ? (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="p-5 bg-indigo-50 border border-indigo-100 rounded-2xl mb-4 text-center">
@@ -119,7 +119,7 @@ const PasswordSetup: React.FC<PasswordSetupProps> = ({ profile, onComplete }) =>
             </form>
           ) : (
             <div className="text-center py-12 animate-in zoom-in-95 duration-700">
-               <div className="w-24 h-24 bg-emerald-500 text-white rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/30">
+               <div className="w-24 h-24 bg-emerald-500 text-white rounded-blob-lg flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-emerald-500/30">
                   <span className="material-icons-round text-5xl">check_circle</span>
                </div>
                <h3 className="text-2xl font-black text-slate-900 mb-2">¡Acceso Configurado!</h3>
