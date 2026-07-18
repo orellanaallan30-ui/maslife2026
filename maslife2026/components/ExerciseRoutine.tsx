@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { Exercise, RoutineItem, Patient, ProfessionalProfile } from '../types';
-import { exportRoutinePDF, getRoutinePDFBase64 } from '../pdfExport';
+import { exportRoutinePDF, getRoutinePDFBase64, getRoutinePDFBlob } from '../pdfExport';
 import { toast } from '../lib/toast';
 
 interface Props {
@@ -53,6 +53,9 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   const [muscleFilter, setMuscleFilter] = useState('');
   const [items, setItems] = useState<RoutineItem[]>([]);
   const [title, setTitle] = useState('Rutina de ejercicios');
+  const [bulkSets, setBulkSets] = useState<number | ''>(3);
+  const [bulkReps, setBulkReps] = useState('12');
+  const [bulkRest, setBulkRest] = useState<number | ''>(60);
   const [sending, setSending] = useState<'whatsapp' | 'email' | null>(null);
   const [downloading, setDownloading] = useState(false);
 
@@ -98,10 +101,24 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
       return next;
     });
 
-  // Guarda la rutina en Supabase (queda en el historial del paciente). Si falla,
-  // se avisa pero no bloquea el envío por WhatsApp/email — el profesional ya
-  // tiene el contenido listo, no debe perderlo por un problema de guardado.
-  const persistRoutine = async (sentVia: 'whatsapp' | 'email'): Promise<void> => {
+  // Aplica series/repeticiones/descanso a TODOS los ejercicios de la rutina de
+  // una vez — evita tener que repetir los mismos valores ítem por ítem cuando
+  // la rutina es uniforme (lo más común).
+  const applyBulkToAll = () => {
+    setItems(prev => prev.map(i => ({
+      ...i,
+      sets: bulkSets === '' ? i.sets : bulkSets,
+      reps: bulkReps.trim() ? bulkReps : i.reps,
+      restSeconds: bulkRest === '' ? i.restSeconds : bulkRest,
+    })));
+    toast.success('Valores aplicados a todos los ejercicios');
+  };
+
+  // Guarda la rutina en Supabase (queda en el historial del paciente) y devuelve
+  // su id — lo necesita el envío por WhatsApp para nombrar el PDF en Storage.
+  // Si falla, se avisa pero no bloquea el envío — el profesional ya tiene el
+  // contenido listo, no debe perderlo por un problema de guardado.
+  const persistRoutine = async (sentVia: 'whatsapp' | 'email'): Promise<string | null> => {
     try {
       const { data: routine, error } = await supabase.from('exercise_routines').insert({
         patient_id: patient.id, professional_id: loggedPro.id, title,
@@ -114,9 +131,11 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
       }));
       const { error: itemsError } = await supabase.from('routine_items').insert(rows);
       if (itemsError) throw itemsError;
+      return routine.id as string;
     } catch (e) {
       console.error('[exercise_routines] guardar', (e as Error)?.message || e);
       toast.error('⚠️ La rutina se envió, pero no se guardó en el historial del paciente.');
+      return null;
     }
   };
 
@@ -135,16 +154,39 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
 
   const handleSendWhatsApp = async () => {
     if (!items.length) return;
+    const phone = (patient.phone || '').replace(/\D/g, '');
+    if (!phone) { toast.error('El paciente no tiene teléfono registrado.'); return; }
     setSending('whatsapp');
     try {
-      const list = items.map((it, i) =>
-        `${i + 1}. ${it.exercise?.nameEs || 'Ejercicio'} — ${it.sets ? `${it.sets}x` : ''}${it.reps || ''}`
-      ).join('\n');
-      const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de Agenda Maslife. Te envío tu rutina "${title}":\n\n${list}\n\nSi sientes dolor al hacer algún ejercicio, detente y avísame. Cualquier duda, escríbeme por aquí.`;
-      const phone = (patient.phone || '').replace(/\D/g, '');
-      if (!phone) { toast.error('El paciente no tiene teléfono registrado.'); return; }
+      const routineId = await persistRoutine('whatsapp');
+
+      // Sube el PDF (con imágenes e indicaciones) a un bucket público, para poder
+      // compartir un link real por WhatsApp — ese canal solo permite pre-llenar
+      // texto, no adjuntar archivos directamente.
+      let pdfLink = '';
+      if (routineId) {
+        try {
+          const blob = await getRoutinePDFBlob(patient, loggedPro, title, items);
+          const path = `${routineId}.pdf`;
+          const { error: uploadError } = await supabase.storage.from('routine-pdfs')
+            .upload(path, blob, { contentType: 'application/pdf', upsert: true });
+          if (uploadError) throw uploadError;
+          const { data: pub } = supabase.storage.from('routine-pdfs').getPublicUrl(path);
+          pdfLink = pub?.publicUrl || '';
+        } catch (e) {
+          console.error('[routine] subir pdf', e);
+          // No bloquea el envío: si falla la subida, igual se manda el listado en texto.
+        }
+      }
+
+      const list = items.map((it, i) => {
+        const setsReps = `${it.sets ? `${it.sets}x` : ''}${it.reps || ''}`;
+        const rest = it.restSeconds ? ` (descanso ${it.restSeconds}s)` : '';
+        return `${i + 1}. ${it.exercise?.nameEs || 'Ejercicio'} — ${setsReps}${rest}`;
+      }).join('\n');
+      const pdfLine = pdfLink ? `\n\n📄 PDF con imágenes e indicaciones: ${pdfLink}` : '';
+      const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de Agenda Maslife. Te envío tu rutina "${title}":\n\n${list}${pdfLine}\n\nSi sientes dolor al hacer algún ejercicio, detente y avísame. Cualquier duda, escríbeme por aquí.`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-      await persistRoutine('whatsapp');
       toast.success('Rutina enviada por WhatsApp');
     } catch (e) {
       console.error('[routine] whatsapp', e);
@@ -169,7 +211,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
           patientName: patient.name,
           professionalName: loggedPro.name,
           routineTitle: title,
-          items: items.map(it => ({ nameEs: it.exercise?.nameEs || '', sets: it.sets, reps: it.reps })),
+          items: items.map(it => ({ nameEs: it.exercise?.nameEs || '', sets: it.sets, reps: it.reps, restSeconds: it.restSeconds })),
           pdfBase64,
         }),
       });
@@ -205,6 +247,30 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
           Aún no agregaste ejercicios. Usa "Agregar Ejercicio" para armar la rutina.
         </div>
       ) : (
+        <>
+        <div className="no-print flex flex-wrap items-end gap-2 p-3 bg-teal-50/60 rounded-xl border border-teal-100">
+          <div>
+            <label htmlFor="bulk-sets" className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Series</label>
+            <input id="bulk-sets" type="number" min={1} value={bulkSets}
+              onChange={e => setBulkSets(e.target.value ? Number(e.target.value) : '')}
+              className="w-16 bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-bold text-center block" />
+          </div>
+          <div>
+            <label htmlFor="bulk-reps" className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Repeticiones</label>
+            <input id="bulk-reps" value={bulkReps} onChange={e => setBulkReps(e.target.value)} placeholder="ej: 12 o 30 seg"
+              className="w-32 bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-bold block" />
+          </div>
+          <div>
+            <label htmlFor="bulk-rest" className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Descanso (seg)</label>
+            <input id="bulk-rest" type="number" min={0} step={5} value={bulkRest}
+              onChange={e => setBulkRest(e.target.value ? Number(e.target.value) : '')}
+              className="w-20 bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-bold text-center block" />
+          </div>
+          <button onClick={applyBulkToAll}
+            className="px-4 py-2 bg-teal-500 text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-teal-600 transition-all">
+            Aplicar a todos
+          </button>
+        </div>
         <div className="space-y-3">
           {items.map((item, idx) => (
             <div key={item.id} className="flex items-start gap-3 p-4 bg-slate-50/80 rounded-2xl border border-slate-200">
@@ -221,6 +287,9 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                   <input value={item.reps} placeholder="Reps (ej: 12 o 30 seg)"
                     onChange={e => updateItem(item.id, { reps: e.target.value })}
                     className="w-40 bg-white border border-slate-200 rounded-xl py-1.5 px-2 text-xs font-bold" />
+                  <input type="number" min={0} step={5} value={item.restSeconds ?? ''} placeholder="Descanso (seg)"
+                    onChange={e => updateItem(item.id, { restSeconds: e.target.value ? Number(e.target.value) : null })}
+                    className="w-28 bg-white border border-slate-200 rounded-xl py-1.5 px-2 text-xs font-bold text-center" />
                   <input value={item.notes} placeholder="Notas (opcional)"
                     onChange={e => updateItem(item.id, { notes: e.target.value })}
                     className="flex-1 min-w-[140px] bg-white border border-slate-200 rounded-xl py-1.5 px-2 text-xs font-bold" />
@@ -243,6 +312,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
             </div>
           ))}
         </div>
+        </>
       )}
 
       {items.length > 0 && (
