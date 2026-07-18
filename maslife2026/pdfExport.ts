@@ -24,6 +24,7 @@ interface jsPDFInstance {
   getTextWidth(text: string): number;
   save(filename: string): string;
   output(type: string): string;
+  output(type: 'blob'): Blob;
   getNumberOfPages(): number;
   setPage(page: number): void;
   addPage(): void;
@@ -1377,6 +1378,14 @@ async function buildRoutineDoc(
     if (setsReps) doc.text(setsReps, W - MARGIN - 4, ty, { align: 'right' });
     ty += 5;
 
+    if (item.restSeconds) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Descanso: ${item.restSeconds} seg`, W - MARGIN - 4, ty, { align: 'right' });
+      ty += 4.5;
+    }
+
     if (instrLines.length) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
@@ -1425,4 +1434,16 @@ export async function getRoutinePDFBase64(
   const doc = await buildRoutineDoc(patient, professional, routineTitle, items);
   const dataUri = doc.output('datauristring');
   return dataUri.split(',')[1] || '';
+}
+
+// Devuelve el PDF como Blob, para subirlo a Supabase Storage (enlace compartible
+// por WhatsApp, ya que ese canal no permite adjuntar archivos directamente).
+export async function getRoutinePDFBlob(
+  patient: Patient,
+  professional: ProfessionalProfile,
+  routineTitle: string,
+  items: RoutineItem[]
+): Promise<Blob> {
+  const doc = await buildRoutineDoc(patient, professional, routineTitle, items);
+  return doc.output('blob');
 }

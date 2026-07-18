@@ -251,11 +251,13 @@ async function sendEmail(
   return data;
 }
 
-function exerciseRoutineHtml(p: { professionalName: string; patientName: string; routineTitle: string; items: Array<{ nameEs: string; sets: number | null; reps: string }> }): string {
+function exerciseRoutineHtml(p: { professionalName: string; patientName: string; routineTitle: string; items: Array<{ nameEs: string; sets: number | null; reps: string; restSeconds?: number | null }> }): string {
   const rows = p.items.map(it => `
     <tr>
       <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:14px;font-weight:700;">${escapeHtml(it.nameEs)}</td>
-      <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;text-align:right;white-space:nowrap;">${it.sets ? `${it.sets} × ` : ''}${escapeHtml(it.reps || '—')}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;text-align:right;white-space:nowrap;">
+        ${it.sets ? `${it.sets} × ` : ''}${escapeHtml(it.reps || '—')}${it.restSeconds ? `<br><span style="color:#94a3b8;font-size:11px;">Descanso: ${it.restSeconds}s</span>` : ''}
+      </td>
     </tr>`).join('');
   return emailShell({
     kicker: 'Rutina de ejercicios',
@@ -453,6 +455,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       nameEs: cleanLine(it?.nameEs).slice(0, 120),
       sets: typeof it?.sets === 'number' ? it.sets : null,
       reps: cleanLine(it?.reps).slice(0, 40),
+      restSeconds: typeof it?.restSeconds === 'number' ? it.restSeconds : null,
     }));
 
     const subject = `Tu rutina de ejercicios — ${cleanLine(routineTitle) || 'Agenda Maslife'}`;
