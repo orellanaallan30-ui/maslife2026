@@ -11,6 +11,7 @@ import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
 import { auditService } from '../auditService';
 import BiomechReport, { BiomechReportData } from '../components/BiomechReport';
+import { ExerciseRoutinePanel } from '../components/ExerciseRoutine';
 import { ConsentSendPanel } from '../components/ConsentFlow';
 import { InformedConsent } from '../types_clinical';
 
@@ -1954,6 +1955,11 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               </div>
             </div>
           </section>
+          )}
+
+          {/* ── Rutina de Ejercicios (documento vivo, no depende del tab EV1/EV2) ── */}
+          {loggedPro && initialPatient?.id && (
+            <ExerciseRoutinePanel patient={safePatient} loggedPro={loggedPro} />
           )}
 
           </>)}

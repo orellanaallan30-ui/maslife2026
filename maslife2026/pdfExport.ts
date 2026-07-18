@@ -3,7 +3,7 @@
 // Importar en index.html: <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
 
 import { SOAPEntry, BolsetaGlosa } from './types_clinical';
-import { ProfessionalProfile, Patient, Vitals, SessionLog } from './types';
+import { ProfessionalProfile, Patient, Vitals, SessionLog, RoutineItem } from './types';
 
 declare const window: Window & {
   jspdf?: { jsPDF: new (opts: object) => jsPDFInstance };
@@ -1270,4 +1270,159 @@ export async function exportOrdenPDF(
 
   const safeName = patient.name.replace(/\s+/g, '_');
   doc.save(`Orden_${safeName}_${dateStr.replace(/\//g, '-')}.pdf`);
+}
+
+// ── Rutina de ejercicios (kinesiología) ──────────────────────────────────────
+
+// Descarga la primera imagen de un ejercicio como data URL para incrustarla en
+// el PDF (jsPDF necesita los bytes, no puede referenciar una URL externa).
+// Si falla (red, CORS), se omite la imagen y el PDF sigue generándose sin ella.
+async function loadImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('No se pudo leer la imagen'));
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function buildRoutineDoc(
+  patient: Patient,
+  professional: ProfessionalProfile,
+  routineTitle: string,
+  items: RoutineItem[]
+): Promise<jsPDFInstance> {
+  await ensureJsPDF();
+  const { jsPDF } = window.jspdf!;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const MARGIN = 18;
+  const COL = W - MARGIN * 2;
+  let y = MARGIN;
+
+  const dateStr = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  // Las imágenes se descargan todas en paralelo antes de dibujar, para no
+  // encadenar N esperas secuenciales.
+  const images = await Promise.all(
+    items.map(it => it.exercise?.imageUrls?.[0] ? loadImageAsDataUrl(it.exercise.imageUrls[0]) : Promise.resolve(null))
+  );
+
+  drawMembrete(doc, W, MARGIN, `Rutina · ${dateStr}`);
+  y = 36;
+
+  y = drawDocMeta(doc, MARGIN, COL, y, {
+    updatedAt: new Date().toISOString(),
+    proName: professional.name,
+    proSpecialty: professional.specialty,
+    docId: patient.id,
+  });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(15, 23, 42);
+  doc.text(routineTitle || 'RUTINA DE EJERCICIOS', MARGIN, y);
+  y += 5;
+  doc.setDrawColor(0, 168, 158);
+  doc.line(MARGIN, y, W - MARGIN, y);
+  y += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Paciente: ${patient.name}  ·  Profesional: ${professional.name} (${professional.specialty})`, MARGIN, y);
+  y += 10;
+
+  const IMG_SIZE = 26;
+
+  items.forEach((item, idx) => {
+    const ex = item.exercise;
+    const name = ex?.nameEs || ex?.name || 'Ejercicio';
+    const instructions = ex?.instructionsEs?.length ? ex.instructionsEs : [];
+    const instrLines = instructions.length
+      ? doc.splitTextToSize(instructions.map((s, i) => `${i + 1}. ${s}`).join('   '), COL - IMG_SIZE - 10)
+      : [];
+    const textBlockH = 6 + instrLines.length * 4.2 + (item.notes ? 5 : 0);
+    const cardH = Math.max(IMG_SIZE, textBlockH) + 8;
+
+    if (y + cardH > 265) { doc.addPage(); y = MARGIN; }
+
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(MARGIN, y, COL, cardH, 'FD');
+
+    const img = images[idx];
+    const textX = MARGIN + (img ? IMG_SIZE + 8 : 4);
+    if (img) {
+      try { doc.addImage(img, 'JPEG', MARGIN + 4, y + 4, IMG_SIZE, IMG_SIZE); } catch { /* imagen corrupta, se omite */ }
+    }
+
+    let ty = y + 7;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`${idx + 1}. ${name}`, textX, ty);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(0, 126, 119);
+    const setsReps = `${item.sets ? `${item.sets} series` : ''}${item.sets && item.reps ? ' × ' : ''}${item.reps || ''}`.trim();
+    if (setsReps) doc.text(setsReps, W - MARGIN - 4, ty, { align: 'right' });
+    ty += 5;
+
+    if (instrLines.length) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text(instrLines, textX, ty);
+      ty += instrLines.length * 4.2;
+    }
+    if (item.notes) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Nota: ${item.notes}`, textX, ty + 1);
+    }
+
+    y += cardH + 4;
+  });
+
+  y += 4;
+  if (y + 42 > 265) { doc.addPage(); y = MARGIN; }
+  drawAutoSignature(doc, professional, MARGIN, COL, y);
+
+  drawFooters(doc, W, professional);
+  return doc;
+}
+
+export async function exportRoutinePDF(
+  patient: Patient,
+  professional: ProfessionalProfile,
+  routineTitle: string,
+  items: RoutineItem[]
+): Promise<void> {
+  const doc = await buildRoutineDoc(patient, professional, routineTitle, items);
+  const dateStr = new Date().toLocaleDateString('es-CL').replace(/\//g, '-');
+  const safeName = patient.name.replace(/\s+/g, '_');
+  doc.save(`Rutina_${safeName}_${dateStr}.pdf`);
+}
+
+// Devuelve el PDF como base64 puro (sin el prefijo data:...;base64,) para
+// adjuntarlo en el correo vía api/notify.ts.
+export async function getRoutinePDFBase64(
+  patient: Patient,
+  professional: ProfessionalProfile,
+  routineTitle: string,
+  items: RoutineItem[]
+): Promise<string> {
+  const doc = await buildRoutineDoc(patient, professional, routineTitle, items);
+  const dataUri = doc.output('datauristring');
+  return dataUri.split(',')[1] || '';
 }

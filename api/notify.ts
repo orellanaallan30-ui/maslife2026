@@ -215,17 +215,32 @@ function paymentReceiptHtml(p: { patientName: string; doctorName: string; servic
   });
 }
 
-async function sendEmail(apiKey: string, from: string, to: string, subject: string, html: string, icsContent?: string) {
+async function sendEmail(
+  apiKey: string, from: string, to: string, subject: string, html: string,
+  icsContent?: string,
+  // Adjunto genérico (ej. PDF de una rutina de ejercicios) — independiente del
+  // adjunto .ics de invitación de calendario, ambos pueden coexistir.
+  attachment?: { filename: string; contentBase64: string; contentType: string }
+) {
   const body: Record<string, unknown> = { from, to: [to], subject, html };
+  const attachments: Array<{ filename: string; content: string; content_type: string }> = [];
   if (icsContent) {
-    body.attachments = [{
+    attachments.push({
       filename: 'cita.ics',
       content: Buffer.from(icsContent).toString('base64'),
       // content_type de invitación: hace que Gmail/Outlook muestren el evento
       // de forma interactiva y lo agreguen al calendario automáticamente
       content_type: 'text/calendar; method=REQUEST; charset=UTF-8'
-    }];
+    });
   }
+  if (attachment) {
+    attachments.push({
+      filename: attachment.filename,
+      content: attachment.contentBase64,
+      content_type: attachment.contentType,
+    });
+  }
+  if (attachments.length) body.attachments = attachments;
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -234,6 +249,24 @@ async function sendEmail(apiKey: string, from: string, to: string, subject: stri
   const data = await response.json();
   if (!response.ok) throw new Error(JSON.stringify(data));
   return data;
+}
+
+function exerciseRoutineHtml(p: { professionalName: string; patientName: string; routineTitle: string; items: Array<{ nameEs: string; sets: number | null; reps: string }> }): string {
+  const rows = p.items.map(it => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:14px;font-weight:700;">${escapeHtml(it.nameEs)}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;text-align:right;white-space:nowrap;">${it.sets ? `${it.sets} × ` : ''}${escapeHtml(it.reps || '—')}</td>
+    </tr>`).join('');
+  return emailShell({
+    kicker: 'Rutina de ejercicios',
+    title: escapeHtml(p.routineTitle),
+    subtitle: `De parte de ${escapeHtml(p.professionalName)}`,
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 16px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
+      <p style="color:#475569;font-size:14px;margin:0 0 20px;line-height:1.6;">Tu kinesiólogo/a te envió la siguiente rutina de ejercicios. Encontrarás el detalle completo con imágenes en el PDF adjunto.</p>
+      <table style="width:100%;border-collapse:collapse;">${rows}</table>
+      <p style="color:#94a3b8;font-size:12px;margin:20px 0 0;">Si tienes dolor o molestias al realizar algún ejercicio, detente y consulta con tu profesional.</p>`,
+  });
 }
 
 function ratingRequestHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; reviewLink: string }): string {
@@ -394,6 +427,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({ submitted: true });
+  }
+
+  // ── Envío de rutina de ejercicios (kinesiología) por email, con PDF adjunto ─
+  // El cliente genera el PDF (jsPDF) y lo manda como base64 — este endpoint solo
+  // arma el correo y lo despacha, no genera el PDF.
+  if (req.body?.action === 'exercise-routine') {
+    if (!checkRateLimit(req.headers, 20, 60 * 60 * 1000))
+      return res.status(429).json({ error: 'Demasiados envíos. Intenta más tarde.' });
+
+    const { patientEmail, patientName, professionalName, routineTitle, items, pdfBase64 } = req.body || {};
+
+    if (!patientEmail || !EMAIL_RE.test(String(patientEmail)))
+      return res.status(400).json({ error: 'Email inválido' });
+    if (!patientName || !professionalName || !Array.isArray(items) || !items.length)
+      return res.status(400).json({ error: 'Faltan parámetros requeridos' });
+    if (!pdfBase64 || typeof pdfBase64 !== 'string')
+      return res.status(400).json({ error: 'Falta el PDF de la rutina' });
+
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
+    const FROM = process.env.EMAIL_FROM || 'notificaciones@clinicamaslife.cl';
+
+    const safeItems = items.slice(0, 60).map((it: Record<string, unknown>) => ({
+      nameEs: cleanLine(it?.nameEs).slice(0, 120),
+      sets: typeof it?.sets === 'number' ? it.sets : null,
+      reps: cleanLine(it?.reps).slice(0, 40),
+    }));
+
+    const subject = `Tu rutina de ejercicios — ${cleanLine(routineTitle) || 'Agenda Maslife'}`;
+    try {
+      await sendEmail(RESEND_KEY, FROM, String(patientEmail), subject,
+        exerciseRoutineHtml({
+          professionalName: String(professionalName),
+          patientName: String(patientName),
+          routineTitle: String(routineTitle || 'Rutina de ejercicios'),
+          items: safeItems,
+        }),
+        undefined,
+        { filename: 'rutina-de-ejercicios.pdf', contentBase64: String(pdfBase64), contentType: 'application/pdf' }
+      );
+    } catch (e: any) {
+      console.error('[exercise-routine]', e?.message);
+      return res.status(502).json({ error: 'No se pudo enviar el correo.' });
+    }
+    return res.status(200).json({ ok: true });
   }
 
   // ── Solicitud de calificación post-atención ────────────────────────────────
