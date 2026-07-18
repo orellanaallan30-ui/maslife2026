@@ -167,6 +167,7 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   // Cargar datos del profesional desde Supabase al iniciar sesión
   const lastLoadRef = useRef(0);
+  const isFetchingRef = useRef(false);
   useEffect(() => {
     if (!loggedPro) {
       // Al cerrar sesión: limpiar datos para no filtrar a la próxima sesión
@@ -176,8 +177,11 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       return;
     }
 
-    const loadProData = async () => {
-      setIsLoading(true);
+    const loadProData = async (opts?: { silent?: boolean }) => {
+      const silent = opts?.silent ?? false;
+      if (isFetchingRef.current) return; // evita solicitudes superpuestas (sondeo lento / red lenta)
+      isFetchingRef.current = true;
+      if (!silent) setIsLoading(true);
       try {
         const [supaPatients, supaApps, supaTransactions] = await Promise.all([
           getPatients(loggedPro.id),
@@ -237,7 +241,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           prev.filter(t => !t.professionalId || t.professionalId === loggedPro.id)
         );
       } finally {
-        setIsLoading(false);
+        if (!silent) setIsLoading(false);
+        isFetchingRef.current = false;
       }
     };
 
@@ -254,7 +259,21 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       loadProData();
     };
     document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
+
+    // Sondeo silencioso: mientras la pestaña esté en primer plano, refrescar
+    // cada 25s para reflejar citas creadas por reservas online (u otro
+    // dispositivo) sin necesidad de recargar la página ni mostrar pantallas
+    // de carga intermedias (silent:true no toca isLoading).
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      lastLoadRef.current = Date.now();
+      loadProData({ silent: true });
+    }, 25_000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      clearInterval(pollInterval);
+    };
   }, [loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
