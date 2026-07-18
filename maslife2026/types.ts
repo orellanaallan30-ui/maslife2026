@@ -213,3 +213,43 @@ export interface MealPlanRow {
   kcal: string;       // Kcal estimadas
   notes: string;      // Observaciones
 }
+
+// Catálogo de ejercicios (dato de referencia, compartido — no ligado a un profesional).
+// Fuente: free-exercise-db (yuhonas), licencia Unlicense (dominio público).
+export interface Exercise {
+  id: string;
+  name: string;
+  nameEs: string;
+  category: string | null;
+  equipment: string | null;
+  level: string | null;
+  primaryMuscles: string[];
+  secondaryMuscles: string[];
+  instructionsEs: string[];
+  imageUrls: string[];
+}
+
+// Un ejercicio dentro de una rutina, con la prescripción del profesional.
+export interface RoutineItem {
+  id: string;
+  exerciseId: string;
+  sets: number | null;
+  reps: string;          // texto libre: "12", "10-12", "30 seg"
+  restSeconds: number | null;
+  notes: string;
+  orderIndex: number;
+  // Datos del ejercicio embebidos al leer (join), para no requerir otra consulta.
+  exercise?: Exercise;
+}
+
+export interface ExerciseRoutine {
+  id: string;
+  patientId: string;
+  professionalId: string;
+  title: string;
+  notes: string;
+  createdAt: string;
+  sentAt?: string;
+  sentVia?: 'whatsapp' | 'email' | 'both';
+  items: RoutineItem[];
+}
