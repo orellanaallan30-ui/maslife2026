@@ -51,8 +51,11 @@ interface SentRoutine {
   title: string;
   sentAt: string | null;
   sentVia: string | null;
-  items: Array<{ id: string; nameEs: string; completedDates: string[] }>;
+  items: Array<{ id: string; nameEs: string; completions: Array<{ on: string; pain: number | null }> }>;
 }
+
+// Semáforo de dolor EVA: 1-3 tolerable · 4-5 precaución · 6-10 no realizar.
+const painDotClass = (n: number) => (n <= 3 ? 'bg-emerald-500' : n <= 5 ? 'bg-amber-400' : 'bg-rose-500');
 
 export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) => {
   const [catalog, setCatalog] = useState<Exercise[]>([]);
@@ -82,7 +85,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   // que dejó desde el link público (adherencia al tratamiento).
   const loadSentRoutines = React.useCallback(() => {
     supabase.from('exercise_routines')
-      .select('id, title, sent_at, sent_via, routine_items(id, order_index, exercises(name_es), routine_completions(completed_on))')
+      .select('id, title, sent_at, sent_via, routine_items(id, order_index, exercises(name_es), routine_completions(completed_on, pain_level))')
       .eq('patient_id', patient.id)
       .order('sent_at', { ascending: false })
       .limit(10)
@@ -98,7 +101,9 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
             .map((it: any) => ({
               id: it.id,
               nameEs: it.exercises?.name_es || 'Ejercicio',
-              completedDates: (it.routine_completions || []).map((c: any) => c.completed_on as string).sort(),
+              completions: (it.routine_completions || [])
+                .map((c: any) => ({ on: c.completed_on as string, pain: (c.pain_level ?? null) as number | null }))
+                .sort((a: any, b: any) => a.on.localeCompare(b.on)),
             })),
         })));
       });
@@ -377,10 +382,13 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
         <div className="no-print pt-4 border-t border-slate-100 space-y-3">
           <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Rutinas enviadas y adherencia</h3>
           {sentRoutines.map(r => {
-            const totalChecks = r.items.reduce((acc, it) => acc + it.completedDates.length, 0);
+            const totalChecks = r.items.reduce((acc, it) => acc + it.completions.length, 0);
             const weekAgo = new Date(Date.now() - 7 * 86400000);
             const recentChecks = r.items.reduce((acc, it) =>
-              acc + it.completedDates.filter(d => new Date(d + 'T12:00:00') >= weekAgo).length, 0);
+              acc + it.completions.filter(c => new Date(c.on + 'T12:00:00') >= weekAgo).length, 0);
+            const maxRecentPain = r.items.flatMap(it =>
+              it.completions.filter(c => new Date(c.on + 'T12:00:00') >= weekAgo).map(c => c.pain)
+            ).filter((p): p is number => p != null).reduce((a, b) => Math.max(a, b), 0);
             const isOpen = expandedRoutine === r.id;
             const link = `${window.location.origin}/rutina/${r.id}`;
             return (
@@ -402,6 +410,12 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                       {recentChecks} checks últimos 7 días
                     </span>
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-200 text-slate-500">{totalChecks} total</span>
+                    {maxRecentPain > 0 && (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-white border border-slate-200 text-slate-600 flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${painDotClass(maxRecentPain)}`} />
+                        dolor máx. {maxRecentPain}/10 (7d)
+                      </span>
+                    )}
                     <button title="Copiar link de la rutina" aria-label="Copiar link de la rutina"
                       onClick={() => { navigator.clipboard?.writeText(link); toast.success('Link copiado'); }}
                       className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50">
@@ -411,16 +425,25 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                 </div>
                 {isOpen && (
                   <div className="pl-6 space-y-1.5 pt-1">
-                    {r.items.map(it => (
-                      <div key={it.id} className="flex items-center justify-between gap-2 text-xs">
-                        <span className="font-bold text-slate-600 truncate">{it.nameEs}</span>
-                        <span className={`shrink-0 font-black text-[10px] ${it.completedDates.length ? 'text-teal-600' : 'text-slate-400'}`}>
-                          {it.completedDates.length
-                            ? `${it.completedDates.length} ${it.completedDates.length === 1 ? 'día' : 'días'} · último ${new Date(it.completedDates[it.completedDates.length - 1] + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}`
-                            : 'Sin registros'}
-                        </span>
-                      </div>
-                    ))}
+                    {r.items.map(it => {
+                      const last = it.completions[it.completions.length - 1];
+                      return (
+                        <div key={it.id} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="font-bold text-slate-600 truncate">{it.nameEs}</span>
+                          <span className={`shrink-0 font-black text-[10px] flex items-center gap-1.5 ${it.completions.length ? 'text-teal-600' : 'text-slate-400'}`}>
+                            {last
+                              ? `${it.completions.length} ${it.completions.length === 1 ? 'día' : 'días'} · último ${new Date(last.on + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}`
+                              : 'Sin registros'}
+                            {last?.pain != null && (
+                              <span className="flex items-center gap-1 text-slate-500">
+                                · dolor {last.pain}
+                                <span className={`w-2 h-2 rounded-full ${painDotClass(last.pain)}`} />
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
