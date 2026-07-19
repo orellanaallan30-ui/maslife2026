@@ -1436,14 +1436,59 @@ export async function getRoutinePDFBase64(
   return dataUri.split(',')[1] || '';
 }
 
-// Devuelve el PDF como Blob, para subirlo a Supabase Storage (enlace compartible
-// por WhatsApp, ya que ese canal no permite adjuntar archivos directamente).
-export async function getRoutinePDFBlob(
-  patient: Patient,
-  professional: ProfessionalProfile,
-  routineTitle: string,
-  items: RoutineItem[]
-): Promise<Blob> {
-  const doc = await buildRoutineDoc(patient, professional, routineTitle, items);
-  return doc.output('blob');
+// Genera y descarga el PDF desde la página pública /rutina/:id, usando solo
+// los datos que expone get_routine_public (sin sesión). Se generan al momento
+// — así el PDF siempre refleja los datos actuales y las imágenes vigentes,
+// en vez de servir un archivo congelado al momento del envío.
+export interface PublicRoutineItem {
+  nameEs: string;
+  imageUrls: string[];
+  instructionsEs: string[];
+  sets: number | null;
+  reps: string;
+  restSeconds: number | null;
+  notes: string | null;
+}
+
+export async function exportRoutinePDFPublic(
+  routineId: string,
+  data: {
+    patientName: string;
+    professionalName: string;
+    professionalSpecialty?: string;
+    title: string;
+    items: PublicRoutineItem[];
+  }
+): Promise<void> {
+  // buildRoutineDoc solo usa patient.name/id y professional.name/specialty —
+  // se construyen stubs mínimos con lo que expone la RPC pública.
+  const patientStub = { id: routineId, name: data.patientName || 'Paciente' } as Patient;
+  const proStub = {
+    name: data.professionalName || 'Profesional',
+    specialty: data.professionalSpecialty || '',
+  } as ProfessionalProfile;
+  const routineItems: RoutineItem[] = data.items.map((it, idx) => ({
+    id: `pub-${idx}`,
+    exerciseId: '',
+    sets: it.sets,
+    reps: it.reps || '',
+    restSeconds: it.restSeconds,
+    notes: it.notes || '',
+    orderIndex: idx,
+    exercise: {
+      id: `pub-${idx}`,
+      name: it.nameEs,
+      nameEs: it.nameEs,
+      category: null,
+      equipment: null,
+      level: null,
+      primaryMuscles: [],
+      secondaryMuscles: [],
+      instructionsEs: it.instructionsEs || [],
+      imageUrls: it.imageUrls || [],
+    },
+  }));
+  const doc = await buildRoutineDoc(patientStub, proStub, data.title, routineItems);
+  const dateStr = new Date().toLocaleDateString('es-CL').replace(/\//g, '-');
+  doc.save(`Rutina_${(data.patientName || 'paciente').replace(/\s+/g, '_')}_${dateStr}.pdf`);
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import { exportRoutinePDFPublic } from '../pdfExport';
 
 interface RoutineItemView {
   id: string;
@@ -32,6 +33,7 @@ interface RoutineData {
   title: string;
   notes: string | null;
   professionalName: string;
+  professionalSpecialty?: string;
   patientName: string;
   items: RoutineItemView[];
 }
@@ -49,6 +51,7 @@ const RoutineView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingItem, setSavingItem] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   useEffect(() => {
     if (!id) { setError('Enlace inválido.'); setLoading(false); return; }
@@ -139,9 +142,22 @@ const RoutineView: React.FC = () => {
 
   if (!data) return null;
 
-  const { title, notes, professionalName, patientName, items } = data;
-  const pdfUrl = id ? supabase.storage.from('routine-pdfs').getPublicUrl(`${id}.pdf`).data.publicUrl : null;
+  const { title, notes, professionalName, professionalSpecialty, patientName, items } = data;
   const doneToday = items.filter(it => it.completedDates.includes(today)).length;
+
+  // El PDF se genera al momento con los datos actuales (imágenes incluidas),
+  // en vez de servir el archivo congelado que se subió al enviar la rutina.
+  const handleDownloadPdf = async () => {
+    if (!id || downloadingPdf) return;
+    setDownloadingPdf(true);
+    try {
+      await exportRoutinePDFPublic(id, { patientName, professionalName, professionalSpecialty, title, items });
+    } catch (e) {
+      console.error('[rutina] pdf', e);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
@@ -185,17 +201,14 @@ const RoutineView: React.FC = () => {
             <p><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${PAIN_STYLES.yellow.dot}`} />4-5 precaución: menos intensidad y más descanso</p>
             <p><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${PAIN_STYLES.red.dot}`} />6-10 no realizar el ejercicio y avisa a tu kinesiólogo</p>
           </div>
-          {pdfUrl && (
-            <a
-              href={pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold hover:bg-primary/20 transition"
-            >
-              <span className="material-icons-round text-base">picture_as_pdf</span>
-              Descargar PDF
-            </a>
-          )}
+          <button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold hover:bg-primary/20 transition disabled:opacity-60"
+          >
+            <span className="material-icons-round text-base">{downloadingPdf ? 'sync' : 'picture_as_pdf'}</span>
+            {downloadingPdf ? 'Generando PDF...' : 'Descargar PDF'}
+          </button>
         </section>
 
         {/* Ejercicios */}
