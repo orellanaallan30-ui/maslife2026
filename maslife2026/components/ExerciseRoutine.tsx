@@ -160,10 +160,11 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
     try {
       const routineId = await persistRoutine('whatsapp');
 
-      // Sube el PDF (con imágenes e indicaciones) a un bucket público, para poder
-      // compartir un link real por WhatsApp — ese canal solo permite pre-llenar
-      // texto, no adjuntar archivos directamente.
-      let pdfLink = '';
+      // Sube el PDF (con imágenes e indicaciones) a un bucket público — queda
+      // disponible como descarga dentro de la página de la rutina, ya que un
+      // link directo al archivo es poco confiable para compartir por WhatsApp
+      // (dominio ajeno, sin marca, y ese canal solo permite pre-llenar texto).
+      let routineLink = '';
       if (routineId) {
         try {
           const blob = await getRoutinePDFBlob(patient, loggedPro, title, items);
@@ -171,12 +172,12 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
           const { error: uploadError } = await supabase.storage.from('routine-pdfs')
             .upload(path, blob, { contentType: 'application/pdf', upsert: true });
           if (uploadError) throw uploadError;
-          const { data: pub } = supabase.storage.from('routine-pdfs').getPublicUrl(path);
-          pdfLink = pub?.publicUrl || '';
         } catch (e) {
           console.error('[routine] subir pdf', e);
-          // No bloquea el envío: si falla la subida, igual se manda el listado en texto.
+          // No bloquea el envío: si falla la subida, igual se manda el link a la
+          // página de la rutina (que ya muestra imágenes e indicaciones sin el PDF).
         }
+        routineLink = `${window.location.origin}/rutina/${routineId}`;
       }
 
       const list = items.map((it, i) => {
@@ -184,8 +185,8 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
         const rest = it.restSeconds ? ` (descanso ${it.restSeconds}s)` : '';
         return `${i + 1}. ${it.exercise?.nameEs || 'Ejercicio'} — ${setsReps}${rest}`;
       }).join('\n');
-      const pdfLine = pdfLink ? `\n\n📄 PDF con imágenes e indicaciones: ${pdfLink}` : '';
-      const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de Agenda Maslife. Te envío tu rutina "${title}":\n\n${list}${pdfLine}\n\nSi sientes dolor al hacer algún ejercicio, detente y avísame. Cualquier duda, escríbeme por aquí.`;
+      const linkLine = routineLink ? `\n\n📋 Ver rutina con imágenes e indicaciones: ${routineLink}` : '';
+      const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de Agenda Maslife. Te envío tu rutina "${title}":\n\n${list}${linkLine}\n\nSi sientes dolor al hacer algún ejercicio, detente y avísame. Cualquier duda, escríbeme por aquí.`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
       toast.success('Rutina enviada por WhatsApp');
     } catch (e) {

@@ -25,6 +25,7 @@ import { ConsentAcceptPage } from './pages/ConsentAcceptPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import PatientPortal  from './pages/PatientPortal';
+import RoutineView    from './pages/RoutineView';
 import { PasswordRecovery, ResetPassword } from './pages/PasswordRecovery';
 import Sidebar          from './components/Sidebar';
 import GlobalAIPanel    from './components/GlobalAIPanel';
@@ -197,7 +198,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
     prevCountRef.current = notifications.length;
   }, [notifications.length]);
 
-  const publicPaths = ['/pro/login','/pro/register','/pro/recover','/pro/reset-password','/verify/','/consent/','/admin/login', '/patient'];
+  const publicPaths = ['/pro/login','/pro/register','/pro/recover','/pro/reset-password','/verify/','/consent/','/admin/login', '/patient', '/rutina/'];
   const isFullPublic = location.pathname === '/' || publicPaths.some(p => location.pathname.startsWith(p));
   const isAuthPage   = publicPaths.some(p => location.pathname.startsWith(p));
   const showProActions = view === 'PROFESSIONAL' && !isAuthPage && !!loggedPro;
@@ -537,6 +538,7 @@ const AppContent: React.FC = () => {
           <Route path="/privacidad"          element={<PrivacyPolicy />} />
           <Route path="/terminos"            element={<TermsOfService />} />
           <Route path="/mi-ficha/:token"    element={<PatientPortal />} />
+          <Route path="/rutina/:id"          element={<RoutineView />} />
           {/* Auth */}
           <Route path="/pro/login"           element={<ProfessionalLogin />} />
           <Route path="/pro/register"        element={<ProfessionalRegistration />} />
