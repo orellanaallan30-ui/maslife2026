@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 interface RoutineItemView {
+  id: string;
   nameEs: string;
   imageUrls: string[];
   instructionsEs: string[];
@@ -10,6 +11,7 @@ interface RoutineItemView {
   reps: string;
   restSeconds: number | null;
   notes: string | null;
+  completedDates: string[];
 }
 
 interface RoutineData {
@@ -20,11 +22,19 @@ interface RoutineData {
   items: RoutineItemView[];
 }
 
+// Fecha local del dispositivo del paciente (no toISOString: cruza de día en UTC).
+const localToday = () => {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
 const RoutineView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<RoutineData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingItem, setSavingItem] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) { setError('Enlace inválido.'); setLoading(false); return; }
@@ -33,10 +43,47 @@ const RoutineView: React.FC = () => {
         .then(({ data: res, error: err }) => {
           if (err || !res) { setError('No se pudo cargar la rutina.'); return; }
           if ((res as { error?: string }).error) { setError((res as { error?: string }).error!); return; }
-          setData(res as RoutineData);
+          const parsed = res as RoutineData;
+          parsed.items = (parsed.items || []).map(it => ({ ...it, completedDates: it.completedDates || [] }));
+          setData(parsed);
         })
     ).finally(() => setLoading(false));
   }, [id]);
+
+  const today = localToday();
+
+  const toggleDone = async (item: RoutineItemView) => {
+    if (!id || savingItem) return;
+    const wasDone = item.completedDates.includes(today);
+    setSavingItem(item.id);
+    // Actualización optimista
+    setData(prev => prev ? {
+      ...prev,
+      items: prev.items.map(it => it.id === item.id
+        ? { ...it, completedDates: wasDone ? it.completedDates.filter(d => d !== today) : [...it.completedDates, today] }
+        : it),
+    } : prev);
+    try {
+      const { data: res, error: err } = await supabase.rpc('toggle_routine_item', {
+        p_routine_id: id,
+        p_item_id: item.id,
+        p_date: today,
+        p_done: !wasDone,
+      });
+      if (err || (res as { error?: string })?.error) throw new Error((res as { error?: string })?.error || err?.message);
+    } catch (e) {
+      console.error('[rutina] marcar', e);
+      // Revertir si falló
+      setData(prev => prev ? {
+        ...prev,
+        items: prev.items.map(it => it.id === item.id
+          ? { ...it, completedDates: wasDone ? [...it.completedDates, today] : it.completedDates.filter(d => d !== today) }
+          : it),
+      } : prev);
+    } finally {
+      setSavingItem(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -63,6 +110,7 @@ const RoutineView: React.FC = () => {
 
   const { title, notes, professionalName, patientName, items } = data;
   const pdfUrl = id ? supabase.storage.from('routine-pdfs').getPublicUrl(`${id}.pdf`).data.publicUrl : null;
+  const doneToday = items.filter(it => it.completedDates.includes(today)).length;
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
@@ -73,7 +121,7 @@ const RoutineView: React.FC = () => {
         </div>
         <div>
           <p className="text-sm font-black text-slate-900">Clínica Mas Life</p>
-          <p className="text-[10px] text-slate-400 uppercase tracking-widest">Rutina de ejercicios — Solo lectura</p>
+          <p className="text-[10px] text-slate-400 uppercase tracking-widest">Rutina de ejercicios</p>
         </div>
       </header>
 
@@ -82,14 +130,23 @@ const RoutineView: React.FC = () => {
         <div className="bg-sky-50 border border-sky-200 rounded-2xl px-5 py-3 flex items-center gap-3">
           <span className="material-icons-round text-sky-500 text-lg">info</span>
           <p className="text-xs text-sky-700 font-medium">
-            {patientName ? `Hola ${patientName}, esta` : 'Esta'} es la rutina que te envió <strong>{professionalName}</strong>. Sigue las indicaciones de cada ejercicio y detente si sientes dolor.
+            {patientName ? `Hola ${patientName}, esta` : 'Esta'} es la rutina que te envió <strong>{professionalName}</strong>. Marca cada ejercicio cuando lo completes — tu profesional puede ver tu avance. Detente si sientes dolor.
           </p>
         </div>
 
-        {/* Título */}
+        {/* Título + progreso de hoy */}
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-3">
           <h1 className="text-lg font-black text-slate-900">{title}</h1>
           {notes?.trim() && <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{notes}</p>}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-teal-500 rounded-full transition-all"
+                style={{ width: items.length ? `${(doneToday / items.length) * 100}%` : '0%' }}
+              />
+            </div>
+            <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Hoy: {doneToday} de {items.length}</span>
+          </div>
           {pdfUrl && (
             <a
               href={pdfUrl}
@@ -105,43 +162,61 @@ const RoutineView: React.FC = () => {
 
         {/* Ejercicios */}
         <section className="space-y-4">
-          {items.map((item, i) => (
-            <div key={i} className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              {item.imageUrls?.[0] && (
-                <div className="grid grid-cols-2 bg-slate-100">
-                  {item.imageUrls.slice(0, 2).map((url, imgI) => (
-                    <img key={imgI} src={url} alt={item.nameEs} className="w-full h-40 object-cover" loading="lazy" />
-                  ))}
-                </div>
-              )}
-              <div className="p-5 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-black text-slate-900">{i + 1}. {item.nameEs}</h2>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {item.sets != null && (
-                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">{item.sets} series</span>
-                  )}
-                  {item.reps && (
-                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">{item.reps} repeticiones</span>
-                  )}
-                  {item.restSeconds != null && (
-                    <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">Descanso {item.restSeconds}s</span>
-                  )}
-                </div>
-                {item.instructionsEs?.length > 0 && (
-                  <ol className="list-decimal list-inside space-y-1">
-                    {item.instructionsEs.map((step, stepI) => (
-                      <li key={stepI} className="text-xs text-slate-600 leading-relaxed">{step}</li>
+          {items.map((item, i) => {
+            const isDone = item.completedDates.includes(today);
+            return (
+              <div key={item.id || i} className={`bg-white rounded-3xl shadow-sm border overflow-hidden transition ${isDone ? 'border-teal-300' : 'border-slate-200'}`}>
+                {item.imageUrls?.[0] && (
+                  <div className="grid grid-cols-2 bg-slate-100">
+                    {item.imageUrls.slice(0, 2).map((url, imgI) => (
+                      <img key={imgI} src={url} alt={item.nameEs} className="w-full h-40 object-cover" loading="lazy" />
                     ))}
-                  </ol>
+                  </div>
                 )}
-                {item.notes?.trim() && (
-                  <p className="text-xs text-slate-500 italic">Nota: {item.notes}</p>
-                )}
+                <div className="p-5 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-sm font-black text-slate-900">{i + 1}. {item.nameEs}</h2>
+                    {isDone && <span className="material-icons-round text-teal-500 text-xl shrink-0">check_circle</span>}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {item.sets != null && (
+                      <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">{item.sets} series</span>
+                    )}
+                    {item.reps && (
+                      <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold">{item.reps} repeticiones</span>
+                    )}
+                    {item.restSeconds != null && (
+                      <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">Descanso {item.restSeconds}s</span>
+                    )}
+                  </div>
+                  {item.instructionsEs?.length > 0 && (
+                    <ol className="list-decimal list-inside space-y-1">
+                      {item.instructionsEs.map((step, stepI) => (
+                        <li key={stepI} className="text-xs text-slate-600 leading-relaxed">{step}</li>
+                      ))}
+                    </ol>
+                  )}
+                  {item.notes?.trim() && (
+                    <p className="text-xs text-slate-500 italic">Nota: {item.notes}</p>
+                  )}
+                  {item.id && (
+                    <button
+                      onClick={() => toggleDone(item)}
+                      disabled={savingItem === item.id}
+                      className={`w-full min-h-[48px] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition disabled:opacity-60 ${
+                        isDone
+                          ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                          : 'bg-primary text-white hover:opacity-90'
+                      }`}
+                    >
+                      <span className="material-icons-round text-lg">{isDone ? 'task_alt' : 'radio_button_unchecked'}</span>
+                      {isDone ? 'Realizado hoy ✓ (tocar para deshacer)' : 'Marcar como realizado hoy'}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </section>
 
         {/* Footer */}

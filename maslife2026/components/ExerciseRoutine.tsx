@@ -45,6 +45,15 @@ function mapExerciseFromDB(row: Record<string, unknown>): Exercise {
 let newId = 0;
 const localId = () => `new-${++newId}-${Date.now()}`;
 
+// Rutina ya enviada, con el progreso que el paciente marcó desde /rutina/:id.
+interface SentRoutine {
+  id: string;
+  title: string;
+  sentAt: string | null;
+  sentVia: string | null;
+  items: Array<{ id: string; nameEs: string; completedDates: string[] }>;
+}
+
 export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) => {
   const [catalog, setCatalog] = useState<Exercise[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
@@ -58,6 +67,8 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   const [bulkRest, setBulkRest] = useState<number | ''>(60);
   const [sending, setSending] = useState<'whatsapp' | 'email' | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [sentRoutines, setSentRoutines] = useState<SentRoutine[]>([]);
+  const [expandedRoutine, setExpandedRoutine] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.from('exercises').select('*').order('name_es').then(({ data, error }) => {
@@ -66,6 +77,34 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
       setLoadingCatalog(false);
     });
   }, []);
+
+  // Historial de rutinas enviadas al paciente, con las marcas de "realizado"
+  // que dejó desde el link público (adherencia al tratamiento).
+  const loadSentRoutines = React.useCallback(() => {
+    supabase.from('exercise_routines')
+      .select('id, title, sent_at, sent_via, routine_items(id, order_index, exercises(name_es), routine_completions(completed_on))')
+      .eq('patient_id', patient.id)
+      .order('sent_at', { ascending: false })
+      .limit(10)
+      .then(({ data, error }) => {
+        if (error) { console.error('[routines] historial', error.message); return; }
+        setSentRoutines((data || []).map((r: Record<string, any>) => ({
+          id: r.id,
+          title: r.title,
+          sentAt: r.sent_at,
+          sentVia: r.sent_via,
+          items: (r.routine_items || [])
+            .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
+            .map((it: any) => ({
+              id: it.id,
+              nameEs: it.exercises?.name_es || 'Ejercicio',
+              completedDates: (it.routine_completions || []).map((c: any) => c.completed_on as string).sort(),
+            })),
+        })));
+      });
+  }, [patient.id]);
+
+  useEffect(() => { loadSentRoutines(); }, [loadSentRoutines]);
 
   const muscles = useMemo(() => {
     const s = new Set<string>();
@@ -131,6 +170,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
       }));
       const { error: itemsError } = await supabase.from('routine_items').insert(rows);
       if (itemsError) throw itemsError;
+      loadSentRoutines();
       return routine.id as string;
     } catch (e) {
       console.error('[exercise_routines] guardar', (e as Error)?.message || e);
@@ -330,6 +370,62 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
             className="px-5 py-3 bg-teal-500 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-teal-600 transition-all disabled:opacity-50 flex items-center gap-1.5">
             <span className="material-icons-round text-base">{sending === 'email' ? 'sync' : 'mail'}</span> {sending === 'email' ? 'Enviando...' : 'Enviar por Email'}
           </button>
+        </div>
+      )}
+
+      {sentRoutines.length > 0 && (
+        <div className="no-print pt-4 border-t border-slate-100 space-y-3">
+          <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Rutinas enviadas y adherencia</h3>
+          {sentRoutines.map(r => {
+            const totalChecks = r.items.reduce((acc, it) => acc + it.completedDates.length, 0);
+            const weekAgo = new Date(Date.now() - 7 * 86400000);
+            const recentChecks = r.items.reduce((acc, it) =>
+              acc + it.completedDates.filter(d => new Date(d + 'T12:00:00') >= weekAgo).length, 0);
+            const isOpen = expandedRoutine === r.id;
+            const link = `${window.location.origin}/rutina/${r.id}`;
+            return (
+              <div key={r.id} className="bg-slate-50/80 rounded-2xl border border-slate-200 p-4 space-y-2">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <button onClick={() => setExpandedRoutine(isOpen ? null : r.id)}
+                    className="flex items-center gap-2 text-left flex-1 min-w-0">
+                    <span className="material-icons-round text-slate-400 text-base">{isOpen ? 'expand_less' : 'expand_more'}</span>
+                    <div className="min-w-0">
+                      <p className="font-black text-xs text-slate-800 truncate">{r.title}</p>
+                      <p className="text-[10px] text-slate-400">
+                        {r.sentAt ? new Date(r.sentAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '—'}
+                        {r.sentVia === 'whatsapp' ? ' · WhatsApp' : r.sentVia === 'email' ? ' · Email' : ''}
+                      </p>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${recentChecks > 0 ? 'bg-teal-500/10 text-teal-700' : 'bg-slate-200 text-slate-500'}`}>
+                      {recentChecks} checks últimos 7 días
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-200 text-slate-500">{totalChecks} total</span>
+                    <button title="Copiar link de la rutina" aria-label="Copiar link de la rutina"
+                      onClick={() => { navigator.clipboard?.writeText(link); toast.success('Link copiado'); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50">
+                      <span className="material-icons-round text-base">link</span>
+                    </button>
+                  </div>
+                </div>
+                {isOpen && (
+                  <div className="pl-6 space-y-1.5 pt-1">
+                    {r.items.map(it => (
+                      <div key={it.id} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="font-bold text-slate-600 truncate">{it.nameEs}</span>
+                        <span className={`shrink-0 font-black text-[10px] ${it.completedDates.length ? 'text-teal-600' : 'text-slate-400'}`}>
+                          {it.completedDates.length
+                            ? `${it.completedDates.length} ${it.completedDates.length === 1 ? 'día' : 'días'} · último ${new Date(it.completedDates[it.completedDates.length - 1] + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}`
+                            : 'Sin registros'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
