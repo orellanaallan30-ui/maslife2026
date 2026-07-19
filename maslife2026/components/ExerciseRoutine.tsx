@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import { Exercise, RoutineItem, Patient, ProfessionalProfile } from '../types';
-import { exportRoutinePDF, getRoutinePDFBase64, getRoutinePDFBlob } from '../pdfExport';
+import { exportRoutinePDF, getRoutinePDFBase64 } from '../pdfExport';
 import { toast } from '../lib/toast';
 
 interface Props {
@@ -205,25 +205,10 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
     try {
       const routineId = await persistRoutine('whatsapp');
 
-      // Sube el PDF (con imágenes e indicaciones) a un bucket público — queda
-      // disponible como descarga dentro de la página de la rutina, ya que un
-      // link directo al archivo es poco confiable para compartir por WhatsApp
-      // (dominio ajeno, sin marca, y ese canal solo permite pre-llenar texto).
-      let routineLink = '';
-      if (routineId) {
-        try {
-          const blob = await getRoutinePDFBlob(patient, loggedPro, title, items);
-          const path = `${routineId}.pdf`;
-          const { error: uploadError } = await supabase.storage.from('routine-pdfs')
-            .upload(path, blob, { contentType: 'application/pdf', upsert: true });
-          if (uploadError) throw uploadError;
-        } catch (e) {
-          console.error('[routine] subir pdf', e);
-          // No bloquea el envío: si falla la subida, igual se manda el link a la
-          // página de la rutina (que ya muestra imágenes e indicaciones sin el PDF).
-        }
-        routineLink = `${window.location.origin}/rutina/${routineId}`;
-      }
+      // La página /rutina/:id muestra imágenes e indicaciones y genera el PDF
+      // al momento — no se sube ningún archivo a Storage (un PDF pre-generado
+      // quedaba congelado con los datos del día del envío).
+      const routineLink = routineId ? `${window.location.origin}/rutina/${routineId}` : '';
 
       const list = items.map((it, i) => {
         const setsReps = `${it.sets ? `${it.sets}x` : ''}${it.reps || ''}`;
