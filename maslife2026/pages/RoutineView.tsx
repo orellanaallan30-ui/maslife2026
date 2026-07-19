@@ -12,7 +12,21 @@ interface RoutineItemView {
   restSeconds: number | null;
   notes: string | null;
   completedDates: string[];
+  completions: Array<{ on: string; pain: number | null }>;
 }
+
+// Semáforo de dolor (escala EVA 1-10):
+//   1-3 verde: tolerable, permitido · 4-5 amarillo: precaución, menos
+//   intensidad y más descanso · 6-10 rojo: no realizar el ejercicio.
+const painBand = (n: number) => (n <= 3 ? 'green' : n <= 5 ? 'yellow' : 'red');
+const PAIN_STYLES: Record<string, { dot: string; selected: string; text: string; msg: string }> = {
+  green:  { dot: 'bg-emerald-500', selected: 'bg-emerald-500 text-white border-emerald-500', text: 'text-emerald-700',
+            msg: 'Dolor tolerable — puedes realizar el ejercicio.' },
+  yellow: { dot: 'bg-amber-400',   selected: 'bg-amber-400 text-white border-amber-400',     text: 'text-amber-700',
+            msg: 'Precaución: baja la intensidad y descansa más entre series.' },
+  red:    { dot: 'bg-rose-500',    selected: 'bg-rose-500 text-white border-rose-500',       text: 'text-rose-700',
+            msg: 'Con este dolor NO realices el ejercicio. Avísale a tu kinesiólogo.' },
+};
 
 interface RoutineData {
   title: string;
@@ -44,7 +58,11 @@ const RoutineView: React.FC = () => {
           if (err || !res) { setError('No se pudo cargar la rutina.'); return; }
           if ((res as { error?: string }).error) { setError((res as { error?: string }).error!); return; }
           const parsed = res as RoutineData;
-          parsed.items = (parsed.items || []).map(it => ({ ...it, completedDates: it.completedDates || [] }));
+          parsed.items = (parsed.items || []).map(it => ({
+            ...it,
+            completedDates: it.completedDates || [],
+            completions: it.completions || [],
+          }));
           setData(parsed);
         })
     ).finally(() => setLoading(false));
@@ -52,37 +70,50 @@ const RoutineView: React.FC = () => {
 
   const today = localToday();
 
-  const toggleDone = async (item: RoutineItemView) => {
-    if (!id || savingItem) return;
-    const wasDone = item.completedDates.includes(today);
-    setSavingItem(item.id);
-    // Actualización optimista
+  // Aplica al estado local la marca del día (con o sin dolor) de un ítem.
+  const applyLocal = (itemId: string, done: boolean, pain: number | null) =>
     setData(prev => prev ? {
       ...prev,
-      items: prev.items.map(it => it.id === item.id
-        ? { ...it, completedDates: wasDone ? it.completedDates.filter(d => d !== today) : [...it.completedDates, today] }
-        : it),
+      items: prev.items.map(it => {
+        if (it.id !== itemId) return it;
+        const dates = it.completedDates.filter(d => d !== today);
+        const comps = it.completions.filter(c => c.on !== today);
+        return done
+          ? { ...it, completedDates: [...dates, today], completions: [...comps, { on: today, pain }] }
+          : { ...it, completedDates: dates, completions: comps };
+      }),
     } : prev);
+
+  const saveMark = async (item: RoutineItemView, done: boolean, pain: number | null) => {
+    if (!id || savingItem) return;
+    const prevDone = item.completedDates.includes(today);
+    const prevPain = item.completions.find(c => c.on === today)?.pain ?? null;
+    setSavingItem(item.id);
+    applyLocal(item.id, done, pain); // optimista
     try {
       const { data: res, error: err } = await supabase.rpc('toggle_routine_item', {
         p_routine_id: id,
         p_item_id: item.id,
         p_date: today,
-        p_done: !wasDone,
+        p_done: done,
+        p_pain: pain,
       });
       if (err || (res as { error?: string })?.error) throw new Error((res as { error?: string })?.error || err?.message);
     } catch (e) {
       console.error('[rutina] marcar', e);
-      // Revertir si falló
-      setData(prev => prev ? {
-        ...prev,
-        items: prev.items.map(it => it.id === item.id
-          ? { ...it, completedDates: wasDone ? [...it.completedDates, today] : it.completedDates.filter(d => d !== today) }
-          : it),
-      } : prev);
+      applyLocal(item.id, prevDone, prevPain); // revertir
     } finally {
       setSavingItem(null);
     }
+  };
+
+  const toggleDone = (item: RoutineItemView) => {
+    const wasDone = item.completedDates.includes(today);
+    void saveMark(item, !wasDone, wasDone ? null : item.completions.find(c => c.on === today)?.pain ?? null);
+  };
+
+  const setPain = (item: RoutineItemView, pain: number) => {
+    void saveMark(item, true, pain);
   };
 
   if (loading) {
@@ -147,6 +178,13 @@ const RoutineView: React.FC = () => {
             </div>
             <span className="text-xs font-bold text-slate-600 whitespace-nowrap">Hoy: {doneToday} de {items.length}</span>
           </div>
+          {/* Semáforo de dolor (leyenda única, minimalista) */}
+          <div className="flex flex-col gap-1 pt-1 text-[11px] text-slate-500 leading-snug">
+            <p className="font-black text-[10px] uppercase tracking-widest text-slate-400">Escala de dolor (1-10)</p>
+            <p><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${PAIN_STYLES.green.dot}`} />1-3 tolerable: puedes hacer el ejercicio</p>
+            <p><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${PAIN_STYLES.yellow.dot}`} />4-5 precaución: menos intensidad y más descanso</p>
+            <p><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${PAIN_STYLES.red.dot}`} />6-10 no realizar el ejercicio y avisa a tu kinesiólogo</p>
+          </div>
           {pdfUrl && (
             <a
               href={pdfUrl}
@@ -164,6 +202,8 @@ const RoutineView: React.FC = () => {
         <section className="space-y-4">
           {items.map((item, i) => {
             const isDone = item.completedDates.includes(today);
+            const todayPain = item.completions.find(c => c.on === today)?.pain ?? null;
+            const band = todayPain != null ? painBand(todayPain) : null;
             return (
               <div key={item.id || i} className={`bg-white rounded-3xl shadow-sm border overflow-hidden transition ${isDone ? 'border-teal-300' : 'border-slate-200'}`}>
                 {item.imageUrls?.[0] && (
@@ -200,18 +240,47 @@ const RoutineView: React.FC = () => {
                     <p className="text-xs text-slate-500 italic">Nota: {item.notes}</p>
                   )}
                   {item.id && (
-                    <button
-                      onClick={() => toggleDone(item)}
-                      disabled={savingItem === item.id}
-                      className={`w-full min-h-[48px] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition disabled:opacity-60 ${
-                        isDone
-                          ? 'bg-teal-50 text-teal-700 border border-teal-200'
-                          : 'bg-primary text-white hover:opacity-90'
-                      }`}
-                    >
-                      <span className="material-icons-round text-lg">{isDone ? 'task_alt' : 'radio_button_unchecked'}</span>
-                      {isDone ? 'Realizado hoy ✓ (tocar para deshacer)' : 'Marcar como realizado hoy'}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => toggleDone(item)}
+                        disabled={savingItem === item.id}
+                        className={`w-full min-h-[48px] rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition disabled:opacity-60 ${
+                          isDone
+                            ? 'bg-teal-50 text-teal-700 border border-teal-200'
+                            : 'bg-primary text-white hover:opacity-90'
+                        }`}
+                      >
+                        <span className="material-icons-round text-lg">{isDone ? 'task_alt' : 'radio_button_unchecked'}</span>
+                        {isDone ? 'Realizado hoy ✓ (tocar para deshacer)' : 'Marcar como realizado hoy'}
+                      </button>
+                      {isDone && (
+                        <div className="space-y-1.5 pt-1">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">¿Cuánto dolor sentiste? (1-10)</p>
+                          <div className="flex gap-1.5 flex-wrap">
+                            {Array.from({ length: 10 }, (_, n) => n + 1).map(n => {
+                              const s = PAIN_STYLES[painBand(n)];
+                              const selected = todayPain === n;
+                              return (
+                                <button
+                                  key={n}
+                                  onClick={() => setPain(item, n)}
+                                  disabled={savingItem === item.id}
+                                  aria-label={`Dolor ${n} de 10`}
+                                  className={`w-8 h-8 rounded-full text-xs font-black border transition disabled:opacity-60 ${
+                                    selected ? s.selected : 'bg-white text-slate-500 border-slate-200'
+                                  }`}
+                                >
+                                  {n}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {band && (
+                            <p className={`text-xs font-bold ${PAIN_STYLES[band].text}`}>{PAIN_STYLES[band].msg}</p>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
