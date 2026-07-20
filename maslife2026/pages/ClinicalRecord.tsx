@@ -13,6 +13,8 @@ import { auditService } from '../auditService';
 import BiomechReport, { BiomechReportData } from '../components/BiomechReport';
 import { ExerciseRoutinePanel } from '../components/ExerciseRoutine';
 import { MealPlanSend } from '../components/MealPlanSend';
+import { PsychScales, PsychScaleResult } from '../components/PsychScales';
+import { TOAssessment, TOData } from '../components/TOAssessment';
 import { ConsentSendPanel } from '../components/ConsentFlow';
 import { InformedConsent } from '../types_clinical';
 
@@ -362,6 +364,12 @@ const ClinicalRecord: React.FC = () => {
   const [psychPsychHistory,  setPsychPsychHistory]  = useState<string>(savedSpec.psychPsychHistory  || '');
   const [psychIntervention,  setPsychIntervention]  = useState<string>(savedSpec.psychIntervention  || '');
   const [psychNextObjective, setPsychNextObjective] = useState<string>(savedSpec.psychNextObjective || '');
+  const [psychScales, setPsychScales] = useState<PsychScaleResult[]>(
+    (savedSpec.psychScales as PsychScaleResult[]) || []
+  );
+  const [toData, setToData] = useState<TOData>(
+    (savedSpec.toData as TOData) || { barthel: {}, goals: '' }
+  );
 
   const [soap, setSoap] = useState({ subjective: '', objective: '', assessment: '', plan: '', ...((safePatient.soap as any) || {}) });
 
@@ -1156,7 +1164,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
         nutSum6Pliegues, nutSum8Pliegues,
         compositionHistory: newHistory,
         // Psicología
-        psychMood, psychPsychHistory, psychIntervention, psychNextObjective,
+        psychMood, psychPsychHistory, psychIntervention, psychNextObjective, psychScales,
+        // Terapia Ocupacional
+        toData,
         // Kinesiología
         kinesio: { initial: kiData.initial, final: kiData.final },
         // Campos personalizados por sección (todas las especialidades)
@@ -2314,6 +2324,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           </section>
           )}
 
+          {specialtyKey === 'to' && (
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-8">
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-amber-500 pl-4">Evaluación Ocupacional</h2>
+            {renderSectionFields('to')}
+            <TOAssessment data={toData} onChange={d => { setToData(d); setIsDirtyTrue(); }} />
+          </section>
+          )}
+
           {specialtyKey === 'general' && (
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-6">
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Evaluación Clínica</h2>
@@ -2367,6 +2385,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
                 className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
             </div>
+
+            {/* Escalas PHQ-9 / GAD-7 con historial */}
+            <PsychScales scales={psychScales} onChange={s => { setPsychScales(s); setIsDirtyTrue(); }} />
           </section>
           )}
 
