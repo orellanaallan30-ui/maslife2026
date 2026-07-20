@@ -271,6 +271,25 @@ function exerciseRoutineHtml(p: { professionalName: string; patientName: string;
   });
 }
 
+function mealPlanHtml(p: { professionalName: string; patientName: string; planTitle: string; rows: Array<{ meal: string; food: string; quantity: string; kcal: string }> }): string {
+  const rows = p.rows.map(r => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:14px;font-weight:700;white-space:nowrap;">${escapeHtml(r.meal || '—')}</td>
+      <td style="padding:10px 8px;border-bottom:1px solid #e2e8f0;color:#475569;font-size:13px;">${escapeHtml(r.food || '—')}${r.quantity ? `<br><span style="color:#94a3b8;font-size:11px;">${escapeHtml(r.quantity)}</span>` : ''}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #e2e8f0;color:#059669;font-size:13px;font-weight:700;text-align:right;white-space:nowrap;">${r.kcal ? `${escapeHtml(r.kcal)} kcal` : ''}</td>
+    </tr>`).join('');
+  return emailShell({
+    kicker: 'Plan alimentario',
+    title: escapeHtml(p.planTitle),
+    subtitle: `De parte de ${escapeHtml(p.professionalName)}`,
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 16px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
+      <p style="color:#475569;font-size:14px;margin:0 0 20px;line-height:1.6;">Tu nutricionista te envió tu plan alimentario. Encontrarás el detalle completo en el PDF adjunto.</p>
+      <table style="width:100%;border-collapse:collapse;">${rows}</table>
+      <p style="color:#94a3b8;font-size:12px;margin:20px 0 0;">Ante cualquier duda o malestar, contacta directamente a tu profesional.</p>`,
+  });
+}
+
 function ratingRequestHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; reviewLink: string }): string {
   const dateFormatted = p.date ? new Date(p.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
   return emailShell({
@@ -472,6 +491,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
     } catch (e: any) {
       console.error('[exercise-routine]', e?.message);
+      return res.status(502).json({ error: 'No se pudo enviar el correo.' });
+    }
+    return res.status(200).json({ ok: true });
+  }
+
+  // ── Plan alimentario (nutrición): PDF adjunto al paciente ──────────────────
+  if (req.body?.action === 'meal-plan') {
+    if (!checkRateLimit(req.headers, 20, 60 * 60 * 1000))
+      return res.status(429).json({ error: 'Demasiados envíos. Intenta más tarde.' });
+
+    const { patientEmail, patientName, professionalName, planTitle, rows, pdfBase64 } = req.body || {};
+
+    if (!patientEmail || !EMAIL_RE.test(String(patientEmail)))
+      return res.status(400).json({ error: 'Email inválido' });
+    if (!patientName || !professionalName || !Array.isArray(rows) || !rows.length)
+      return res.status(400).json({ error: 'Faltan parámetros requeridos' });
+    if (!pdfBase64 || typeof pdfBase64 !== 'string')
+      return res.status(400).json({ error: 'Falta el PDF del plan' });
+
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
+    const FROM = process.env.EMAIL_FROM || 'notificaciones@clinicamaslife.cl';
+
+    const safeRows = rows.slice(0, 40).map((r: Record<string, unknown>) => ({
+      meal: cleanLine(r?.meal).slice(0, 60),
+      food: cleanLine(r?.food).slice(0, 200),
+      quantity: cleanLine(r?.quantity).slice(0, 60),
+      kcal: cleanLine(r?.kcal).slice(0, 12),
+    }));
+
+    const subject = `Tu plan alimentario — ${cleanLine(planTitle) || 'Agenda Maslife'}`;
+    try {
+      await sendEmail(RESEND_KEY, FROM, String(patientEmail), subject,
+        mealPlanHtml({
+          professionalName: String(professionalName),
+          patientName: String(patientName),
+          planTitle: String(planTitle || 'Plan alimentario'),
+          rows: safeRows,
+        }),
+        undefined,
+        { filename: 'plan-alimentario.pdf', contentBase64: String(pdfBase64), contentType: 'application/pdf' }
+      );
+    } catch (e: any) {
+      console.error('[meal-plan]', e?.message);
       return res.status(502).json({ error: 'No se pudo enviar el correo.' });
     }
     return res.status(200).json({ ok: true });
