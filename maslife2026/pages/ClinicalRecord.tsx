@@ -12,6 +12,7 @@ import { supabase } from '../supabaseService';
 import { auditService } from '../auditService';
 import BiomechReport, { BiomechReportData } from '../components/BiomechReport';
 import { ExerciseRoutinePanel } from '../components/ExerciseRoutine';
+import { MealPlanSend } from '../components/MealPlanSend';
 import { ConsentSendPanel } from '../components/ConsentFlow';
 import { InformedConsent } from '../types_clinical';
 
@@ -330,6 +331,8 @@ const ClinicalRecord: React.FC = () => {
   const [nutActivity,     setNutActivity]     = useState<ActivityLevel>(savedSpec.nutActivity || 'moderado');
   const [nutGoals,        setNutGoals]        = useState<string>(savedSpec.nutGoals        || '');
   const [nutSupplements,  setNutSupplements]  = useState<string>(savedSpec.nutSupplements  || '');
+  const [nutRecall24,     setNutRecall24]     = useState<string>(savedSpec.nutRecall24     || '');
+  const [nutDietHistory,  setNutDietHistory]  = useState<string>(savedSpec.nutDietHistory  || '');
   const [mealPlan, setMealPlan] = useState<MealPlanRow[]>(
     (savedSpec.mealPlan as MealPlanRow[]) || DEFAULT_MEAL_PLAN
   );
@@ -1148,7 +1151,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
       return {
         // Nutrición
         nutPeso, nutTalla, nutCintura, nutCadera, nutGender, nutActivity,
-        nutGoals, nutSupplements, mealPlan,
+        nutGoals, nutSupplements, nutRecall24, nutDietHistory, mealPlan,
         nutMasaGrasaPct, nutMasaAdiposaPct, nutMasaMuscularPct,
         nutSum6Pliegues, nutSum8Pliegues,
         compositionHistory: newHistory,
@@ -2171,6 +2174,69 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               })()}
             </div>
 
+            {/* Curva de evolución de peso e IMC (todas las evaluaciones guardadas) */}
+            {compositionHistory.length >= 2 && (() => {
+              const pts = compositionHistory
+                .map(s => ({ date: String(s.date), peso: Number(s.peso) || 0, imc: Number(s.imc) || 0 }))
+                .filter(p => p.peso > 0);
+              if (pts.length < 2) return null;
+              const W = 560, H = 150, PAD = 34;
+              const xs = (i: number) => PAD + (i * (W - PAD * 2)) / (pts.length - 1);
+              const build = (vals: number[]) => {
+                const min = Math.min(...vals), max = Math.max(...vals);
+                const span = max - min || 1;
+                return vals.map((v, i) => `${xs(i)},${H - PAD - ((v - min) / span) * (H - PAD * 2)}`).join(' ');
+              };
+              const pesoLine = build(pts.map(p => p.peso));
+              const imcLine = pts.every(p => p.imc > 0) ? build(pts.map(p => p.imc)) : null;
+              return (
+                <div className="space-y-3">
+                  <h4 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                    <span className="material-icons-round text-base text-emerald-500">show_chart</span>
+                    Curva de Peso {imcLine ? 'e IMC' : ''}
+                  </h4>
+                  <div className="bg-white rounded-2xl border border-slate-200 p-4 overflow-x-auto">
+                    <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[420px]" role="img"
+                      aria-label={`Evolución de peso desde ${pts[0].date} (${pts[0].peso} kg) hasta ${pts[pts.length - 1].date} (${pts[pts.length - 1].peso} kg)`}>
+                      <line x1={PAD} y1={H - PAD} x2={W - PAD} y2={H - PAD} stroke="#e2e8f0" strokeWidth="1" />
+                      {imcLine && <polyline points={imcLine} fill="none" stroke="#a78bfa" strokeWidth="2" strokeDasharray="5 4" strokeLinecap="round" />}
+                      <polyline points={pesoLine} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+                      {pts.map((p, i) => {
+                        const [x, y] = pesoLine.split(' ')[i].split(',').map(Number);
+                        return (
+                          <g key={i}>
+                            <circle cx={x} cy={y} r="4" fill="#10b981" />
+                            <text x={x} y={y - 8} textAnchor="middle" fontSize="10" fontWeight="800" fill="#047857">{p.peso}</text>
+                            <text x={x} y={H - PAD + 14} textAnchor="middle" fontSize="9" fill="#94a3b8">{p.date.slice(5)}</text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                    <div className="flex gap-4 pt-1 text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-emerald-600">━ Peso (kg)</span>
+                      {imcLine && <span className="text-violet-400">╌ IMC</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Recordatorio 24h + historia dietética */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+              <div className="space-y-2">
+                <label htmlFor="nut-recall24" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Recordatorio 24 Horas</label>
+                <textarea id="nut-recall24" value={nutRecall24} onChange={e => { setNutRecall24(e.target.value); setIsDirtyTrue(); }} rows={4}
+                  placeholder="Todo lo que el paciente comió y bebió en las últimas 24 horas, con horarios y cantidades aproximadas..."
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="nut-diet-history" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Historia Dietética</label>
+                <textarea id="nut-diet-history" value={nutDietHistory} onChange={e => { setNutDietHistory(e.target.value); setIsDirtyTrue(); }} rows={4}
+                  placeholder="Dietas previas, intolerancias, alergias alimentarias, patrones de alimentación, relación con la comida..."
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+              </div>
+            </div>
+
             {/* Objetivos nutricionales */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-2">
@@ -2240,6 +2306,10 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   </tbody>
                 </table>
               </div>
+              {/* Envío del plan al paciente (link público + PDF + email) */}
+              {loggedPro && initialPatient?.id && (
+                <MealPlanSend patient={safePatient} loggedPro={loggedPro} rows={mealPlan} />
+              )}
             </div>
           </section>
           )}

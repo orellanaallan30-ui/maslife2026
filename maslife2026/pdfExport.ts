@@ -1492,3 +1492,147 @@ export async function exportRoutinePDFPublic(
   const dateStr = new Date().toLocaleDateString('es-CL').replace(/\//g, '-');
   doc.save(`Rutina_${(data.patientName || 'paciente').replace(/\s+/g, '_')}_${dateStr}.pdf`);
 }
+
+// ── Plan alimentario (nutrición) ─────────────────────────────────────────────
+
+export interface MealPlanPDFRow {
+  meal: string;
+  food: string;
+  quantity: string;
+  kcal: string;
+  notes: string;
+}
+
+export interface MealPlanPDFData {
+  patientName: string;
+  professionalName: string;
+  professionalSpecialty?: string;
+  title: string;
+  notes?: string | null;
+  rows: MealPlanPDFRow[];
+}
+
+async function buildMealPlanDoc(docId: string, data: MealPlanPDFData): Promise<jsPDFInstance> {
+  await ensureJsPDF();
+  const { jsPDF } = window.jspdf!;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const MARGIN = 18;
+  const COL = W - MARGIN * 2;
+  let y = MARGIN;
+
+  const proStub = {
+    name: data.professionalName || 'Profesional',
+    specialty: data.professionalSpecialty || '',
+  } as ProfessionalProfile;
+  const dateStr = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  drawMembrete(doc, W, MARGIN, `Plan alimentario · ${dateStr}`);
+  y = 36;
+  y = drawDocMeta(doc, MARGIN, COL, y, {
+    updatedAt: new Date().toISOString(),
+    proName: proStub.name,
+    proSpecialty: proStub.specialty,
+    docId,
+  });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.setTextColor(15, 23, 42);
+  doc.text(data.title || 'PLAN ALIMENTARIO', MARGIN, y);
+  y += 5;
+  doc.setDrawColor(0, 168, 158);
+  doc.line(MARGIN, y, W - MARGIN, y);
+  y += 8;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Paciente: ${data.patientName || '—'}  ·  Profesional: ${proStub.name}${proStub.specialty ? ` (${proStub.specialty})` : ''}`, MARGIN, y);
+  y += 8;
+
+  if (data.notes?.trim()) {
+    const noteLines = doc.splitTextToSize(data.notes, COL);
+    doc.setFontSize(8.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(noteLines, MARGIN, y);
+    y += noteLines.length * 4.2 + 4;
+  }
+
+  // Tabla: Tiempo | Alimento | Cantidad | Kcal | Observaciones
+  const colW = [26, COL - 26 - 22 - 14 - 42, 22, 14, 42];
+  const colX: number[] = [];
+  let acc = MARGIN;
+  colW.forEach(w => { colX.push(acc); acc += w; });
+  const HEADERS = ['Tiempo', 'Preparación / Alimento', 'Cantidad', 'Kcal', 'Observaciones'];
+
+  const drawHeader = () => {
+    doc.setFillColor(240, 253, 250);
+    doc.setDrawColor(0, 168, 158);
+    doc.rect(MARGIN, y, COL, 7, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(0, 126, 119);
+    HEADERS.forEach((h, i) => doc.text(h.toUpperCase(), colX[i] + 2, y + 4.7));
+    y += 7;
+  };
+  drawHeader();
+
+  const rows = data.rows.filter(r => (r.food || r.quantity || r.kcal || r.notes || '').toString().trim());
+  rows.forEach((r, idx) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const foodLines = doc.splitTextToSize(r.food || '—', colW[1] - 4);
+    const notesLines = r.notes ? doc.splitTextToSize(r.notes, colW[4] - 4) : [];
+    const rowH = Math.max(7, Math.max(foodLines.length, notesLines.length) * 4 + 3);
+    if (y + rowH > 265) { doc.addPage(); y = MARGIN; drawHeader(); }
+
+    if (idx % 2 === 1) {
+      doc.setFillColor(248, 250, 252);
+      doc.rect(MARGIN, y, COL, rowH, 'F');
+    }
+    doc.setDrawColor(226, 232, 240);
+    doc.line(MARGIN, y + rowH, MARGIN + COL, y + rowH);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(r.meal || '—', colX[0] + 2, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(51, 65, 85);
+    doc.text(foodLines, colX[1] + 2, y + 5);
+    doc.text(r.quantity || '', colX[2] + 2, y + 5);
+    doc.text(r.kcal || '', colX[3] + 2, y + 5);
+    doc.setTextColor(100, 116, 139);
+    if (notesLines.length) doc.text(notesLines, colX[4] + 2, y + 5);
+    y += rowH;
+  });
+
+  const totalKcal = rows.reduce((s, r) => s + (parseFloat(r.kcal) || 0), 0);
+  if (totalKcal > 0) {
+    if (y + 8 > 265) { doc.addPage(); y = MARGIN; }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(0, 126, 119);
+    doc.text(`Total estimado: ${totalKcal} kcal/día`, W - MARGIN, y + 6, { align: 'right' });
+    y += 12;
+  }
+
+  y += 4;
+  if (y + 42 > 265) { doc.addPage(); y = MARGIN; }
+  drawAutoSignature(doc, proStub, MARGIN, COL, y);
+  drawFooters(doc, W, proStub);
+  return doc;
+}
+
+export async function exportMealPlanPDFPublic(planId: string, data: MealPlanPDFData): Promise<void> {
+  const doc = await buildMealPlanDoc(planId, data);
+  const dateStr = new Date().toLocaleDateString('es-CL').replace(/\//g, '-');
+  doc.save(`Plan_Alimentario_${(data.patientName || 'paciente').replace(/\s+/g, '_')}_${dateStr}.pdf`);
+}
+
+// Base64 puro (sin prefijo data:) para adjuntar en el correo vía api/notify.ts.
+export async function getMealPlanPDFBase64(planId: string, data: MealPlanPDFData): Promise<string> {
+  const doc = await buildMealPlanDoc(planId, data);
+  const dataUri = doc.output('datauristring');
+  return dataUri.split(',')[1] || '';
+}
