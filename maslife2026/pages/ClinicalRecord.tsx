@@ -61,6 +61,12 @@ const SOAP_LABELS: Record<string, Array<{ l: string; c: string; k: string; bg: s
     { l: 'Análisis Funcional',     c: 'A', k: 'assessment', bg: 'bg-indigo-500', ph: 'Barreras, facilitadores, nivel de independencia...' },
     { l: 'Plan de Intervención',   c: 'P', k: 'plan',       bg: 'bg-slate-800',  ph: 'Estrategias, adaptaciones, ortesis, entrenamiento...' },
   ],
+  general: [
+    { l: 'Subjetivo',              c: 'S', k: 'subjective', bg: 'bg-primary',    ph: 'Motivo de consulta y lo que reporta el paciente...' },
+    { l: 'Objetivo',               c: 'O', k: 'objective',  bg: 'bg-teal-500',   ph: 'Hallazgos del examen, mediciones, observaciones clínicas...' },
+    { l: 'Evaluación',             c: 'A', k: 'assessment', bg: 'bg-indigo-500', ph: 'Diagnóstico o impresión clínica, evolución...' },
+    { l: 'Plan',                   c: 'P', k: 'plan',       bg: 'bg-slate-800',  ph: 'Indicaciones, tratamiento, derivaciones, próximos pasos...' },
+  ],
 };
 
 // ── ROM: definiciones por defecto (label y normal EDITABLES por el profesional) ──
@@ -232,7 +238,11 @@ const ClinicalRecord: React.FC = () => {
     if (s.includes('psicolog') || s.includes('psiquiat')) return 'psicologia';
     if (s.includes('nutrici') || s.includes('dietét') || s.includes('dietista')) return 'nutricion';
     if (s.includes('ocupacional') || s.includes('t.o.')) return 'to';
-    return 'kinesiologia';
+    if (s.includes('kinesi') || s.includes('fisioter') || s.includes('rehabilit')) return 'kinesiologia';
+    // Especialidades sin ficha dedicada (medicina general, fonoaudiología, etc.):
+    // ficha general con secciones comunes + campos personalizados, en vez de
+    // heredar la ficha kinesiológica completa (ROM, tests, rutinas).
+    return 'general';
   }, [loggedPro?.specialty]);
 
   // ── Estado: datos especialidad guardados ───────────────────────────────────
@@ -2231,6 +2241,17 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 </table>
               </div>
             </div>
+          </section>
+          )}
+
+          {specialtyKey === 'general' && (
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-6">
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Evaluación Clínica</h2>
+            {renderSectionFields('general')}
+            <p className="text-xs text-slate-400 font-medium no-print">
+              Arma tu ficha a medida: usa "+ Agregar campo" para crear los campos que tu especialidad necesite
+              (se guardan en la ficha de cada paciente, igual que el resto de la información clínica).
+            </p>
           </section>
           )}
 
