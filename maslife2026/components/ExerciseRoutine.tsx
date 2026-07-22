@@ -54,6 +54,8 @@ interface RoutineSession {
   symptom: string | null;
 }
 
+interface EvidenceRef { id: string; path: string; type: string | null }
+
 // Rutina ya enviada, con el progreso que el paciente marcó desde /rutina/:id.
 interface SentRoutine {
   id: string;
@@ -62,13 +64,58 @@ interface SentRoutine {
   sentVia: string | null;
   sessionsPerWeek: number | null;
   sessions: RoutineSession[];
-  items: Array<{ id: string; nameEs: string; completions: Array<{ on: string; pain: number | null }> }>;
+  items: Array<{ id: string; nameEs: string; completions: Array<{ on: string; pain: number | null }>; evidence: EvidenceRef[] }>;
 }
 
 const RPE_LABELS = ['', 'Fácil', 'Moderado', 'Difícil', 'Muy difícil'];
 
 // Semáforo de dolor EVA: 1-3 tolerable · 4-5 precaución · 6-10 no realizar.
 const painDotClass = (n: number) => (n <= 3 ? 'bg-emerald-500' : n <= 5 ? 'bg-amber-400' : 'bg-rose-500');
+
+// Curva de evolución: dolor final (EVA, eje fijo 0-10) por sesión + esfuerzo (RPE)
+// como línea tenue en la misma escala (rpe 1-4 → ×2.5). SVG puro, sin librerías.
+const SessionChart: React.FC<{ sessions: RoutineSession[] }> = ({ sessions }) => {
+  const pts = sessions.filter(s => s.painPost != null);
+  if (pts.length < 2) return null;
+  const W = 520, H = 120, PAD = 26;
+  const x = (i: number) => PAD + (i * (W - PAD * 2)) / (pts.length - 1);
+  const yPain = (v: number) => H - PAD - (v / 10) * (H - PAD * 2);
+  const painLine = pts.map((s, i) => `${x(i)},${yPain(s.painPost as number)}`).join(' ');
+  const rpePts = pts.map((s, i) => (s.rpe != null ? `${x(i)},${yPain((s.rpe as number) * 2.5)}` : null)).filter(Boolean) as string[];
+  const rpeLine = rpePts.length >= 2 ? rpePts.join(' ') : null;
+  return (
+    <div className="space-y-2 pb-2 mb-1 border-b border-slate-200">
+      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Evolución (dolor{rpeLine ? ' y esfuerzo' : ''})</p>
+      <div className="bg-white rounded-xl border border-slate-200 p-2 overflow-x-auto">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[380px]" role="img" aria-label="Curva de evolución del dolor por sesión">
+          {[0, 5, 10].map(g => (
+            <g key={g}>
+              <line x1={PAD} y1={yPain(g)} x2={W - PAD} y2={yPain(g)} stroke="#f1f5f9" strokeWidth="1" />
+              <text x={4} y={yPain(g) + 3} fontSize="8" fill="#cbd5e1">{g}</text>
+            </g>
+          ))}
+          {rpeLine && <polyline points={rpeLine} fill="none" stroke="#a78bfa" strokeWidth="1.5" strokeDasharray="4 4" strokeLinecap="round" />}
+          <polyline points={painLine} fill="none" stroke="#0f766e" strokeWidth="2" strokeLinecap="round" />
+          {pts.map((s, i) => {
+            const [cx, cy] = painLine.split(' ')[i].split(',').map(Number);
+            const p = s.painPost as number;
+            const color = p <= 3 ? '#10b981' : p <= 5 ? '#f59e0b' : '#f43f5e';
+            return (
+              <g key={i}>
+                <circle cx={cx} cy={cy} r="3.5" fill={color} />
+                <text x={cx} y={H - 8} textAnchor="middle" fontSize="7.5" fill="#94a3b8">{s.date.slice(5)}</text>
+              </g>
+            );
+          })}
+        </svg>
+        <div className="flex gap-4 pt-1 text-[9px] font-black uppercase tracking-widest">
+          <span className="text-teal-700">━ Dolor (0-10)</span>
+          {rpeLine && <span className="text-violet-400">╌ Esfuerzo</span>}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Semáforo de adherencia clínica: combina cumplimiento semanal + tendencia del dolor.
 // Verde: ≥80% y dolor estable/baja · Amarillo: 50-80% o esfuerzo/dolor alto · Rojo: <50% o dolor sube ≥3.
@@ -101,6 +148,39 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   const [sentRoutines, setSentRoutines] = useState<SentRoutine[]>([]);
   const [expandedRoutine, setExpandedRoutine] = useState<string | null>(null);
   const [perWeek, setPerWeek] = useState<number | ''>(3);
+  const [viewer, setViewer] = useState<{ id: string; path: string; type: string | null; url: string } | null>(null);
+  const [viewerBusy, setViewerBusy] = useState(false);
+
+  // Abre la evidencia con un enlace firmado (privado, temporal).
+  const openEvidence = async (ev: EvidenceRef) => {
+    try {
+      const { data, error } = await supabase.storage.from('routine-evidence').createSignedUrl(ev.path, 3600);
+      if (error || !data?.signedUrl) throw error || new Error('sin url');
+      setViewer({ id: ev.id, path: ev.path, type: ev.type, url: data.signedUrl });
+    } catch (e) {
+      console.error('[evidence] ver', e);
+      toast.error('No se pudo abrir la evidencia.');
+    }
+  };
+
+  // "Revisado": elimina el archivo del bucket y su registro.
+  const reviewEvidence = async () => {
+    if (!viewer || viewerBusy) return;
+    setViewerBusy(true);
+    try {
+      const { error: rmErr } = await supabase.storage.from('routine-evidence').remove([viewer.path]);
+      if (rmErr) throw rmErr;
+      await supabase.from('routine_evidence').delete().eq('id', viewer.id);
+      toast.success('Evidencia revisada y eliminada');
+      setViewer(null);
+      loadSentRoutines();
+    } catch (e) {
+      console.error('[evidence] eliminar', e);
+      toast.error('No se pudo eliminar la evidencia.');
+    } finally {
+      setViewerBusy(false);
+    }
+  };
 
   useEffect(() => {
     supabase.from('exercises').select('*').order('name_es').then(({ data, error }) => {
@@ -114,7 +194,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   // que dejó desde el link público (adherencia al tratamiento).
   const loadSentRoutines = React.useCallback(() => {
     supabase.from('exercise_routines')
-      .select('id, title, sent_at, sent_via, sessions_per_week, routine_sessions(session_date, pain_pre, pain_post, rpe, symptom, finished_at), routine_items(id, order_index, exercises(name_es), routine_completions(completed_on, pain_level))')
+      .select('id, title, sent_at, sent_via, sessions_per_week, routine_sessions(session_date, pain_pre, pain_post, rpe, symptom, finished_at), routine_evidence(id, item_id, storage_path, media_type), routine_items(id, order_index, exercises(name_es), routine_completions(completed_on, pain_level))')
       .eq('patient_id', patient.id)
       .order('sent_at', { ascending: false })
       .limit(10)
@@ -144,6 +224,9 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
               completions: (it.routine_completions || [])
                 .map((c: any) => ({ on: c.completed_on as string, pain: (c.pain_level ?? null) as number | null }))
                 .sort((a: any, b: any) => a.on.localeCompare(b.on)),
+              evidence: (r.routine_evidence || [])
+                .filter((ev: any) => ev.item_id === it.id)
+                .map((ev: any) => ({ id: ev.id, path: ev.storage_path, type: ev.media_type })),
             })),
         })));
       });
@@ -466,6 +549,8 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                 </div>
                 {isOpen && (
                   <div className="pl-6 space-y-1.5 pt-1">
+                    {/* Curva de evolución (dolor + esfuerzo) */}
+                    <SessionChart sessions={r.sessions} />
                     {/* Sesiones completadas: métricas clínicas */}
                     {r.sessions.length > 0 && (
                       <div className="space-y-1 pb-2 mb-1 border-b border-slate-200">
@@ -492,19 +577,33 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                     {r.items.map(it => {
                       const last = it.completions[it.completions.length - 1];
                       return (
-                        <div key={it.id} className="flex items-center justify-between gap-2 text-xs">
-                          <span className="font-bold text-slate-600 truncate">{it.nameEs}</span>
-                          <span className={`shrink-0 font-black text-[10px] flex items-center gap-1.5 ${it.completions.length ? 'text-teal-600' : 'text-slate-400'}`}>
-                            {last
-                              ? `${it.completions.length} ${it.completions.length === 1 ? 'día' : 'días'} · último ${new Date(last.on + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}`
-                              : 'Sin registros'}
-                            {last?.pain != null && (
-                              <span className="flex items-center gap-1 text-slate-500">
-                                · dolor {last.pain}
-                                <span className={`w-2 h-2 rounded-full ${painDotClass(last.pain)}`} />
-                              </span>
-                            )}
-                          </span>
+                        <div key={it.id} className="space-y-1">
+                          <div className="flex items-center justify-between gap-2 text-xs">
+                            <span className="font-bold text-slate-600 truncate">{it.nameEs}</span>
+                            <span className={`shrink-0 font-black text-[10px] flex items-center gap-1.5 ${it.completions.length ? 'text-teal-600' : 'text-slate-400'}`}>
+                              {last
+                                ? `${it.completions.length} ${it.completions.length === 1 ? 'día' : 'días'} · último ${new Date(last.on + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}`
+                                : 'Sin registros'}
+                              {last?.pain != null && (
+                                <span className="flex items-center gap-1 text-slate-500">
+                                  · dolor {last.pain}
+                                  <span className={`w-2 h-2 rounded-full ${painDotClass(last.pain)}`} />
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          {/* Evidencia enviada por el paciente para este ejercicio */}
+                          {it.evidence.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pl-1">
+                              {it.evidence.map((ev, ei) => (
+                                <button key={ev.id} onClick={() => openEvidence(ev)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-50 text-violet-700 text-[10px] font-black hover:bg-violet-100 transition">
+                                  <span className="material-icons-round text-xs">{ev.type === 'video' ? 'videocam' : 'photo_camera'}</span>
+                                  Ver evidencia {it.evidence.length > 1 ? ei + 1 : ''}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -513,6 +612,29 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Visor de evidencia del paciente (privado, enlace firmado) */}
+      {viewer && (
+        <div className="fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4 no-print" onClick={() => setViewer(null)}>
+          <div className="bg-slate-900 rounded-3xl overflow-hidden max-w-lg w-full" onClick={e => e.stopPropagation()}>
+            <div className="bg-black flex items-center justify-center">
+              {viewer.type === 'video'
+                ? <video src={viewer.url} controls autoPlay playsInline className="w-full max-h-[70vh] object-contain bg-black" />
+                : <img src={viewer.url} alt="Evidencia del paciente" className="w-full max-h-[70vh] object-contain bg-black" />}
+            </div>
+            <div className="p-4 flex items-center justify-between gap-3">
+              <p className="text-[11px] text-slate-400">La evidencia se elimina al marcarla revisada.</p>
+              <div className="flex gap-2">
+                <button onClick={() => setViewer(null)} className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 bg-slate-800">Cerrar</button>
+                <button onClick={reviewEvidence} disabled={viewerBusy}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 transition disabled:opacity-60 flex items-center gap-1.5">
+                  <span className="material-icons-round text-base">delete</span> {viewerBusy ? 'Eliminando...' : 'Revisado, eliminar'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

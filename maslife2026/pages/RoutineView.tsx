@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { exportRoutinePDFPublic } from '../pdfExport';
+import { EvidenceCapture } from '../components/EvidenceCapture';
 
 interface RoutineItemView {
   id: string;
@@ -14,6 +15,7 @@ interface RoutineItemView {
   notes: string | null;
   completedDates: string[];
   completions: Array<{ on: string; pain: number | null }>;
+  evidenceCount: number;
 }
 
 // Semáforo de dolor (escala EVA 1-10):
@@ -122,6 +124,7 @@ const RoutineView: React.FC = () => {
             ...it,
             completedDates: it.completedDates || [],
             completions: it.completions || [],
+            evidenceCount: it.evidenceCount || 0,
           }));
           setData(parsed);
           setSession(parsed.todaySession || null);
@@ -527,6 +530,14 @@ const RoutineView: React.FC = () => {
                           {band && (
                             <p className={`text-xs font-bold ${PAIN_STYLES[band].text}`}>{PAIN_STYLES[band].msg}</p>
                           )}
+                        </div>
+                      )}
+                      {/* Evidencia: grabar video 10s o adjuntar (foto/video) */}
+                      {id && (
+                        <div className="pt-2 border-t border-slate-100">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Enviar evidencia (opcional)</p>
+                          <EvidenceCapture routineId={id} itemId={item.id} count={item.evidenceCount || 0}
+                            onUploaded={() => { /* el contador lo lleva el componente */ }} />
                         </div>
                       )}
                     </>
