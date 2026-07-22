@@ -30,9 +30,16 @@ const videoDuration = (file: File): Promise<number> => new Promise(resolve => {
   v.src = URL.createObjectURL(file);
 });
 
+// iOS: el MediaRecorder propio graba webm (que Safari no reproduce) y falla la
+// subida por el tipo con códec. En iPhone/iPad usamos la cámara nativa.
+const isIOS = () =>
+  /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 const canRecord = () =>
   typeof MediaRecorder !== 'undefined' &&
-  !!navigator.mediaDevices?.getUserMedia;
+  !!navigator.mediaDevices?.getUserMedia &&
+  !isIOS();
 
 const pickMime = (): string => {
   const opts = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
@@ -66,9 +73,11 @@ export const EvidenceCapture: React.FC<Props> = ({ routineId, itemId, count, onU
 
   const upload = async (blob: Blob, type: string) => {
     const isVideo = type.startsWith('video');
-    const path = `${routineId}/${itemId}/${genId()}.${extFromType(type)}`;
+    // El bucket valida el mime EXACTO: quitar el sufijo de códec (video/webm;codecs=… → video/webm).
+    const baseType = (type || 'application/octet-stream').split(';')[0].trim();
+    const path = `${routineId}/${itemId}/${genId()}.${extFromType(baseType)}`;
     const { error } = await supabase.storage.from('routine-evidence')
-      .upload(path, blob, { contentType: type || 'application/octet-stream', upsert: false });
+      .upload(path, blob, { contentType: baseType, upsert: false });
     if (error) throw error;
     const { data: res, error: rerr } = await supabase.rpc('add_routine_evidence', {
       p_routine_id: routineId, p_item_id: itemId, p_path: path, p_type: isVideo ? 'video' : 'image',
