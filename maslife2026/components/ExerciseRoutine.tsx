@@ -45,17 +45,45 @@ function mapExerciseFromDB(row: Record<string, unknown>): Exercise {
 let newId = 0;
 const localId = () => `new-${++newId}-${Date.now()}`;
 
+// Una sesión terminada por el paciente (métricas clínicas).
+interface RoutineSession {
+  date: string;
+  painPre: number | null;
+  painPost: number | null;
+  rpe: number | null;       // 1 Fácil … 4 Muy difícil
+  symptom: string | null;
+}
+
 // Rutina ya enviada, con el progreso que el paciente marcó desde /rutina/:id.
 interface SentRoutine {
   id: string;
   title: string;
   sentAt: string | null;
   sentVia: string | null;
+  sessionsPerWeek: number | null;
+  sessions: RoutineSession[];
   items: Array<{ id: string; nameEs: string; completions: Array<{ on: string; pain: number | null }> }>;
 }
 
+const RPE_LABELS = ['', 'Fácil', 'Moderado', 'Difícil', 'Muy difícil'];
+
 // Semáforo de dolor EVA: 1-3 tolerable · 4-5 precaución · 6-10 no realizar.
 const painDotClass = (n: number) => (n <= 3 ? 'bg-emerald-500' : n <= 5 ? 'bg-amber-400' : 'bg-rose-500');
+
+// Semáforo de adherencia clínica: combina cumplimiento semanal + tendencia del dolor.
+// Verde: ≥80% y dolor estable/baja · Amarillo: 50-80% o esfuerzo/dolor alto · Rojo: <50% o dolor sube ≥3.
+function adherenceLight(sessions: RoutineSession[], perWeek: number | null): { cls: string; label: string } {
+  const weekAgo = new Date(Date.now() - 7 * 86400000);
+  const recent = sessions.filter(s => new Date(s.date + 'T12:00:00') >= weekAgo);
+  const done = recent.length;
+  const ratio = perWeek ? done / perWeek : null;
+  // Tendencia de dolor: promedio pain_post de las últimas 2 vs las 2 previas.
+  const withPost = sessions.filter(s => s.painPost != null).map(s => s.painPost as number);
+  const painRising = withPost.length >= 2 && withPost[withPost.length - 1] - withPost[0] >= 3;
+  if (painRising || (ratio != null && ratio < 0.5)) return { cls: 'bg-rose-500', label: 'Requiere atención' };
+  if ((ratio != null && ratio < 0.8) || done === 0) return { cls: 'bg-amber-400', label: 'Seguimiento' };
+  return { cls: 'bg-emerald-500', label: 'En buen camino' };
+}
 
 export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) => {
   const [catalog, setCatalog] = useState<Exercise[]>([]);
@@ -72,6 +100,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   const [downloading, setDownloading] = useState(false);
   const [sentRoutines, setSentRoutines] = useState<SentRoutine[]>([]);
   const [expandedRoutine, setExpandedRoutine] = useState<string | null>(null);
+  const [perWeek, setPerWeek] = useState<number | ''>(3);
 
   useEffect(() => {
     supabase.from('exercises').select('*').order('name_es').then(({ data, error }) => {
@@ -85,7 +114,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   // que dejó desde el link público (adherencia al tratamiento).
   const loadSentRoutines = React.useCallback(() => {
     supabase.from('exercise_routines')
-      .select('id, title, sent_at, sent_via, routine_items(id, order_index, exercises(name_es), routine_completions(completed_on, pain_level))')
+      .select('id, title, sent_at, sent_via, sessions_per_week, routine_sessions(session_date, pain_pre, pain_post, rpe, symptom, finished_at), routine_items(id, order_index, exercises(name_es), routine_completions(completed_on, pain_level))')
       .eq('patient_id', patient.id)
       .order('sent_at', { ascending: false })
       .limit(10)
@@ -96,6 +125,17 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
           title: r.title,
           sentAt: r.sent_at,
           sentVia: r.sent_via,
+          sessionsPerWeek: (r.sessions_per_week ?? null) as number | null,
+          sessions: (r.routine_sessions || [])
+            .filter((s: any) => s.finished_at)
+            .map((s: any) => ({
+              date: s.session_date as string,
+              painPre: (s.pain_pre ?? null) as number | null,
+              painPost: (s.pain_post ?? null) as number | null,
+              rpe: (s.rpe ?? null) as number | null,
+              symptom: (s.symptom ?? null) as string | null,
+            }))
+            .sort((a: RoutineSession, b: RoutineSession) => a.date.localeCompare(b.date)),
           items: (r.routine_items || [])
             .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
             .map((it: any) => ({
@@ -167,6 +207,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
       const { data: routine, error } = await supabase.from('exercise_routines').insert({
         patient_id: patient.id, professional_id: loggedPro.id, title,
         sent_at: new Date().toISOString(), sent_via: sentVia,
+        sessions_per_week: perWeek === '' ? null : perWeek,
       }).select('id').single();
       if (error || !routine) throw error || new Error('sin id');
       const rows = items.map((it, idx) => ({
@@ -267,10 +308,19 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
         </button>
       </div>
 
-      <div>
-        <label htmlFor="routine-title" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Nombre de la Rutina</label>
-        <input id="routine-title" value={title} onChange={e => setTitle(e.target.value)}
-          className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-teal-500/10 transition-all" />
+      <div className="flex flex-col lg:flex-row gap-3">
+        <div className="flex-1">
+          <label htmlFor="routine-title" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Nombre de la Rutina</label>
+          <input id="routine-title" value={title} onChange={e => setTitle(e.target.value)}
+            className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-teal-500/10 transition-all" />
+        </div>
+        <div className="lg:w-40">
+          <label htmlFor="routine-perweek" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Veces por semana</label>
+          <input id="routine-perweek" type="number" min={1} max={14} value={perWeek}
+            onChange={e => setPerWeek(e.target.value ? Number(e.target.value) : '')}
+            placeholder="ej: 3"
+            className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm text-center focus:ring-4 focus:ring-teal-500/10 transition-all" />
+        </div>
       </div>
 
       {items.length === 0 ? (
@@ -367,13 +417,14 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
         <div className="no-print pt-4 border-t border-slate-100 space-y-3">
           <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Rutinas enviadas y adherencia</h3>
           {sentRoutines.map(r => {
-            const totalChecks = r.items.reduce((acc, it) => acc + it.completions.length, 0);
             const weekAgo = new Date(Date.now() - 7 * 86400000);
             const recentChecks = r.items.reduce((acc, it) =>
               acc + it.completions.filter(c => new Date(c.on + 'T12:00:00') >= weekAgo).length, 0);
             const maxRecentPain = r.items.flatMap(it =>
               it.completions.filter(c => new Date(c.on + 'T12:00:00') >= weekAgo).map(c => c.pain)
             ).filter((p): p is number => p != null).reduce((a, b) => Math.max(a, b), 0);
+            const weekSessions = r.sessions.filter(s => new Date(s.date + 'T12:00:00') >= weekAgo).length;
+            const light = adherenceLight(r.sessions, r.sessionsPerWeek);
             const isOpen = expandedRoutine === r.id;
             const link = `${window.location.origin}/rutina/${r.id}`;
             return (
@@ -390,11 +441,16 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                       </p>
                     </div>
                   </button>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${recentChecks > 0 ? 'bg-teal-500/10 text-teal-700' : 'bg-slate-200 text-slate-500'}`}>
-                      {recentChecks} checks últimos 7 días
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-white border border-slate-200 text-slate-600 flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${light.cls}`} />{light.label}
                     </span>
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-200 text-slate-500">{totalChecks} total</span>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-teal-500/10 text-teal-700">
+                      {weekSessions}{r.sessionsPerWeek ? `/${r.sessionsPerWeek}` : ''} sesiones (7d)
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${recentChecks > 0 ? 'bg-slate-100 text-slate-600' : 'bg-slate-200 text-slate-500'}`}>
+                      {recentChecks} checks (7d)
+                    </span>
                     {maxRecentPain > 0 && (
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-white border border-slate-200 text-slate-600 flex items-center gap-1.5">
                         <span className={`w-2 h-2 rounded-full ${painDotClass(maxRecentPain)}`} />
@@ -410,6 +466,29 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                 </div>
                 {isOpen && (
                   <div className="pl-6 space-y-1.5 pt-1">
+                    {/* Sesiones completadas: métricas clínicas */}
+                    {r.sessions.length > 0 && (
+                      <div className="space-y-1 pb-2 mb-1 border-b border-slate-200">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sesiones ({r.sessions.length})</p>
+                        {r.sessions.slice(-6).reverse().map((s, si) => (
+                          <div key={si} className="flex items-center justify-between gap-2 text-[11px]">
+                            <span className="font-bold text-slate-600">{new Date(s.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}</span>
+                            <span className="flex items-center gap-2 text-slate-500 flex-wrap justify-end">
+                              {(s.painPre != null || s.painPost != null) && (
+                                <span className="flex items-center gap-1 font-bold">
+                                  dolor {s.painPre ?? '—'}→{s.painPost ?? '—'}
+                                  {s.painPost != null && <span className={`w-2 h-2 rounded-full ${painDotClass(s.painPost)}`} />}
+                                </span>
+                              )}
+                              {s.rpe != null && <span className="px-1.5 py-0.5 rounded bg-slate-100 font-bold">{RPE_LABELS[s.rpe]}</span>}
+                              {s.symptom && s.symptom !== 'Sin molestia' && (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 font-bold">{s.symptom}</span>
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {r.items.map(it => {
                       const last = it.completions[it.completions.length - 1];
                       return (
