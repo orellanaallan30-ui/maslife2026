@@ -512,24 +512,33 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
             const link = `${window.location.origin}/rutina/${r.id}`;
             return (
               <div key={r.id} className="bg-slate-50/80 rounded-2xl border border-slate-200 p-4 space-y-2">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <button onClick={() => setExpandedRoutine(isOpen ? null : r.id)}
-                    className="flex items-center gap-2 text-left flex-1 min-w-0">
-                    <span className="material-icons-round text-slate-400 text-base">{isOpen ? 'expand_less' : 'expand_more'}</span>
-                    <div className="min-w-0">
-                      <p className="font-black text-xs text-slate-800 truncate">{r.title}</p>
-                      <p className="text-[10px] text-slate-400">
-                        {r.sentAt ? new Date(r.sentAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '—'}
-                        {r.sentVia === 'whatsapp' ? ' · WhatsApp' : r.sentVia === 'email' ? ' · Email' : ''}
-                      </p>
-                    </div>
-                  </button>
-                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                <div className="space-y-2">
+                  {/* Fila 1: título + copiar link */}
+                  <div className="flex items-center justify-between gap-2">
+                    <button onClick={() => setExpandedRoutine(isOpen ? null : r.id)}
+                      className="flex items-center gap-2 text-left flex-1 min-w-0">
+                      <span className="material-icons-round text-slate-400 text-base">{isOpen ? 'expand_less' : 'expand_more'}</span>
+                      <div className="min-w-0">
+                        <p className="font-black text-xs text-slate-800 truncate">{r.title}</p>
+                        <p className="text-[10px] text-slate-400">
+                          {r.sentAt ? new Date(r.sentAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '—'}
+                          {r.sentVia === 'whatsapp' ? ' · WhatsApp' : r.sentVia === 'email' ? ' · Email' : ''}
+                        </p>
+                      </div>
+                    </button>
+                    <button title="Copiar link de la rutina" aria-label="Copiar link de la rutina"
+                      onClick={() => { navigator.clipboard?.writeText(link); toast.success('Link copiado'); }}
+                      className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50">
+                      <span className="material-icons-round text-base">link</span>
+                    </button>
+                  </div>
+                  {/* Fila 2: chips de adherencia (ancho completo, envuelven) */}
+                  <div className="flex flex-wrap gap-2">
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-white border border-slate-200 text-slate-600 flex items-center gap-1.5">
                       <span className={`w-2 h-2 rounded-full ${light.cls}`} />{light.label}
                     </span>
                     <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-teal-500/10 text-teal-700">
-                      {weekSessions}{r.sessionsPerWeek ? `/${r.sessionsPerWeek}` : ''} sesiones (7d)
+                      {weekSessions}{r.sessionsPerWeek ? `/${r.sessionsPerWeek}` : ''} {weekSessions === 1 && !r.sessionsPerWeek ? 'sesión' : 'sesiones'} (7d)
                     </span>
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${recentChecks > 0 ? 'bg-slate-100 text-slate-600' : 'bg-slate-200 text-slate-500'}`}>
                       {recentChecks} checks (7d)
@@ -540,11 +549,6 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                         dolor máx. {maxRecentPain}/10 (7d)
                       </span>
                     )}
-                    <button title="Copiar link de la rutina" aria-label="Copiar link de la rutina"
-                      onClick={() => { navigator.clipboard?.writeText(link); toast.success('Link copiado'); }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50">
-                      <span className="material-icons-round text-base">link</span>
-                    </button>
                   </div>
                 </div>
                 {isOpen && (
