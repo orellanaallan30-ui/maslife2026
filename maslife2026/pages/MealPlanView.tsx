@@ -18,6 +18,7 @@ const MealPlanView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [finishedMsg, setFinishedMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) { setError('Enlace inválido.'); setLoading(false); return; }
@@ -25,6 +26,7 @@ const MealPlanView: React.FC = () => {
       supabase.rpc('get_meal_plan_public', { p_plan_id: id })
         .then(({ data: res, error: err }) => {
           if (err || !res) { setError('No se pudo cargar el plan.'); return; }
+          if ((res as { finished?: boolean }).finished) { setFinishedMsg((res as { message?: string }).message || 'Este plan ya no está activo.'); return; }
           if ((res as { error?: string }).error) { setError((res as { error?: string }).error!); return; }
           const parsed = res as MealPlanData;
           parsed.rows = parsed.rows || [];
@@ -37,6 +39,18 @@ const MealPlanView: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (finishedMsg) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
+        <div className="bg-white rounded-3xl shadow-xl p-10 max-w-sm w-full text-center space-y-4">
+          <span className="material-icons-round text-5xl text-emerald-500">verified</span>
+          <h1 className="text-xl font-black text-slate-900">Tratamiento finalizado</h1>
+          <p className="text-sm text-slate-500">{finishedMsg}</p>
+        </div>
       </div>
     );
   }
