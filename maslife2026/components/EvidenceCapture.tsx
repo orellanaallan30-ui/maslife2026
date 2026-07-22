@@ -22,6 +22,19 @@ const extFromType = (type: string): string => {
   return 'jpg';
 };
 
+// Content-type confiable: si el archivo no trae tipo (iOS a veces lo deja vacío),
+// se deduce de la extensión para que luego se reproduzca/abra bien.
+const EXT_MIME: Record<string, string> = {
+  mov: 'video/quicktime', mp4: 'video/mp4', webm: 'video/webm', m4v: 'video/mp4',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic',
+};
+const resolveType = (rawType: string, name?: string): string => {
+  const base = (rawType || '').split(';')[0].trim();
+  if (base && base !== 'application/octet-stream') return base;
+  const ext = (name || '').split('.').pop()?.toLowerCase() || '';
+  return EXT_MIME[ext] || base || 'application/octet-stream';
+};
+
 const videoDuration = (file: File): Promise<number> => new Promise(resolve => {
   const v = document.createElement('video');
   v.preload = 'metadata';
@@ -72,9 +85,8 @@ export const EvidenceCapture: React.FC<Props> = ({ routineId, itemId, count, onU
   const videoElRef = useRef<HTMLVideoElement | null>(null);
 
   const upload = async (blob: Blob, type: string) => {
-    const isVideo = type.startsWith('video');
-    // El bucket valida el mime EXACTO: quitar el sufijo de códec (video/webm;codecs=… → video/webm).
-    const baseType = (type || 'application/octet-stream').split(';')[0].trim();
+    const baseType = (type || 'application/octet-stream').split(';')[0].trim() || 'application/octet-stream';
+    const isVideo = baseType.startsWith('video');
     const path = `${routineId}/${itemId}/${genId()}.${extFromType(baseType)}`;
     const { error } = await supabase.storage.from('routine-evidence')
       .upload(path, blob, { contentType: baseType, upsert: false });
@@ -96,7 +108,7 @@ export const EvidenceCapture: React.FC<Props> = ({ routineId, itemId, count, onU
           return;
         }
       }
-      await upload(file, file.type || 'application/octet-stream');
+      await upload(file, resolveType(file.type, file.name));
       setSent(s => s + 1);
       onUploaded();
       toast.success('Evidencia enviada a tu profesional');
