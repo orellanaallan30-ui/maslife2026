@@ -303,6 +303,35 @@ export async function getAppointments(proId: string): Promise<Appointment[]> {
   return (data || []).map(mapDBtoAppointment);
 }
 
+export interface ProNotificationRow {
+  id: string;
+  patient_id: string | null;
+  routine_id: string | null;
+  kind: string;
+  body: string | null;
+  created_at: string;
+  read_at: string | null;
+}
+
+// Notificaciones del profesional (eventos del paciente: evidencia, sesión, mensaje).
+// Solo las no leídas, para alimentar la campana del panel.
+export async function getProNotifications(proId: string): Promise<ProNotificationRow[]> {
+  const { data, error } = await supabase
+    .from('pro_notifications')
+    .select('id, patient_id, routine_id, kind, body, created_at, read_at')
+    .eq('professional_id', proId)
+    .is('read_at', null)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) { console.warn('[getProNotifications]', error.message); return []; }
+  return (data || []) as ProNotificationRow[];
+}
+
+export async function markProNotificationRead(id: string): Promise<void> {
+  const { error } = await supabase.from('pro_notifications').update({ read_at: new Date().toISOString() }).eq('id', id);
+  if (error) console.warn('[markProNotificationRead]', error.message);
+}
+
 export async function saveAppointment(app: Appointment): Promise<void> {
   if (!app.professionalId) throw new Error('Appointment sin professionalId');
   await withRetry(async () => {

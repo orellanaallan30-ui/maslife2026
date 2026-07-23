@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, Appointment, Patient, Transaction, ClinicalTemplate, Notification } from './types';
-import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, deleteAppointment as deleteAppointmentDB, saveTransaction, deleteTransaction as deleteTransactionDB, batchInsertBlocks, deleteBlocksByRecurrence } from './supabaseService';
+import { supabase, getActiveSession, getPatients, getAppointments, getTransactions, savePatient, saveAppointment, deleteAppointment as deleteAppointmentDB, saveTransaction, deleteTransaction as deleteTransactionDB, batchInsertBlocks, deleteBlocksByRecurrence, getProNotifications, markProNotificationRead } from './supabaseService';
 import { auditService } from './auditService';
 
 interface ClinicContextType {
@@ -183,11 +183,29 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       isFetchingRef.current = true;
       if (!silent) setIsLoading(true);
       try {
-        const [supaPatients, supaApps, supaTransactions] = await Promise.all([
+        const [supaPatients, supaApps, supaTransactions, supaNotifs] = await Promise.all([
           getPatients(loggedPro.id),
           getAppointments(loggedPro.id),
           getTransactions(loggedPro.id),
+          getProNotifications(loggedPro.id),
         ]);
+
+        // Notificaciones del paciente (evidencia / sesión / mensaje) → campana.
+        // Solo llegan las NO leídas; se agregan las nuevas sin duplicar.
+        setNotifications(prev => {
+          const have = new Set(prev.map(n => n.id));
+          const fresh = supaNotifs
+            .filter(r => !have.has(`db-${r.id}`))
+            .map(r => ({
+              id: `db-${r.id}`,
+              title: r.body || 'Nueva actividad de un paciente',
+              time: new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
+              type: 'patient' as const,
+              read: false,
+              patientId: r.patient_id || undefined,
+            }));
+          return fresh.length ? [...fresh, ...prev] : prev;
+        });
         // Merge: Supabase es la fuente de verdad, pero si hay registros locales
         // con IDs que no están en Supabase (guardado fallido), los conservamos
         // en lugar de perderlos silenciosamente — y los RE-SINCRONIZAMOS (rescate).
@@ -457,6 +475,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    // Notificaciones de paciente (id 'db-…') → persistir leída en Supabase.
+    if (id.startsWith('db-')) void markProNotificationRead(id.slice(3));
   };
 
   const removeNotification = (id: string) => {
