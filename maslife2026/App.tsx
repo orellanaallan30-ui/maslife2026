@@ -453,6 +453,33 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                                   </button>
                                 </div>
                               </div>
+                            ) : n.type === 'patient' ? (
+                              // Notificación de actividad del paciente (evidencia / sesión / mensaje)
+                              <div>
+                                <div className="flex items-start gap-3">
+                                  <div className="w-9 h-9 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center shrink-0 mt-0.5">
+                                    <span className="material-icons-round text-base">directions_run</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-black text-violet-600 uppercase tracking-wider">Paciente</p>
+                                    <p className={`text-sm leading-snug ${!n.read ? 'font-black text-slate-900' : 'font-medium text-slate-600'}`}>{n.title}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{n.time}</p>
+                                  </div>
+                                  <button onClick={(e) => { e.stopPropagation(); removeNotification(n.id); }}
+                                    className="w-6 h-6 rounded-lg hover:bg-slate-200 flex items-center justify-center shrink-0 transition-all">
+                                    <span className="material-icons-round text-xs text-slate-400">close</span>
+                                  </button>
+                                </div>
+                                <div className="mt-2.5 ml-12">
+                                  <button
+                                    onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); navigate(n.patientId ? `/pro/record/${n.patientId}` : '/pro/patients'); }}
+                                    className="py-1.5 px-4 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1"
+                                  >
+                                    <span className="material-icons-round text-xs">description</span>
+                                    Ver ficha
+                                  </button>
+                                </div>
+                              </div>
                             ) : (
                               // Notificación genérica
                               <div className="flex items-start gap-3">

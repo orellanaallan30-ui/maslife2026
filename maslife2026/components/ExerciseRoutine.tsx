@@ -55,6 +55,7 @@ interface RoutineSession {
 }
 
 interface EvidenceRef { id: string; path: string; type: string | null }
+interface RoutineMsg { id: string; sender: string; kind: string; body: string; done: boolean; createdAt: string }
 
 // Rutina ya enviada, con el progreso que el paciente marcó desde /rutina/:id.
 interface SentRoutine {
@@ -64,6 +65,7 @@ interface SentRoutine {
   sentVia: string | null;
   sessionsPerWeek: number | null;
   sessions: RoutineSession[];
+  messages: RoutineMsg[];
   items: Array<{ id: string; nameEs: string; completions: Array<{ on: string; pain: number | null }>; evidence: EvidenceRef[] }>;
 }
 
@@ -150,6 +152,30 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   const [perWeek, setPerWeek] = useState<number | ''>(3);
   const [viewer, setViewer] = useState<{ id: string; path: string; type: string | null; url: string } | null>(null);
   const [viewerBusy, setViewerBusy] = useState(false);
+  const [msgDraft, setMsgDraft] = useState('');
+  const [msgKind, setMsgKind] = useState<'message' | 'task'>('message');
+  const [msgBusy, setMsgBusy] = useState(false);
+
+  // El profesional deja un mensaje o tarea al paciente (aparece en el enlace).
+  const postMessage = async (routineId: string) => {
+    const body = msgDraft.trim();
+    if (!body || msgBusy) return;
+    setMsgBusy(true);
+    try {
+      const { error } = await supabase.from('routine_messages').insert({
+        routine_id: routineId, sender: 'pro', kind: msgKind, body: body.slice(0, 800),
+      });
+      if (error) throw error;
+      setMsgDraft('');
+      loadSentRoutines();
+      toast.success(msgKind === 'task' ? 'Tarea enviada al paciente' : 'Mensaje enviado al paciente');
+    } catch (e) {
+      console.error('[routine_messages] enviar', e);
+      toast.error('No se pudo enviar. Intenta de nuevo.');
+    } finally {
+      setMsgBusy(false);
+    }
+  };
 
   // Abre la evidencia con un enlace firmado (privado, temporal).
   const openEvidence = async (ev: EvidenceRef) => {
@@ -194,7 +220,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   // que dejó desde el link público (adherencia al tratamiento).
   const loadSentRoutines = React.useCallback(() => {
     supabase.from('exercise_routines')
-      .select('id, title, sent_at, sent_via, sessions_per_week, routine_sessions(session_date, pain_pre, pain_post, rpe, symptom, finished_at), routine_evidence(id, item_id, storage_path, media_type), routine_items(id, order_index, exercises(name_es), routine_completions(completed_on, pain_level))')
+      .select('id, title, sent_at, sent_via, sessions_per_week, routine_sessions(session_date, pain_pre, pain_post, rpe, symptom, finished_at), routine_evidence(id, item_id, storage_path, media_type), routine_messages(id, sender, kind, body, done, created_at), routine_items(id, order_index, exercises(name_es), routine_completions(completed_on, pain_level))')
       .eq('patient_id', patient.id)
       .order('sent_at', { ascending: false })
       .limit(10)
@@ -206,6 +232,9 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
           sentAt: r.sent_at,
           sentVia: r.sent_via,
           sessionsPerWeek: (r.sessions_per_week ?? null) as number | null,
+          messages: (r.routine_messages || [])
+            .map((m: any) => ({ id: m.id, sender: m.sender, kind: m.kind, body: m.body, done: m.done, createdAt: m.created_at }))
+            .sort((a: RoutineMsg, b: RoutineMsg) => a.createdAt.localeCompare(b.createdAt)),
           sessions: (r.routine_sessions || [])
             .filter((s: any) => s.finished_at)
             .map((s: any) => ({
@@ -611,6 +640,44 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                         </div>
                       );
                     })}
+
+                    {/* Mensajes y tareas para el paciente (aparecen en el enlace) */}
+                    <div className="pt-2 mt-1 border-t border-slate-200 space-y-2">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mensajes y tareas</p>
+                      {r.messages.length > 0 && (
+                        <div className="space-y-1.5">
+                          {r.messages.map(m => (
+                            <div key={m.id} className={`flex items-start gap-2 text-[11px] ${m.sender === 'pro' ? '' : 'pl-4'}`}>
+                              <span className={`material-icons-round text-sm shrink-0 mt-0.5 ${m.sender === 'pro' ? 'text-teal-500' : 'text-slate-400'}`}>
+                                {m.kind === 'task' ? (m.done ? 'task_alt' : 'radio_button_unchecked') : m.sender === 'pro' ? 'support_agent' : 'person'}
+                              </span>
+                              <div className="min-w-0">
+                                <p className={`leading-snug ${m.kind === 'task' && m.done ? 'text-slate-400 line-through' : 'text-slate-700'} font-medium`}>{m.body}</p>
+                                <p className="text-[9px] text-slate-400">
+                                  {m.sender === 'pro' ? 'Tú' : 'Paciente'}
+                                  {m.kind === 'task' ? (m.done ? ' · tarea hecha ✓' : ' · tarea pendiente') : ''}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-1.5">
+                        <button onClick={() => setMsgKind(k => k === 'task' ? 'message' : 'task')}
+                          title={msgKind === 'task' ? 'Enviando como tarea' : 'Enviando como mensaje'}
+                          className={`shrink-0 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition ${msgKind === 'task' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-slate-500 border-slate-200'}`}>
+                          {msgKind === 'task' ? 'Tarea' : 'Mensaje'}
+                        </button>
+                        <input value={expandedRoutine === r.id ? msgDraft : ''} onChange={e => setMsgDraft(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') postMessage(r.id); }}
+                          placeholder={msgKind === 'task' ? 'Escribe una tarea…' : 'Escribe un mensaje…'}
+                          className="flex-1 min-w-0 bg-white border border-slate-200 rounded-lg py-1.5 px-2.5 text-xs" />
+                        <button onClick={() => postMessage(r.id)} disabled={msgBusy || !msgDraft.trim()}
+                          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-teal-500 text-white hover:bg-teal-600 transition disabled:opacity-40">
+                          <span className="material-icons-round text-base">send</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

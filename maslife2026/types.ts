@@ -137,8 +137,9 @@ export interface Notification {
   id: string;
   title: string;
   time: string;
-  type: 'appointment' | 'payment' | 'system';
+  type: 'appointment' | 'payment' | 'system' | 'patient';
   read: boolean;
+  patientId?: string;   // para 'patient': navegar a la ficha al tocar la notificación
 }
 
 export interface Patient {

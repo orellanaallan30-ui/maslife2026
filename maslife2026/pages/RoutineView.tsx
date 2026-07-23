@@ -33,6 +33,8 @@ const PAIN_STYLES: Record<string, { dot: string; selected: string; text: string;
 
 interface TodaySession { id: string; painPre: number | null; finished: boolean }
 
+interface RoutineMessage { id: string; sender: string; kind: string; body: string; done: boolean; createdAt: string }
+
 interface RoutineData {
   title: string;
   notes: string | null;
@@ -42,6 +44,7 @@ interface RoutineData {
   sessionsPerWeek: number | null;
   sessionDates: string[];
   todaySession: TodaySession | null;
+  messages: RoutineMessage[];
   items: RoutineItemView[];
 }
 
@@ -109,6 +112,9 @@ const RoutineView: React.FC = () => {
   const [rpe, setRpe] = useState<number | null>(null);
   const [symptom, setSymptom] = useState('');
   const [busy, setBusy] = useState(false);
+  const [messages, setMessages] = useState<RoutineMessage[]>([]);
+  const [reply, setReply] = useState('');
+  const [msgBusy, setMsgBusy] = useState(false);
 
   useEffect(() => {
     if (!id) { setError('Enlace inválido.'); setLoading(false); return; }
@@ -130,6 +136,7 @@ const RoutineView: React.FC = () => {
           setSession(parsed.todaySession || null);
           setSessionDates(parsed.sessionDates || []);
           setSessionsPerWeek(parsed.sessionsPerWeek ?? null);
+          setMessages(parsed.messages || []);
         })
     ).finally(() => setLoading(false));
   }, [id]);
@@ -152,6 +159,40 @@ const RoutineView: React.FC = () => {
       console.error('[rutina] iniciar sesión', e);
     } finally {
       setBusy(false);
+    }
+  };
+
+  // Paciente marca una tarea del profesional como hecha.
+  const toggleTask = async (m: RoutineMessage) => {
+    if (!id || msgBusy) return;
+    const next = !m.done;
+    setMessages(prev => prev.map(x => x.id === m.id ? { ...x, done: next } : x));
+    try {
+      const { data: res, error: err } = await supabase.rpc('toggle_routine_message_done', {
+        p_routine_id: id, p_message_id: m.id, p_done: next,
+      });
+      if (err || (res as { error?: string })?.error) throw new Error((res as { error?: string })?.error || err?.message);
+    } catch (e) {
+      console.error('[rutina] tarea', e);
+      setMessages(prev => prev.map(x => x.id === m.id ? { ...x, done: m.done } : x));
+    }
+  };
+
+  // Paciente responde por el enlace.
+  const sendReply = async () => {
+    if (!id || msgBusy) return;
+    const body = reply.trim();
+    if (!body) return;
+    setMsgBusy(true);
+    try {
+      const { data: res, error: err } = await supabase.rpc('add_routine_message', { p_routine_id: id, p_body: body });
+      if (err || (res as { error?: string })?.error) throw new Error((res as { error?: string })?.error || err?.message);
+      setMessages(prev => [...prev, { id: `local-${Date.now()}`, sender: 'patient', kind: 'message', body, done: false, createdAt: new Date().toISOString() }]);
+      setReply('');
+    } catch (e) {
+      console.error('[rutina] responder', e);
+    } finally {
+      setMsgBusy(false);
     }
   };
 
@@ -294,6 +335,45 @@ const RoutineView: React.FC = () => {
             {patientName ? `Hola ${patientName}, esta` : 'Esta'} es la rutina que te envió <strong>{professionalName}</strong>. Marca cada ejercicio cuando lo completes — tu profesional puede ver tu avance. Detente si sientes dolor.
           </p>
         </div>
+
+        {/* Mensajes y tareas del profesional */}
+        {messages.length > 0 && (
+          <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-3">
+            <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+              <span className="material-icons-round text-primary text-lg">forum</span> Mensajes de tu profesional
+            </h2>
+            <div className="space-y-2">
+              {messages.map(m => (
+                <div key={m.id} className={`flex items-start gap-2 ${m.sender === 'patient' ? 'justify-end' : ''}`}>
+                  {m.sender === 'pro' && m.kind === 'task' ? (
+                    <button onClick={() => toggleTask(m)}
+                      className={`flex items-start gap-2 text-left rounded-2xl px-4 py-2.5 max-w-[85%] border transition ${m.done ? 'bg-teal-50 border-teal-200' : 'bg-slate-50 border-slate-200'}`}>
+                      <span className={`material-icons-round text-lg shrink-0 ${m.done ? 'text-teal-500' : 'text-slate-400'}`}>{m.done ? 'task_alt' : 'radio_button_unchecked'}</span>
+                      <div>
+                        <p className={`text-sm font-bold ${m.done ? 'text-teal-700 line-through' : 'text-slate-700'}`}>{m.body}</p>
+                        <p className="text-[10px] text-slate-400">Tarea{m.done ? ' · completada ✓' : ' · toca para marcar hecha'}</p>
+                      </div>
+                    </button>
+                  ) : (
+                    <div className={`rounded-2xl px-4 py-2.5 max-w-[85%] ${m.sender === 'patient' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700'}`}>
+                      <p className="text-sm leading-relaxed">{m.body}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <input value={reply} onChange={e => setReply(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') sendReply(); }}
+                placeholder="Escribe una respuesta…"
+                className="flex-1 min-w-0 bg-white border border-slate-300 rounded-2xl py-2.5 px-4 text-sm focus:ring-4 focus:ring-primary/10" />
+              <button onClick={sendReply} disabled={msgBusy || !reply.trim()}
+                className="shrink-0 w-11 h-11 flex items-center justify-center rounded-2xl bg-primary text-white hover:opacity-90 transition disabled:opacity-40">
+                <span className="material-icons-round">send</span>
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Racha + progreso semanal */}
         {(streak > 0 || sessionDates.length > 0) && (
