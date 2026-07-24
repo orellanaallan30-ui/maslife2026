@@ -217,7 +217,8 @@ const ProfessionalRegistration: React.FC = () => {
           if (proData) { clearTimeout(timeoutId); setEmailSent(emailLower); return; }
           setError('Este email ya tiene un perfil. Intenta iniciar sesión.');
         } else {
-          setError('Error al guardar el perfil: ' + saveErr.message);
+          console.error('[registro:guardar perfil]', saveErr?.message || saveErr);
+          setError('No pudimos completar tu registro. Revisa tu conexión e intenta de nuevo.');
         }
         return;
       }
@@ -267,7 +268,8 @@ const ProfessionalRegistration: React.FC = () => {
       setRegistrationDone(true);
 
     } catch (err: any) {
-      if (!timedOut) setError('Error inesperado: ' + err.message);
+      console.error('[registro]', err?.message || err);
+      if (!timedOut) setError('No pudimos completar tu registro. Revisa tu conexión e intenta de nuevo.');
     } finally {
       clearTimeout(timeoutId);
       if (!timedOut) setLoading(false);

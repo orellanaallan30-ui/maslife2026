@@ -74,7 +74,8 @@ const Settings: React.FC = () => {
       setFbSubject(''); setFbMessage('');
       setTimeout(() => setFbSent(false), 6000);
     } catch (e: any) {
-      addNotification(`⚠️ No se pudo enviar tu mensaje: ${e?.message || 'intenta de nuevo'}`, 'system');
+      console.error('[admin-feedback]', e?.message || e);
+      addNotification('⚠️ No se pudo enviar tu mensaje. Revisa tu conexión e intenta de nuevo.', 'system');
     } finally {
       setFbSending(false);
     }
@@ -494,7 +495,8 @@ const Settings: React.FC = () => {
                         }).catch(err => {
                           setLocalProfile(localProfile); // revertir el switch visualmente
                           onSave(localProfile);
-                          addNotification(`⚠️ No se pudo cambiar la visibilidad del perfil en el servidor. Intenta de nuevo. (${err?.message || 'error'})`, 'appointment');
+                          console.error('[saveProfessional:visibility]', err?.message || err);
+                          addNotification('⚠️ No se pudo cambiar la visibilidad de tu perfil. Revisa tu conexión e intenta de nuevo.', 'appointment');
                         });
                       }}
                       className={`w-14 h-8 rounded-full relative transition-all shrink-0 ${localProfile.isPublic !== false ? 'bg-teal-500' : 'bg-slate-300'}`}
