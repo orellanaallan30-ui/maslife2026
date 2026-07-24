@@ -124,12 +124,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-sonnet-5',
         max_tokens: 4096,
         system: system || '',
         messages: msgs,
         tools: TOOLS,
-        temperature: 0,
       }),
     });
     if (!r.ok) {
