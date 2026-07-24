@@ -95,7 +95,8 @@ const PatientList: React.FC = () => {
     } catch (err) {
       // No mutar el estado local si el servidor no lo aceptó: evita mostrar como
       // eliminado algo que sigue vivo en la BD.
-      addNotification(`⚠️ No se pudo archivar la ficha en el servidor. Intenta de nuevo. (${(err as Error)?.message || 'error'})`, 'appointment');
+      console.error('[softDeletePatient]', (err as Error)?.message || err);
+      addNotification('⚠️ No se pudo archivar la ficha. Revisa tu conexión e intenta de nuevo.', 'appointment');
     }
     setDeleteConfirm(null);
   };
@@ -105,7 +106,8 @@ const PatientList: React.FC = () => {
       await restorePatient(id);
       setContextPatients(prev => prev.map(p => p.id === id ? { ...p, deletedAt: undefined } : p));
     } catch (err) {
-      addNotification(`⚠️ No se pudo restaurar la ficha en el servidor. Intenta de nuevo. (${(err as Error)?.message || 'error'})`, 'appointment');
+      console.error('[restorePatient]', (err as Error)?.message || err);
+      addNotification('⚠️ No se pudo restaurar la ficha. Revisa tu conexión e intenta de nuevo.', 'appointment');
     }
   };
 
@@ -115,7 +117,8 @@ const PatientList: React.FC = () => {
       await deletePatient(id);
       setContextPatients(prev => prev.filter(pat => pat.id !== id));
     } catch (err) {
-      addNotification(`⚠️ El paciente NO se eliminó en el servidor: seguirá apareciendo. Intenta de nuevo. (${(err as Error)?.message || 'error'})`, 'appointment');
+      console.error('[deletePatient]', (err as Error)?.message || err);
+      addNotification('⚠️ No se pudo eliminar al paciente. Revisa tu conexión e intenta de nuevo.', 'appointment');
     }
     setDeleteConfirm(null);
   };

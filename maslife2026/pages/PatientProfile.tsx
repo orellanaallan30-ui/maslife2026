@@ -436,7 +436,7 @@ const PatientProfile: React.FC = () => {
     } catch (error: any) {
       console.error("Error booking appointment:", error);
       setIsProcessing(false);
-      setBookingError(error?.message || 'Ocurrió un error al confirmar tu cita. Por favor intenta de nuevo.');
+      setBookingError('Ocurrió un error al confirmar tu cita. Por favor intenta de nuevo.');
     }
   };
 
