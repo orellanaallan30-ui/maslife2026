@@ -41,7 +41,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         system: system || '',
         messages,
         tools: tools || [],
-        temperature: 0,
       }),
     });
 
