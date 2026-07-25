@@ -8,6 +8,10 @@ export interface ClaudeRequest {
   system?: string;
   tools?: any[];
   maxTokens?: number;
+  /** Activa la búsqueda web server-side (fuentes clínicas confiables).
+   *  Déjalo apagado en salidas estructuradas: las citas parten el texto en
+   *  varios bloques y pueden romper un bloque ```json. */
+  webSearch?: boolean;
 }
 
 export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
@@ -26,6 +30,7 @@ export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
       system: request.system || '',
       tools: request.tools || [],
       max_tokens: request.maxTokens,
+      web_search: request.webSearch === true,
     })
   });
 
@@ -66,7 +71,7 @@ export async function askClaudeWithImages(
       maxTokens: maxTokens || 2048,
     });
     const textBlocks = result.content?.filter((b: any) => b.type === 'text') || [];
-    return textBlocks.map((b: any) => b.text).join('\n') || 'Sin respuesta.';
+    return textBlocks.map((b: any) => b.text).join('') || 'Sin respuesta.';
   } catch (error: any) {
     console.error('Claude Vision error:', error);
     throw error;
@@ -82,7 +87,7 @@ export async function askClaude(prompt: string, systemPrompt?: string): Promise<
     });
 
     const textBlocks = data.content?.filter((b: any) => b.type === 'text') || [];
-    return textBlocks.map((b: any) => b.text).join('\n') || 'Sin respuesta.';
+    return textBlocks.map((b: any) => b.text).join('') || 'Sin respuesta.';
   } catch (error: any) {
     console.error('Claude API error:', error);
     throw error;

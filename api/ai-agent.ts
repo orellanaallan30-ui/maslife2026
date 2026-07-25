@@ -21,21 +21,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada en Vercel' });
   }
 
-  const { messages, system, tools, max_tokens } = req.body;
+  const { messages, system, tools, max_tokens, web_search } = req.body;
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages requerido' });
   }
   // El cliente puede pedir más tokens (informes largos); tope duro de 4096
   const maxTokens = typeof max_tokens === 'number' && max_tokens > 0 ? Math.min(max_tokens, 4096) : 2048;
 
-  // El cliente aporta sus herramientas de agenda (las ejecuta él). La búsqueda
-  // web se sirve server-side desde Anthropic y restringida a fuentes confiables,
-  // así que se descarta cualquier `web_search` que mande el cliente — evita
+  // La búsqueda web es OPT-IN (`web_search: true`). No se activa por defecto
+  // porque este endpoint también sirve al análisis postural, que pide una salida
+  // estructurada (bloque ```json): buscar ahí añade latencia y, al generar citas,
+  // Claude parte el texto en varios bloques y puede romper ese JSON.
+  const usarBusqueda = web_search === true;
+
+  // El cliente aporta sus herramientas de agenda (las ejecuta él). Se descarta
+  // cualquier `web_search` que mande el cliente — la sirve el servidor y evita
   // nombres duplicados si quedó JS antiguo en caché.
   const herramientasCliente = Array.isArray(tools)
     ? tools.filter((t: any) => t?.name !== 'web_search')
     : [];
-  const herramientas = [...herramientasCliente, WEB_SEARCH_TOOL];
+  const herramientas = usarBusqueda
+    ? [...herramientasCliente, WEB_SEARCH_TOOL]
+    : herramientasCliente;
 
   const callClaude = async (msgs: any[]) => {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -48,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: maxTokens,
-        system: (system || '') + INSTRUCCIONES_BUSQUEDA,
+        system: usarBusqueda ? (system || '') + INSTRUCCIONES_BUSQUEDA : (system || ''),
         messages: msgs,
         tools: herramientas,
       }),
