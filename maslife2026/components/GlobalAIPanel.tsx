@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useClinic } from '../ClinicContext';
 import { Appointment } from '../types';
 import supabaseService from '../supabaseService';
-import { supabase } from '../supabaseClient';
 import { callClaudeAPI } from '../lib/claudeHelper';
 
 interface ChatMessage {
@@ -90,17 +89,6 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
         },
         required: ['patient_name', 'new_date', 'new_time']
       }
-    },
-    {
-      name: 'web_search',
-      description: 'Busca información en internet sobre protocolos clínicos, fármacos, guías MINSAL, diagnósticos, o cualquier información médica actualizada. Usa cuando el profesional pregunte algo que requiera datos actualizados.',
-      input_schema: {
-        type: 'object' as const,
-        properties: {
-          query: { type: 'string', description: 'Consulta de búsqueda en español o inglés' },
-        },
-        required: ['query'],
-      },
     },
   ];
 
@@ -212,25 +200,6 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
         return `✅ Cita de ${match.patientName} reagendada de ${oldDate} ${oldTime} → ${new_date} ${new_time}.`;
       }
 
-      case 'web_search': {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const r = await fetch('/api/web-search', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
-            },
-            body: JSON.stringify({ query: args.query }),
-          });
-          if (!r.ok) return 'Error al buscar en internet.';
-          const d = await r.json();
-          return d.result || 'Sin resultados.';
-        } catch {
-          return 'Error de conexión al buscar en internet.';
-        }
-      }
-
       default:
         return 'Función no reconocida.';
     }
@@ -329,7 +298,9 @@ REGLAS:
 
       // Extraer texto final
       const textBlocks = response.content.filter((b: any) => b.type === 'text');
-      const finalText = textBlocks.map((b: any) => b.text).join('\n') || 'Listo.';
+      // Con citas, Claude parte la respuesta en varios bloques contiguos:
+      // se unen sin separador para no cortar frases a la mitad.
+      const finalText = textBlocks.map((b: any) => b.text).join('') || 'Listo.';
 
       // Guardar respuesta en historial
       claudeHistoryRef.current = [

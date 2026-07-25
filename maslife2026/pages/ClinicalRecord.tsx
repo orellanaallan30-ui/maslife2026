@@ -581,7 +581,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         throw new Error(`Error ${r.status}`);
       }
       const data = await r.json();
-      const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n') || 'Sin respuesta.';
+      const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('') || 'Sin respuesta.';
 
       setChatMessages(prev => [...prev, { role: 'model', text }]);
     } catch (e: any) {
@@ -624,7 +624,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
       });
       if (!r.ok) throw new Error('Error al generar');
       const data = await r.json();
-      const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n') || 'Error al generar el informe.';
+      const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('') || 'Error al generar el informe.';
       setReportContent(text);
     } catch {
       setReportContent('Error al generar el informe. Verifica la conexión con el AgenteMasLife.');
