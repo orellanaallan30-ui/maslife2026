@@ -236,6 +236,7 @@ REGLAS:
       messages: msgHistory as any,
       system: getSystemPrompt(),
       tools: claudeTools,
+      webSearch: true, // consultas clínicas: buscar en fuentes confiables
     });
   };
 
