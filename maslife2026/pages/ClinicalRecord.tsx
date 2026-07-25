@@ -574,15 +574,21 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         }),
       });
 
-      if (!r.ok) throw new Error(`Error ${r.status}`);
+      if (!r.ok) {
+        // Detalle técnico solo a consola (diagnóstico); al profesional, mensaje claro.
+        const detail = await r.text().catch(() => '');
+        console.error('[clinical-agent]', r.status, detail);
+        throw new Error(`Error ${r.status}`);
+      }
       const data = await r.json();
       const text = (data.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n') || 'Sin respuesta.';
 
       setChatMessages(prev => [...prev, { role: 'model', text }]);
     } catch (e: any) {
-      const msg = e.message?.includes('API_KEY')
+      console.error('[clinical-agent]', e?.message || e);
+      const msg = e?.message?.includes('API_KEY')
         ? 'Error: ANTHROPIC_API_KEY no configurada en Vercel.'
-        : 'Error al conectar con el AgenteMasLife.';
+        : 'No se pudo obtener respuesta del asistente. Revisa tu conexión e intenta de nuevo.';
       setChatMessages(prev => [...prev, { role: 'model', text: msg }]);
     } finally {
       setLoadingAi(false);
