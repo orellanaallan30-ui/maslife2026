@@ -97,25 +97,25 @@ const ReferralProgram: React.FC = () => {
           <span className="material-icons-round text-2xl text-emerald-500">person_add</span>
           <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Tu referido obtiene</p>
           <p className="text-xl font-black text-slate-900">30 días gratis</p>
-          <p className="text-[10px] text-slate-400 leading-snug">El período de prueba completo, sin tarjeta ni permanencia</p>
+          <p className="text-[11px] text-slate-400 leading-snug">El período de prueba completo, sin tarjeta ni permanencia</p>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-center space-y-1">
           <span className="material-icons-round text-2xl text-primary">savings</span>
           <p className="text-xs font-black text-slate-500 uppercase tracking-widest">Tú ganas</p>
           <p className="text-xl font-black text-slate-900">$1.000</p>
-          <p className="text-[10px] text-slate-400 leading-snug">De descuento en tu próxima renovación</p>
+          <p className="text-[11px] text-slate-400 leading-snug">De descuento en tu próxima renovación</p>
         </div>
       </div>
 
       {/* Enlace de referido */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tu enlace de referido</p>
+        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Tu enlace de referido</p>
 
         {referralCode ? (
           <>
             <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-200">
               <span className="text-xs font-bold text-slate-700 flex-1 truncate">{referralLink}</span>
-              <span className="text-[10px] font-black text-slate-400 uppercase shrink-0 bg-slate-100 px-2 py-0.5 rounded-lg">{referralCode}</span>
+              <span className="text-[11px] font-black text-slate-400 uppercase shrink-0 bg-slate-100 px-2 py-0.5 rounded-lg">{referralCode}</span>
             </div>
             <button
               onClick={handleCopy}
@@ -151,7 +151,7 @@ const ReferralProgram: React.FC = () => {
 
       {/* Estadísticas */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Tu actividad</p>
+        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">Tu actividad</p>
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
             <p className="text-3xl font-black text-slate-900">{referralCount}</p>
@@ -171,7 +171,7 @@ const ReferralProgram: React.FC = () => {
 
       {/* Cómo funciona */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">¿Cómo funciona?</p>
+        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">¿Cómo funciona?</p>
         {[
           { icon: 'link', text: 'Copia tu enlace único y compártelo con colegas de salud' },
           { icon: 'person_add', text: 'Tu colega se registra usando tu enlace y obtiene sus 30 días gratis' },
@@ -186,7 +186,7 @@ const ReferralProgram: React.FC = () => {
         ))}
       </div>
 
-      <p className="text-center text-[10px] text-slate-400 pb-4">
+      <p className="text-center text-[11px] text-slate-400 pb-4">
         Sujeto a los{' '}
         <a href="/terminos" target="_blank" className="underline hover:text-slate-600">Términos y Condiciones</a>
         {' '}— Sección 11

@@ -37,6 +37,17 @@ export default {
         outfit: ['Outfit', 'sans-serif'],
         display: ['Fraunces', 'Georgia', 'serif'],
       },
+      // Escala de espaciado entre letras, reducida respecto al default de
+      // Tailwind. El default (widest = 0.1em) combinado con MAYÚSCULAS y texto
+      // de 10-12px separaba tanto las letras que las palabras se leían letra a
+      // letra ("G U A R D A R  F I C H A"). Al redefinir la escala aquí se
+      // corrigen ~520 elementos a la vez sin tocar ningún componente.
+      // `tight`/`tighter` (títulos) se dejan en su valor por defecto.
+      letterSpacing: {
+        wide: '0.015em',    // default: 0.025em
+        wider: '0.025em',   // default: 0.05em
+        widest: '0.045em',  // default: 0.1em  ← el cambio de mayor impacto
+      },
       // Escala "blob" — los mismos 8 radios arbitrarios que ya se usaban sueltos
       // (rounded-[Xrem]) en la landing pública, ahora nombrados. Sin cambio visual.
       borderRadius: {

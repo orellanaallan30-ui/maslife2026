@@ -160,7 +160,7 @@ export const MealPlanSend: React.FC<Props> = ({ patient, loggedPro, rows }) => {
 
       {sentPlans.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Planes enviados</h3>
+          <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Planes enviados</h3>
           {sentPlans.map(p => {
             const link = `${window.location.origin}/plan/${p.id}`;
             return (

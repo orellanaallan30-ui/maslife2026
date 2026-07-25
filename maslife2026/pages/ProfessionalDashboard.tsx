@@ -309,7 +309,7 @@ const ProfessionalDashboard: React.FC = () => {
           <div className="mb-5 flex items-start justify-between gap-3">
             <div className="min-w-0">
               {loggedPro.specialty && (
-                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] mb-1" style={{color:'#00B3A4'}}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] mb-1" style={{color:'#00B3A4'}}>
                   {loggedPro.specialty}
                 </p>
               )}
@@ -332,7 +332,7 @@ const ProfessionalDashboard: React.FC = () => {
                 boxShadow:'0 10px 30px rgba(15,94,247,0.10), 0 4px 12px rgba(0,0,0,0.05)'
               }}>
               <p className="text-[22px] font-bold tabular-nums leading-none tracking-tight" style={{color:'#0B1736'}}>{timeHM}</p>
-              <p className="text-[10px] font-semibold tabular-nums mt-0.5 tracking-widest" style={{color:'#00B3A4'}}>:{timeSec}</p>
+              <p className="text-[11px] font-semibold tabular-nums mt-0.5 tracking-widest" style={{color:'#00B3A4'}}>:{timeSec}</p>
             </div>
           </div>
 
@@ -353,7 +353,7 @@ const ProfessionalDashboard: React.FC = () => {
               <span className="material-icons-round text-white text-lg">card_giftcard</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-widest" style={{color:'#7A859F'}}>Programa de Referidos</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest" style={{color:'#7A859F'}}>Programa de Referidos</p>
               <p className="text-sm font-bold leading-tight" style={{color:'#0B1736'}}>Invita y Gana</p>
             </div>
             <span className="material-icons-round text-lg group-hover:translate-x-0.5 transition-transform" style={{color:'#7A859F'}}>chevron_right</span>
@@ -376,18 +376,18 @@ const ProfessionalDashboard: React.FC = () => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 mb-0.5">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{color:'#7A859F'}}>Link de Reservas</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.05em]" style={{color:'#7A859F'}}>Link de Reservas</p>
                 {profileComplete
-                  ? <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-widest" style={{background:'rgba(34,197,94,0.12)',color:'#16a34a'}}>✓ Activo</span>
-                  : <span className="px-1.5 py-0.5 bg-amber-200 text-amber-800 text-[9px] font-bold rounded-md uppercase">Incompleto</span>}
+                  ? <span className="px-1.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-widest" style={{background:'rgba(34,197,94,0.12)',color:'#16a34a'}}>✓ Activo</span>
+                  : <span className="px-1.5 py-0.5 bg-amber-200 text-amber-800 text-[11px] font-bold rounded-md uppercase">Incompleto</span>}
               </div>
               <p className="text-xs font-semibold truncate" style={{color:'#0F5EF7'}}>{bookingLink}</p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <button onClick={() => window.open(bookingLink, '_blank')} className="hidden md:flex px-3 py-1.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:opacity-80 transition-all items-center gap-1" style={{background:'#F5F8FC',color:'#7A859F'}}>
+              <button onClick={() => window.open(bookingLink, '_blank')} className="hidden md:flex px-3 py-1.5 rounded-xl text-[11px] font-semibold uppercase tracking-widest hover:opacity-80 transition-all items-center gap-1" style={{background:'#F5F8FC',color:'#7A859F'}}>
                 <span className="material-icons-round text-sm">visibility</span>Ver
               </button>
-              <button onClick={handleCopyBookingLink} className="px-3 py-1.5 rounded-xl text-[10px] font-semibold uppercase tracking-widest transition-all flex items-center gap-1"
+              <button onClick={handleCopyBookingLink} className="px-3 py-1.5 rounded-xl text-[11px] font-semibold uppercase tracking-widest transition-all flex items-center gap-1"
                 style={linkCopied ? {background:'#22C55E',color:'white'} : {background:'#0F5EF7',color:'white'}}>
                 <span className="material-icons-round text-sm">{linkCopied ? 'check_circle' : 'content_copy'}</span>
                 <span className="hidden sm:inline">{linkCopied ? '¡Copiado!' : 'Copiar'}</span>
@@ -407,14 +407,14 @@ const ProfessionalDashboard: React.FC = () => {
               onMouseEnter={e => (e.currentTarget.style.boxShadow='0 10px 30px rgba(15,94,247,0.08)')}
               onMouseLeave={e => (e.currentTarget.style.boxShadow='0 4px 12px rgba(0,0,0,0.05)')}>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{color:'#7A859F'}}>Pacientes Hoy</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.05em]" style={{color:'#7A859F'}}>Pacientes Hoy</span>
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors group-hover:bg-[rgba(0,179,164,0.10)]" style={{background:'#F5F8FC'}}>
                   <span className="material-icons-round text-lg transition-colors group-hover:text-[#00B3A4]" style={{color:'#7A859F'}}>groups</span>
                 </div>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl font-bold tracking-tight" style={{color:'#0B1736'}}>{myTodayApps.length}</span>
-                <span className="text-[9px] font-semibold px-2 py-0.5 rounded-lg" style={{background:'rgba(34,197,94,0.12)',color:'#16a34a'}}>En cola</span>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg" style={{background:'rgba(34,197,94,0.12)',color:'#16a34a'}}>En cola</span>
               </div>
             </div>
 
@@ -424,14 +424,14 @@ const ProfessionalDashboard: React.FC = () => {
               onMouseEnter={e => (e.currentTarget.style.boxShadow='0 10px 30px rgba(15,94,247,0.08)')}
               onMouseLeave={e => (e.currentTarget.style.boxShadow='0 4px 12px rgba(0,0,0,0.05)')}>
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[9px] font-semibold uppercase tracking-[0.2em]" style={{color:'#7A859F'}}>Ingresos Hoy</span>
+                <span className="text-[11px] font-semibold uppercase tracking-[0.05em]" style={{color:'#7A859F'}}>Ingresos Hoy</span>
                 <div className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors group-hover:bg-[rgba(15,94,247,0.10)]" style={{background:'#F5F8FC'}}>
                   <span className="material-icons-round text-lg transition-colors group-hover:text-[#0F5EF7]" style={{color:'#7A859F'}}>payments</span>
                 </div>
               </div>
               <div>
                 <h3 className="text-2xl font-bold tracking-tight" style={{color:'#0B1736'}}>${totalIncomeToday.toLocaleString('es-CL')}</h3>
-                <p className="text-[9px] font-medium uppercase tracking-widest mt-1" style={{color:'#7A859F'}}>Total parcial</p>
+                <p className="text-[11px] font-medium uppercase tracking-widest mt-1" style={{color:'#7A859F'}}>Total parcial</p>
               </div>
             </div>
 
@@ -448,11 +448,11 @@ const ProfessionalDashboard: React.FC = () => {
             >
               <div className="relative z-10 flex items-center justify-between h-full">
                 <div>
-                  <span className="block text-[9px] font-medium uppercase tracking-[0.25em] mb-1" style={{color:'rgba(255,255,255,0.70)'}}>Sistema de Agenda</span>
+                  <span className="block text-[11px] font-medium uppercase tracking-[0.25em] mb-1" style={{color:'rgba(255,255,255,0.70)'}}>Sistema de Agenda</span>
                   <h3 className="text-lg font-bold tracking-tight uppercase mb-2">Agenda Maslife</h3>
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(255,255,255,0.20)',border:'1px solid rgba(255,255,255,0.25)'}}>
                     <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:'#22C55E'}}></div>
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.2em]">ACTIVO</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">ACTIVO</span>
                   </div>
                 </div>
                 <div className="p-2.5 rounded-xl transition-all group-hover:bg-white shrink-0" style={{background:'rgba(255,255,255,0.20)',border:'1px solid rgba(255,255,255,0.25)'}}>
@@ -472,7 +472,7 @@ const ProfessionalDashboard: React.FC = () => {
                 <span className="w-2 h-2 rounded-full animate-pulse" style={{background:'#22C55E'}}></span>
                 Próximas Citas
               </h2>
-              <button onClick={() => navigate('/pro/agenda', { state: { date: today } })} className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest hover:opacity-70 transition-opacity" style={{color:'#0F5EF7'}}>
+              <button onClick={() => navigate('/pro/agenda', { state: { date: today } })} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-widest hover:opacity-70 transition-opacity" style={{color:'#0F5EF7'}}>
                 Ver agenda <span className="material-icons-round text-sm">arrow_forward</span>
               </button>
             </div>
@@ -485,9 +485,9 @@ const ProfessionalDashboard: React.FC = () => {
                     <div className="w-9 h-9 rounded-xl text-white flex items-center justify-center font-bold text-sm shrink-0" style={{background:'#0B1736'}}>{p.patientName.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate" style={{color:'#0B1736'}}>{p.patientName}</p>
-                      <p className="text-[10px] font-medium" style={{color:'#7A859F'}}>{formatAppDate(p.date)} · {p.time} · {p.type}</p>
+                      <p className="text-[11px] font-medium" style={{color:'#7A859F'}}>{formatAppDate(p.date)} · {p.time} · {p.type}</p>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-semibold uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
+                    <span className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
                     <div className="w-8 h-8 text-white rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
                       style={{background:'#00B3A4',boxShadow:'0 4px 8px rgba(0,179,164,0.30)'}}>
                       <span className="material-icons-round text-base">play_arrow</span>
@@ -497,7 +497,7 @@ const ProfessionalDashboard: React.FC = () => {
               }) : (
                 <div className="px-4 py-8 text-center">
                   <span className="material-icons-round text-4xl block mb-2" style={{color:'#e2e8f0'}}>event_available</span>
-                  <p className="text-[10px] font-medium uppercase tracking-widest" style={{color:'#7A859F'}}>No hay citas próximas agendadas</p>
+                  <p className="text-[11px] font-medium uppercase tracking-widest" style={{color:'#7A859F'}}>No hay citas próximas agendadas</p>
                 </div>
               )}
             </div>
@@ -508,7 +508,7 @@ const ProfessionalDashboard: React.FC = () => {
             style={{background:'white',border:'1px solid rgba(229,231,235,0.8)',boxShadow:'0 4px 12px rgba(0,0,0,0.05)'}}>
             <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid rgba(229,231,235,0.6)'}}>
               <h2 className="font-bold text-sm" style={{color:'#0B1736'}}>Citas de Hoy</h2>
-              <span className="px-2 py-0.5 text-[10px] font-semibold rounded-lg" style={{background:'rgba(0,179,164,0.10)',color:'#00B3A4'}}>{myTodayApps.length}</span>
+              <span className="px-2 py-0.5 text-[11px] font-semibold rounded-lg" style={{background:'rgba(0,179,164,0.10)',color:'#00B3A4'}}>{myTodayApps.length}</span>
             </div>
             <div className="divide-y" style={{borderColor:'rgba(229,231,235,0.4)'}}>
               {myTodayApps.length > 0 ? myTodayApps.map((p, i) => {
@@ -519,9 +519,9 @@ const ProfessionalDashboard: React.FC = () => {
                     <div className="w-9 h-9 rounded-xl text-white flex items-center justify-center font-bold text-sm shrink-0" style={{background:'#0B1736'}}>{p.patientName.charAt(0)}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate" style={{color:'#0B1736'}}>{p.patientName}</p>
-                      <p className="text-[10px] font-medium" style={{color:'#7A859F'}}>{p.time} · {p.type}</p>
+                      <p className="text-[11px] font-medium" style={{color:'#7A859F'}}>{p.time} · {p.type}</p>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-semibold uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
+                    <span className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold uppercase tracking-wide border shrink-0 ${styles.bg} ${styles.text} ${styles.border}`}>{p.status}</span>
                     <div className="w-8 h-8 text-white rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform"
                       style={{background:'#00B3A4',boxShadow:'0 4px 8px rgba(0,179,164,0.30)'}}>
                       <span className="material-icons-round text-base">play_arrow</span>
@@ -531,7 +531,7 @@ const ProfessionalDashboard: React.FC = () => {
               }) : (
                 <div className="px-4 py-8 text-center">
                   <span className="material-icons-round text-4xl block mb-2" style={{color:'#e2e8f0'}}>event_busy</span>
-                  <p className="text-[10px] font-medium uppercase tracking-widest" style={{color:'#7A859F'}}>Sin citas para hoy</p>
+                  <p className="text-[11px] font-medium uppercase tracking-widest" style={{color:'#7A859F'}}>Sin citas para hoy</p>
                 </div>
               )}
             </div>

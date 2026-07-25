@@ -614,7 +614,7 @@ const PatientProfile: React.FC = () => {
 
                   <div className="space-y-5 relative z-10">
                     <div>
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Paciente</span>
+                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1">Paciente</span>
                       <p className="text-lg font-black text-slate-900">{patientData.name}</p>
                       <p className="text-xs font-bold text-slate-500">RUT: {patientData.rut}</p>
                     </div>
@@ -623,12 +623,12 @@ const PatientProfile: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-5">
                       <div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fecha y Hora</span>
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1">Fecha y Hora</span>
                         <p className="text-sm font-black text-slate-900">{confirmedDateLabelRef.current || availableDays[selectedDay]?.label}</p>
                         <p className="text-xl font-black text-primary">{selectedSlot}</p>
                       </div>
                       <div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Profesional</span>
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1">Profesional</span>
                         <p className="text-sm font-black text-slate-900">{doctor.name}</p>
                         <p className="text-xs font-bold text-slate-500">{doctor.specialty}</p>
                       </div>
@@ -638,11 +638,11 @@ const PatientProfile: React.FC = () => {
 
                     <div className="flex justify-between items-end">
                       <div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Servicio</span>
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1">Servicio</span>
                         <p className="text-sm font-black text-slate-900">{selectedService?.name}</p>
                       </div>
                       <div className="text-right">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Pagado</span>
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1">Total Pagado</span>
                         <p className="text-2xl font-black text-slate-900">${willCharge ? paymentAmount.toLocaleString('es-CL') : '0'}</p>
                       </div>
                     </div>
@@ -744,7 +744,7 @@ const PatientProfile: React.FC = () => {
                 <img className="w-12 h-12 rounded-xl object-cover border border-slate-100 shadow-sm" src={doctor.avatar || 'https://picsum.photos/seed/doc/100/100'} alt="Doc" />
                 <div>
                   <h1 className="text-sm font-black text-slate-900 leading-tight">{doctor.name}</h1>
-                  <p className="text-[10px] font-bold text-primary uppercase tracking-wider">{doctor.specialty}</p>
+                  <p className="text-[11px] font-bold text-primary uppercase tracking-wider">{doctor.specialty}</p>
                 </div>
             </div>
           </div>
@@ -754,7 +754,7 @@ const PatientProfile: React.FC = () => {
              <div className="flex items-center gap-1">
                {[1, 2, 3, 4].map(num => (
                  <div key={num} className="flex items-center group">
-                    <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black transition-all ${step === num ? 'bg-primary text-white scale-110 shadow-lg shadow-primary/30' : step > num ? 'bg-primary/20 text-primary' : 'bg-slate-100 text-slate-400'}`}>
+                    <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-black transition-all ${step === num ? 'bg-primary text-white scale-110 shadow-lg shadow-primary/30' : step > num ? 'bg-primary/20 text-primary' : 'bg-slate-100 text-slate-400'}`}>
                       {step > num ? <span className="material-icons-round text-xs sm:text-sm">check</span> : num}
                     </div>
                     {num < 4 && <div className={`w-4 sm:w-8 h-[2px] mx-1 transition-all ${step > num ? 'bg-primary/40' : 'bg-slate-100'}`}></div>}
@@ -799,7 +799,7 @@ const PatientProfile: React.FC = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-black text-slate-900 text-base leading-tight">{doctor.name}</h3>
                     {doctor.isVerified && (
-                      <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                      <span className="inline-flex items-center gap-0.5 bg-emerald-50 text-emerald-700 text-[11px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
                         <span className="material-icons-round" style={{ fontSize: '10px' }}>verified</span>
                         Verificado
                       </span>
@@ -864,8 +864,8 @@ const PatientProfile: React.FC = () => {
                           ))}
                         </div>
                         <span className="text-xs font-black text-slate-700">{r.patientName}</span>
-                        {r.isVerified && <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">✓ Paciente verificado</span>}
-                        <span className="text-[10px] text-slate-400 ml-auto">{new Date(r.createdAt).toLocaleDateString('es-CL', { month: 'short', year: 'numeric' })}</span>
+                        {r.isVerified && <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">✓ Paciente verificado</span>}
+                        <span className="text-[11px] text-slate-400 ml-auto">{new Date(r.createdAt).toLocaleDateString('es-CL', { month: 'short', year: 'numeric' })}</span>
                       </div>
                       {r.comment && <p className="text-xs text-slate-600 leading-relaxed">{r.comment}</p>}
                     </div>
@@ -888,7 +888,7 @@ const PatientProfile: React.FC = () => {
                         ) : (
                           <>
                             <div>
-                              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Tu calificación</label>
+                              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-2">Tu calificación</label>
                               <div className="flex gap-1">
                                 {[1,2,3,4,5].map(s => (
                                   <button key={s} onClick={() => setReviewRating(s)} className="p-0.5">
@@ -899,7 +899,7 @@ const PatientProfile: React.FC = () => {
                             </div>
 
                             <div>
-                              <label htmlFor="review-name" className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu nombre</label>
+                              <label htmlFor="review-name" className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu nombre</label>
                               <input
                                 id="review-name"
                                 value={reviewName}
@@ -910,7 +910,7 @@ const PatientProfile: React.FC = () => {
                             </div>
 
                             <div>
-                              <label htmlFor="review-rut" className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu RUT (para verificar que fuiste atendido/a)</label>
+                              <label htmlFor="review-rut" className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Tu RUT (para verificar que fuiste atendido/a)</label>
                               <input
                                 id="review-rut"
                                 value={reviewRut}
@@ -918,11 +918,11 @@ const PatientProfile: React.FC = () => {
                                 placeholder="Ej: 12.345.678-9"
                                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 px-4 text-sm font-bold text-slate-800 outline-none focus:border-primary"
                               />
-                              <p className="text-[10px] text-slate-400 mt-1 ml-1">Tu RUT solo se usa para verificar que fuiste atendido/a. No se publica.</p>
+                              <p className="text-[11px] text-slate-400 mt-1 ml-1">Tu RUT solo se usa para verificar que fuiste atendido/a. No se publica.</p>
                             </div>
 
                             <div>
-                              <label htmlFor="review-comment" className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Comentario (opcional)</label>
+                              <label htmlFor="review-comment" className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1 ml-1">Comentario (opcional)</label>
                               <textarea
                                 id="review-comment"
                                 value={reviewComment}
@@ -990,7 +990,7 @@ const PatientProfile: React.FC = () => {
                       <p className="text-xs text-slate-500 font-bold mb-6 line-clamp-3">{s.description}</p>
                       <div className="flex justify-between items-end mt-auto">
                         <span className="text-xl font-black text-primary">${s.price.toLocaleString('es-CL')}</span>
-                        <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-lg uppercase tracking-widest">{s.duration} MIN</span>
+                        <span className="text-[11px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-lg uppercase tracking-widest">{s.duration} MIN</span>
                       </div>
                     </button>
                   )) : (
@@ -1011,7 +1011,7 @@ const PatientProfile: React.FC = () => {
                      <span className="material-icons-round text-primary text-lg">medical_services</span>
                    </div>
                    <div>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">Servicio Elegido</p>
+                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-tight">Servicio Elegido</p>
                      <p className="text-sm font-bold text-slate-900">{selectedService?.name}</p>
                    </div>
                 </div>
@@ -1023,10 +1023,10 @@ const PatientProfile: React.FC = () => {
                       onClick={() => { setSelectedDay(i); setAvailabilityRefresh(n => n + 1); }}
                       className={`flex-none w-28 py-5 px-2 rounded-blob-2xs flex flex-col items-center gap-2 border-2 transition-all relative ${selectedDay === i ? 'border-primary bg-primary shadow-lg shadow-primary/20 text-white' : 'border-slate-100 bg-white text-slate-500 hover:border-primary/50'}`}
                     >
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${selectedDay === i ? 'text-white/80' : 'text-slate-400'}`}>{day.name}</span>
+                      <span className={`text-[11px] font-black uppercase tracking-widest ${selectedDay === i ? 'text-white/80' : 'text-slate-400'}`}>{day.name}</span>
                       <span className="text-lg font-black tracking-tighter">{day.label.split(' ')[0]} {day.label.split(' ')[1]}</span>
                       {!day.hasAvailable && (
-                        <span className={`text-[8px] font-black uppercase tracking-wider ${selectedDay === i ? 'text-white/70' : 'text-rose-400'}`}>Completo</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${selectedDay === i ? 'text-white/70' : 'text-rose-400'}`}>Completo</span>
                       )}
                     </button>
                   )) : (
@@ -1181,7 +1181,7 @@ const PatientProfile: React.FC = () => {
 
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">A pagar ahora</span>
+                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">A pagar ahora</span>
                         {willCharge && (
                           <span className="text-xs font-bold text-slate-500">
                             {doctor.chargeFullService ? 'Precio del servicio' : 'Bono de Reserva de Cupo'}

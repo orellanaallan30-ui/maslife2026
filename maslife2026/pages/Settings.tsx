@@ -351,12 +351,12 @@ const Settings: React.FC = () => {
         <div className="max-w-5xl mx-auto space-y-5 pb-24 md:pb-10">
           <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Configuración Agenda Maslife</p>
+              <p className="text-xs font-black text-primary uppercase tracking-[0.06em] mb-1">Configuración Agenda Maslife</p>
               <h1 className="text-2xl font-black tracking-tight text-black">Ajustes de Cuenta</h1>
               <div className="flex bg-slate-50 p-1.5 rounded-xl mt-4 max-w-fit border border-slate-200 shadow-inner gap-1.5">
-                <button onClick={() => setActiveTab('perfil')} className={`px-4 lg:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'perfil' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Mi Perfil</button>
-                <button onClick={() => setActiveTab('suscripcion')} className={`px-4 lg:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'suscripcion' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Suscripción</button>
-                <button onClick={() => setActiveTab('seguridad')} className={`px-4 lg:px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'seguridad' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Seguridad</button>
+                <button onClick={() => setActiveTab('perfil')} className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'perfil' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Mi Perfil</button>
+                <button onClick={() => setActiveTab('suscripcion')} className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'suscripcion' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Suscripción</button>
+                <button onClick={() => setActiveTab('seguridad')} className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'seguridad' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Seguridad</button>
               </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
@@ -367,7 +367,7 @@ const Settings: React.FC = () => {
                 <button
                   disabled={!hasChanges}
                   onClick={handleSave}
-                  className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${hasChanges ? 'bg-slate-900 text-white shadow-pop border-b-4 border-slate-800 active:border-b-0 active:translate-y-1' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
+                  className={`px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${hasChanges ? 'bg-slate-900 text-white shadow-pop border-b-4 border-slate-800 active:border-b-0 active:translate-y-1' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}
                 >
                   Guardar Cambios
                 </button>
@@ -377,7 +377,7 @@ const Settings: React.FC = () => {
                 <button
                   onClick={handleAdminSSO}
                   disabled={adminLoading}
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-violet-600 border border-violet-200 bg-white hover:bg-violet-50 active:scale-95 transition-all disabled:opacity-60"
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest text-violet-600 border border-violet-200 bg-white hover:bg-violet-50 active:scale-95 transition-all disabled:opacity-60"
                 >
                   {adminLoading
                     ? <span className="material-icons-round text-sm animate-spin">sync</span>
@@ -389,7 +389,7 @@ const Settings: React.FC = () => {
               {/* Cerrar Sesión — visible en todos los tabs, especialmente útil en mobile */}
               <button
                 onClick={onLogout}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest text-rose-500 border border-rose-200 bg-white hover:bg-rose-50 active:scale-95 transition-all"
+                className="flex items-center gap-2 px-4 py-3 rounded-xl font-black text-[11px] uppercase tracking-widest text-rose-500 border border-rose-200 bg-white hover:bg-rose-50 active:scale-95 transition-all"
               >
                 <span className="material-icons-round text-sm">logout</span>
                 Cerrar Sesión
@@ -430,7 +430,7 @@ const Settings: React.FC = () => {
                         {getShareableLink()}
                       </p>
                       {(!localProfile.slug || !localProfile.specialty || localProfile.services.length === 0) && (
-                        <p className="text-[10px] text-amber-600 font-bold mt-1">Completa tu perfil (nombre, especialidad y servicios) para activar tu link</p>
+                        <p className="text-[11px] text-amber-600 font-bold mt-1">Completa tu perfil (nombre, especialidad y servicios) para activar tu link</p>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -781,7 +781,7 @@ const Settings: React.FC = () => {
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         {syncMsg && (
-                          <span className={`text-[10px] font-bold ${syncMsg.ok ? 'text-green-600' : 'text-red-500'}`}>
+                          <span className={`text-[11px] font-bold ${syncMsg.ok ? 'text-green-600' : 'text-red-500'}`}>
                             {syncMsg.text}
                           </span>
                         )}
@@ -875,7 +875,7 @@ const Settings: React.FC = () => {
                   </h3>
                   <button
                     onClick={() => setShowServiceModal(true)}
-                    className="bg-slate-900 text-white px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-pop border-b-4 border-slate-800 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
+                    className="bg-slate-900 text-white px-4 py-2.5 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-pop border-b-4 border-slate-800 active:border-b-0 active:translate-y-1 transition-all flex items-center gap-2"
                   >
                     <span className="material-icons-round text-sm">add</span>
                     Nuevo Servicio
@@ -890,7 +890,7 @@ const Settings: React.FC = () => {
                       )}
                       <div className="relative space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="px-4 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em]">{service.duration} min</span>
+                          <span className="px-4 py-1 rounded-full bg-primary/10 text-primary text-[11px] font-black uppercase tracking-[0.05em]">{service.duration} min</span>
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleOpenEditService(service)}
@@ -909,7 +909,7 @@ const Settings: React.FC = () => {
                       </div>
                       <div className="relative mt-4 flex items-end justify-between border-t border-slate-100 pt-4">
                         <div className="space-y-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Precio</p>
+                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">Precio</p>
                           <p className="text-2xl font-black text-black">${service.price.toLocaleString('es-CL')}</p>
                         </div>
                         <button
@@ -1021,7 +1021,7 @@ const Settings: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-black tracking-tight">Agenda Maslife</h3>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-[0.12em]"
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em]"
                         style={{ background: 'rgba(255,255,255,0.20)', border: '1px solid rgba(255,255,255,0.30)' }}>
                         {localProfile.subscriptionStatus === 'trial' ? 'Prueba Gratis'
                           : localProfile.subscriptionStatus === 'active' ? 'Pro · Activo'
@@ -1072,7 +1072,7 @@ const Settings: React.FC = () => {
                   ].map(s => (
                     <div key={s.label} className="rounded-xl p-2.5 text-center"
                       style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.20)' }}>
-                      <p className="text-[8px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.60)' }}>{s.label}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'rgba(255,255,255,0.60)' }}>{s.label}</p>
                       <p className={`text-sm font-black tracking-tight ${s.warn ? 'text-yellow-300' : 'text-white'}`}>{s.value}</p>
                     </div>
                   ))}
@@ -1083,10 +1083,10 @@ const Settings: React.FC = () => {
                   style={{ borderTop: '1px solid rgba(255,255,255,0.18)' }}>
                   <div className="flex items-center gap-1.5">
                     <span className="material-icons-round text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>security</span>
-                    <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>Pago Seguro · MercadoPago</p>
+                    <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.45)' }}>Pago Seguro · MercadoPago</p>
                   </div>
                   <a href={mpLinkWithBack}
-                    className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-[0.15em] transition-all active:scale-95"
+                    className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-[0.04em] transition-all active:scale-95"
                     style={{ background: 'white', color: '#0F5EF7', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
                     <span className="material-icons-round text-sm">
                       {localProfile.subscriptionStatus === 'active' ? 'manage_accounts' : 'credit_card'}
@@ -1104,7 +1104,7 @@ const Settings: React.FC = () => {
 
               {/* Incluido en tu plan */}
               <div className="rounded-2xl p-5" style={{ background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid rgba(15,23,42,0.06)' }}>
-                <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: '#7A859F' }}>Incluido en tu Plan Pro</p>
+                <p className="text-[11px] font-black uppercase tracking-widest mb-4" style={{ color: '#7A859F' }}>Incluido en tu Plan Pro</p>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                   {[
                     { icon: 'calendar_month', label: 'Agenda inteligente ilimitada' },
@@ -1128,7 +1128,7 @@ const Settings: React.FC = () => {
 
               {/* Soporte */}
               <div className="rounded-2xl p-5" style={{ background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid rgba(15,23,42,0.06)' }}>
-                <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: '#7A859F' }}>Soporte y Ayuda</p>
+                <p className="text-[11px] font-black uppercase tracking-widest mb-4" style={{ color: '#7A859F' }}>Soporte y Ayuda</p>
                 <div className="flex flex-col lg:flex-row gap-3">
                   <a
                     href={`https://wa.me/${SUPPORT_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola Agenda Maslife! Soy ${localProfile.name} y necesito ayuda con mi cuenta.`)}`}
@@ -1321,7 +1321,7 @@ const Settings: React.FC = () => {
                       <img src={mfaQr.qr_code} alt="QR Code MFA" className="w-48 h-48 border-4 border-white shadow-lg rounded-xl" />
                     </div>
                     <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2">
-                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Clave manual</p>
+                      <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest mb-1">Clave manual</p>
                       <p className="text-xs font-mono text-slate-600 break-all">{mfaQr.secret}</p>
                     </div>
                     <div className="flex gap-3">

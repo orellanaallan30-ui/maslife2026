@@ -221,7 +221,7 @@ export const EvidenceCapture: React.FC<Props> = ({ routineId, itemId, count, onU
           {sent} {sent === 1 ? 'evidencia enviada' : 'evidencias enviadas'} a tu profesional
         </p>
       )}
-      <p className="text-[10px] text-slate-400 mt-1">Video de máximo 10 segundos. Solo lo ve tu profesional.</p>
+      <p className="text-[11px] text-slate-400 mt-1">Video de máximo 10 segundos. Solo lo ve tu profesional.</p>
 
       {/* inputs ocultos */}
       <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden"

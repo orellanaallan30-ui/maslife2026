@@ -82,10 +82,10 @@ const PatientPortal: React.FC = () => {
           </div>
           <div>
             <p className="text-sm font-black text-slate-900">Agenda Maslife</p>
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest">Portal de Paciente — Solo Lectura</p>
+            <p className="text-[11px] text-slate-400 uppercase tracking-widest">Portal de Paciente — Solo Lectura</p>
           </div>
         </div>
-        <span className="text-[10px] text-slate-400">Acceso válido hasta {expiryDate}</span>
+        <span className="text-[11px] text-slate-400">Acceso válido hasta {expiryDate}</span>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-10 space-y-6">
@@ -99,7 +99,7 @@ const PatientPortal: React.FC = () => {
 
         {/* Datos personales */}
         <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
-          <h2 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Datos del Paciente</h2>
+          <h2 className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Datos del Paciente</h2>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Nombre" value={patient.name} />
             <Field label="RUT" value={patient.rut} />
@@ -110,7 +110,7 @@ const PatientPortal: React.FC = () => {
           </div>
           {patient.allergies?.length > 0 && (
             <div>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Alergias</p>
+              <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Alergias</p>
               <div className="flex flex-wrap gap-2">
                 {patient.allergies.map((a, i) => (
                   <span key={i} className="px-3 py-1 bg-rose-50 border border-rose-200 text-rose-700 rounded-full text-xs font-bold">{a}</span>
@@ -123,7 +123,7 @@ const PatientPortal: React.FC = () => {
         {/* Diagnóstico */}
         {patient.diagnoses && (
           <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-3">
-            <h2 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Diagnóstico</h2>
+            <h2 className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Diagnóstico</h2>
             <p className="text-sm text-slate-700 leading-relaxed">{patient.diagnoses}</p>
           </section>
         )}
@@ -131,12 +131,12 @@ const PatientPortal: React.FC = () => {
         {/* Nota SOAP */}
         {Object.values(soap).some(v => (v as string)?.trim()) && (
           <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-4">
-            <h2 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Nota Clínica (SOAP)</h2>
+            <h2 className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Nota Clínica (SOAP)</h2>
             <div className="grid grid-cols-1 gap-4">
               {(['subjective', 'objective', 'assessment', 'plan'] as const).map(key =>
                 soap[key]?.trim() ? (
                   <div key={key} className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{soapLabels[key]}</p>
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{soapLabels[key]}</p>
                     <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{soap[key]}</p>
                   </div>
                 ) : null
@@ -148,7 +148,7 @@ const PatientPortal: React.FC = () => {
         {/* Antecedentes */}
         {patient.medicalHistory?.trim() && (
           <section className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 space-y-3">
-            <h2 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Médicos</h2>
+            <h2 className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Médicos</h2>
             <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">{patient.medicalHistory}</p>
           </section>
         )}
@@ -164,7 +164,7 @@ const PatientPortal: React.FC = () => {
 
 const Field: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div>
-    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
+    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
     <p className="text-sm font-semibold text-slate-800">{value}</p>
   </div>
 );

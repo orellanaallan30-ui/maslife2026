@@ -240,7 +240,7 @@ const Charlas: React.FC = () => {
             {/* Header modal */}
             <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-start justify-between gap-3 rounded-t-3xl lg:rounded-t-3xl">
               <div>
-                <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest">Inscripción gratuita</p>
+                <p className="text-[11px] font-black text-teal-600 uppercase tracking-widest">Inscripción gratuita</p>
                 <h3 className="text-base font-black text-slate-900 leading-snug mt-0.5">{selected.titulo}</h3>
                 <p className="text-xs text-slate-500 mt-1 font-bold capitalize">{fmtFecha(selected.fecha)} · {selected.hora} hrs</p>
               </div>
@@ -269,13 +269,13 @@ const Charlas: React.FC = () => {
                 <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Nombre *</label>
+                      <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Nombre *</label>
                       <input value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                         placeholder="Tu nombre"
                         className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Apellido</label>
+                      <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Apellido</label>
                       <input value={form.apellido} onChange={e => setForm(f => ({ ...f, apellido: e.target.value }))}
                         placeholder="Tu apellido"
                         className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
@@ -283,14 +283,14 @@ const Charlas: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Email *</label>
+                    <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Email *</label>
                     <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                       placeholder="tu@email.com"
                       className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Repetir email *</label>
+                    <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Repetir email *</label>
                     <input type="email" value={form.emailRepeat} onChange={e => setForm(f => ({ ...f, emailRepeat: e.target.value }))}
                       placeholder="Repite tu email"
                       className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
@@ -298,13 +298,13 @@ const Charlas: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Celular</label>
+                      <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Celular</label>
                       <input value={form.celular} onChange={e => setForm(f => ({ ...f, celular: e.target.value }))}
                         placeholder="+56 9 ..."
                         className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Ciudad</label>
+                      <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Ciudad</label>
                       <input value={form.ciudad} onChange={e => setForm(f => ({ ...f, ciudad: e.target.value }))}
                         placeholder="Ej: Ovalle"
                         className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
@@ -312,7 +312,7 @@ const Charlas: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Temas de interés</label>
+                    <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2">Temas de interés</label>
                     <div className="flex flex-wrap gap-2">
                       {TEMAS.map(t => (
                         <button key={t.id} type="button" onClick={() => toggleTema(t.id)}

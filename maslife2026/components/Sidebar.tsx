@@ -22,7 +22,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
   return (
     <>
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden md:flex w-20 lg:w-64 h-full overflow-hidden bg-white border-r border-slate-100 flex-col shrink-0 transition-all">
+      <aside className="hidden md:flex w-20 lg:w-56 h-full overflow-hidden bg-white border-r border-slate-100 flex-col shrink-0 transition-all">
         {/* Logo */}
         <div className="px-4 lg:px-6 pt-5 pb-3 border-b border-slate-100 flex items-center justify-center lg:justify-start">
           <img
@@ -40,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${isActive
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
                   ? 'bg-primary shadow-lg shadow-primary/20'
                   : 'hover:bg-primary/5'
                 }`
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           <NavLink
             to="/pro/referral"
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-4 rounded-2xl transition-all ${isActive
+              `flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${isActive
                 ? 'bg-primary shadow-lg shadow-primary/20'
                 : 'hover:bg-primary/5'
               }`
@@ -84,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           {/* Asistente IA */}
           <button
             onClick={onToggleAI}
-            className="flex items-center gap-3 px-4 py-4 rounded-2xl transition-all w-full hover:bg-primary/5 group"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all w-full hover:bg-primary/5 group"
           >
             <span className="material-icons-round text-2xl text-primary flex-shrink-0 group-hover:scale-110 transition-transform">
               smart_toy
@@ -96,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           {isAdmin && (
             <button
               onClick={() => navigate('/admin/management')}
-              className="flex items-center gap-3 px-4 py-4 rounded-2xl transition-all w-full hover:bg-primary/5 group"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all w-full hover:bg-primary/5 group"
             >
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-md shadow-primary/30 group-hover:scale-105 transition-transform">
                 <span className="material-icons-round text-white text-base">person</span>
@@ -108,11 +108,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
 
         <div className="p-3 lg:p-4 mt-auto space-y-3">
           <div className="bg-primary/5 rounded-2xl p-4 hidden lg:block border border-primary/10">
-            <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">Soporte Médico</p>
+            <p className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">Soporte Médico</p>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">¿Necesitas ayuda técnica?</p>
             <button
               onClick={() => window.open('https://wa.me/56965329974?text=Hola,%20necesito%20soporte%20t%C3%A9cnico%20con%20la%20plataforma%20Agenda%20Maslife', '_blank')}
-              className="mt-3 w-full py-3 bg-primary text-white rounded-xl text-[10px] font-bold shadow-lg shadow-primary/20 uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
+              className="mt-3 w-full py-3 bg-primary text-white rounded-xl text-[11px] font-bold shadow-lg shadow-primary/20 uppercase tracking-wider transition-all hover:scale-105 active:scale-95"
             >
               Chat Soporte
             </button>
@@ -120,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
 
           <button
             onClick={(e) => { e.preventDefault(); if (onLogout) onLogout(); }}
-            className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all font-semibold text-sm group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all font-semibold text-sm group"
           >
             <span className="material-icons-round text-xl group-hover:translate-x-1 transition-transform">logout</span>
             <span className="hidden lg:inline">Cerrar Sesión</span>
@@ -146,7 +146,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
                 <span className={`material-icons-round text-[22px] ${isActive ? 'text-primary' : 'text-slate-400'}`}>
                   {item.icon}
                 </span>
-                <span className="text-[9px] font-bold mt-0.5 leading-none">{item.label}</span>
+                <span className="text-[11px] font-bold mt-0.5 leading-none">{item.label}</span>
                 {isActive && <div className="mt-0.5 w-1 h-1 rounded-full bg-primary" />}
               </>
             )}
@@ -159,7 +159,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           className="flex flex-col items-center justify-center flex-1 h-full text-primary"
         >
           <span className="material-icons-round text-[22px]">smart_toy</span>
-          <span className="text-[9px] font-bold mt-0.5 leading-none">IA</span>
+          <span className="text-[11px] font-bold mt-0.5 leading-none">IA</span>
           <div className="mt-0.5 w-1 h-1 rounded-full bg-primary animate-pulse" />
         </button>
 
@@ -173,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
           {({ isActive }) => (
             <>
               <span className={`material-icons-round text-[22px] ${isActive ? 'text-primary' : 'text-slate-400'}`}>card_giftcard</span>
-              <span className="text-[9px] font-bold mt-0.5 leading-none">Invita</span>
+              <span className="text-[11px] font-bold mt-0.5 leading-none">Invita</span>
               {isActive && <div className="mt-0.5 w-1 h-1 rounded-full bg-primary" />}
             </>
           )}
@@ -188,7 +188,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
             <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow-sm">
               <span className="material-icons-round text-white text-xs">person</span>
             </div>
-            <span className="text-[9px] font-bold text-primary leading-none">Admin</span>
+            <span className="text-[11px] font-bold text-primary leading-none">Admin</span>
           </button>
         )}
       </nav>

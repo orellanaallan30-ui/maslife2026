@@ -426,13 +426,13 @@ const MainHome: React.FC = () => {
             { label: 'Filosofía', id: 'filosofia' },
           ].map(({ label, id }) => (
             <button key={id} onClick={() => scrollToSection(id)}
-              className="text-[.8rem] font-medium uppercase tracking-[1.8px] opacity-80 hover:opacity-100 transition-opacity"
+              className="text-[.8rem] font-medium uppercase tracking-[0.04em] opacity-80 hover:opacity-100 transition-opacity"
               style={{ color: 'inherit' }}>
               {label}
             </button>
           ))}
           <button onClick={() => navigate('/patient/results')}
-            className="text-[.8rem] font-medium uppercase tracking-[1.8px] opacity-80 hover:opacity-100 transition-opacity"
+            className="text-[.8rem] font-medium uppercase tracking-[0.04em] opacity-80 hover:opacity-100 transition-opacity"
             style={{ color: 'inherit' }}>
             Buscar profesionales
           </button>
@@ -613,7 +613,7 @@ const MainHome: React.FC = () => {
 
         {/* Scroll indicator */}
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 pointer-events-none">
-          <span className="font-outfit text-[.7rem] uppercase tracking-[3px]" style={{ color: '#475569', opacity: .6 }}>Desliza</span>
+          <span className="font-outfit text-[.7rem] uppercase tracking-[0.05em]" style={{ color: '#475569', opacity: .6 }}>Desliza</span>
           <div style={{ width: 1, height: 44, background: '#0ea5e9', opacity: .45, animation: 'scrollBounce 2.4s ease-in-out infinite', transformOrigin: 'top' }} />
         </div>
       </section>
@@ -631,7 +631,7 @@ const MainHome: React.FC = () => {
           ].map((stat, i) => (
             <div key={i} data-reveal={`stat-${i}`} className={`text-center ${rv(`stat-${i}`)}`} style={{ transitionDelay: `${i * 100}ms` }}>
               <p className="font-display font-light text-2xl lg:text-4xl tracking-tight text-white">{stat.num}</p>
-              <p className="font-outfit text-[.72rem] uppercase tracking-[2px] mt-1" style={{ color: 'rgba(186,230,253,.85)' }}>{stat.label}</p>
+              <p className="font-outfit text-[.72rem] uppercase tracking-[0.04em] mt-1" style={{ color: 'rgba(186,230,253,.85)' }}>{stat.label}</p>
             </div>
           ))}
         </div>
@@ -674,7 +674,7 @@ const MainHome: React.FC = () => {
       <section id="como-funciona" className="px-[6vw] py-[7vh] lg:py-[11vh]" style={{ background: '#ffffff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="max-w-xl mb-[6vh]">
-            <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Proceso simple</p>
+            <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#0ea5e9' }}>Proceso simple</p>
             <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#0f172a' }}>
               Menos administración.<br /><em style={{ color: '#0ea5e9', fontStyle: 'italic' }}>Más presencia.</em>
             </h2>
@@ -718,7 +718,7 @@ const MainHome: React.FC = () => {
                   style={{ background: 'linear-gradient(135deg, #e0f2fe, #bae6fd)', boxShadow: '0 4px 12px rgba(2,132,199,.2)' }}>
                   <span className="material-icons-round text-xl" style={{ color: '#0284c7' }}>{step.icon}</span>
                 </div>
-                <p className="font-outfit text-[.78rem] tracking-[2px] uppercase mb-4 font-bold" style={{ color: '#06b6d4' }}>{step.step}</p>
+                <p className="font-outfit text-[.78rem] tracking-[0.04em] uppercase mb-4 font-bold" style={{ color: '#06b6d4' }}>{step.step}</p>
                 <h4 className="font-display font-light text-xl mb-3 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h4>
                 <p className="font-outfit font-light text-[.93rem] leading-[1.65]" style={{ color: '#475569' }}>{step.desc}</p>
               </div>
@@ -780,19 +780,19 @@ const MainHome: React.FC = () => {
                     {charlaFormOpen && (
                       <form onSubmit={handleCharlaSubscribe} className="flex flex-col gap-3">
                         <div>
-                          <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Nombre *</label>
+                          <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Nombre *</label>
                           <input value={charlaForm.nombre} onChange={e => setCharlaForm(f => ({ ...f, nombre: e.target.value }))}
                             placeholder="Tu nombre" autoFocus
                             className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Email *</label>
+                          <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Email *</label>
                           <input type="email" value={charlaForm.email} onChange={e => setCharlaForm(f => ({ ...f, email: e.target.value }))}
                             placeholder="tu@email.com"
                             className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Celular <span className="text-slate-400 font-medium normal-case tracking-normal">(opcional)</span></label>
+                          <label className="block text-[11px] font-black text-slate-600 uppercase tracking-widest mb-1.5">Celular <span className="text-slate-400 font-medium normal-case tracking-normal">(opcional)</span></label>
                           <input value={charlaForm.celular} onChange={e => setCharlaForm(f => ({ ...f, celular: e.target.value }))}
                             placeholder="+56 9 ..."
                             className="w-full bg-slate-50 border-2 border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-teal-500 focus:bg-white transition-all" />
@@ -822,7 +822,7 @@ const MainHome: React.FC = () => {
                       </button>
                     )}
 
-                    <p className="text-[10px] text-slate-400 text-center">Sin spam · Solo charlas de salud · Puedes darte de baja cuando quieras</p>
+                    <p className="text-[11px] text-slate-400 text-center">Sin spam · Solo charlas de salud · Puedes darte de baja cuando quieras</p>
                   </div>
                 )}
               </div>
@@ -839,7 +839,7 @@ const MainHome: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
             <div>
-              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-3" style={{ color: '#0ea5e9' }}>Nuestro equipo</p>
+              <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-3" style={{ color: '#0ea5e9' }}>Nuestro equipo</p>
               <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Selecciona un área y agenda</h2>
               <p className="font-outfit text-sm font-light mt-1" style={{ color: '#475569' }}>con un profesional directamente</p>
             </div>
@@ -888,7 +888,7 @@ const MainHome: React.FC = () => {
         <section id="kine-plans" className="px-[6vw] py-14 lg:py-28" style={{ background: '#f8faff', animation: 'fadeIn .5s ease-out' }}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
-              <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Atención a domicilio</p>
+              <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#0ea5e9' }}>Atención a domicilio</p>
               <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.4rem)', letterSpacing: '-1px', color: '#0f172a' }}>
                 Planes Kinesiológicos a Domicilio
               </h2>
@@ -909,7 +909,7 @@ const MainHome: React.FC = () => {
                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = isFeatured ? '0 32px 64px -24px rgba(2,132,199,.35)' : 'none'; }}
                   >
                     {plan.badge && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white px-6 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg whitespace-nowrap"
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-white px-6 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider shadow-lg whitespace-nowrap"
                            style={{ background: '#0284c7' }}>
                         {plan.badge}
                       </div>
@@ -955,7 +955,7 @@ const MainHome: React.FC = () => {
       <section id="testimonios" className="px-[6vw] py-14 lg:py-28 overflow-hidden" style={{ background: '#f0f9ff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="mb-12">
-            <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-5" style={{ color: '#0ea5e9' }}>Testimonios reales</p>
+            <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#0ea5e9' }}>Testimonios reales</p>
             <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Lo que dicen nuestros pacientes</h2>
           </div>
 
@@ -982,7 +982,7 @@ const MainHome: React.FC = () => {
                           </div>
                           <div>
                             <p className="font-outfit text-sm font-semibold" style={{ color: '#0f172a' }}>{t.name}</p>
-                            <p className="font-outfit text-[10px] font-medium uppercase tracking-wider" style={{ color: '#0ea5e9' }}>{t.role}</p>
+                            <p className="font-outfit text-[11px] font-medium uppercase tracking-wider" style={{ color: '#0ea5e9' }}>{t.role}</p>
                           </div>
                         </div>
                       </div>
@@ -1035,7 +1035,7 @@ const MainHome: React.FC = () => {
                style={{ background: 'rgba(224,242,254,.2)', filter: 'blur(70px)', animation: 'blobFloat 9s ease-in-out infinite' }} />
         </div>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <p className="font-outfit text-[.78rem] uppercase tracking-[3px] mb-6" style={{ color: 'rgba(186,230,253,.85)' }}>Comienza hoy</p>
+          <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-6" style={{ color: 'rgba(186,230,253,.85)' }}>Comienza hoy</p>
           <h2 className="font-display font-light leading-[1.0] mb-6" style={{ fontSize: 'clamp(2.2rem,6vw,4.5rem)', color: '#ffffff', letterSpacing: '-1.5px' }}>
             ¿Listo para<br /><em style={{ color: '#bae6fd', fontStyle: 'italic' }}>sentirte mejor?</em>
           </h2>
@@ -1078,7 +1078,7 @@ const MainHome: React.FC = () => {
 
             {/* Servicios */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Servicios</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#0ea5e9' }}>Servicios</h4>
               <ul className="space-y-3">
                 {[
                   { label: 'Consulta Guiada', action: () => setIsGeneralFormOpen(true) },
@@ -1096,7 +1096,7 @@ const MainHome: React.FC = () => {
 
             {/* Compañía */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Compañía</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#0ea5e9' }}>Compañía</h4>
               <ul className="space-y-3">
                 {[
                   { label: 'Método Life', action: () => {} },
@@ -1120,7 +1120,7 @@ const MainHome: React.FC = () => {
 
             {/* Legal */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[2.5px] mb-5" style={{ color: '#0ea5e9' }}>Legal</h4>
+              <h4 className="font-outfit text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#0ea5e9' }}>Legal</h4>
               <ul className="space-y-3">
                 {[{ label: 'Privacidad', href: '/privacidad' }, { label: 'Términos', href: '/terminos' }].map(({ label, href }) => (
                   <li key={label}>

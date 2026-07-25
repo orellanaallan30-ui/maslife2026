@@ -128,7 +128,7 @@ const AdminLogin: React.FC = () => {
             <span className="material-icons-round text-primary text-4xl">admin_panel_settings</span>
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">Core Administration</h1>
-          <p className="text-slate-500 font-bold mt-2 uppercase text-xs tracking-[0.3em]">Agenda Maslife Central Control</p>
+          <p className="text-slate-500 font-bold mt-2 uppercase text-xs tracking-[0.06em]">Agenda Maslife Central Control</p>
         </div>
 
         <div className="bg-slate-900/80 backdrop-blur-2xl p-8 rounded-blob-xl shadow-[0_48px_80px_-16px_rgba(0,0,0,0.5)] border border-white/10 relative space-y-6">
@@ -144,7 +144,7 @@ const AdminLogin: React.FC = () => {
           {/* Con sesión pero acceso automático no completó (reintento manual) */}
           {!autoChecking && hasSsoSession && (
             <div className="bg-teal-500/10 border border-teal-500/20 rounded-2xl p-4">
-              <p className="text-[10px] font-black text-teal-400 uppercase tracking-widest mb-1">Sesión detectada</p>
+              <p className="text-[11px] font-black text-teal-400 uppercase tracking-widest mb-1">Sesión detectada</p>
               <p className="text-xs text-slate-300 font-bold mb-3 truncate">{ssoEmail}</p>
               <button
                 onClick={() => handleSSO()}
@@ -184,7 +184,7 @@ const AdminLogin: React.FC = () => {
           {!autoChecking && !showPasswordForm && (
             <button
               onClick={() => setShowPasswordForm(true)}
-              className="w-full text-[10px] font-black text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
+              className="w-full text-[11px] font-black text-slate-600 hover:text-slate-400 uppercase tracking-widest transition-colors"
             >
               Usar contraseña
             </button>
@@ -193,7 +193,7 @@ const AdminLogin: React.FC = () => {
           {showPasswordForm && (
           <form onSubmit={handleAdminLogin} className="space-y-6">
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Correo Administrador</label>
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Correo Administrador</label>
               <div className="relative">
                 <span className="material-icons-round absolute left-5 top-1/2 -translate-y-1/2 text-slate-600">account_circle</span>
                 <input
@@ -208,7 +208,7 @@ const AdminLogin: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Clave de Acceso</label>
+              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Clave de Acceso</label>
               <div className="relative">
                 <span className="material-icons-round absolute left-5 top-1/2 -translate-y-1/2 text-slate-600">vpn_key</span>
                 <input
@@ -237,7 +237,7 @@ const AdminLogin: React.FC = () => {
 
             <button
               type="submit"
-              className="group w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
+              className="group w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.05em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3"
             >
               Autenticar Sistema
               <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">security</span>

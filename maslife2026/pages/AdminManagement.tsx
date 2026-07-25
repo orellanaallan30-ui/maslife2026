@@ -457,8 +457,8 @@ const AdminManagement: React.FC = () => {
       : null;
     return (
       <div className="flex flex-col gap-0.5">
-        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black border w-fit ${cls}`}>{label}</span>
-        {expiry && <span className="text-[10px] text-slate-500">{status === 'active' ? 'desde' : 'vence'} {expiry}</span>}
+        <span className={`px-2 py-0.5 rounded-lg text-[11px] font-black border w-fit ${cls}`}>{label}</span>
+        {expiry && <span className="text-[11px] text-slate-500">{status === 'active' ? 'desde' : 'vence'} {expiry}</span>}
       </div>
     );
   };
@@ -478,7 +478,7 @@ const AdminManagement: React.FC = () => {
         {/* ── Header ── */}
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
-            <p className="text-teal-500 font-black text-[10px] uppercase tracking-widest mb-1">Panel de Control</p>
+            <p className="text-teal-500 font-black text-[11px] uppercase tracking-widest mb-1">Panel de Control</p>
             <h1 className="text-2xl md:text-3xl font-black text-slate-900">Administración Central</h1>
           </div>
           <button onClick={() => logout(navigate, 'ADMIN')}
@@ -501,7 +501,7 @@ const AdminManagement: React.FC = () => {
               <span className={`material-icons-round text-xl ${s.cls}`}>{s.icon}</span>
               <div>
                 <p className={`text-xl font-black leading-none ${s.cls}`}>{s.val}</p>
-                <p className="text-[10px] text-slate-500 font-bold mt-0.5 uppercase tracking-widest">{s.label}</p>
+                <p className="text-[11px] text-slate-500 font-bold mt-0.5 uppercase tracking-widest">{s.label}</p>
               </div>
             </div>
           ))}
@@ -525,7 +525,7 @@ const AdminManagement: React.FC = () => {
               <span className="material-icons-round text-base">{tab.icon}</span>
               {tab.label}
               {tab.count > 0 && (
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-amber-500/20 text-amber-600'}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-amber-500/20 text-amber-600'}`}>
                   {tab.count}
                 </span>
               )}
@@ -559,7 +559,7 @@ const AdminManagement: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2 flex-wrap">
                             <p className="font-black text-slate-900">{pro.name}</p>
-                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black shrink-0 ${daysAgo >= 3 ? 'bg-amber-500/20 text-amber-600' : 'bg-slate-200 text-slate-500'}`}>
+                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-black shrink-0 ${daysAgo >= 3 ? 'bg-amber-500/20 text-amber-600' : 'bg-slate-200 text-slate-500'}`}>
                               Hace {daysAgo === 0 ? 'hoy' : `${daysAgo}d`}
                             </span>
                           </div>
@@ -634,11 +634,11 @@ const AdminManagement: React.FC = () => {
                   <table className="w-full text-left min-w-[800px]">
                     <thead className="bg-slate-100 border-b border-slate-200">
                       <tr>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Especialista</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Ciudad</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Suscripción</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Registro</th>
-                        <th className="px-5 py-4 text-right text-[10px] font-black text-slate-500 uppercase tracking-widest">Acciones</th>
+                        <th className="px-5 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Especialista</th>
+                        <th className="px-5 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Ciudad</th>
+                        <th className="px-5 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Suscripción</th>
+                        <th className="px-5 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest">Registro</th>
+                        <th className="px-5 py-4 text-right text-[11px] font-black text-slate-500 uppercase tracking-widest">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -656,12 +656,12 @@ const AdminManagement: React.FC = () => {
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <p className="text-sm font-black text-slate-900 truncate max-w-[140px]">{pro.name}</p>
                                   {pro.needsPasswordReset && (
-                                    <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-600 border border-amber-500/30 rounded-md text-[9px] font-black uppercase tracking-wide shrink-0">
+                                    <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-600 border border-amber-500/30 rounded-md text-[11px] font-black uppercase tracking-wide shrink-0">
                                       Reset pwd
                                     </span>
                                   )}
                                   {!pro.isPublic && (
-                                    <span className="px-1.5 py-0.5 bg-slate-200 text-slate-500 rounded-md text-[9px] font-black uppercase tracking-wide shrink-0">Oculto</span>
+                                    <span className="px-1.5 py-0.5 bg-slate-200 text-slate-500 rounded-md text-[11px] font-black uppercase tracking-wide shrink-0">Oculto</span>
                                   )}
                                 </div>
                                 <p className="text-[11px] text-slate-500 truncate max-w-[180px]">{pro.email}</p>
@@ -673,8 +673,8 @@ const AdminManagement: React.FC = () => {
                           <td className="px-5 py-4">
                             <p className="text-xs text-slate-700 font-bold">{pro.city || '—'}</p>
                             {pro.paymentEnabled && (
-                              <span className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5 mt-0.5">
-                                <span className="material-icons-round text-[10px]">payments</span> Pago activo
+                              <span className="text-[11px] text-emerald-600 font-bold flex items-center gap-0.5 mt-0.5">
+                                <span className="material-icons-round text-[11px]">payments</span> Pago activo
                               </span>
                             )}
                           </td>
@@ -809,7 +809,7 @@ const AdminManagement: React.FC = () => {
               ].map(s => (
                 <div key={s.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                   <div className="flex items-center gap-2 mb-2"><span className={`material-icons-round ${s.cls}`}>{s.icon}</span>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{s.label}</p></div>
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{s.label}</p></div>
                   <p className={`text-2xl font-black ${s.cls}`}>{s.val}</p>
                 </div>
               ))}
@@ -821,7 +821,7 @@ const AdminManagement: React.FC = () => {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead><tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  <thead><tr className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
                     <th className="text-left px-6 py-3">Profesional</th>
                     <th className="text-right px-4 py-3">Citas</th>
                     <th className="text-right px-4 py-3">Bruto</th>
@@ -831,7 +831,7 @@ const AdminManagement: React.FC = () => {
                   <tbody>
                     {(finance?.rows || []).map(r => (
                       <tr key={r.id} className="border-t border-slate-50 hover:bg-slate-50">
-                        <td className="px-6 py-3"><p className="font-black text-slate-800">{r.name}</p><p className="text-[10px] text-slate-400">{r.email}</p></td>
+                        <td className="px-6 py-3"><p className="font-black text-slate-800">{r.name}</p><p className="text-[11px] text-slate-400">{r.email}</p></td>
                         <td className="px-4 py-3 text-right font-bold text-slate-600">{r.paidCount}</td>
                         <td className="px-4 py-3 text-right font-black text-slate-800">{clp(r.gross)}</td>
                         <td className="px-4 py-3 text-right font-bold text-sky-600">{clp(r.platformFee)}</td>
@@ -859,14 +859,14 @@ const AdminManagement: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${f.type === 'problem' ? 'bg-rose-100 text-rose-600' : 'bg-teal-100 text-teal-600'}`}>{f.type === 'problem' ? 'Problema' : 'Sugerencia'}</span>
+                      <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${f.type === 'problem' ? 'bg-rose-100 text-rose-600' : 'bg-teal-100 text-teal-600'}`}>{f.type === 'problem' ? 'Problema' : 'Sugerencia'}</span>
                       {f.status === 'open'
-                        ? <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-100 text-amber-600">Abierto</span>
-                        : <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600">Resuelto</span>}
+                        ? <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-100 text-amber-600">Abierto</span>
+                        : <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600">Resuelto</span>}
                     </div>
                     {f.subject && <p className="font-black text-slate-800 text-sm">{f.subject}</p>}
                     <p className="text-sm text-slate-600 leading-relaxed mt-1 whitespace-pre-wrap">{f.message}</p>
-                    <p className="text-[10px] text-slate-400 mt-2">{f.professional_name} · {f.professional_email} · {new Date(f.created_at).toLocaleDateString('es-CL')}</p>
+                    <p className="text-[11px] text-slate-400 mt-2">{f.professional_name} · {f.professional_email} · {new Date(f.created_at).toLocaleDateString('es-CL')}</p>
                   </div>
                   <button onClick={() => resolveFeedback(f)} title={f.status === 'open' ? 'Marcar resuelto' : 'Reabrir'}
                     className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all ${f.status === 'open' ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>
@@ -886,12 +886,12 @@ const AdminManagement: React.FC = () => {
                 <h3 className="text-base font-black text-slate-900">Enviar mensaje a profesionales</h3></div>
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => setMsgTargets(new Set())}
-                  className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border ${msgTargets.size === 0 ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-200'}`}>
+                  className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest border ${msgTargets.size === 0 ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-200'}`}>
                   Todos ({approved.length})
                 </button>
                 {approved.map(p => (
                   <button key={p.id} onClick={() => setMsgTargets(prev => { const n = new Set(prev); n.has(p.id) ? n.delete(p.id) : n.add(p.id); return n; })}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border ${msgTargets.has(p.id) ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-200 hover:border-primary/40'}`}>
+                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border ${msgTargets.has(p.id) ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-200 hover:border-primary/40'}`}>
                     {p.name}
                   </button>
                 ))}
@@ -930,7 +930,7 @@ const AdminManagement: React.FC = () => {
               ].map(s => (
                 <div key={s.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
                   <p className={`text-2xl font-black ${s.cls}`}>{s.val}</p>
-                  <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest">{s.label}</p>
+                  <p className="text-[11px] font-bold text-slate-500 mt-1 uppercase tracking-widest">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -944,9 +944,9 @@ const AdminManagement: React.FC = () => {
                       <span className={`material-icons-round text-base ${color}`}>{color.includes('emerald') ? 'check_circle' : color.includes('rose') ? 'error' : color.includes('amber') ? 'warning' : 'radio_button_unchecked'}</span>
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-slate-700">{e.outcome || '—'} <span className="text-slate-400 font-normal">· {e.event_type} {e.mp_status ? `· ${e.mp_status}` : ''}</span></p>
-                        {(e.payer_email || e.detail) && <p className="text-[10px] text-slate-400 truncate">{e.payer_email || e.detail}</p>}
+                        {(e.payer_email || e.detail) && <p className="text-[11px] text-slate-400 truncate">{e.payer_email || e.detail}</p>}
                       </div>
-                      <span className="text-[10px] text-slate-400 shrink-0">{new Date(e.created_at).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[11px] text-slate-400 shrink-0">{new Date(e.created_at).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   );
                 })}
@@ -990,12 +990,12 @@ const AdminManagement: React.FC = () => {
                     <div className="flex items-start gap-4 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${c.es_activa ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/20' : 'bg-slate-500/20 text-slate-500 border border-slate-500/20'}`}>
+                          <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${c.es_activa ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/20' : 'bg-slate-500/20 text-slate-500 border border-slate-500/20'}`}>
                             {c.es_activa ? 'Activa' : 'Oculta'}
                           </span>
-                          {c.meet_link && <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 border border-blue-500/20">Meet listo</span>}
+                          {c.meet_link && <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-600 border border-blue-500/20">Meet listo</span>}
                           {c._count !== undefined && c._count > 0 && (
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-600 border border-teal-500/20">{c._count} inscrito{c._count !== 1 ? 's' : ''}</span>
+                            <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-600 border border-teal-500/20">{c._count} inscrito{c._count !== 1 ? 's' : ''}</span>
                           )}
                         </div>
                         <h4 className="text-slate-900 font-black text-sm leading-snug">{c.titulo}</h4>
@@ -1054,7 +1054,7 @@ const AdminManagement: React.FC = () => {
                 ].map(s => (
                   <div key={s.label} className={`rounded-2xl p-4 text-center ${s.color}`}>
                     <p className="text-2xl font-black leading-none">{s.val}</p>
-                    <p className="text-[10px] font-bold mt-1 uppercase tracking-widest opacity-70">{s.label}</p>
+                    <p className="text-[11px] font-bold mt-1 uppercase tracking-widest opacity-70">{s.label}</p>
                   </div>
                 ))}
               </div>
@@ -1173,7 +1173,7 @@ const AdminManagement: React.FC = () => {
               </div>
             )}
             <div className="space-y-2 mb-6">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Días a regalar</label>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Días a regalar</label>
               <input type="number" min={1} max={365} value={giftModal.days}
                 onChange={e => setGiftModal({ ...giftModal, days: e.target.value })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 text-2xl font-black focus:outline-none focus:border-violet-500/50 text-center"
@@ -1221,14 +1221,14 @@ const AdminManagement: React.FC = () => {
             </p>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estrellas (0–5)</label>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Estrellas (0–5)</label>
                 <input type="number" min={0} max={5} step={0.1} value={seedModal.rating}
                   onChange={e => setSeedModal({ ...seedModal, rating: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 text-2xl font-black focus:outline-none focus:border-amber-500/50 text-center"
                   placeholder="4.8" autoFocus />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nº reseñas base</label>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Nº reseñas base</label>
                 <input type="number" min={0} max={9999} value={seedModal.count}
                   onChange={e => setSeedModal({ ...seedModal, count: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 text-slate-900 text-2xl font-black focus:outline-none focus:border-amber-500/50 text-center"
@@ -1299,7 +1299,7 @@ const AdminManagement: React.FC = () => {
           <div className="relative bg-white border border-slate-200 w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
             <div className="flex items-start justify-between mb-5 gap-3">
               <div>
-                <p className="text-[10px] font-black text-violet-600 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                <p className="text-[11px] font-black text-violet-600 uppercase tracking-widest mb-1 flex items-center gap-1.5">
                   <span className="material-icons-round text-sm">send</span>
                   Notificación masiva
                 </p>
@@ -1334,7 +1334,7 @@ const AdminManagement: React.FC = () => {
             ) : (
               <div className="flex flex-col gap-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Asunto *</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Asunto *</label>
                   <input
                     value={blastForm.asunto}
                     onChange={e => setBlastForm(f => ({ ...f, asunto: e.target.value }))}
@@ -1343,7 +1343,7 @@ const AdminManagement: React.FC = () => {
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-violet-500 transition-all disabled:opacity-50" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Mensaje *</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Mensaje *</label>
                   <textarea
                     value={blastForm.mensaje}
                     onChange={e => setBlastForm(f => ({ ...f, mensaje: e.target.value }))}
@@ -1351,7 +1351,7 @@ const AdminManagement: React.FC = () => {
                     placeholder="Hola, te recordamos que mañana jueves tenemos nuestra charla gratuita sobre dolor lumbar a las 20:00 hrs.&#10;&#10;El link de Google Meet es: https://meet.google.com/...&#10;&#10;¡Te esperamos!"
                     disabled={blastSending}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-violet-500 transition-all resize-none disabled:opacity-50" />
-                  <p className="text-slate-600 text-[10px] mt-1">El saludo "Hola, [nombre]" se agrega automáticamente.</p>
+                  <p className="text-slate-600 text-[11px] mt-1">El saludo "Hola, [nombre]" se agrega automáticamente.</p>
                 </div>
 
                 {blastModal.totalRegs === 0 && (
@@ -1402,7 +1402,7 @@ const AdminManagement: React.FC = () => {
                 { label: 'Link de Google Meet', key: 'meet_link', type: 'url', placeholder: 'https://meet.google.com/...' },
               ].map(f => (
                 <div key={f.key}>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{f.label}</label>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{f.label}</label>
                   <input
                     type={f.type}
                     value={(charlaFormData as Record<string, unknown>)[f.key] as string}
@@ -1412,7 +1412,7 @@ const AdminManagement: React.FC = () => {
                 </div>
               ))}
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Descripción</label>
+                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Descripción</label>
                 <textarea
                   value={charlaFormData.descripcion}
                   onChange={e => setCharlaFormData(p => ({ ...p, descripcion: e.target.value }))}
@@ -1447,7 +1447,7 @@ const AdminManagement: React.FC = () => {
           <div className="relative bg-white border border-slate-200 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
             <div className="flex items-start justify-between mb-4 gap-3">
               <div>
-                <p className="text-[10px] font-black text-teal-500 uppercase tracking-widest mb-1">Inscritos</p>
+                <p className="text-[11px] font-black text-teal-500 uppercase tracking-widest mb-1">Inscritos</p>
                 <h3 className="text-slate-900 font-black text-base leading-snug">{selectedCharlaRegs.charla.titulo}</h3>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -1492,7 +1492,7 @@ const AdminManagement: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      <span className="text-slate-600 text-[10px] shrink-0">{new Date(r.created_at).toLocaleDateString('es-CL')}</span>
+                      <span className="text-slate-600 text-[11px] shrink-0">{new Date(r.created_at).toLocaleDateString('es-CL')}</span>
                     </div>
                   ))}
                 </div>

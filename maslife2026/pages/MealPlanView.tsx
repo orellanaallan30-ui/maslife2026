@@ -95,7 +95,7 @@ const MealPlanView: React.FC = () => {
         </div>
         <div>
           <p className="text-sm font-black text-slate-900">Clínica Mas Life</p>
-          <p className="text-[10px] text-slate-400 uppercase tracking-widest">Plan alimentario</p>
+          <p className="text-[11px] text-slate-400 uppercase tracking-widest">Plan alimentario</p>
         </div>
       </header>
 

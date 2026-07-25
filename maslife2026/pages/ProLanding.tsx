@@ -147,7 +147,7 @@ const ProLanding: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2">
                 {['RO', 'CM', 'JS', 'MP'].map((ini, i) => (
-                  <div key={i} className="w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white"
+                  <div key={i} className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white border-2 border-white"
                     style={{ background: `hsl(${210 + i * 14}, 55%, ${38 + i * 6}%)` }}>{ini}</div>
                 ))}
               </div>
@@ -165,7 +165,7 @@ const ProLanding: React.FC = () => {
               {/* Barra superior del mockup */}
               <div className="flex items-center gap-1.5 px-4 py-3" style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-300" /><span className="w-2.5 h-2.5 rounded-full bg-amber-300" /><span className="w-2.5 h-2.5 rounded-full bg-emerald-300" />
-                <span className="ml-3 text-[10px] font-medium" style={{ color: MUTED }}>agenda.maslife — Panel</span>
+                <span className="ml-3 text-[11px] font-medium" style={{ color: MUTED }}>agenda.maslife — Panel</span>
               </div>
               <div className="p-4 lg:p-5 grid grid-cols-5 gap-3">
                 {/* Mini stats */}
@@ -176,17 +176,17 @@ const ProLanding: React.FC = () => {
                     { l: 'Ocupación', v: '92%', c: ORANGE },
                   ].map(s => (
                     <div key={s.l} className="rounded-2xl p-3" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-                      <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>{s.l}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>{s.l}</p>
                       <p className="text-lg font-extrabold" style={{ color: s.c }}>{s.v}</p>
                     </div>
                   ))}
                 </div>
                 {/* Mini calendario */}
                 <div className="col-span-2 rounded-2xl p-3" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-                  <p className="text-[9px] font-semibold uppercase tracking-wide mb-2" style={{ color: MUTED }}>Julio</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{ color: MUTED }}>Julio</p>
                   <div className="grid grid-cols-7 gap-1">
                     {Array.from({ length: 28 }, (_, i) => (
-                      <span key={i} className="w-full aspect-square rounded-md text-[8px] flex items-center justify-center font-medium"
+                      <span key={i} className="w-full aspect-square rounded-md text-[10px] flex items-center justify-center font-medium"
                         style={i === 19 ? { background: BLUE, color: '#fff' } : i % 6 === 2 ? { background: 'rgba(255,107,0,.15)', color: ORANGE } : { color: MUTED }}>
                         {i + 1}
                       </span>
@@ -195,22 +195,22 @@ const ProLanding: React.FC = () => {
                 </div>
                 {/* Reservas del día */}
                 <div className="col-span-3 rounded-2xl p-3 space-y-2" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-                  <p className="text-[9px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>Próximas reservas</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>Próximas reservas</p>
                   {[
                     { t: '09:00', n: 'María P.', tag: 'Pagado', tc: '#059669' },
                     { t: '10:00', n: 'Jorge L.', tag: 'Online', tc: BLUE },
                     { t: '11:30', n: 'Sofía R.', tag: 'Recordado', tc: ORANGE },
                   ].map(r => (
                     <div key={r.t} className="flex items-center justify-between bg-white rounded-xl px-2.5 py-2" style={{ border: `1px solid ${BORDER}` }}>
-                      <span className="text-[10px] font-bold" style={{ color: TEXT }}>{r.t} · {r.n}</span>
-                      <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${r.tc}15`, color: r.tc }}>{r.tag}</span>
+                      <span className="text-[11px] font-bold" style={{ color: TEXT }}>{r.t} · {r.n}</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${r.tc}15`, color: r.tc }}>{r.tag}</span>
                     </div>
                   ))}
                 </div>
                 {/* Chips inferiores */}
                 <div className="col-span-5 flex flex-wrap gap-1.5">
                   {['Agenda', 'Pagos', 'Recordatorios', 'IA', 'Estadísticas', 'Chat IA'].map(c => (
-                    <span key={c} className="text-[9px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,51,102,.06)', color: BLUE }}>{c}</span>
+                    <span key={c} className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,51,102,.06)', color: BLUE }}>{c}</span>
                   ))}
                 </div>
               </div>
@@ -294,7 +294,7 @@ const ProLanding: React.FC = () => {
                 <span className="material-icons-round shrink-0" style={{ color: BLUE }}>{f.icon}</span>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold leading-tight" style={{ color: TEXT }}>{f.label}</p>
-                  {f.soon && <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: ORANGE }}>Próximamente</span>}
+                  {f.soon && <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: ORANGE }}>Próximamente</span>}
                 </div>
               </motion.div>
             ))}

@@ -354,7 +354,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
 
                   {/* Footer del menú */}
                   <div className="border-t border-slate-100 p-4 text-center shrink-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">© 2026 Clínica Mas Life</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">© 2026 Clínica Mas Life</p>
                   </div>
                 </div>
               </div>
@@ -374,7 +374,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
               >
                 <span className="material-icons-round text-xl text-slate-700">notifications</span>
                 {unread > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-[18px] h-[18px] bg-rose-500 rounded-full text-white text-[9px] font-black flex items-center justify-center">
+                  <span className="absolute top-1.5 right-1.5 w-[18px] h-[18px] bg-rose-500 rounded-full text-white text-[11px] font-black flex items-center justify-center">
                     {unread}
                   </span>
                 )}
@@ -390,7 +390,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                         {unread > 0 && (
                           <button
                             onClick={() => notifications.forEach(n => !n.read && markNotificationRead(n.id))}
-                            className="text-[10px] font-black text-teal-600 uppercase tracking-wider hover:text-teal-800 transition-colors"
+                            className="text-[11px] font-black text-teal-600 uppercase tracking-wider hover:text-teal-800 transition-colors"
                           >
                             Marcar leídas
                           </button>
@@ -424,7 +424,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                                     <span className="material-icons-round text-base">event</span>
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black text-teal-600 uppercase tracking-wider">Nueva Cita</p>
+                                    <p className="text-[11px] font-black text-teal-600 uppercase tracking-wider">Nueva Cita</p>
                                     <p className={`text-sm font-black text-slate-900 truncate`}>{citaMatch[1]}</p>
                                     <p className="text-xs font-bold text-slate-500 truncate">{citaMatch[2]}</p>
                                     <p className="text-xs text-slate-400 font-bold mt-0.5">
@@ -439,14 +439,14 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                                 <div className="flex gap-2 mt-2.5 ml-12">
                                   <button
                                     onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); navigate('/pro/agenda', { state: { date: citaMatch[3] } }); }}
-                                    className="flex-1 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                                    className="flex-1 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-600 text-white text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
                                   >
                                     <span className="material-icons-round text-xs">calendar_today</span>
                                     Ver Agenda
                                   </button>
                                   <button
                                     onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); navigate('/pro/patients'); }}
-                                    className="flex-1 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
+                                    className="flex-1 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1"
                                   >
                                     <span className="material-icons-round text-xs">person_add</span>
                                     Crear Ficha
@@ -461,9 +461,9 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                                     <span className="material-icons-round text-base">directions_run</span>
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-black text-violet-600 uppercase tracking-wider">Paciente</p>
+                                    <p className="text-[11px] font-black text-violet-600 uppercase tracking-wider">Paciente</p>
                                     <p className={`text-sm leading-snug ${!n.read ? 'font-black text-slate-900' : 'font-medium text-slate-600'}`}>{n.title}</p>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{n.time}</p>
+                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{n.time}</p>
                                   </div>
                                   <button onClick={(e) => { e.stopPropagation(); removeNotification(n.id); }}
                                     className="w-6 h-6 rounded-lg hover:bg-slate-200 flex items-center justify-center shrink-0 transition-all">
@@ -473,7 +473,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                                 <div className="mt-2.5 ml-12">
                                   <button
                                     onClick={() => { if (!n.read) markNotificationRead(n.id); setShowNotifications(false); navigate(n.patientId ? `/pro/record/${n.patientId}` : '/pro/patients'); }}
-                                    className="py-1.5 px-4 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1"
+                                    className="py-1.5 px-4 rounded-lg bg-violet-500 hover:bg-violet-600 text-white text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1"
                                   >
                                     <span className="material-icons-round text-xs">description</span>
                                     Ver ficha
@@ -492,7 +492,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className={`text-sm leading-snug ${!n.read ? 'font-black text-slate-900' : 'font-medium text-slate-600'}`}>{n.title}</p>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
+                                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">{n.time}</p>
                                   </div>
                                   {!n.read && <div className="w-2 h-2 bg-slate-400 rounded-full shrink-0 mt-1.5" />}
                                 </div>
@@ -510,7 +510,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
                       <div className="border-t border-slate-100 p-3">
                         <button
                           onClick={() => { clearNotifications(); setShowNotifications(false); }}
-                          className="w-full text-center text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors py-2"
+                          className="w-full text-center text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors py-2"
                         >
                           Borrar todas
                         </button>

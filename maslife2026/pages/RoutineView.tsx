@@ -323,7 +323,7 @@ const RoutineView: React.FC = () => {
         </div>
         <div>
           <p className="text-sm font-black text-slate-900">Clínica Mas Life</p>
-          <p className="text-[10px] text-slate-400 uppercase tracking-widest">Rutina de ejercicios</p>
+          <p className="text-[11px] text-slate-400 uppercase tracking-widest">Rutina de ejercicios</p>
         </div>
       </header>
 
@@ -351,7 +351,7 @@ const RoutineView: React.FC = () => {
                       <span className={`material-icons-round text-lg shrink-0 ${m.done ? 'text-teal-500' : 'text-slate-400'}`}>{m.done ? 'task_alt' : 'radio_button_unchecked'}</span>
                       <div>
                         <p className={`text-sm font-bold ${m.done ? 'text-teal-700 line-through' : 'text-slate-700'}`}>{m.body}</p>
-                        <p className="text-[10px] text-slate-400">Tarea{m.done ? ' · completada ✓' : ' · toca para marcar hecha'}</p>
+                        <p className="text-[11px] text-slate-400">Tarea{m.done ? ' · completada ✓' : ' · toca para marcar hecha'}</p>
                       </div>
                     </button>
                   ) : (
@@ -390,12 +390,12 @@ const RoutineView: React.FC = () => {
             {sessionsPerWeek ? (
               <div className="text-right">
                 <p className="text-sm font-black text-teal-600">{weekCount}<span className="text-slate-400 font-bold">/{sessionsPerWeek}</span></p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest">esta semana</p>
+                <p className="text-[11px] text-slate-400 uppercase tracking-widest">esta semana</p>
               </div>
             ) : weekCount > 0 && (
               <div className="text-right">
                 <p className="text-sm font-black text-teal-600">{weekCount}</p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest">esta semana</p>
+                <p className="text-[11px] text-slate-400 uppercase tracking-widest">esta semana</p>
               </div>
             )}
           </div>
@@ -410,7 +410,7 @@ const RoutineView: React.FC = () => {
                 <p className="text-xs text-slate-500 mt-1">Antes de empezar, cuéntanos con cuánto dolor inicias.</p>
               </div>
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dolor al iniciar (1-10) · opcional</p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Dolor al iniciar (1-10) · opcional</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {Array.from({ length: 10 }, (_, n) => n + 1).map(n => {
                     const s = PAIN_STYLES[painBand(n)];
@@ -452,7 +452,7 @@ const RoutineView: React.FC = () => {
               <h2 className="text-sm font-black text-slate-900">¿Cómo te fue?</h2>
               {/* Dolor final */}
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dolor al terminar (1-10)</p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Dolor al terminar (1-10)</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {Array.from({ length: 10 }, (_, n) => n + 1).map(n => {
                     const s = PAIN_STYLES[painBand(n)];
@@ -467,7 +467,7 @@ const RoutineView: React.FC = () => {
               </div>
               {/* Esfuerzo percibido */}
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">¿Qué tan exigente fue?</p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">¿Qué tan exigente fue?</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {RPE_OPTIONS.map(o => (
                     <button key={o.v} onClick={() => setRpe(rpe === o.v ? null : o.v)}
@@ -479,7 +479,7 @@ const RoutineView: React.FC = () => {
               </div>
               {/* Síntoma */}
               <div className="space-y-1.5">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">¿Sentiste alguna molestia inusual?</p>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">¿Sentiste alguna molestia inusual?</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {SYMPTOMS.map(sy => (
                     <button key={sy} onClick={() => setSymptom(symptom === sy ? '' : sy)}
@@ -515,7 +515,7 @@ const RoutineView: React.FC = () => {
           </div>
           {/* Semáforo de dolor (leyenda única, minimalista) */}
           <div className="flex flex-col gap-1 pt-1 text-[11px] text-slate-500 leading-snug">
-            <p className="font-black text-[10px] uppercase tracking-widest text-slate-400">Escala de dolor (1-10)</p>
+            <p className="font-black text-[11px] uppercase tracking-widest text-slate-400">Escala de dolor (1-10)</p>
             <p><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${PAIN_STYLES.green.dot}`} />1-3 tolerable: puedes hacer el ejercicio</p>
             <p><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${PAIN_STYLES.yellow.dot}`} />4-5 precaución: menos intensidad y más descanso</p>
             <p><span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${PAIN_STYLES.red.dot}`} />6-10 no realizar el ejercicio y avisa a tu kinesiólogo</p>
@@ -587,7 +587,7 @@ const RoutineView: React.FC = () => {
                       </button>
                       {isDone && (
                         <div className="space-y-1.5 pt-1">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">¿Cuánto dolor sentiste? (1-10)</p>
+                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">¿Cuánto dolor sentiste? (1-10)</p>
                           <div className="flex gap-1.5 flex-wrap">
                             {Array.from({ length: 10 }, (_, n) => n + 1).map(n => {
                               const s = PAIN_STYLES[painBand(n)];
@@ -615,7 +615,7 @@ const RoutineView: React.FC = () => {
                       {/* Evidencia: grabar video 10s o adjuntar (foto/video) */}
                       {id && (
                         <div className="pt-2 border-t border-slate-100">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Enviar evidencia (opcional)</p>
+                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">Enviar evidencia (opcional)</p>
                           <EvidenceCapture routineId={id} itemId={item.id} count={item.evidenceCount || 0}
                             onUploaded={() => { /* el contador lo lleva el componente */ }} />
                         </div>

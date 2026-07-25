@@ -341,7 +341,7 @@ REGLAS:
           </div>
           <div>
             <h3 className="text-sm font-extrabold tracking-wide">Asistente MasLife</h3>
-            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+            <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
               Claude IA · Agenda + Búsqueda Web
             </p>
@@ -425,7 +425,7 @@ REGLAS:
             <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce"></div>
             <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
             <div className="w-2 h-2 bg-sky-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-            <span className="text-[10px] font-bold text-violet-600 uppercase tracking-widest">Procesando...</span>
+            <span className="text-[11px] font-bold text-violet-600 uppercase tracking-widest">Procesando...</span>
           </div>
         )}
         <div ref={chatEndRef} />
