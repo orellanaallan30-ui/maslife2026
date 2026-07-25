@@ -88,11 +88,11 @@ export const PsychScales: React.FC<Props> = ({ scales, onChange }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Escalas Estandarizadas</h3>
+        <h3 className="text-xs font-black uppercase tracking-[0.06em] text-slate-500">Escalas Estandarizadas</h3>
         <div className="flex gap-2 no-print">
           {(['phq9', 'gad7'] as const).map(t => (
             <button key={t} onClick={() => startScale(t)}
-              className="text-[10px] font-black text-violet-600 bg-violet-500/10 px-4 py-2.5 rounded-xl hover:bg-violet-500/20 transition-all uppercase tracking-widest">
+              className="text-[11px] font-black text-violet-600 bg-violet-500/10 px-4 py-2.5 rounded-xl hover:bg-violet-500/20 transition-all uppercase tracking-widest">
               Aplicar {SCALE_META[t].name}
             </button>
           ))}
@@ -105,7 +105,7 @@ export const PsychScales: React.FC<Props> = ({ scales, onChange }) => {
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-black text-slate-700">
               {SCALE_META[activeScale].name} — {SCALE_META[activeScale].label}
-              <span className="block text-[10px] font-bold text-slate-400 normal-case mt-0.5">
+              <span className="block text-[11px] font-bold text-slate-400 normal-case mt-0.5">
                 Durante las últimas 2 semanas, ¿con qué frecuencia ha tenido molestias por...?
               </span>
             </p>
@@ -120,7 +120,7 @@ export const PsychScales: React.FC<Props> = ({ scales, onChange }) => {
                   {OPTIONS.map((opt, val) => (
                     <button key={val}
                       onClick={() => setAnswers(prev => prev.map((a, j) => (j === i ? val : a)))}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition ${
+                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition ${
                         answers[i] === val
                           ? 'bg-violet-500 text-white border-violet-500'
                           : 'bg-white text-slate-500 border-slate-200 hover:border-violet-300'
@@ -136,13 +136,13 @@ export const PsychScales: React.FC<Props> = ({ scales, onChange }) => {
             <p className="text-sm font-black text-slate-700">
               Puntaje: {score}/{SCALE_META[activeScale].max}
               {complete && (
-                <span className={`ml-2 px-2.5 py-1 rounded-full text-[10px] font-black ${interpret(activeScale, score).cls}`}>
+                <span className={`ml-2 px-2.5 py-1 rounded-full text-[11px] font-black ${interpret(activeScale, score).cls}`}>
                   {interpret(activeScale, score).label}
                 </span>
               )}
             </p>
             <button onClick={saveResult} disabled={!complete}
-              className="px-5 py-2.5 bg-violet-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-violet-600 transition-all disabled:opacity-40">
+              className="px-5 py-2.5 bg-violet-500 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-violet-600 transition-all disabled:opacity-40">
               Guardar resultado
             </button>
           </div>
@@ -162,14 +162,14 @@ export const PsychScales: React.FC<Props> = ({ scales, onChange }) => {
             if (!results.length) return null;
             return (
               <div key={t} className="flex items-center gap-3 flex-wrap bg-slate-50/80 rounded-2xl border border-slate-200 px-4 py-3">
-                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest w-24 shrink-0">
+                <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest w-24 shrink-0">
                   {SCALE_META[t].name}
                 </span>
                 <div className="flex gap-2 flex-wrap">
                   {results.map((r, i) => {
                     const info = interpret(t, r.score);
                     return (
-                      <span key={i} className={`px-2.5 py-1 rounded-full text-[10px] font-black ${info.cls}`}
+                      <span key={i} className={`px-2.5 py-1 rounded-full text-[11px] font-black ${info.cls}`}
                         title={`${info.label} — ${r.date}`}>
                         {new Date(r.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}: {r.score}
                       </span>

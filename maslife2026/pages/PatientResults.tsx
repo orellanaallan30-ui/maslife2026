@@ -174,7 +174,7 @@ const PatientResults: React.FC = () => {
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Filtros de Búsqueda</h3>
                 {hasActiveFilters && (
-                  <button onClick={clearFilters} className="text-[10px] font-bold text-blue-600 uppercase tracking-wider hover:underline">
+                  <button onClick={clearFilters} className="text-[11px] font-bold text-blue-600 uppercase tracking-wider hover:underline">
                     Limpiar
                   </button>
                 )}
@@ -288,7 +288,7 @@ const PatientResults: React.FC = () => {
                     />
                     {doc.isVerified && (
                       <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-lg border-2 border-white">
-                        <span className="material-icons-round text-[10px]">verified</span>
+                        <span className="material-icons-round text-[11px]">verified</span>
                       </div>
                     )}
                   </div>
@@ -303,9 +303,9 @@ const PatientResults: React.FC = () => {
                       <span className="text-xs font-bold text-slate-500">{doc.city || 'Chile'}</span>
                     </div>
                     <div className="flex flex-wrap justify-center lg:justify-start gap-1.5">
-                      {doc.modalities?.online && <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-md">Online</span>}
-                      {doc.modalities?.inPerson && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md">Presencial</span>}
-                      {doc.modalities?.home && <span className="px-2.5 py-1 bg-teal-50 text-teal-600 text-[10px] font-bold rounded-md">Domicilio</span>}
+                      {doc.modalities?.online && <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-md">Online</span>}
+                      {doc.modalities?.inPerson && <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">Presencial</span>}
+                      {doc.modalities?.home && <span className="px-2.5 py-1 bg-teal-50 text-teal-600 text-[11px] font-bold rounded-md">Domicilio</span>}
                     </div>
                   </div>
 

@@ -1016,7 +1016,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
       <div className={fields.length === 0 ? 'mb-3 print:hidden' : 'mb-4'}>
         <button
           onClick={() => addSectionField(section)}
-          className="text-[10px] font-black text-primary bg-primary/5 px-4 py-2 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest mb-3"
+          className="text-[11px] font-black text-primary bg-primary/5 px-4 py-2 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest mb-3"
         >
           + Agregar campo
         </button>
@@ -1029,16 +1029,16 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     value={cf.label}
                     onChange={e => updateSectionField(section, idx, 'label', e.target.value)}
                     placeholder="Etiqueta..."
-                    className="flex-1 min-w-0 text-[10px] font-black uppercase tracking-widest ml-1 bg-transparent border-none p-0 focus:ring-0"
+                    className="flex-1 min-w-0 text-[11px] font-black uppercase tracking-widest ml-1 bg-transparent border-none p-0 focus:ring-0"
                     style={{ color: cf.color || '#475569' }}
                   />
                   <div className="flex items-center shrink-0 opacity-30 group-hover/cf:opacity-100 focus-within:opacity-100 transition-all no-print">
                     <button onClick={() => moveSectionField(section, idx, -1)} disabled={idx === 0} title="Subir"
-                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                      className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-primary disabled:opacity-20">
                       <span className="material-icons-round text-xs">arrow_upward</span>
                     </button>
                     <button onClick={() => moveSectionField(section, idx, 1)} disabled={idx === fields.length - 1} title="Bajar"
-                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                      className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-primary disabled:opacity-20">
                       <span className="material-icons-round text-xs">arrow_downward</span>
                     </button>
                     <button onClick={() => updateSectionField(section, idx, 'color', cycleFieldColor(cf.color))} title="Cambiar color"
@@ -1046,7 +1046,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       <span className="w-3 h-3 rounded-full inline-block border border-slate-300" style={{ background: cf.color || '#94a3b8' }} />
                     </button>
                     <button onClick={() => removeSectionField(section, idx)} title="Eliminar"
-                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-500">
+                      className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-500">
                       <span className="material-icons-round text-xs">delete</span>
                     </button>
                   </div>
@@ -1248,14 +1248,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             </div>
             <div className="min-w-0">
               <h1 className="text-sm lg:text-2xl font-black text-slate-900 tracking-tight truncate">{personalData.name}</h1>
-              <p className="text-[10px] lg:text-xs font-bold text-primary uppercase tracking-widest mt-0.5">Paciente Agenda Maslife Premium</p>
+              <p className="text-[11px] lg:text-xs font-bold text-primary uppercase tracking-widest mt-0.5">Paciente Agenda Maslife Premium</p>
             </div>
           </div>
           {/* Actions */}
           <div className="flex items-center gap-1.5 lg:gap-3 shrink-0">
             {/* Auto-save indicator — desktop only */}
             {autoSaveStatus !== 'idle' && (
-              <span className={`hidden lg:flex text-[10px] font-black uppercase tracking-widest items-center gap-1 transition-all ${autoSaveStatus === 'saving' ? 'text-amber-500' : 'text-emerald-500'}`}>
+              <span className={`hidden lg:flex text-[11px] font-black uppercase tracking-widest items-center gap-1 transition-all ${autoSaveStatus === 'saving' ? 'text-amber-500' : 'text-emerald-500'}`}>
                 <span className={`material-icons-round text-sm ${autoSaveStatus === 'saving' ? 'animate-spin' : ''}`}>
                   {autoSaveStatus === 'saving' ? 'sync' : 'check_circle'}
                 </span>
@@ -1265,7 +1265,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* PDF */}
             <button
               onClick={handleExportFicha}
-              className="p-2.5 lg:px-6 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-600 shadow-sm hover:bg-rose-100 transition-all border-b-[3px] lg:border-b-4 border-rose-300 active:border-b-0 active:translate-y-1"
+              className="p-2.5 lg:px-4 lg:py-3 rounded-xl lg:rounded-2xl font-black text-[11px] uppercase tracking-[0.05em] flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-600 shadow-sm hover:bg-rose-100 transition-all border-b-[3px] lg:border-b-4 border-rose-300 active:border-b-0 active:translate-y-1"
               title="Descargar Ficha como PDF"
             >
               <span className="material-icons-round text-lg">picture_as_pdf</span>
@@ -1274,7 +1274,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* ORDEN */}
             <button
               onClick={() => setShowOrdenModal(true)}
-              className="p-2.5 lg:px-6 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-sky-50 border border-sky-200 text-sky-600 shadow-sm hover:bg-sky-100 transition-all border-b-[3px] lg:border-b-4 border-sky-300 active:border-b-0 active:translate-y-1"
+              className="p-2.5 lg:px-4 lg:py-3 rounded-xl lg:rounded-2xl font-black text-[11px] uppercase tracking-[0.05em] flex items-center gap-2 bg-sky-50 border border-sky-200 text-sky-600 shadow-sm hover:bg-sky-100 transition-all border-b-[3px] lg:border-b-4 border-sky-300 active:border-b-0 active:translate-y-1"
               title="Emitir Orden Profesional"
             >
               <span className="material-icons-round text-lg">assignment</span>
@@ -1283,7 +1283,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* FHIR — desktop only */}
             <button
               onClick={handleExportFhir}
-              className="hidden lg:flex px-6 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] items-center gap-2 bg-violet-50 border border-violet-200 text-violet-600 shadow-sm hover:bg-violet-100 transition-all border-b-4 border-violet-300 active:border-b-0 active:translate-y-1"
+              className="hidden lg:flex px-4 py-3 rounded-2xl font-black text-[11px] uppercase tracking-[0.05em] items-center gap-2 bg-violet-50 border border-violet-200 text-violet-600 shadow-sm hover:bg-violet-100 transition-all border-b-4 border-violet-300 active:border-b-0 active:translate-y-1"
               title="Exportar registro en formato FHIR R4 (estándar interoperabilidad)"
             >
               <span className="material-icons-round text-lg">data_object</span>
@@ -1294,7 +1294,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <button
                 onClick={handleShareWithPatient}
                 disabled={shareLoading}
-                className="p-2.5 lg:px-6 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-600 shadow-sm hover:bg-emerald-100 transition-all border-b-[3px] lg:border-b-4 border-emerald-300 active:border-b-0 active:translate-y-1 disabled:opacity-50"
+                className="p-2.5 lg:px-4 lg:py-3 rounded-xl lg:rounded-2xl font-black text-[11px] uppercase tracking-[0.05em] flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-600 shadow-sm hover:bg-emerald-100 transition-all border-b-[3px] lg:border-b-4 border-emerald-300 active:border-b-0 active:translate-y-1 disabled:opacity-50"
                 title="Generar enlace de acceso temporal para el paciente (Ley 20.584)"
               >
                 {shareLoading
@@ -1305,7 +1305,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               </button>
               {shareLink && (
                 <div className="absolute right-0 top-full mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 w-72 lg:w-80 space-y-3">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Enlace para el paciente (30 días)</p>
+                  <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Enlace para el paciente (30 días)</p>
                   <div className="flex items-center gap-2 bg-slate-50 rounded-xl border border-slate-200 px-3 py-2">
                     <span className="text-xs text-slate-600 truncate flex-1">{shareLink}</span>
                     <button
@@ -1315,8 +1315,8 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       <span className="material-icons-round text-lg">content_copy</span>
                     </button>
                   </div>
-                  <p className="text-[10px] text-slate-400">El paciente puede acceder a su ficha sin login durante 30 días.</p>
-                  <button onClick={() => setShareLink(null)} className="text-[10px] text-slate-400 hover:text-slate-600">Cerrar</button>
+                  <p className="text-[11px] text-slate-500">El paciente puede acceder a su ficha sin login durante 30 días.</p>
+                  <button onClick={() => setShareLink(null)} className="text-[11px] text-slate-500 hover:text-slate-600">Cerrar</button>
                 </div>
               )}
             </div>
@@ -1324,13 +1324,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <button
               onClick={handleSaveAttention}
               disabled={isSaving || !isDirty}
-              className={`p-2.5 lg:px-10 lg:py-5 rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-emerald-500/50 border-b-[3px] lg:border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-400 border-b-[3px] lg:border-b-4 border-slate-200 cursor-not-allowed shadow-none'} disabled:opacity-70`}
+              className={`p-2.5 lg:px-6 lg:py-3 rounded-xl lg:rounded-2xl font-black text-[11px] uppercase tracking-[0.05em] flex items-center gap-2 lg:gap-3 transition-all ${isDirty ? 'bg-emerald-600 text-white shadow-emerald-500/50 border-b-[3px] lg:border-b-4 border-emerald-800 active:border-b-0 active:translate-y-1' : 'bg-slate-100 text-slate-500 border-b-[3px] lg:border-b-4 border-slate-200 cursor-not-allowed shadow-none'} disabled:opacity-70`}
             >
               <span className="material-icons-round text-lg">{isSaving ? 'sync' : 'save'}</span>
               <span className="hidden lg:inline">{isSaving ? 'Guardando...' : 'Guardar Ficha'}</span>
             </button>
             {/* AI Agent */}
-            <button onClick={() => setShowAiPanel(true)} className="p-2.5 lg:px-10 lg:py-5 bg-primary text-white rounded-xl lg:rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 lg:gap-3 border-b-[3px] lg:border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 shadow-cta hover:brightness-110 transition-all">
+            <button onClick={() => setShowAiPanel(true)} className="p-2.5 lg:px-6 lg:py-3 bg-primary text-white rounded-xl lg:rounded-2xl font-black text-[11px] uppercase tracking-[0.05em] flex items-center gap-2 lg:gap-3 border-b-[3px] lg:border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 shadow-cta hover:brightness-110 transition-all">
               <span className="material-icons-round text-lg">auto_awesome</span>
               <span className="hidden lg:inline">AgenteMasLife</span>
             </button>
@@ -1377,7 +1377,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 print:border-none print:shadow-none">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Identificación del Paciente</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Identificación del Paciente</h2>
               <button onClick={addCustomField} className="text-xs font-black text-primary bg-primary/5 px-6 py-3 rounded-xl no-print hover:bg-primary/10 transition-all">+ AGREGAR CAMPO</button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
@@ -1390,7 +1390,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 { label: 'Teléfono', val: personalData.phone, k: 'phone' }
               ].map(f => (
                 <div key={f.k} className="space-y-2">
-                  <label htmlFor={`personal-${f.k}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{f.label}</label>
+                  <label htmlFor={`personal-${f.k}`} className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">{f.label}</label>
                   <input
                     id={`personal-${f.k}`}
                     type={f.t || 'text'}
@@ -1408,7 +1408,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       value={cf.label}
                       onChange={e => { updateCustomField(idx, 'label', e.target.value); setIsDirtyTrue(); }}
                       placeholder="Etiqueta (ej: Deporte)..."
-                      className="text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
+                      className="text-[11px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0 w-2/3"
                     />
                     <button onClick={() => { removeCustomField(idx); setIsDirtyTrue(); }} className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-rose-500 no-print transition-all">
                       <span className="material-icons-round text-xs">delete</span>
@@ -1423,7 +1423,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               ))}
 
               <div className="lg:col-span-3 space-y-2">
-                <label htmlFor="dx-diagnoses" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Diagnóstico Principal</label>
+                <label htmlFor="dx-diagnoses" className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Diagnóstico Principal</label>
                 <input id="dx-diagnoses" value={personalData.diagnoses} onChange={e => { setPersonalData({ ...personalData, diagnoses: e.target.value }); setIsDirtyTrue(); }} className="w-full bg-primary/5 text-primary shadow-inner border border-primary/20 rounded-2xl py-5 px-6 font-black text-lg print:bg-white" placeholder="Ej: Esguince de tobillo grado II..." />
               </div>
             </div>
@@ -1435,10 +1435,10 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           <div className="flex flex-wrap gap-2 no-print">
             {(['initial', 'final', 'compare'] as const).map(tab => (
               <button key={tab} onClick={() => setKiEvalTab(tab)}
-                className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] transition-all border ${
+                className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-[0.04em] transition-all border ${
                   kiEvalTab === tab
                     ? tab === 'compare' ? 'bg-slate-800 text-white border-slate-800 shadow-md' : tab === 'initial' ? 'bg-primary text-white border-primary shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md'
-                    : 'bg-white text-slate-400 border-slate-200 hover:border-primary hover:text-primary'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'
                 }`}>
                 {tab === 'initial' ? 'EV1 — Inicial' : tab === 'final' ? 'EV2 — Final' : 'Comparar EV1 vs EV2'}
               </button>
@@ -1451,7 +1451,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Header */}
             <div className="flex flex-wrap justify-between items-start gap-4">
               <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">
+                <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">
                   {kiEvalTab === 'initial' ? 'Evaluación Kinesiológica — EV1 Inicial' : 'Evaluación Kinesiológica — EV2 Final'}
                 </h2>
                 <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Análisis postural · ROM · Tests especiales · Visión IA real</p>
@@ -1460,7 +1460,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* ── 1. Datos Antropométricos ─────────────────────── */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Datos Antropométricos</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Datos Antropométricos</h3>
               {renderSectionFields('ki-antropometria')}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
@@ -1471,7 +1471,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   { label: 'Long. MMII Izq. (cm)', key: 'legL', placeholder: '88' },
                 ].map(({ label, key, placeholder }) => (
                   <div key={key} className="space-y-1">
-                    <label htmlFor={`ki-anthro-${key}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
+                    <label htmlFor={`ki-anthro-${key}`} className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
                     <input
                       id={`ki-anthro-${key}`}
                       type="number"
@@ -1485,13 +1485,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 {/* IMC y discrepancia calculados */}
                 {kiImc && (
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">IMC</label>
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">IMC</label>
                     <div className="w-full bg-primary/5 border border-primary/20 rounded-2xl py-3 px-4 font-black text-primary text-sm">{kiImc} kg/m²</div>
                   </div>
                 )}
                 {kiDiscrep && Number(kiDiscrep) > 0 && (
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Discrepancia MMII</label>
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Discrepancia MMII</label>
                     <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl py-3 px-4 font-black text-amber-700 text-sm">{kiDiscrep} cm</div>
                   </div>
                 )}
@@ -1500,7 +1500,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* ── 2. Evaluación Postural Estructurada ──────────── */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Evaluación Postural Estructurada</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Evaluación Postural Estructurada</h3>
               {renderSectionFields('ki-postural')}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 {([
@@ -1513,7 +1513,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   { label: 'Pies', key: 'feet', options: ['Normal','Pronación bilateral','Supinación bilateral','Pie plano bilateral','Pie cavo bilateral','Pronación unilateral Der.','Pronación unilateral Izq.'] },
                 ] as { label: string; key: keyof typeof kiPostural; options: string[] }[]).map(({ label, key, options }) => (
                   <div key={key} className="space-y-1">
-                    <label htmlFor={`ki-postural-${String(key)}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
+                    <label htmlFor={`ki-postural-${String(key)}`} className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">{label}</label>
                     <select
                       id={`ki-postural-${String(key)}`}
                       value={(kiPostural as any)[key]}
@@ -1527,7 +1527,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 ))}
               </div>
               <div className="mt-3 space-y-1">
-                <label htmlFor="ki-postural-observations" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Observaciones Posturales</label>
+                <label htmlFor="ki-postural-observations" className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Observaciones Posturales</label>
                 <textarea
                   id="ki-postural-observations"
                   value={kiPostural.observations}
@@ -1541,7 +1541,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* ── 3. ROM ─────────────────────────────────────────── */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Rango de Movimiento (ROM) en grados</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Rango de Movimiento (ROM) en grados</h3>
               {renderSectionFields('ki-rom')}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {romDefs.map((def, idx) => (
@@ -1551,23 +1551,23 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         value={def.label}
                         onChange={e => updateRomDef(def.id, { label: e.target.value })}
                         placeholder="Nombre..."
-                        className="flex-1 min-w-0 text-[10px] font-black uppercase tracking-widest ml-1 bg-transparent border-none p-0 focus:ring-0"
+                        className="flex-1 min-w-0 text-[11px] font-black uppercase tracking-widest ml-1 bg-transparent border-none p-0 focus:ring-0"
                         style={{ color: def.color || '#475569' }}
                       />
-                      <span className="text-[10px] font-black text-slate-400 shrink-0">(N:</span>
+                      <span className="text-[11px] font-black text-slate-500 shrink-0">(N:</span>
                       <input
                         value={def.normal}
                         onChange={e => updateRomDef(def.id, { normal: e.target.value })}
-                        className="w-7 shrink-0 text-[10px] font-black text-slate-400 bg-transparent border-none p-0 focus:ring-0 text-center"
+                        className="w-7 shrink-0 text-[11px] font-black text-slate-500 bg-transparent border-none p-0 focus:ring-0 text-center"
                       />
-                      <span className="text-[10px] font-black text-slate-400 shrink-0">°)</span>
+                      <span className="text-[11px] font-black text-slate-500 shrink-0">°)</span>
                       <div className="flex items-center shrink-0 opacity-30 group-hover/rom:opacity-100 focus-within:opacity-100 transition-all no-print">
                         <button onClick={() => moveRomDef(def.id, -1)} disabled={idx === 0} title="Subir"
-                          className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                          className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-primary disabled:opacity-20">
                           <span className="material-icons-round text-xs">arrow_upward</span>
                         </button>
                         <button onClick={() => moveRomDef(def.id, 1)} disabled={idx === romDefs.length - 1} title="Bajar"
-                          className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-primary disabled:opacity-20">
+                          className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-primary disabled:opacity-20">
                           <span className="material-icons-round text-xs">arrow_downward</span>
                         </button>
                         <button onClick={() => updateRomDef(def.id, { color: cycleFieldColor(def.color) })} title="Cambiar color"
@@ -1575,7 +1575,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                           <span className="w-3 h-3 rounded-full inline-block border border-slate-300" style={{ background: def.color || '#94a3b8' }} />
                         </button>
                         <button onClick={() => removeRomDef(def.id)} title="Eliminar"
-                          className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-500">
+                          className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-500">
                           <span className="material-icons-round text-xs">delete</span>
                         </button>
                       </div>
@@ -1589,14 +1589,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         className="w-full bg-white shadow-input-inset border rounded-2xl py-3 px-3 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
                         style={{ borderColor: def.color ? `${def.color}66` : '#cbd5e1' }}
                       />
-                      <span className="text-xs font-black text-slate-400">°</span>
+                      <span className="text-xs font-black text-slate-500">°</span>
                     </div>
                   </div>
                 ))}
               </div>
               <button
                 onClick={addRomDef}
-                className="mt-3 text-[10px] font-black text-primary bg-primary/5 px-4 py-2 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest"
+                className="mt-3 text-[11px] font-black text-primary bg-primary/5 px-4 py-2 rounded-xl no-print hover:bg-primary/10 transition-all uppercase tracking-widest"
               >
                 + Agregar campo ROM
               </button>
@@ -1604,7 +1604,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* ── 4. Tests Especiales ────────────────────────────── */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Tests Especiales</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Tests Especiales</h3>
               {renderSectionFields('ki-tests')}
               {/* Selector de zona afectada → tests recomendados */}
               <div className="mb-4 space-y-3 no-print">
@@ -1613,7 +1613,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     <button
                       key={region}
                       onClick={() => setTestRegion(r => r === region ? '' : region)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border ${
                         testRegion === region
                           ? 'bg-primary text-white border-primary shadow-sm'
                           : 'bg-white text-slate-500 border-slate-200 hover:border-primary/40 hover:text-primary'
@@ -1625,18 +1625,18 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 </div>
                 {testRegion && (
                   <div className="flex flex-wrap items-center gap-2 p-3 bg-primary/5 rounded-2xl border border-primary/10">
-                    <p className="w-full text-[9px] font-black text-primary uppercase tracking-widest">Tests recomendados — {testRegion}</p>
+                    <p className="w-full text-[11px] font-black text-primary uppercase tracking-widest">Tests recomendados — {testRegion}</p>
                     {TEST_CATALOG[testRegion].filter(t => !testDefs.includes(t)).map(t => (
                       <button
                         key={t}
                         onClick={() => addTest(t)}
-                        className="px-3 py-1.5 rounded-xl text-[10px] font-bold bg-white text-slate-600 border border-slate-200 hover:border-primary hover:text-primary transition-all"
+                        className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white text-slate-600 border border-slate-200 hover:border-primary hover:text-primary transition-all"
                       >
                         + {t}
                       </button>
                     ))}
                     {TEST_CATALOG[testRegion].every(t => testDefs.includes(t)) && (
-                      <p className="text-[10px] text-slate-400 italic">Todos los tests de esta zona ya están agregados.</p>
+                      <p className="text-[11px] text-slate-500 italic">Todos los tests de esta zona ya están agregados.</p>
                     )}
                   </div>
                 )}
@@ -1651,7 +1651,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <button
                     onClick={() => { addTest(customTestName); setCustomTestName(''); }}
                     disabled={!customTestName.trim()}
-                    className="px-5 rounded-2xl bg-primary text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40 transition-all"
+                    className="px-5 rounded-2xl bg-primary text-white text-[11px] font-black uppercase tracking-widest disabled:opacity-40 transition-all"
                   >
                     Agregar
                   </button>
@@ -1659,7 +1659,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               </div>
 
               {testDefs.length === 0 ? (
-                <p className="text-xs text-slate-400 italic py-2">Escoge la zona afectada del paciente para ver los tests recomendados, o agrega uno propio.</p>
+                <p className="text-xs text-slate-500 italic py-2">Escoge la zona afectada del paciente para ver los tests recomendados, o agrega uno propio.</p>
               ) : (
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                   {testDefs.map(test => (
@@ -1668,12 +1668,12 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         <input
                           defaultValue={test}
                           onBlur={e => { const nn = e.target.value.trim(); if (nn && nn !== test) renameTest(test, nn); else e.target.value = test; }}
-                          className="flex-1 min-w-0 text-[10px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0"
+                          className="flex-1 min-w-0 text-[11px] font-black text-slate-600 uppercase tracking-widest bg-transparent border-none p-0 focus:ring-0"
                         />
                         <button
                           onClick={() => removeTest(test)}
                           title="Quitar test"
-                          className="shrink-0 w-6 h-6 flex items-center justify-center text-slate-300 hover:text-rose-500 opacity-100 lg:opacity-40 lg:group-hover/test:opacity-100 transition-all no-print"
+                          className="shrink-0 w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-500 opacity-100 lg:opacity-40 lg:group-hover/test:opacity-100 transition-all no-print"
                         >
                           <span className="material-icons-round text-xs">close</span>
                         </button>
@@ -1683,12 +1683,12 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                           <button
                             key={v}
                             onClick={() => { setKiTests(p => ({ ...p, [test]: v })); setIsDirtyTrue(); }}
-                            className={`flex-1 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wide transition-all ${
+                            className={`flex-1 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wide transition-all ${
                               kiTests[test] === v
                                 ? v === 'pos' ? 'bg-rose-500 text-white shadow-sm'
                                   : v === 'neg' ? 'bg-emerald-500 text-white shadow-sm'
                                   : 'bg-slate-600 text-white shadow-sm'
-                                : 'bg-white text-slate-400 border border-slate-200 hover:border-slate-300'
+                                : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-300'
                             }`}
                           >{v === 'ne' ? 'N/E' : v.charAt(0).toUpperCase() + v.slice(1)}</button>
                         ))}
@@ -1704,12 +1704,12 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 overflow-hidden relative">
             <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
               <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
+                <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
                 <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Claude Vision — procesa las fotografías reales del paciente</p>
               </div>
               <div className="flex bg-slate-50/80 shadow-inner border border-slate-200 p-2 rounded-2xl no-print">
                 {(['Postural', 'Marcha', 'Musculoesquelético'] as const).map(t => (
-                  <button key={t} onClick={() => setAnalysisType(t)} className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${analysisType === t ? 'bg-white shadow-sm border border-slate-100 text-primary scale-105' : 'text-slate-400 hover:text-slate-600'}`}>{t}</button>
+                  <button key={t} onClick={() => setAnalysisType(t)} className={`px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.04em] transition-all ${analysisType === t ? 'bg-white shadow-sm border border-slate-100 text-primary scale-105' : 'text-slate-500 hover:text-slate-600'}`}>{t}</button>
                 ))}
               </div>
             </div>
@@ -1721,7 +1721,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <div className="grid grid-cols-2 gap-4">
                   {(['Anterior','Posterior','Lateral Der.','Lateral Izq.'] as const).map((label, idx) => (
                     <div key={label} className="space-y-1">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest text-center">{label}</p>
+                      <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest text-center">{label}</p>
                       {analysisImages[idx] ? (
                         <div className="relative aspect-square rounded-blob-md overflow-hidden border-4 border-slate-50 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
                           <img src={analysisImages[idx]} className="w-full h-full object-cover" alt={label} />
@@ -1735,9 +1735,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                           </div>
                         </div>
                       ) : (
-                        <button onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="aspect-square w-full rounded-blob-md border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-300 hover:border-primary hover:text-primary transition-all no-print group">
+                        <button onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="aspect-square w-full rounded-blob-md border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-500 hover:border-primary hover:text-primary transition-all no-print group">
                           <span className="material-icons-round text-3xl group-hover:scale-110 transition-transform">add_a_photo</span>
-                          <span className="text-[9px] font-black uppercase tracking-widest">Cargar</span>
+                          <span className="text-[11px] font-black uppercase tracking-widest">Cargar</span>
                         </button>
                       )}
                     </div>
@@ -1748,7 +1748,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <button
                   onClick={runAdvancedAnalysis}
                   disabled={isAnalyzing || analysisImages.filter(Boolean).length === 0}
-                  className="w-full py-6 bg-slate-900 border-b-4 border-slate-800 text-white rounded-blob-md font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-pop active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:border-b-4 no-print"
+                  className="w-full py-6 bg-slate-900 border-b-4 border-slate-800 text-white rounded-blob-md font-black text-[11px] uppercase tracking-[0.05em] flex items-center justify-center gap-3 shadow-pop active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:border-b-4 no-print"
                 >
                   <span className={`material-icons-round ${isAnalyzing ? 'animate-spin' : ''}`}>{isAnalyzing ? 'sync' : 'biotech'}</span>
                   {isAnalyzing ? 'Procesando imágenes con IA...' : `Ejecutar Análisis ${analysisType}`}
@@ -1758,7 +1758,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   onClick={() => setShowBiomechReport(true)}
                   disabled={!biomechReport}
                   title={biomechReport ? 'Ver informe biomecánico visual' : 'Ejecuta primero un análisis con IA'}
-                  className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-500 border-b-4 border-amber-600 text-slate-950 rounded-blob-md font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 shadow-amber-500/50 active:border-b-0 active:translate-y-1 hover:brightness-105 transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4 no-print"
+                  className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-500 border-b-4 border-amber-600 text-slate-950 rounded-blob-md font-black text-[11px] uppercase tracking-[0.05em] flex items-center justify-center gap-3 shadow-amber-500/50 active:border-b-0 active:translate-y-1 hover:brightness-105 transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4 no-print"
                 >
                   <span className="material-icons-round">insights</span>
                   Informe Visual — Postura · Simetrías · ROM
@@ -1779,10 +1779,10 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   {isAnalyzing ? (
                     <div className="h-full flex flex-col items-center justify-center space-y-6 py-20">
                       <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                      <p className="text-xs font-black text-primary uppercase tracking-[0.3em] animate-pulse">Procesando anatomía digital...</p>
+                      <p className="text-xs font-black text-primary uppercase tracking-[0.06em] animate-pulse">Procesando anatomía digital...</p>
                     </div>
                   ) : (
-                    analysisResult || <div className="text-center py-20 text-slate-300 italic">Cargue fotografías posturales y ejecute el análisis para que la IA evalúe lo que ve en las imágenes reales.</div>
+                    analysisResult || <div className="text-center py-20 text-slate-500 italic">Cargue fotografías posturales y ejecute el análisis para que la IA evalúe lo que ve en las imágenes reales.</div>
                   )}
                 </div>
               </div>
@@ -1794,21 +1794,21 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           {kiEvalTab === 'compare' && (
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 overflow-hidden relative space-y-10">
             <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-slate-800 pl-4">Comparación EV1 vs EV2</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-slate-800 pl-4">Comparación EV1 vs EV2</h2>
               <p className="text-xs font-bold text-slate-500 uppercase mt-2 tracking-widest pl-5">Evolución kinesiológica del paciente</p>
             </div>
             {renderSectionFields('comparacion')}
 
             {/* Fotos comparativas */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Fotografías Comparativas</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Fotografías Comparativas</h3>
               <div className="grid gap-2" style={{ gridTemplateColumns: 'auto repeat(4, 1fr)' }}>
                 <div></div>
                 {(['Anterior','Posterior','Lat. Der.','Lat. Izq.'] as const).map(l => (
-                  <div key={l} className="text-[9px] font-black text-slate-400 uppercase text-center tracking-widest pb-1">{l}</div>
+                  <div key={l} className="text-[11px] font-black text-slate-500 uppercase text-center tracking-widest pb-1">{l}</div>
                 ))}
                 {(['initial','final'] as const).map(ev => (<React.Fragment key={ev}>
-                  <div className={`text-[9px] font-black uppercase tracking-widest flex items-center pr-2 ${ev === 'initial' ? 'text-primary' : 'text-emerald-600'}`}>{ev === 'initial' ? 'EV1' : 'EV2'}</div>
+                  <div className={`text-[11px] font-black uppercase tracking-widest flex items-center pr-2 ${ev === 'initial' ? 'text-primary' : 'text-emerald-600'}`}>{ev === 'initial' ? 'EV1' : 'EV2'}</div>
                   {[0,1,2,3].map(idx => (
                     <div key={idx}>
                       {kiData[ev].images[idx] ? (
@@ -1828,14 +1828,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* Datos Antropométricos comparativos */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Datos Antropométricos</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Datos Antropométricos</h3>
               <div className="overflow-auto rounded-2xl border border-slate-100">
                 <table className="w-full text-xs">
                   <thead className="bg-slate-50">
                     <tr>
                       <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Parámetro</th>
                       <th className="px-4 py-3 font-black text-primary uppercase tracking-wider text-center">EV1</th>
-                      <th className="px-4 py-3 font-black text-slate-400 uppercase tracking-wider text-center">Δ</th>
+                      <th className="px-4 py-3 font-black text-slate-500 uppercase tracking-wider text-center">Δ</th>
                       <th className="px-4 py-3 font-black text-emerald-600 uppercase tracking-wider text-center">EV2</th>
                     </tr>
                   </thead>
@@ -1859,7 +1859,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         <tr key={label} className="hover:bg-slate-50/50">
                           <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
                           <td className="px-4 py-3 text-center font-bold text-primary">{v1 || '—'}</td>
-                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-300' : deltaNum > 0 ? 'text-emerald-600' : deltaNum < 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-500' : deltaNum > 0 ? 'text-emerald-600' : deltaNum < 0 ? 'text-rose-500' : 'text-slate-500'}`}>
                             {delta ? (deltaNum > 0 ? '+' : '') + delta : '—'}
                           </td>
                           <td className="px-4 py-3 text-center font-bold text-emerald-600">{v2 || '—'}</td>
@@ -1873,7 +1873,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* Evaluación Postural comparativa */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Evaluación Postural</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Evaluación Postural</h3>
               <div className="overflow-auto rounded-2xl border border-slate-100">
                 <table className="w-full text-xs">
                   <thead className="bg-slate-50">
@@ -1908,14 +1908,14 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* ROM comparativo */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Rango de Movimiento (ROM)</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Rango de Movimiento (ROM)</h3>
               <div className="overflow-auto rounded-2xl border border-slate-100">
                 <table className="w-full text-xs">
                   <thead className="bg-slate-50">
                     <tr>
                       <th className="text-left px-4 py-3 font-black text-slate-500 uppercase tracking-wider">Movimiento</th>
                       <th className="px-4 py-3 font-black text-primary uppercase tracking-wider text-center">EV1 (°)</th>
-                      <th className="px-4 py-3 font-black text-slate-400 uppercase tracking-wider text-center">Δ</th>
+                      <th className="px-4 py-3 font-black text-slate-500 uppercase tracking-wider text-center">Δ</th>
                       <th className="px-4 py-3 font-black text-emerald-600 uppercase tracking-wider text-center">EV2 (°)</th>
                     </tr>
                   </thead>
@@ -1937,7 +1937,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         <tr key={label} className="hover:bg-slate-50/50">
                           <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
                           <td className="px-4 py-3 text-center font-bold text-primary">{r1 || '—'}</td>
-                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-300' : dn > 0 ? 'text-emerald-600' : dn < 0 ? 'text-rose-500' : 'text-slate-400'}`}>
+                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-500' : dn > 0 ? 'text-emerald-600' : dn < 0 ? 'text-rose-500' : 'text-slate-500'}`}>
                             {delta ? (dn > 0 ? '+' : '') + delta : '—'}
                           </td>
                           <td className="px-4 py-3 text-center font-bold text-emerald-600">{r2 || '—'}</td>
@@ -1945,7 +1945,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       );
                     })}
                     {!(['CueFlex','CueExt','CueRotD','CueRotI','HomFlex','HomAbd','ColFlex','ColExt','CadFlex','CadExt','RodFlex','RodExt','TobFlex','TobExt'].some(k => kiData.initial.rom[k] || kiData.final.rom[k])) && (
-                      <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-300 italic">Sin datos de ROM registrados en ninguna evaluación</td></tr>
+                      <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500 italic">Sin datos de ROM registrados en ninguna evaluación</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -1954,27 +1954,27 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* Tests Especiales comparativos */}
             <div>
-              <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Tests Especiales</h3>
+              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Tests Especiales</h3>
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
                 {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => {
                   const t1 = kiData.initial.tests[test];
                   const t2 = kiData.final.tests[test];
                   const chip = (val: string | undefined) => {
-                    if (!val) return <span className="px-2 py-0.5 rounded-lg text-[9px] font-black bg-slate-100 text-slate-300 uppercase">N/E</span>;
+                    if (!val) return <span className="px-2 py-0.5 rounded-lg text-[11px] font-black bg-slate-100 text-slate-600 uppercase">N/E</span>;
                     const color = val === 'pos' ? 'bg-rose-100 text-rose-600' : val === 'neg' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500';
-                    return <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${color}`}>{val === 'ne' ? 'N/E' : val === 'pos' ? 'Pos' : 'Neg'}</span>;
+                    return <span className={`px-2 py-0.5 rounded-lg text-[11px] font-black uppercase ${color}`}>{val === 'ne' ? 'N/E' : val === 'pos' ? 'Pos' : 'Neg'}</span>;
                   };
                   return (
                     <div key={test} className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">{test}</p>
+                      <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">{test}</p>
                       <div className="flex items-center gap-2">
                         <div className="flex flex-col items-center gap-0.5">
-                          <span className="text-[8px] text-primary font-black uppercase">EV1</span>
+                          <span className="text-[10px] text-primary font-black uppercase">EV1</span>
                           {chip(t1)}
                         </div>
-                        <span className="material-icons-round text-slate-300 text-sm">arrow_forward</span>
+                        <span className="material-icons-round text-slate-500 text-sm">arrow_forward</span>
                         <div className="flex flex-col items-center gap-0.5">
-                          <span className="text-[8px] text-emerald-600 font-black uppercase">EV2</span>
+                          <span className="text-[10px] text-emerald-600 font-black uppercase">EV2</span>
                           {chip(t2)}
                         </div>
                       </div>
@@ -2003,7 +2003,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               { l: 'Temp (°C)', k: 'temperature', c: 'text-amber-500' }
             ].map(v => (
               <div key={v.k} className="bg-white p-8 rounded-blob-lg border border-slate-100 shadow-section text-center group hover:-translate-y-1 hover:shadow-xl transition-all">
-                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">{v.l}</p>
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-4">{v.l}</p>
                 <input type="number" value={(vitals as any)[v.k]} onChange={e => { setVitals({ ...vitals, [v.k]: Number(e.target.value) }); setIsDirtyTrue(); }} className={`w-full bg-transparent border-none p-0 text-4xl font-black ${v.c} text-center focus:ring-0`} />
               </div>
             ))}
@@ -2011,7 +2011,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           {specialtyKey === 'nutricion' && (
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-10">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
+            <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-emerald-500 pl-4">Evaluación Nutricional — Calculadora Clínica</h2>
             {renderSectionFields('nutricion')}
 
             {/* Inputs antropométricos */}
@@ -2023,7 +2023,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 { l: 'Circ. Cadera (cm)', v: nutCadera,  set: (n: number) => { setNutCadera(n);  setIsDirtyTrue(); } },
               ].map((f, idx) => (
                 <div key={f.l} className="space-y-2">
-                  <label htmlFor={`nut-antropo-${idx}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
+                  <label htmlFor={`nut-antropo-${idx}`} className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                   <input id={`nut-antropo-${idx}`} type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
                     className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                 </div>
@@ -2033,7 +2033,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Género y nivel de actividad */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Género Biológico</label>
+                <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Género Biológico</label>
                 <div className="flex gap-3">
                   {(['Femenino', 'Masculino'] as Gender[]).map(g => (
                     <button key={g} onClick={() => { setNutGender(g); setIsDirtyTrue(); }}
@@ -2044,7 +2044,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 </div>
               </div>
               <div className="space-y-3">
-                <label htmlFor="nut-activity-level" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Nivel de Actividad Física</label>
+                <label htmlFor="nut-activity-level" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Nivel de Actividad Física</label>
                 <select id="nut-activity-level" value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
                   {(Object.entries(ACTIVITY_FACTORS) as [ActivityLevel, { label: string; factor: number }][]).map(([k, v]) => (
@@ -2064,22 +2064,22 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   { l: 'Rel. C/C',        val: nutMetrics.whr || '—',     unit: '',      sub: nutMetrics.whrClassification.label, col: nutMetrics.whrClassification.color },
                 ].map(card => (
                   <div key={card.l} className="bg-slate-50 rounded-blob-md p-8 border border-slate-100 text-center shadow-inner">
-                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3">{card.l}</p>
+                    <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-3">{card.l}</p>
                     <p className={`text-3xl font-black ${card.col}`}>{card.val}</p>
-                    {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
+                    {card.unit && <p className="text-[11px] text-slate-500 font-bold mt-1">{card.unit}</p>}
                     <p className={`text-xs font-black mt-2 ${card.col}`}>{card.sub}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 bg-slate-50 rounded-blob-md border border-dashed border-slate-200 text-slate-400 text-sm font-bold">
+              <div className="text-center py-8 bg-slate-50 rounded-blob-md border border-dashed border-slate-200 text-slate-500 text-sm font-bold">
                 Ingresa peso y talla para calcular automáticamente IMC, TMB y GET
               </div>
             )}
 
             {/* ── Composición Corporal ──────────────────────────────── */}
             <div className="space-y-6 border-t border-slate-100 pt-8">
-              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-emerald-400 pl-4">
+              <h3 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-emerald-400 pl-4">
                 Composición Corporal Tetracompartimental
               </h3>
 
@@ -2093,7 +2093,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   { l: 'Sum. 8 Pliegues (mm)', v: nutSum8Pliegues, set: (n: number) => { setNutSum8Pliegues(n); setIsDirtyTrue(); } },
                 ].map((f, idx) => (
                   <div key={f.l} className="space-y-2">
-                    <label htmlFor={`nut-composicion-${idx}`} className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
+                    <label htmlFor={`nut-composicion-${idx}`} className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                     <input id={`nut-composicion-${idx}`} type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
                       className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
                   </div>
@@ -2110,9 +2110,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     { l: 'Índ. Musc. Óseo',val: nutIndiceMuscularOseo, unit: '',  col: 'text-blue-600' },
                   ].map(card => (
                     <div key={card.l} className="bg-slate-50 rounded-blob-md p-6 border border-slate-100 text-center shadow-inner">
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">{card.l}</p>
+                      <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2">{card.l}</p>
                       <p className={`text-2xl font-black ${card.col}`}>{card.val || '—'}</p>
-                      {card.unit && <p className="text-[10px] text-slate-400 font-bold mt-1">{card.unit}</p>}
+                      {card.unit && <p className="text-[11px] text-slate-500 font-bold mt-1">{card.unit}</p>}
                     </div>
                   ))}
                 </div>
@@ -2138,7 +2138,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 ];
                 return (
                   <div className="space-y-3">
-                    <h4 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                    <h4 className="text-xs font-black uppercase tracking-[0.06em] text-slate-500 flex items-center gap-2">
                       <span className="material-icons-round text-base text-emerald-500">trending_up</span>
                       Tabla de Evolución
                     </h4>
@@ -2146,19 +2146,19 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="bg-slate-50 border-b border-slate-200">
-                            <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">Campo</th>
+                            <th className="px-4 py-3 text-[11px] font-black text-slate-500 uppercase tracking-widest text-left">Campo</th>
                             <th className="px-4 py-3 text-center">
-                              <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-wider">
+                              <span className="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-black uppercase tracking-wider">
                                 EV 1 · {String(ev1.date)}
                               </span>
                             </th>
                             <th className="px-4 py-3 text-center">
-                              <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider">
+                              <span className="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-black uppercase tracking-wider">
                                 EV 2 · {String(ev2.date)}
                               </span>
                             </th>
                             <th className="px-4 py-3 text-center">
-                              <span className="inline-block px-3 py-1 rounded-full bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider">DIF</span>
+                              <span className="inline-block px-3 py-1 rounded-full bg-slate-800 text-white text-[11px] font-black uppercase tracking-wider">DIF</span>
                             </th>
                           </tr>
                         </thead>
@@ -2169,7 +2169,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                             const dif = +(v2 - v1).toFixed(3);
                             const improved = row.betterDown ? dif < 0 : dif > 0;
                             const neutral = dif === 0;
-                            const difColor = neutral ? 'text-slate-400' : improved ? 'text-emerald-600' : 'text-rose-500';
+                            const difColor = neutral ? 'text-slate-500' : improved ? 'text-emerald-600' : 'text-rose-500';
                             const arrow = neutral ? '→' : dif < 0 ? '↓' : '↑';
                             return (
                               <tr key={row.key} className={`border-b border-slate-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}`}>
@@ -2207,7 +2207,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               const imcLine = pts.every(p => p.imc > 0) ? build(pts.map(p => p.imc)) : null;
               return (
                 <div className="space-y-3">
-                  <h4 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2">
+                  <h4 className="text-xs font-black uppercase tracking-[0.06em] text-slate-500 flex items-center gap-2">
                     <span className="material-icons-round text-base text-emerald-500">show_chart</span>
                     Curva de Peso {imcLine ? 'e IMC' : ''}
                   </h4>
@@ -2228,7 +2228,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         );
                       })}
                     </svg>
-                    <div className="flex gap-4 pt-1 text-[10px] font-black uppercase tracking-widest">
+                    <div className="flex gap-4 pt-1 text-[11px] font-black uppercase tracking-widest">
                       <span className="text-emerald-600">━ Peso (kg)</span>
                       {imcLine && <span className="text-violet-400">╌ IMC</span>}
                     </div>
@@ -2240,13 +2240,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Recordatorio 24h + historia dietética */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-2">
-                <label htmlFor="nut-recall24" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Recordatorio 24 Horas</label>
+                <label htmlFor="nut-recall24" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Recordatorio 24 Horas</label>
                 <textarea id="nut-recall24" value={nutRecall24} onChange={e => { setNutRecall24(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Todo lo que el paciente comió y bebió en las últimas 24 horas, con horarios y cantidades aproximadas..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label htmlFor="nut-diet-history" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Historia Dietética</label>
+                <label htmlFor="nut-diet-history" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Historia Dietética</label>
                 <textarea id="nut-diet-history" value={nutDietHistory} onChange={e => { setNutDietHistory(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Dietas previas, intolerancias, alergias alimentarias, patrones de alimentación, relación con la comida..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
@@ -2256,13 +2256,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Objetivos nutricionales */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-2">
-                <label htmlFor="nut-goals" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
+                <label htmlFor="nut-goals" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
                 <textarea id="nut-goals" value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Reducir peso corporal 5 kg en 3 meses, normalizar glicemia..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label htmlFor="nut-supplements" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Suplementación Indicada</label>
+                <label htmlFor="nut-supplements" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Suplementación Indicada</label>
                 <textarea id="nut-supplements" value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Vitamina D 2000 UI/día, Omega-3 1g/día..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
@@ -2272,11 +2272,11 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Plan alimentario editable */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Plan Alimentario — Tabla Editable</h3>
+                <h3 className="text-xs font-black uppercase tracking-[0.06em] text-slate-500">Plan Alimentario — Tabla Editable</h3>
                 <button onClick={() => {
                   setMealPlan(p => [...p, { id: Date.now().toString(), meal: 'Nueva Comida', food: '', quantity: '', kcal: '', notes: '' }]);
                   setIsDirtyTrue();
-                }} className="text-[10px] bg-emerald-500 text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-1 no-print">
+                }} className="text-[11px] bg-emerald-500 text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-1 no-print">
                   <span className="material-icons-round text-sm">add</span> Agregar fila
                 </button>
               </div>
@@ -2285,7 +2285,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <thead className="bg-emerald-50 border-b border-slate-200">
                     <tr>
                       {['Tiempo', 'Preparación / Alimento', 'Cantidad', 'Kcal est.', 'Observaciones', ''].map(h => (
-                        <th key={h} className="px-5 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">{h}</th>
+                        <th key={h} className="px-5 py-4 text-[11px] font-black text-slate-500 uppercase tracking-widest text-left">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2305,7 +2305,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         ))}
                         <td className="px-4 py-3 no-print">
                           <button onClick={() => { setMealPlan(p => p.filter(r => r.id !== row.id)); setIsDirtyTrue(); }}
-                            className="text-slate-300 hover:text-rose-500 transition-all">
+                            className="text-slate-500 hover:text-rose-500 transition-all">
                             <span className="material-icons-round text-base">delete</span>
                           </button>
                         </td>
@@ -2332,7 +2332,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           {specialtyKey === 'to' && (
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-8">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-amber-500 pl-4">Evaluación Ocupacional</h2>
+            <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-amber-500 pl-4">Evaluación Ocupacional</h2>
             {renderSectionFields('to')}
             <TOAssessment data={toData} onChange={d => { setToData(d); setIsDirtyTrue(); }} />
           </section>
@@ -2340,9 +2340,9 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           {specialtyKey === 'general' && (
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-6">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Evaluación Clínica</h2>
+            <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Evaluación Clínica</h2>
             {renderSectionFields('general')}
-            <p className="text-xs text-slate-400 font-medium no-print">
+            <p className="text-xs text-slate-500 font-medium no-print">
               Arma tu ficha a medida: usa "+ Agregar campo" para crear los campos que tu especialidad necesite
               (se guardan en la ficha de cada paciente, igual que el resto de la información clínica).
             </p>
@@ -2351,19 +2351,19 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           {specialtyKey === 'psicologia' && (
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-8">
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
+            <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-violet-500 pl-4">Evaluación Psicológica</h2>
             {renderSectionFields('psicologia')}
 
             {/* Escala de ánimo */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <label htmlFor="psych-mood-range" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
+                <label htmlFor="psych-mood-range" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Escala de Ánimo Subjetivo (EVA Psicológica)</label>
                 <span className={`text-3xl font-black ${psychMood <= 3 ? 'text-rose-500' : psychMood <= 6 ? 'text-amber-500' : 'text-emerald-500'}`}>{psychMood}/10</span>
               </div>
               <input id="psych-mood-range" type="range" min={0} max={10} step={1} value={psychMood}
                 onChange={e => { setPsychMood(Number(e.target.value)); setIsDirtyTrue(); }}
                 className="w-full accent-violet-500 h-3 rounded-full" />
-              <div className="flex justify-between text-[10px] font-black text-slate-600 uppercase tracking-widest">
+              <div className="flex justify-between text-[11px] font-black text-slate-600 uppercase tracking-widest">
                 <span>😔 Muy bajo</span><span>😐 Neutro</span><span>😊 Muy alto</span>
               </div>
             </div>
@@ -2371,13 +2371,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {/* Antecedentes psiquiátricos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-2">
-                <label htmlFor="psych-history" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
+                <label htmlFor="psych-history" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
                 <textarea id="psych-history" value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Diagnósticos previos, hospitalizaciones, intentos de autolesión, medicación psiquiátrica..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
-                <label htmlFor="psych-intervention" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
+                <label htmlFor="psych-intervention" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
                 <textarea id="psych-intervention" value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Ej: TCC — reestructuración cognitiva de pensamientos automáticos negativos. EMDR fase 3..."
                   className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
@@ -2386,7 +2386,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
             {/* Objetivo próxima sesión */}
             <div className="space-y-2">
-              <label htmlFor="psych-next-objective" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivo Próxima Sesión</label>
+              <label htmlFor="psych-next-objective" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Objetivo Próxima Sesión</label>
               <textarea id="psych-next-objective" value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
                 className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
@@ -2404,7 +2404,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <div key={f.k} className="bg-white rounded-blob-xl border border-slate-200 shadow-section overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
                 <div className="px-10 py-6 bg-slate-50/50 border-b border-slate-100 flex items-center gap-4">
                   <div className={`w-10 h-10 rounded-xl ${f.bg} text-white flex items-center justify-center font-black text-sm shadow-sm`}>{f.c}</div>
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-800">{f.l}</h4>
+                  <h4 className="text-[11px] font-black uppercase tracking-widest text-slate-800">{f.l}</h4>
                 </div>
                 <textarea
                   value={soap[f.k as keyof typeof soap] || ''}
@@ -2418,8 +2418,8 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200">
             <div className="flex justify-between items-center mb-10">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Objetivos del Tratamiento</h2>
-              <button onClick={addGoal} className="text-[10px] bg-teal-500 text-white shadow-teal-500/50 border-b-4 border-teal-700 px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all no-print flex items-center gap-2">
+              <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Objetivos del Tratamiento</h2>
+              <button onClick={addGoal} className="text-[11px] bg-teal-500 text-white shadow-teal-500/50 border-b-4 border-teal-700 px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all no-print flex items-center gap-2">
                 <span className="material-icons-round text-sm">add</span> NUEVO OBJETIVO
               </button>
             </div>
@@ -2427,7 +2427,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <div className="space-y-8">
               {goals.map((obj) => (
                 <div key={obj.id} className="p-8 rounded-blob-md bg-slate-50/50 border border-slate-100 relative print:bg-white animate-in zoom-in-95 group">
-                  <button onClick={() => { setGoals(goals.filter(g => g.id !== obj.id)); setIsDirtyTrue(); }} className="absolute top-8 right-8 text-slate-300 hover:text-rose-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 no-print transition-all"><span className="material-icons-round">delete</span></button>
+                  <button onClick={() => { setGoals(goals.filter(g => g.id !== obj.id)); setIsDirtyTrue(); }} className="absolute top-8 right-8 text-slate-500 hover:text-rose-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 no-print transition-all"><span className="material-icons-round">delete</span></button>
                   <div className="flex flex-col lg:flex-row gap-5 lg:gap-10 items-start">
                     <div className="flex-1 w-full space-y-2">
                       <input value={obj.name} onChange={e => { setGoals(goals.map(g => g.id === obj.id ? { ...g, name: e.target.value } : g)); setIsDirtyTrue(); }} className="w-full bg-transparent border-none p-0 text-2xl font-black text-slate-800 focus:ring-0" />
@@ -2448,10 +2448,10 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200">
             <div className="flex justify-between items-center mb-10">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Documentos y Exámenes</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Documentos y Exámenes</h2>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[10px] bg-white border-b-4 border-slate-200 text-primary shadow-sm px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:bg-slate-50 transition-all no-print flex items-center gap-2"
+                className="text-[11px] bg-white border-b-4 border-slate-200 text-primary shadow-sm px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:bg-slate-50 transition-all no-print flex items-center gap-2"
               >
                 <span className="material-icons-round text-sm">attach_file</span>
                 ADJUNTAR DOCUMENTO
@@ -2477,7 +2477,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-sm text-slate-800 truncate">{file.name}</p>
-                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-1">
+                      <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest mt-1">
                         {file.date} • {file.size}
                       </p>
                     </div>
@@ -2492,16 +2492,16 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               </div>
             ) : (
               <div className="text-center py-20 bg-slate-50/50 rounded-blob-lg border border-dashed border-slate-200">
-                <span className="material-icons-round text-5xl text-slate-300 mb-4 block">folder_open</span>
-                <p className="text-slate-400 font-bold text-sm tracking-wide">No hay documentos adjuntos para este paciente.</p>
+                <span className="material-icons-round text-5xl text-slate-500 mb-4 block">folder_open</span>
+                <p className="text-slate-500 font-bold text-sm tracking-wide">No hay documentos adjuntos para este paciente.</p>
               </div>
             )}
           </section>
 
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200">
             <div className="flex justify-between items-center mb-10">
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-primary pl-4">Bitácora de Evolución</h2>
-              <button onClick={addSessionLog} className="text-[10px] bg-white border-b-4 border-slate-200 text-primary shadow-sm px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:bg-slate-50 transition-all no-print flex items-center gap-2">
+              <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Bitácora de Evolución</h2>
+              <button onClick={addSessionLog} className="text-[11px] bg-white border-b-4 border-slate-200 text-primary shadow-sm px-6 py-4 rounded-xl font-black uppercase tracking-widest active:border-b-0 active:translate-y-1 hover:bg-slate-50 transition-all no-print flex items-center gap-2">
                 <span className="material-icons-round text-sm">add</span> NUEVA SESIÓN
               </button>
             </div>
@@ -2511,13 +2511,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <div key={log.id} className="flex gap-8 relative group">
                   <div className="w-px bg-slate-200 absolute left-[58px] top-10 bottom-0 print:hidden"></div>
                   <div className="shrink-0 w-[116px] text-right pt-2">
-                    <input type="date" value={log.date} onChange={e => { setSessionLogs(sessionLogs.map(s => s.id === log.id ? { ...s, date: e.target.value } : s)); setIsDirtyTrue(); }} className="text-[10px] font-black text-primary uppercase bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 text-center print:bg-transparent shadow-sm" />
+                    <input type="date" value={log.date} onChange={e => { setSessionLogs(sessionLogs.map(s => s.id === log.id ? { ...s, date: e.target.value } : s)); setIsDirtyTrue(); }} className="text-[11px] font-black text-primary uppercase bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 text-center print:bg-transparent shadow-sm" />
                   </div>
                   <div className="flex-1 bg-slate-50/80 shadow-inner rounded-xl lg:rounded-blob-md p-4 lg:p-10 border border-slate-200 relative print:bg-white group-hover:bg-white group-hover:shadow-[0_20px_40px_-15px_rgba(19,91,236,0.1)] transition-all">
-                    <button onClick={() => { setSessionLogs(sessionLogs.filter(s => s.id !== log.id)); setIsDirtyTrue(); }} className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white text-slate-300 hover:text-rose-500 hover:shadow-md border border-slate-100 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 no-print transition-all flex items-center justify-center">
+                    <button onClick={() => { setSessionLogs(sessionLogs.filter(s => s.id !== log.id)); setIsDirtyTrue(); }} className="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white text-slate-500 hover:text-rose-500 hover:shadow-md border border-slate-100 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 no-print transition-all flex items-center justify-center">
                       <span className="material-icons-round text-sm">delete</span>
                     </button>
-                    <textarea value={log.note} onChange={e => { setSessionLogs(sessionLogs.map(s => s.id === log.id ? { ...s, note: e.target.value } : s)); setIsDirtyTrue(); }} className="w-full bg-transparent border-none p-0 text-sm font-bold text-slate-600 focus:ring-0 resize-none h-24 leading-relaxed placeholder:text-slate-400" placeholder="Registrar evolución de la sesión..." />
+                    <textarea value={log.note} onChange={e => { setSessionLogs(sessionLogs.map(s => s.id === log.id ? { ...s, note: e.target.value } : s)); setIsDirtyTrue(); }} className="w-full bg-transparent border-none p-0 text-sm font-bold text-slate-600 focus:ring-0 resize-none h-24 leading-relaxed placeholder:text-slate-500" placeholder="Registrar evolución de la sesión..." />
                   </div>
                 </div>
               ))}
@@ -2530,7 +2530,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           <div className="px-6 md:px-10 pb-6 no-print">
             <button
               onClick={() => setShowVersions(v => !v)}
-              className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-slate-700 transition-colors"
+              className="flex items-center gap-2 text-[11px] font-black text-slate-600 uppercase tracking-widest hover:text-slate-700 transition-colors"
             >
               <span className="material-icons-round text-sm">{showVersions ? 'expand_less' : 'history'}</span>
               {showVersions ? 'Ocultar historial' : `Historial SOAP (${soapVersions.length} versiones guardadas)`}
@@ -2540,16 +2540,16 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 {soapVersions.map((v, i) => (
                   <div key={i} className="bg-white border border-slate-200 rounded-2xl px-6 py-4 space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                      <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest">
                         {new Date(v.saved_at).toLocaleString('es-CL')} — {v.saved_by_name}
                       </p>
-                      {i === 0 && <span className="text-[9px] bg-emerald-100 text-emerald-700 font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Más reciente</span>}
+                      {i === 0 && <span className="text-[11px] bg-emerald-100 text-emerald-700 font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Más reciente</span>}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {(['subjective', 'objective', 'assessment', 'plan'] as const).map(k =>
                         v.soap_snapshot[k]?.trim() ? (
                           <div key={k}>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{k}</p>
+                            <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-0.5">{k}</p>
                             <p className="text-xs text-slate-600 line-clamp-2">{v.soap_snapshot[k]}</p>
                           </div>
                         ) : null
@@ -2580,7 +2580,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <span className="material-icons-round text-white">auto_awesome</span>
               </div>
               <div>
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-1">AgenteMasLife</h3>
+                <h3 className="text-sm font-black uppercase tracking-[0.05em] mb-1">AgenteMasLife</h3>
                 <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse inline-block"></span>
                   IA Clínica + Búsqueda Web
@@ -2614,7 +2614,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <button
                   key={btn.label}
                   onClick={() => btn.label === 'Generar Informe Formal' ? handleGenerateProfessionalReport() : handleAiAnalysis(btn.label)}
-                  className={`p-3.5 border rounded-2xl text-[10px] font-black uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 ${btn.color}`}
+                  className={`p-3.5 border rounded-2xl text-[11px] font-black uppercase tracking-wide transition-all shadow-sm flex items-center gap-2 ${btn.color}`}
                 >
                   <span className="material-icons-round text-sm">{btn.icon}</span>
                   {btn.label}
@@ -2658,7 +2658,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
               <div>
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Informe Clínico Inteligente</h3>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Revisa, Edita y Descarga el Documento</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.05em] mt-1">Revisa, Edita y Descarga el Documento</p>
               </div>
               <div className="flex gap-4">
                 <button onClick={handleSaveReportAsFile} className="bg-teal-500 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-teal-600 transition-all shadow-xl">
@@ -2680,7 +2680,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               {isGeneratingReport ? (
                 <div className="h-full flex flex-col items-center justify-center gap-6">
                   <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                  <p className="text-xs font-black text-primary uppercase tracking-[0.3em] animate-pulse">Agente MasLife redactando documento formal...</p>
+                  <p className="text-xs font-black text-primary uppercase tracking-[0.06em] animate-pulse">Agente MasLife redactando documento formal...</p>
                 </div>
               ) : (
                 <textarea
@@ -2724,7 +2724,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                    specialtyKey === 'nutricion' ? 'Orden Nutricional' :
                    specialtyKey === 'psicologia' ? 'Orden Psicológica' : 'Orden Médica'}
                 </h3>
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mt-1">Indicaciones para {personalData.name}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.05em] mt-1">Indicaciones para {personalData.name}</p>
               </div>
               <button onClick={() => setShowOrdenModal(false)} className="w-10 h-10 bg-slate-50 text-slate-500 rounded-2xl flex items-center justify-center hover:text-rose-500 transition-all">
                 <span className="material-icons-round text-base">close</span>
@@ -2765,7 +2765,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <p className="text-primary font-black uppercase tracking-widest text-xs mt-2 italic">Emitido por Plataforma Agenda Maslife 🧡</p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Fecha del Documento</p>
+              <p className="text-xs font-black text-slate-500 uppercase tracking-[0.05em]">Fecha del Documento</p>
               <p className="text-xl font-black">{new Date().toLocaleDateString('es-CL')}</p>
             </div>
           </div>

@@ -143,19 +143,19 @@ const PatientList: React.FC = () => {
               <div className="flex bg-white p-1 rounded-xl border border-slate-200 flex-1 sm:flex-initial">
                 <button
                   onClick={() => setViewMode('activos')}
-                  className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${viewMode === 'activos' ? 'bg-teal-500 text-white shadow-sm' : 'text-slate-500'}`}
+                  className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${viewMode === 'activos' ? 'bg-teal-500 text-white shadow-sm' : 'text-slate-500'}`}
                 >
                   ACTIVOS
                 </button>
                 <button
                   onClick={() => setViewMode('archivados')}
-                  className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${viewMode === 'archivados' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'}`}
+                  className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${viewMode === 'archivados' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500'}`}
                 >
                   ARCHIVADOS
                 </button>
                 <button
                   onClick={() => setViewMode('fichas')}
-                  className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all ${viewMode === 'fichas' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}
+                  className={`flex-1 sm:flex-initial px-3 sm:px-5 py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all ${viewMode === 'fichas' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}
                 >
                   FICHAS
                 </button>
@@ -196,7 +196,7 @@ const PatientList: React.FC = () => {
               <div className="hidden lg:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <thead className="bg-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                       <tr>
                         <th className="px-6 py-4">Paciente</th>
                         <th className="px-6 py-4">RUT</th>
@@ -218,8 +218,8 @@ const PatientList: React.FC = () => {
                                 <div className="min-w-0">
                                   <p className="text-sm font-bold text-slate-900 truncate">{p.name}</p>
                                   {daysLeft !== null && (
-                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full mt-0.5">
-                                      <span className="material-icons-round text-[10px]">schedule</span>
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full mt-0.5">
+                                      <span className="material-icons-round text-[11px]">schedule</span>
                                       Eliminación en {daysLeft}d
                                     </span>
                                   )}
@@ -231,7 +231,7 @@ const PatientList: React.FC = () => {
                               {p.lastVisit ? new Date(p.lastVisit).toLocaleDateString('es-CL') : <span className="italic text-slate-300">Sin visitas</span>}
                             </td>
                             <td className="px-6 py-4 text-center">
-                              <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg ${
+                              <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg ${
                                 p.archived ? 'bg-slate-100 text-slate-500' :
                                 p.deletedAt ? 'bg-rose-50 text-rose-500' :
                                 'bg-indigo-50 text-indigo-600'
@@ -290,11 +290,11 @@ const PatientList: React.FC = () => {
                           <p className="text-xs text-slate-400">{p.rut}</p>
                         </div>
                         {daysLeft !== null ? (
-                          <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full shrink-0">
+                          <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full shrink-0">
                             {daysLeft}d restantes
                           </span>
                         ) : (
-                          <span className={`text-[9px] font-bold px-2 py-1 rounded-full shrink-0 ${p.archived ? 'bg-slate-100 text-slate-500' : 'bg-indigo-50 text-indigo-600'}`}>
+                          <span className={`text-[11px] font-bold px-2 py-1 rounded-full shrink-0 ${p.archived ? 'bg-slate-100 text-slate-500' : 'bg-indigo-50 text-indigo-600'}`}>
                             {p.archived ? 'Archivado' : 'Activo'}
                           </span>
                         )}
@@ -346,7 +346,7 @@ const PatientList: React.FC = () => {
               <div className="hidden lg:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
-                    <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    <thead className="bg-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                       <tr>
                         <th className="px-6 py-4">Paciente</th>
                         <th className="px-6 py-4">RUT</th>
@@ -381,7 +381,7 @@ const PatientList: React.FC = () => {
                             <select
                               value={p.status || 'Evaluación'}
                               onChange={(e) => changePatientStatus(p, e.target.value)}
-                              className={`text-[10px] font-bold uppercase tracking-wider border-none px-3 py-2 rounded-lg cursor-pointer transition-colors outline-none ${
+                              className={`text-[11px] font-bold uppercase tracking-wider border-none px-3 py-2 rounded-lg cursor-pointer transition-colors outline-none ${
                                 p.status === 'De alta' ? 'bg-emerald-50 text-emerald-600' :
                                 p.status === 'En sesiones' ? 'bg-blue-50 text-blue-600' :
                                 'bg-amber-50 text-amber-600'
@@ -454,7 +454,7 @@ const PatientList: React.FC = () => {
                       <select
                         value={p.status || 'Evaluación'}
                         onChange={(e) => changePatientStatus(p, e.target.value)}
-                        className={`text-[9px] font-bold uppercase tracking-wider border-none px-2.5 py-1.5 rounded-lg cursor-pointer outline-none shrink-0 ${
+                        className={`text-[11px] font-bold uppercase tracking-wider border-none px-2.5 py-1.5 rounded-lg cursor-pointer outline-none shrink-0 ${
                           p.status === 'De alta' ? 'bg-emerald-50 text-emerald-600' :
                           p.status === 'En sesiones' ? 'bg-blue-50 text-blue-600' :
                           'bg-amber-50 text-amber-600'
@@ -573,7 +573,7 @@ const PatientList: React.FC = () => {
               <div className="flex justify-between items-start mb-8">
                 <div>
                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Nuevo Paciente</h3>
-                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Sincronización de Base de Datos</p>
+                   <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mt-1">Sincronización de Base de Datos</p>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl flex items-center justify-center transition-all active:scale-95">
                   <span className="material-icons-round">close</span>
@@ -583,7 +583,7 @@ const PatientList: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="col-span-2">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Nombre Completo</label>
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Nombre Completo</label>
                     <input
                       required
                       type="text"
@@ -594,7 +594,7 @@ const PatientList: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">RUT / ID</label>
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">RUT / ID</label>
                     <input
                       required
                       type="text"
@@ -605,7 +605,7 @@ const PatientList: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Previsión</label>
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Previsión</label>
                     <select
                       value={newPatient.prevision}
                       onChange={e => setNewPatient({ ...newPatient, prevision: e.target.value })}
@@ -617,7 +617,7 @@ const PatientList: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Correo Electrónico</label>
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Correo Electrónico</label>
                     <input
                       type="email"
                       value={newPatient.email}
@@ -627,7 +627,7 @@ const PatientList: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Teléfono</label>
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Teléfono</label>
                     <input
                       type="tel"
                       value={newPatient.phone}
@@ -639,8 +639,8 @@ const PatientList: React.FC = () => {
                 </div>
 
                 <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-5 bg-slate-100 text-slate-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all hidden sm:block">Cancelar</button>
-                  <button type="submit" className="w-full sm:flex-1 py-5 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">Crear Paciente Central</button>
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-5 bg-slate-100 text-slate-500 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all hidden sm:block">Cancelar</button>
+                  <button type="submit" className="w-full sm:flex-1 py-5 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-[0.05em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">Crear Paciente Central</button>
                 </div>
               </form>
             </div>

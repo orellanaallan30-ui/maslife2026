@@ -26,7 +26,7 @@ const PatientLanding: React.FC = () => {
         <div className="max-w-7xl mx-auto px-8 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24 mb-20 animate-in fade-in slide-in-from-bottom-10 duration-1000">
              <div className="flex-1 text-center lg:text-left">
-                <span className="inline-block py-3 px-8 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-[0.3em] mb-8">Ecosistema Agenda Maslife Premium</span>
+                <span className="inline-block py-3 px-8 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-[0.06em] mb-8">Ecosistema Agenda Maslife Premium</span>
                 <h1 className="text-5xl md:text-7xl lg:text-[5.5rem] font-black text-slate-900 leading-[1.05] mb-8 tracking-tight">
                     Encuentra al profesional ideal <br className="hidden md:block"/> para tu <span className="text-primary inline-flex items-center gap-4 relative">bienestar <span className="absolute -bottom-2 left-0 w-full h-3 bg-teal-400/30 -rotate-1 skew-x-12 animate-pulse"></span></span>
                 </h1>
@@ -34,11 +34,11 @@ const PatientLanding: React.FC = () => {
                     Reserva citas médicas en segundos. Agenda tu visita o contacta a un ejecutivo clínico directamente. 100% online y seguro.
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6">
-                   <button onClick={() => setShowAgendar(true)} className="group relative w-full sm:w-auto px-10 py-5 rounded-2xl bg-slate-900 text-white font-black text-xs md:text-sm uppercase tracking-[0.15em] shadow-pop border-b-4 border-slate-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-4">
+                   <button onClick={() => setShowAgendar(true)} className="group relative w-full sm:w-auto px-10 py-5 rounded-2xl bg-slate-900 text-white font-black text-xs md:text-sm uppercase tracking-[0.04em] shadow-pop border-b-4 border-slate-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-4">
                       <span>Agendar Atención</span>
                       <span className="material-icons-round text-lg group-hover:rotate-12 transition-transform">event_available</span>
                    </button>
-                   <button onClick={() => navigate('/patient/results')} className="group relative w-full sm:w-auto px-10 py-5 rounded-2xl bg-white border-2 border-slate-100 text-slate-600 font-black text-xs md:text-sm uppercase tracking-[0.15em] hover:border-primary hover:text-primary shadow-sm hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
+                   <button onClick={() => navigate('/patient/results')} className="group relative w-full sm:w-auto px-10 py-5 rounded-2xl bg-white border-2 border-slate-100 text-slate-600 font-black text-xs md:text-sm uppercase tracking-[0.04em] hover:border-primary hover:text-primary shadow-sm hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
                       <span>Buscar Médico</span>
                       <span className="material-icons-round text-lg group-hover:translate-x-1 transition-transform">search</span>
                    </button>
@@ -56,7 +56,7 @@ const PatientLanding: React.FC = () => {
                         <span className="material-icons-round">volunteer_activism</span>
                       </div>
                       <div className="pr-4">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atención Inmediata</p>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Atención Inmediata</p>
                         <p className="font-black text-slate-900 text-sm">Reserva 100% Segura</p>
                       </div>
                     </div>
@@ -68,7 +68,7 @@ const PatientLanding: React.FC = () => {
                         <span className="material-icons-round">health_and_safety</span>
                       </div>
                       <div className="pr-4">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Garantía Agenda Maslife</p>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Garantía Agenda Maslife</p>
                         <p className="font-black text-slate-900 text-sm">Clínica Certificada</p>
                       </div>
                     </div>
@@ -126,7 +126,7 @@ const PatientLanding: React.FC = () => {
                           ))}
                       </div>
 
-                      <button className="bg-slate-900 text-white px-14 py-8 rounded-blob-lg font-black text-sm uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-800 transition-all flex items-center gap-5">
+                      <button className="bg-slate-900 text-white px-14 py-8 rounded-blob-lg font-black text-sm uppercase tracking-[0.05em] shadow-2xl hover:bg-slate-800 transition-all flex items-center gap-5">
                           COMENZAR AHORA
                           <span className="material-icons-round text-xl">rocket_launch</span>
                       </button>
@@ -169,7 +169,7 @@ const PatientLanding: React.FC = () => {
                   </div>
               </div>
               <div>
-                  <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-12 text-primary">Ecosistema</h4>
+                  <h4 className="font-black text-xs uppercase tracking-[0.06em] mb-12 text-primary">Ecosistema</h4>
                   <ul className="space-y-6 text-slate-500 text-base font-bold">
                       <li className="hover:text-white transition-colors cursor-pointer flex items-center gap-2">Portal de Pacientes</li>
                       <li className="hover:text-white transition-colors cursor-pointer flex items-center gap-2">Módulo para Médicos</li>
@@ -178,7 +178,7 @@ const PatientLanding: React.FC = () => {
                   </ul>
               </div>
               <div>
-                  <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-12 text-primary">Soporte</h4>
+                  <h4 className="font-black text-xs uppercase tracking-[0.06em] mb-12 text-primary">Soporte</h4>
                   <ul className="space-y-6 text-slate-500 text-base font-bold">
                       <li className="hover:text-white transition-colors cursor-pointer">Centro de Ayuda</li>
                       <li className="hover:text-white transition-colors cursor-pointer">Seguridad de Datos</li>
@@ -187,7 +187,7 @@ const PatientLanding: React.FC = () => {
                   </ul>
               </div>
               <div>
-                  <h4 className="font-black text-xs uppercase tracking-[0.3em] mb-12 text-primary">Contacto</h4>
+                  <h4 className="font-black text-xs uppercase tracking-[0.06em] mb-12 text-primary">Contacto</h4>
                   <ul className="space-y-8 text-slate-500 text-base font-bold">
                       <li className="flex items-center gap-5">
                         <span className="w-12 h-12 rounded-blob-xs bg-white/5 flex items-center justify-center text-primary">
@@ -204,7 +204,7 @@ const PatientLanding: React.FC = () => {
                   </ul>
               </div>
           </div>
-          <div className="max-w-7xl mx-auto px-8 mt-40 pt-12 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center gap-8 text-xs font-black text-slate-500 uppercase tracking-[0.3em]">
+          <div className="max-w-7xl mx-auto px-8 mt-40 pt-12 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center gap-8 text-xs font-black text-slate-500 uppercase tracking-[0.06em]">
               <p>© 2024 AGENDA MASLIFE • SANTIAGO, CHILE</p>
               <div className="flex items-center gap-10">
                   <span className="flex items-center gap-3 text-emerald-500"><span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> SERVIDORES ONLINE</span>
@@ -255,7 +255,7 @@ const PatientLanding: React.FC = () => {
                  <textarea required value={form.details} onChange={e => setForm({...form, details: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all resize-none h-28" placeholder="Cuéntanos brevemente qué necesitas..." />
                </div>
                
-               <button type="submit" className="mt-4 w-full py-5 rounded-2xl bg-emerald-500 text-white font-black text-sm uppercase tracking-[0.2em] shadow-success-pop border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3">
+               <button type="submit" className="mt-4 w-full py-5 rounded-2xl bg-emerald-500 text-white font-black text-sm uppercase tracking-[0.05em] shadow-success-pop border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3">
                  <span className="material-icons-round">send</span>
                  Solicitar por WhatsApp
                </button>

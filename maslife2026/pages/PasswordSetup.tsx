@@ -115,7 +115,7 @@ const PasswordSetup: React.FC<PasswordSetupProps> = ({ profile, onComplete }) =>
 
               {error && <p className="text-rose-500 text-xs font-black text-center uppercase tracking-widest">{error}</p>}
 
-              <button type="submit" disabled={isSaving} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-60">{isSaving ? 'GUARDANDO…' : 'ESTABLECER Y ENTRAR'}</button>
+              <button type="submit" disabled={isSaving} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.05em] shadow-xl hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-60">{isSaving ? 'GUARDANDO…' : 'ESTABLECER Y ENTRAR'}</button>
             </form>
           ) : (
             <div className="text-center py-12 animate-in zoom-in-95 duration-700">
@@ -126,7 +126,7 @@ const PasswordSetup: React.FC<PasswordSetupProps> = ({ profile, onComplete }) =>
                <p className="text-slate-500 font-bold mb-8">Tu perfil ha sido verificado con éxito.</p>
                <div className="flex items-center justify-center gap-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
-                  <p className="text-xs font-black text-emerald-600 uppercase tracking-[0.2em]">Sincronizando Dashboard...</p>
+                  <p className="text-xs font-black text-emerald-600 uppercase tracking-[0.05em]">Sincronizando Dashboard...</p>
                </div>
             </div>
           )}

@@ -51,10 +51,10 @@ export const TOAssessment: React.FC<Props> = ({ data, onChange }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Índice de Barthel — Actividades de la Vida Diaria</h3>
+        <h3 className="text-xs font-black uppercase tracking-[0.06em] text-slate-500">Índice de Barthel — Actividades de la Vida Diaria</h3>
         <p className="text-sm font-black text-slate-700">
           {score}/100
-          <span className={`ml-2 px-2.5 py-1 rounded-full text-[10px] font-black ${cls.cls}`}>{cls.label}</span>
+          <span className={`ml-2 px-2.5 py-1 rounded-full text-[11px] font-black ${cls.cls}`}>{cls.label}</span>
         </p>
       </div>
 
@@ -66,7 +66,7 @@ export const TOAssessment: React.FC<Props> = ({ data, onChange }) => {
               {it.options.map(opt => (
                 <button key={opt.score}
                   onClick={() => onChange({ ...data, barthel: { ...barthel, [it.key]: opt.score } })}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition ${
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition ${
                     barthel[it.key] === opt.score
                       ? 'bg-amber-500 text-white border-amber-500'
                       : 'bg-white text-slate-500 border-slate-200 hover:border-amber-300'
@@ -80,7 +80,7 @@ export const TOAssessment: React.FC<Props> = ({ data, onChange }) => {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="to-goals" className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Objetivos Ocupacionales</label>
+        <label htmlFor="to-goals" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Objetivos Ocupacionales</label>
         <textarea id="to-goals" value={data.goals || ''} onChange={e => onChange({ ...data, goals: e.target.value })} rows={4}
           placeholder="Ej: Recuperar independencia en vestido de hemicuerpo superior. Entrenamiento en AVD instrumentales. Adaptaciones del hogar..."
           className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-amber-500/10 resize-none transition-all" />

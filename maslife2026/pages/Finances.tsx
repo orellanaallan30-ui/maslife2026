@@ -121,25 +121,25 @@ const Finances: React.FC = () => {
         <div className="max-w-[1400px] mx-auto space-y-4 md:space-y-10">
           <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-6">
             <div>
-              <p className="text-[10px] font-black text-teal-600 uppercase tracking-[0.2em] mb-0.5">Agenda Maslife Finanzas</p>
+              <p className="text-[11px] font-black text-teal-600 uppercase tracking-[0.05em] mb-0.5">Agenda Maslife Finanzas</p>
               <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">Balance de Gestión Clínica</h1>
             </div>
             <div className="flex items-center gap-2 md:gap-4">
               <button
                 onClick={() => setShowManualModal(true)}
-                className="flex-1 md:flex-none bg-primary text-white px-4 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 hover:brightness-110 flex items-center justify-center gap-2 transition-all shadow-cta"
+                className="flex-1 md:flex-none bg-primary text-white px-4 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[11px] uppercase tracking-widest border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 hover:brightness-110 flex items-center justify-center gap-2 transition-all shadow-cta"
               >
                 <span className="material-icons-round text-base">add_circle</span>
                 <span>NUEVO REGISTRO</span>
               </button>
               <button
                 onClick={() => setShowConfirmReset(true)}
-                className="bg-white border-b-4 border-slate-200 text-rose-500 px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 hover:border-rose-300 active:border-b-0 active:translate-y-1 flex items-center gap-1.5 transition-all shadow-sm"
+                className="bg-white border-b-4 border-slate-200 text-rose-500 px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-rose-50 hover:border-rose-300 active:border-b-0 active:translate-y-1 flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <span className="material-icons-round text-sm">history_toggle_off</span>
                 <span className="hidden md:inline">REINICIAR</span>
               </button>
-              <button onClick={() => window.print()} className="bg-teal-500 text-white px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[10px] uppercase tracking-widest border-b-4 border-teal-700 active:border-b-0 active:translate-y-1 shadow-teal-500/60 hover:brightness-110 flex items-center gap-1.5 transition-all">
+              <button onClick={() => window.print()} className="bg-teal-500 text-white px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[11px] uppercase tracking-widest border-b-4 border-teal-700 active:border-b-0 active:translate-y-1 shadow-teal-500/60 hover:brightness-110 flex items-center gap-1.5 transition-all">
                 <span className="material-icons-round text-sm">download</span>
                 <span className="hidden md:inline">INFORME</span>
               </button>
@@ -172,11 +172,11 @@ const Finances: React.FC = () => {
                   <div className={`w-10 h-10 md:w-16 md:h-16 ${stat.bg} ${stat.color} rounded-xl md:rounded-2xl flex items-center justify-center shadow-sm`}>
                     <span className="material-icons-round text-2xl md:text-4xl">{stat.icon}</span>
                   </div>
-                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl bg-slate-50 text-slate-500 border border-slate-100 shadow-inner">
+                  <span className="text-[11px] md:text-[11px] font-black uppercase tracking-widest px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl bg-slate-50 text-slate-500 border border-slate-100 shadow-inner">
                     {stat.grow}
                   </span>
                 </div>
-                <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest">{stat.label}</p>
+                <p className="text-slate-400 text-[11px] md:text-[11px] font-black uppercase tracking-widest">{stat.label}</p>
                 <h3 className="text-xl md:text-3xl font-black mt-1 md:mt-2 tracking-tight text-slate-900">{stat.val}</h3>
               </div>
             ))}
@@ -282,13 +282,13 @@ const Finances: React.FC = () => {
                   </div>
                   <div>
                     <h2 className="font-black text-xl text-slate-900 tracking-tight">Panel de Ventas</h2>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">MercadoPago · Pagos en línea</p>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">MercadoPago · Pagos en línea</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   {(['7','30','90'] as const).map(r => (
                     <button key={r} onClick={() => reloadMP(r)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${mpRange === r ? 'bg-[#009ee3] text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                      className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${mpRange === r ? 'bg-[#009ee3] text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                       {r}d
                     </button>
                   ))}
@@ -310,17 +310,17 @@ const Finances: React.FC = () => {
                 <>
                   <div className="grid grid-cols-3 gap-3 md:gap-4 p-5 md:p-8 border-b border-slate-50">
                     <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100">
-                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Aprobados</p>
+                      <p className="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-1">Aprobados</p>
                       <p className="text-2xl font-black text-emerald-700">{mpSummary.approvedCount}</p>
                       <p className="text-xs font-bold text-emerald-600 mt-1">${mpSummary.approvedAmount.toLocaleString('es-CL')}</p>
                     </div>
                     <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
-                      <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Pendientes</p>
+                      <p className="text-[11px] font-black text-amber-600 uppercase tracking-widest mb-1">Pendientes</p>
                       <p className="text-2xl font-black text-amber-700">{mpSummary.pendingCount}</p>
                       <p className="text-xs font-bold text-amber-600 mt-1">${mpSummary.pendingAmount.toLocaleString('es-CL')}</p>
                     </div>
                     <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100">
-                      <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Rechazados</p>
+                      <p className="text-[11px] font-black text-rose-600 uppercase tracking-widest mb-1">Rechazados</p>
                       <p className="text-2xl font-black text-rose-700">{mpSummary.rejectedCount}</p>
                       <p className="text-xs font-bold text-rose-400 mt-1">últimos {mpSummary.days}d</p>
                     </div>
@@ -350,13 +350,13 @@ const Finances: React.FC = () => {
                             </div>
                             <div className="min-w-0">
                               <p className="font-black text-slate-900 text-sm truncate">{p.description || `Pago #${p.id}`}</p>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
                                 {p.payerName || p.payerEmail || 'Pagador desconocido'} · {fecha} {hora}
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0">
-                            <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${statusColor}`}>{statusLabel}</span>
+                            <span className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest border ${statusColor}`}>{statusLabel}</span>
                             <p className="font-black text-slate-900 text-base">${p.amount.toLocaleString('es-CL')}</p>
                           </div>
                         </div>
@@ -388,7 +388,7 @@ const Finances: React.FC = () => {
                   </button>
                 </div>
                 <h3 className="text-2xl lg:text-3xl font-black tracking-tight mb-1">Registro de {newManual.type}</h3>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Gestión directa de flujos de caja</p>
+                <p className="text-[11px] font-black uppercase tracking-widest opacity-80">Gestión directa de flujos de caja</p>
               </div>
 
               <form onSubmit={handleAddManualEntry} className="p-6 lg:p-10 space-y-4 lg:space-y-6 overflow-y-auto flex-1">
@@ -396,17 +396,17 @@ const Finances: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setNewManual({ ...newManual, type: 'Ingreso' })}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${newManual.type === 'Ingreso' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-500 hover:bg-white/50'}`}
+                    className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${newManual.type === 'Ingreso' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-500 hover:bg-white/50'}`}
                   >Ingreso</button>
                   <button
                     type="button"
                     onClick={() => setNewManual({ ...newManual, type: 'Gasto' })}
-                    className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${newManual.type === 'Gasto' ? 'bg-white text-rose-500 shadow-sm border border-slate-100' : 'text-slate-500 hover:bg-white/50'}`}
+                    className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${newManual.type === 'Gasto' ? 'bg-white text-rose-500 shadow-sm border border-slate-100' : 'text-slate-500 hover:bg-white/50'}`}
                   >Gasto</button>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Monto ($)</label>
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Monto ($)</label>
                   <input
                     required
                     type="number"
@@ -417,7 +417,7 @@ const Finances: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Descripción / Concepto</label>
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Descripción / Concepto</label>
                   <input
                     required
                     value={newManual.description}
@@ -427,7 +427,7 @@ const Finances: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha</label>
+                  <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha</label>
                   <input
                     required
                     type="date"
@@ -437,7 +437,7 @@ const Finances: React.FC = () => {
                   />
                 </div>
 
-                <button type="submit" className={`w-full py-4 lg:py-5 ${newManual.type === 'Ingreso' ? 'bg-slate-900 border-b-4 border-black' : 'bg-rose-600 border-b-4 border-rose-800'} text-white rounded-blob-md font-black text-[10px] uppercase tracking-[0.2em] shadow-pop active:border-b-0 active:translate-y-1 transition-all mt-4 lg:mt-8`}>
+                <button type="submit" className={`w-full py-4 lg:py-5 ${newManual.type === 'Ingreso' ? 'bg-slate-900 border-b-4 border-black' : 'bg-rose-600 border-b-4 border-rose-800'} text-white rounded-blob-md font-black text-[11px] uppercase tracking-[0.05em] shadow-pop active:border-b-0 active:translate-y-1 transition-all mt-4 lg:mt-8`}>
                   CONFIRMAR REGISTRO
                 </button>
               </form>

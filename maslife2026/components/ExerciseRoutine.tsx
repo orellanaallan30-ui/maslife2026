@@ -87,7 +87,7 @@ const SessionChart: React.FC<{ sessions: RoutineSession[] }> = ({ sessions }) =>
   const rpeLine = rpePts.length >= 2 ? rpePts.join(' ') : null;
   return (
     <div className="space-y-2 pb-2 mb-1 border-b border-slate-200">
-      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Evolución (dolor{rpeLine ? ' y esfuerzo' : ''})</p>
+      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Evolución (dolor{rpeLine ? ' y esfuerzo' : ''})</p>
       <div className="bg-white rounded-xl border border-slate-200 p-2 overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[380px]" role="img" aria-label="Curva de evolución del dolor por sesión">
           {[0, 5, 10].map(g => (
@@ -110,7 +110,7 @@ const SessionChart: React.FC<{ sessions: RoutineSession[] }> = ({ sessions }) =>
             );
           })}
         </svg>
-        <div className="flex gap-4 pt-1 text-[9px] font-black uppercase tracking-widest">
+        <div className="flex gap-4 pt-1 text-[11px] font-black uppercase tracking-widest">
           <span className="text-teal-700">━ Dolor (0-10)</span>
           {rpeLine && <span className="text-violet-400">╌ Esfuerzo</span>}
         </div>
@@ -413,7 +413,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
   return (
     <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-700 border-l-4 border-teal-500 pl-4">Rutina de Ejercicios</h2>
+        <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-teal-500 pl-4">Rutina de Ejercicios</h2>
         <button onClick={() => setShowPicker(true)}
           className="text-xs font-black text-teal-600 bg-teal-500/10 px-5 py-3 rounded-xl no-print hover:bg-teal-500/20 transition-all flex items-center gap-1.5">
           <span className="material-icons-round text-base">add</span> Agregar Ejercicio
@@ -422,12 +422,12 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
 
       <div className="flex flex-col lg:flex-row gap-3">
         <div className="flex-1">
-          <label htmlFor="routine-title" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Nombre de la Rutina</label>
+          <label htmlFor="routine-title" className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Nombre de la Rutina</label>
           <input id="routine-title" value={title} onChange={e => setTitle(e.target.value)}
             className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-teal-500/10 transition-all" />
         </div>
         <div className="lg:w-40">
-          <label htmlFor="routine-perweek" className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-1">Veces por semana</label>
+          <label htmlFor="routine-perweek" className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Veces por semana</label>
           <input id="routine-perweek" type="number" min={1} max={14} value={perWeek}
             onChange={e => setPerWeek(e.target.value ? Number(e.target.value) : '')}
             placeholder="ej: 3"
@@ -443,24 +443,24 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
         <>
         <div className="no-print flex flex-wrap items-end gap-2 p-3 bg-teal-50/60 rounded-xl border border-teal-100">
           <div>
-            <label htmlFor="bulk-sets" className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Series</label>
+            <label htmlFor="bulk-sets" className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Series</label>
             <input id="bulk-sets" type="number" min={1} value={bulkSets}
               onChange={e => setBulkSets(e.target.value ? Number(e.target.value) : '')}
               className="w-16 bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-bold text-center block" />
           </div>
           <div>
-            <label htmlFor="bulk-reps" className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Repeticiones</label>
+            <label htmlFor="bulk-reps" className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Repeticiones</label>
             <input id="bulk-reps" value={bulkReps} onChange={e => setBulkReps(e.target.value)} placeholder="ej: 12 o 30 seg"
               className="w-32 bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-bold block" />
           </div>
           <div>
-            <label htmlFor="bulk-rest" className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Descanso (seg)</label>
+            <label htmlFor="bulk-rest" className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Descanso (seg)</label>
             <input id="bulk-rest" type="number" min={0} step={5} value={bulkRest}
               onChange={e => setBulkRest(e.target.value ? Number(e.target.value) : '')}
               className="w-20 bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-bold text-center block" />
           </div>
           <button onClick={applyBulkToAll}
-            className="px-4 py-2 bg-teal-500 text-white rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-teal-600 transition-all">
+            className="px-4 py-2 bg-teal-500 text-white rounded-lg font-black text-[11px] uppercase tracking-widest hover:bg-teal-600 transition-all">
             Aplicar a todos
           </button>
         </div>
@@ -527,7 +527,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
 
       {sentRoutines.length > 0 && (
         <div className="no-print pt-4 border-t border-slate-100 space-y-3">
-          <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Rutinas enviadas y adherencia</h3>
+          <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Rutinas enviadas y adherencia</h3>
           {sentRoutines.map(r => {
             const weekAgo = new Date(Date.now() - 7 * 86400000);
             const recentChecks = r.items.reduce((acc, it) =>
@@ -549,7 +549,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                       <span className="material-icons-round text-slate-400 text-base">{isOpen ? 'expand_less' : 'expand_more'}</span>
                       <div className="min-w-0">
                         <p className="font-black text-xs text-slate-800 truncate">{r.title}</p>
-                        <p className="text-[10px] text-slate-400">
+                        <p className="text-[11px] text-slate-400">
                           {r.sentAt ? new Date(r.sentAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : '—'}
                           {r.sentVia === 'whatsapp' ? ' · WhatsApp' : r.sentVia === 'email' ? ' · Email' : ''}
                         </p>
@@ -563,17 +563,17 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                   </div>
                   {/* Fila 2: chips de adherencia (ancho completo, envuelven) */}
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-white border border-slate-200 text-slate-600 flex items-center gap-1.5">
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-white border border-slate-200 text-slate-600 flex items-center gap-1.5">
                       <span className={`w-2 h-2 rounded-full ${light.cls}`} />{light.label}
                     </span>
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-teal-500/10 text-teal-700">
+                    <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-teal-500/10 text-teal-700">
                       {weekSessions}{r.sessionsPerWeek ? `/${r.sessionsPerWeek}` : ''} {weekSessions === 1 && !r.sessionsPerWeek ? 'sesión' : 'sesiones'} (7d)
                     </span>
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black ${recentChecks > 0 ? 'bg-slate-100 text-slate-600' : 'bg-slate-200 text-slate-500'}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-black ${recentChecks > 0 ? 'bg-slate-100 text-slate-600' : 'bg-slate-200 text-slate-500'}`}>
                       {recentChecks} checks (7d)
                     </span>
                     {maxRecentPain > 0 && (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-white border border-slate-200 text-slate-600 flex items-center gap-1.5">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-black bg-white border border-slate-200 text-slate-600 flex items-center gap-1.5">
                         <span className={`w-2 h-2 rounded-full ${painDotClass(maxRecentPain)}`} />
                         dolor máx. {maxRecentPain}/10 (7d)
                       </span>
@@ -587,7 +587,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                     {/* Sesiones completadas: métricas clínicas */}
                     {r.sessions.length > 0 && (
                       <div className="space-y-1 pb-2 mb-1 border-b border-slate-200">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sesiones ({r.sessions.length})</p>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Sesiones ({r.sessions.length})</p>
                         {r.sessions.slice(-6).reverse().map((s, si) => (
                           <div key={si} className="flex items-center justify-between gap-2 text-[11px]">
                             <span className="font-bold text-slate-600">{new Date(s.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}</span>
@@ -613,7 +613,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                         <div key={it.id} className="space-y-1">
                           <div className="flex items-center justify-between gap-2 text-xs">
                             <span className="font-bold text-slate-600 truncate">{it.nameEs}</span>
-                            <span className={`shrink-0 font-black text-[10px] flex items-center gap-1.5 ${it.completions.length ? 'text-teal-600' : 'text-slate-400'}`}>
+                            <span className={`shrink-0 font-black text-[11px] flex items-center gap-1.5 ${it.completions.length ? 'text-teal-600' : 'text-slate-400'}`}>
                               {last
                                 ? `${it.completions.length} ${it.completions.length === 1 ? 'día' : 'días'} · último ${new Date(last.on + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })}`
                                 : 'Sin registros'}
@@ -630,7 +630,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                             <div className="flex flex-wrap gap-1.5 pl-1">
                               {it.evidence.map((ev, ei) => (
                                 <button key={ev.id} onClick={() => openEvidence(ev)}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-50 text-violet-700 text-[10px] font-black hover:bg-violet-100 transition">
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-50 text-violet-700 text-[11px] font-black hover:bg-violet-100 transition">
                                   <span className="material-icons-round text-xs">{ev.type === 'video' ? 'videocam' : 'photo_camera'}</span>
                                   Ver evidencia {it.evidence.length > 1 ? ei + 1 : ''}
                                 </button>
@@ -643,7 +643,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
 
                     {/* Mensajes y tareas para el paciente (aparecen en el enlace) */}
                     <div className="pt-2 mt-1 border-t border-slate-200 space-y-2">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mensajes y tareas</p>
+                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Mensajes y tareas</p>
                       {r.messages.length > 0 && (
                         <div className="space-y-1.5">
                           {r.messages.map(m => (
@@ -653,7 +653,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                               </span>
                               <div className="min-w-0">
                                 <p className={`leading-snug ${m.kind === 'task' && m.done ? 'text-slate-400 line-through' : 'text-slate-700'} font-medium`}>{m.body}</p>
-                                <p className="text-[9px] text-slate-400">
+                                <p className="text-[11px] text-slate-400">
                                   {m.sender === 'pro' ? 'Tú' : 'Paciente'}
                                   {m.kind === 'task' ? (m.done ? ' · tarea hecha ✓' : ' · tarea pendiente') : ''}
                                 </p>
@@ -665,7 +665,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
                       <div className="flex gap-1.5">
                         <button onClick={() => setMsgKind(k => k === 'task' ? 'message' : 'task')}
                           title={msgKind === 'task' ? 'Enviando como tarea' : 'Enviando como mensaje'}
-                          className={`shrink-0 px-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition ${msgKind === 'task' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-slate-500 border-slate-200'}`}>
+                          className={`shrink-0 px-2.5 rounded-lg text-[11px] font-black uppercase tracking-wider border transition ${msgKind === 'task' ? 'bg-teal-500 text-white border-teal-500' : 'bg-white text-slate-500 border-slate-200'}`}>
                           {msgKind === 'task' ? 'Tarea' : 'Mensaje'}
                         </button>
                         <input value={expandedRoutine === r.id ? msgDraft : ''} onChange={e => setMsgDraft(e.target.value)}

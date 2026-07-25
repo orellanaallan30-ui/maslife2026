@@ -132,7 +132,7 @@ const Plans: React.FC = () => {
                    </div>
                    <button 
                      onClick={() => navigate('/patient/search')}
-                     className="w-full py-5 bg-teal-500 text-white rounded-blob-sm font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-teal-500/10 hover:brightness-110 active:scale-95 transition-all"
+                     className="w-full py-5 bg-teal-500 text-white rounded-blob-sm font-black text-xs uppercase tracking-[0.05em] shadow-xl shadow-teal-500/10 hover:brightness-110 active:scale-95 transition-all"
                    >
                      Seleccionar Plan
                    </button>
@@ -151,7 +151,7 @@ const Plans: React.FC = () => {
                   ¿No encuentras lo que buscas? Diseñamos un plan exclusivo para tus necesidades.
                 </p>
               </div>
-              <button className="w-full py-5 bg-white text-slate-900 border border-slate-200 rounded-blob-sm font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-slate-50 transition-all">
+              <button className="w-full py-5 bg-white text-slate-900 border border-slate-200 rounded-blob-sm font-black text-xs uppercase tracking-[0.05em] shadow-xl hover:bg-slate-50 transition-all">
                 Hablar con un Ejecutivo
               </button>
            </div>
@@ -222,7 +222,7 @@ const Plans: React.FC = () => {
             </div>
 
             <div>
-               <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8">Servicios</h4>
+               <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.05em] mb-8">Servicios</h4>
                <ul className="space-y-4 text-slate-500 font-bold text-xs uppercase tracking-widest">
                   <li className="hover:text-teal-600 cursor-pointer">Kinesiología</li>
                   <li className="hover:text-teal-600 cursor-pointer">Nutrición</li>
@@ -232,7 +232,7 @@ const Plans: React.FC = () => {
             </div>
 
             <div>
-               <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8">Compañía</h4>
+               <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.05em] mb-8">Compañía</h4>
                <ul className="space-y-4 text-slate-500 font-bold text-xs uppercase tracking-widest">
                   <li className="hover:text-teal-600 cursor-pointer">Sobre Nosotros</li>
                   <li className="hover:text-teal-600 cursor-pointer">Nuestros Profesionales</li>
@@ -242,7 +242,7 @@ const Plans: React.FC = () => {
             </div>
 
             <div>
-               <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em] mb-8">Suscríbete</h4>
+               <h4 className="text-xs font-black text-slate-900 uppercase tracking-[0.05em] mb-8">Suscríbete</h4>
                <p className="text-xs text-slate-500 font-medium mb-6">Recibe consejos de salud y ofertas.</p>
                <div className="flex gap-2">
                   <input className="flex-1 bg-slate-50 border-none rounded-xl px-4 text-xs font-bold" placeholder="Email" />
@@ -253,7 +253,7 @@ const Plans: React.FC = () => {
             </div>
          </div>
          <div className="text-center border-t border-slate-100 pt-12">
-            <p className="text-xs font-black text-slate-300 uppercase tracking-[0.3em]">© 2024 Clínica Mas Life. Todos los derechos reservados.</p>
+            <p className="text-xs font-black text-slate-300 uppercase tracking-[0.06em]">© 2024 Clínica Mas Life. Todos los derechos reservados.</p>
          </div>
       </footer>
     </div>

@@ -335,7 +335,7 @@ const ProfessionalRegistration: React.FC = () => {
               <span className="material-icons-round text-white text-xl lg:text-2xl">medical_services</span>
             </div>
             <div className="text-left">
-              <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest">PLATAFORMA</p>
+              <p className="text-[11px] font-black text-teal-600 uppercase tracking-widest">PLATAFORMA</p>
               <p className="text-lg lg:text-xl font-black text-slate-900">Agenda Maslife 🧡</p>
             </div>
           </div>
@@ -354,7 +354,7 @@ const ProfessionalRegistration: React.FC = () => {
                     ${done?'bg-emerald-500 text-white':active?'bg-teal-500 text-white scale-110':'bg-white text-slate-400 border-2 border-slate-200'}`}>
                     {done?<span className="material-icons-round text-sm">check</span>:<span className="material-icons-round text-sm">{s.icon}</span>}
                   </div>
-                  <span className={`text-[9px] font-black uppercase tracking-widest
+                  <span className={`text-[11px] font-black uppercase tracking-widest
                     ${active?'text-teal-600':done?'text-emerald-500':'text-slate-400'}`}>{s.label}</span>
                 </div>
                 {i<STEPS.length-1&&<div className={`h-0.5 w-12 lg:w-16 mx-1 mb-4 transition-all ${step>i+1?'bg-emerald-400':'bg-slate-200'}`}/>}
@@ -479,7 +479,7 @@ const ProfessionalRegistration: React.FC = () => {
                         className={`py-3 px-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all
                           ${form.modalities[m.k as keyof typeof form.modalities]?'border-teal-500 bg-teal-50 text-teal-700':'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300'}`}>
                         <span className="material-icons-round text-xl">{m.i}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">{m.l}</span>
+                        <span className="text-[11px] font-black uppercase tracking-widest text-center leading-tight">{m.l}</span>
                       </button>
                     ))}
                   </div>

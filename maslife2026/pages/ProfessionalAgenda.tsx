@@ -368,7 +368,7 @@ const ProfessionalAgenda: React.FC = () => {
                       <span className="material-icons-round text-lg">chevron_left</span>
                     </button>
                     <div className="px-1 text-center min-w-[80px]">
-                      <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">{capitalizedMonth}</p>
+                      <p className="text-[11px] font-black text-primary uppercase tracking-widest leading-none">{capitalizedMonth}</p>
                       <p className="text-sm font-black text-slate-900 leading-tight">
                         {viewMode === 'day' ? currentDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }) : viewMode === 'week' ? `Sem. ${weekDays[0].getDate()}` : currentDate.getFullYear()}
                       </p>
@@ -382,12 +382,12 @@ const ProfessionalAgenda: React.FC = () => {
                       <span className="material-icons-round text-lg">chevron_right</span>
                     </button>
                   </div>
-                  <button onClick={() => setCurrentDate(new Date())} className="px-3 py-2 bg-white rounded-xl border border-slate-100 shadow-sm text-[10px] font-black uppercase text-slate-500 hover:text-primary transition-all shrink-0">HOY</button>
+                  <button onClick={() => setCurrentDate(new Date())} className="px-3 py-2 bg-white rounded-xl border border-slate-100 shadow-sm text-[11px] font-black uppercase text-slate-500 hover:text-primary transition-all shrink-0">HOY</button>
                   {/* Tabs vista */}
                   <div className="flex-1 flex justify-end">
                     <div className="bg-white rounded-xl border border-slate-100 shadow-sm flex p-1 gap-1">
                       {([['day','DÍA'],['week','SEM'],['year','AÑO']] as const).map(([mode, label]) => (
-                        <button key={mode} onClick={() => setViewMode(mode)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all ${viewMode === mode ? 'bg-primary text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{label}</button>
+                        <button key={mode} onClick={() => setViewMode(mode)} className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wide transition-all ${viewMode === mode ? 'bg-primary text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{label}</button>
                       ))}
                     </div>
                   </div>
@@ -407,7 +407,7 @@ const ProfessionalAgenda: React.FC = () => {
                       </div>
                       <div>
                         <p className="text-base font-black text-slate-900 leading-none">{value}</p>
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-wide mt-0.5">{label}</p>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-wide mt-0.5">{label}</p>
                       </div>
                     </div>
                   ))}
@@ -435,7 +435,7 @@ const ProfessionalAgenda: React.FC = () => {
                                                     </div>
                                                     <div>
                                                        <p className={`font-black text-base tracking-tight mb-0 ${app.status === 'Bloqueado' ? 'text-white' : 'text-slate-900'}`}>{app.patientName}</p>
-                                                       <p className={`text-[10px] font-black uppercase tracking-widest ${app.status === 'Bloqueado' ? 'text-white/70' : 'opacity-70'}`}>{app.serviceName} • {app.status}</p>
+                                                       <p className={`text-[11px] font-black uppercase tracking-widest ${app.status === 'Bloqueado' ? 'text-white/70' : 'opacity-70'}`}>{app.serviceName} • {app.status}</p>
                                                     </div>
                                                 </div>
                                                 <span className="material-icons-round text-2xl opacity-30">more_vert</span>
@@ -460,7 +460,7 @@ const ProfessionalAgenda: React.FC = () => {
                            <div className="w-24 shrink-0 border-r-2 border-slate-100 p-4"></div>
                            {weekDays.map(day => (
                                <div key={day.toISOString()} className={`flex-1 min-w-[150px] p-2.5 text-center border-r-2 border-slate-100 ${day.toDateString() === new Date().toDateString() ? 'bg-primary/5' : ''}`}>
-                                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{day.toLocaleDateString('es-ES', { weekday: 'short' })}</p>
+                                  <p className="text-[11px] font-black uppercase tracking-[0.05em] text-slate-500">{day.toLocaleDateString('es-ES', { weekday: 'short' })}</p>
                                   <p className="text-lg font-black text-slate-900 mt-0.5">{day.getDate()}</p>
                                </div>
                            ))}
@@ -518,7 +518,7 @@ const ProfessionalAgenda: React.FC = () => {
                                  </h3>
                                  <div className="grid grid-cols-7 gap-1">
                                     {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
-                                       <div key={d} className="text-[10px] font-bold text-slate-400 text-center py-1">{d}</div>
+                                       <div key={d} className="text-[11px] font-bold text-slate-400 text-center py-1">{d}</div>
                                     ))}
                                     {Array.from({ length: adjustedStartDay }).map((_, i) => <div key={`empty-${i}`} />)}
                                     {days.map(day => {
@@ -560,7 +560,7 @@ const ProfessionalAgenda: React.FC = () => {
                      <div className="p-8 md:p-10 border-b border-slate-100 bg-slate-50/50 flex justify-between items-start">
                         <div>
                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Agendar Atención</h3>
-                           <p className="text-[10px] font-black text-slate-500 uppercase mt-1.5 tracking-widest shadow-sm inline-block px-3 py-1 bg-white rounded-lg border border-slate-200 flex items-center gap-2"><span className="material-icons-round text-sm">schedule</span> {selectedSlot?.time} • {selectedSlot?.date}</p>
+                           <p className="text-[11px] font-black text-slate-500 uppercase mt-1.5 tracking-widest shadow-sm inline-block px-3 py-1 bg-white rounded-lg border border-slate-200 flex items-center gap-2"><span className="material-icons-round text-sm">schedule</span> {selectedSlot?.time} • {selectedSlot?.date}</p>
                         </div>
                         <button onClick={() => setIsCreateModalOpen(false)} className="w-12 h-12 rounded-2xl hover:bg-rose-50 text-slate-400 hover:text-rose-500 flex items-center justify-center transition-all active:scale-95">
                            <span className="material-icons-round text-2xl">close</span>
@@ -568,7 +568,7 @@ const ProfessionalAgenda: React.FC = () => {
                      </div>
 
                      <div className="px-8 md:px-10 pt-8 flex items-center gap-4">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Etiqueta:</label>
+                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Etiqueta:</label>
                         <div className="flex gap-3">
                            {colors.map(c => (
                               <button
@@ -583,13 +583,13 @@ const ProfessionalAgenda: React.FC = () => {
 
                      <div className="p-2 bg-slate-50/80 flex gap-2 mx-8 md:mx-10 mt-6 rounded-2xl shadow-inner border border-slate-200">
                         {['existing', 'new', 'block'].map(t => (
-                           <button key={t} onClick={() => setActiveTab(t as any)} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === t ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>{t === 'existing' ? 'Paciente Red' : t === 'new' ? 'Registrar' : 'Bloquear'}</button>
+                           <button key={t} onClick={() => setActiveTab(t as any)} className={`flex-1 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === t ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>{t === 'existing' ? 'Paciente Red' : t === 'new' ? 'Registrar' : 'Bloquear'}</button>
                         ))}
                      </div>
 
                      {activeTab !== 'block' && loggedPro?.services && loggedPro.services.length > 1 && (
                         <div className="px-8 md:px-10 pb-2 mt-6">
-                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Servicio</label>
+                           <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-2">Servicio</label>
                            <div className="flex flex-wrap gap-2">
                               {loggedPro.services.map(s => (
                                  <button
@@ -622,7 +622,7 @@ const ProfessionalAgenda: React.FC = () => {
                                           <div className="w-12 h-12 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center font-black text-base shadow-sm group-hover:bg-primary/10 group-hover:text-primary transition-colors">{p.name.charAt(0)}</div>
                                           <div className="text-left">
                                              <p className="text-sm font-black text-slate-900">{p.name}</p>
-                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{p.rut}</p>
+                                             <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{p.rut}</p>
                                           </div>
                                        </div>
                                        <span className="material-icons-round text-slate-300 group-hover:text-primary transition-colors">arrow_forward</span>
@@ -630,7 +630,7 @@ const ProfessionalAgenda: React.FC = () => {
                                  ))}
                               </div>
                               <div className="mt-4">
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
+                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
                                  <textarea
                                     value={appointmentNotes}
                                     onChange={e => setAppointmentNotes(e.target.value)}
@@ -645,25 +645,25 @@ const ProfessionalAgenda: React.FC = () => {
                         {activeTab === 'new' && (
                            <div className="space-y-6">
                               <div>
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Nombre Completo</label>
+                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Nombre Completo</label>
                                  <input value={newPatientForm.name} onChange={e => setNewPatientForm({ ...newPatientForm, name: e.target.value })} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400" placeholder="Ej: Maria Lopez" />
                               </div>
                               <div className="grid grid-cols-2 gap-4">
                                  <div>
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">RUT / ID</label>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">RUT / ID</label>
                                     <input value={newPatientForm.rut} onChange={e => setNewPatientForm({ ...newPatientForm, rut: e.target.value })} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400" placeholder="12.345.678-9" />
                                  </div>
                                  <div>
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Teléfono</label>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Teléfono</label>
                                     <input value={newPatientForm.phone} onChange={e => setNewPatientForm({ ...newPatientForm, phone: e.target.value })} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400" placeholder="+56 9..." />
                                  </div>
                               </div>
                               <div>
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Correo del paciente <span className="normal-case text-slate-300">(opcional — recibe confirmación)</span></label>
+                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Correo del paciente <span className="normal-case text-slate-300">(opcional — recibe confirmación)</span></label>
                                  <input type="email" value={newPatientForm.email} onChange={e => setNewPatientForm({ ...newPatientForm, email: e.target.value })} className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm text-black focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner placeholder:text-slate-400" placeholder="paciente@correo.cl" />
                               </div>
                               <div className="mt-4">
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
+                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Observaciones (opcional)</label>
                                  <textarea
                                     value={appointmentNotes}
                                     onChange={e => setAppointmentNotes(e.target.value)}
@@ -696,7 +696,7 @@ const ProfessionalAgenda: React.FC = () => {
                                  };
                                  onAddPatient(newPat);
                                  handleAddAppointment(newPat);
-                              }} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg">schedule</span> Agendar Cita</button>
+                              }} className="w-full py-5 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-[0.05em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 mt-6 transition-all flex items-center justify-center gap-3"><span className="material-icons-round text-lg">schedule</span> Agendar Cita</button>
                            </div>
                         )}
 
@@ -706,14 +706,14 @@ const ProfessionalAgenda: React.FC = () => {
                               {/* ── 1. HORAS ── */}
                               <div>
                                  <div className="flex items-center justify-between mb-2">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Horas a bloquear</label>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Horas a bloquear</label>
                                     <div className="flex gap-2">
                                        {[['08:00','13:00','Mañana'],['14:00','20:00','Tarde'],['08:00','20:00','Todo']].map(([s,e,lbl]) => (
                                           <button key={lbl} onClick={() => setBlockTimes(hours.filter(h => h >= s && h <= e && !appointments.some(a => a.date === blockDate && a.time === h)))}
-                                             className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline">{lbl}</button>
+                                             className="text-[11px] font-black text-primary uppercase tracking-widest hover:underline">{lbl}</button>
                                        ))}
                                        <button onClick={() => { const f = hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)); setBlockTimes(f.length === blockTimes.length ? [] : f); }}
-                                          className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:underline">
+                                          className="text-[11px] font-black text-slate-400 uppercase tracking-widest hover:underline">
                                           {hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)).length === blockTimes.length ? '✕' : 'Todo'}
                                        </button>
                                     </div>
@@ -736,7 +736,7 @@ const ProfessionalAgenda: React.FC = () => {
                                     })}
                                  </div>
                                  {blockTimes.length > 0 && (
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-2 ml-1">
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest mt-2 ml-1">
                                        {blockTimes.length} hora{blockTimes.length > 1 ? 's' : ''} seleccionada{blockTimes.length > 1 ? 's' : ''}
                                     </p>
                                  )}
@@ -744,7 +744,7 @@ const ProfessionalAgenda: React.FC = () => {
 
                               {/* ── 2. TIPO DE BLOQUE ── */}
                               <div>
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 ml-1">Tipo</label>
+                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-2 ml-1">Tipo</label>
                                  <div className="grid grid-cols-3 gap-2">
                                     {([
                                        { v: 'blocked', icon: 'block', label: 'Bloqueado', bg: 'bg-slate-800', sel: 'border-slate-900' },
@@ -754,7 +754,7 @@ const ProfessionalAgenda: React.FC = () => {
                                        <button key={opt.v} onClick={() => setBlockMode(opt.v)}
                                           className={`py-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${blockMode === opt.v ? `${opt.bg} ${opt.sel} text-white scale-[1.02] shadow-md` : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                                           <span className="material-icons-round text-base">{opt.icon}</span>
-                                          <span className="text-[9px] font-black uppercase tracking-widest leading-tight text-center">{opt.label}</span>
+                                          <span className="text-[11px] font-black uppercase tracking-widest leading-tight text-center">{opt.label}</span>
                                        </button>
                                     ))}
                                  </div>
@@ -762,7 +762,7 @@ const ProfessionalAgenda: React.FC = () => {
 
                               {/* ── 3. RECURRENCIA ── */}
                               <div>
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 ml-1">Repetir</label>
+                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-2 ml-1">Repetir</label>
                                  <div className="grid grid-cols-2 gap-2">
                                     {([
                                        { v: 'none', label: 'Una vez' },
@@ -780,7 +780,7 @@ const ProfessionalAgenda: React.FC = () => {
                                  {/* Días de la semana (solo weekly/permanent) */}
                                  {(blockRecurrence === 'weekly' || blockRecurrence === 'permanent') && (
                                     <div className="mt-3">
-                                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Días</label>
+                                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Días</label>
                                        <div className="flex gap-1.5">
                                           {['D','L','M','X','J','V','S'].map((d, i) => (
                                              <button key={i} onClick={() => setBlockDaysOfWeek(prev => prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i])}
@@ -795,7 +795,7 @@ const ProfessionalAgenda: React.FC = () => {
                                  {/* Fecha de fin (no en permanente) */}
                                  {blockRecurrence !== 'none' && blockRecurrence !== 'permanent' && (
                                     <div className="mt-3">
-                                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Hasta (opcional)</label>
+                                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">Hasta (opcional)</label>
                                        <input type="date" value={blockEndsAt} onChange={e => setBlockEndsAt(e.target.value)}
                                           className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 transition-all" />
                                     </div>
@@ -805,7 +805,7 @@ const ProfessionalAgenda: React.FC = () => {
                               {/* ── 4. DETALLE ── */}
                               <div className="grid grid-cols-2 gap-3">
                                  <div>
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Duración</label>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Duración</label>
                                     <div className="flex gap-1.5">
                                        {[30,45,60,90].map(d => (
                                           <button key={d} onClick={() => setBlockDuration(d)}
@@ -816,7 +816,7 @@ const ProfessionalAgenda: React.FC = () => {
                                     </div>
                                  </div>
                                  <div>
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Motivo</label>
+                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Motivo</label>
                                     <input value={blockNote} onChange={e => setBlockNote(e.target.value)}
                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 font-bold text-xs text-black focus:ring-2 focus:ring-slate-900/20 focus:border-slate-900 transition-all placeholder:text-slate-400"
                                        placeholder="Ej: Reunión..." />
@@ -826,7 +826,7 @@ const ProfessionalAgenda: React.FC = () => {
                               {/* Resumen dinámico */}
                               {blockTimes.length > 0 && (
                                  <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Resumen</p>
+                                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1">Resumen</p>
                                     <p className="text-xs font-bold text-slate-800">
                                        {blockTimes.length} hora{blockTimes.length > 1 ? 's' : ''}
                                        {blockRecurrence === 'none' && blockDate ? ` el ${blockDate}` : ''}
@@ -839,7 +839,7 @@ const ProfessionalAgenda: React.FC = () => {
                               )}
 
                               <button onClick={handleApplySmartBlock} disabled={blockTimes.length === 0 || blockApplying}
-                                 className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] border-b-4 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 ${blockTimes.length > 0 && !blockApplying ? 'bg-slate-900 text-white border-slate-800 shadow-pop' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}>
+                                 className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-[0.05em] border-b-4 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-3 ${blockTimes.length > 0 && !blockApplying ? 'bg-slate-900 text-white border-slate-800 shadow-pop' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'}`}>
                                  {blockApplying
                                     ? <><span className="inline-block w-4 h-4 border-2 border-slate-400 border-t-white rounded-full animate-spin" /> Aplicando...</>
                                     : <><span className="material-icons-round text-lg text-rose-400">block</span>
@@ -863,21 +863,21 @@ const ProfessionalAgenda: React.FC = () => {
                         <h3 className="text-3xl font-black tracking-tight mb-3">{editingApp.patientName}</h3>
                         <div className="flex items-center gap-3 opacity-90 border border-white/20 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm shadow-sm">
                            <span className="material-icons-round text-sm">schedule</span>
-                           <p className="text-[10px] font-black uppercase tracking-widest">{editingApp.time} • {editingApp.date}</p>
+                           <p className="text-[11px] font-black uppercase tracking-widest">{editingApp.time} • {editingApp.date}</p>
                         </div>
                      </div>
 
                      <div className="p-8 md:p-10 space-y-8">
                         <div className="grid grid-cols-2 gap-4">
                            {(['Confirmado', 'Llegado', 'En Sesión', 'Finalizado'] as const).map(s => (
-                              <button key={s} onClick={() => handleStatusChange(s)} className={`py-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-b-[3px] active:border-b-0 active:translate-y-[3px] transition-all shadow-sm flex items-center justify-center gap-2 ${editingApp.status === s ? 'bg-emerald-500 border-emerald-700 text-white scale-[1.02]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300 hover:text-black hover:bg-slate-100'}`}>
+                              <button key={s} onClick={() => handleStatusChange(s)} className={`py-4 rounded-xl text-[11px] font-black uppercase tracking-widest border-b-[3px] active:border-b-0 active:translate-y-[3px] transition-all shadow-sm flex items-center justify-center gap-2 ${editingApp.status === s ? 'bg-emerald-500 border-emerald-700 text-white scale-[1.02]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300 hover:text-black hover:bg-slate-100'}`}>
                                  {editingApp.status === s && <span className="material-icons-round text-sm">check_circle</span>}
                                  {s}
                               </button>
                            ))}
                            <button
                               onClick={() => handleStatusChange('Cancelado')}
-                              className={`col-span-2 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-b-[3px] active:border-b-0 active:translate-y-[3px] transition-all shadow-sm flex items-center justify-center gap-2 ${
+                              className={`col-span-2 py-4 rounded-xl text-[11px] font-black uppercase tracking-widest border-b-[3px] active:border-b-0 active:translate-y-[3px] transition-all shadow-sm flex items-center justify-center gap-2 ${
                                  editingApp.status === 'Cancelado'
                                     ? 'bg-rose-500 border-rose-700 text-white scale-[1.02]'
                                     : 'bg-rose-50 border-rose-200 text-rose-400 hover:bg-rose-500 hover:border-rose-600 hover:text-white'
@@ -948,7 +948,7 @@ const ProfessionalAgenda: React.FC = () => {
                         )}
 
                         <div className="mt-8 flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2">Color:</label>
+                           <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest pl-2">Color:</label>
                            <div className="flex gap-3">
                               {colors.map(c => (
                                  <button
@@ -963,11 +963,11 @@ const ProfessionalAgenda: React.FC = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                            {editingApp.status !== 'Bloqueado' && editingApp.patientId && (
-                              <button onClick={() => navigate(`/pro/record/${editingApp.patientId}`)} className="py-5 bg-slate-50 text-slate-600 border-b-[3px] border-slate-200 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-900 hover:border-slate-800 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">description</span> Ficha Médica</button>
+                              <button onClick={() => navigate(`/pro/record/${editingApp.patientId}`)} className="py-5 bg-slate-50 text-slate-600 border-b-[3px] border-slate-200 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-900 hover:border-slate-800 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">description</span> Ficha Médica</button>
                            )}
                            {editingApp.status === 'Bloqueado' && editingApp.recurrenceId ? (
                               <div className="col-span-2 space-y-3">
-                                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block ml-1">Eliminar bloqueo</label>
+                                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Eliminar bloqueo</label>
                                  <div className="flex flex-col gap-2">
                                     {([
                                        { v: 'single', label: 'Solo este bloque', icon: 'event_busy' },
@@ -975,7 +975,7 @@ const ProfessionalAgenda: React.FC = () => {
                                        { v: 'all', label: 'Toda la serie', icon: 'delete_sweep' },
                                     ] as const).map(opt => (
                                        <button key={opt.v} onClick={() => setDeleteRecurrenceMode(opt.v)}
-                                          className={`py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all flex items-center gap-2 ${deleteRecurrenceMode === opt.v ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-400'}`}>
+                                          className={`py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-widest border-2 transition-all flex items-center gap-2 ${deleteRecurrenceMode === opt.v ? 'bg-slate-900 border-slate-900 text-white' : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-400'}`}>
                                           <span className="material-icons-round text-sm">{opt.icon}</span>
                                           {opt.label}
                                        </button>
@@ -986,20 +986,20 @@ const ProfessionalAgenda: React.FC = () => {
                                     if (!window.confirm('¿Confirmas eliminar el/los bloqueo(s) seleccionados?')) return;
                                     await deleteAppointmentsByRecurrence(editingApp.recurrenceId, deleteRecurrenceMode, editingApp.id, editingApp.date);
                                     setIsEditModalOpen(false); setEditingApp(null);
-                                 }} className="w-full py-4 bg-rose-500 text-white border-b-[3px] border-rose-700 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110 active:border-b-0 active:translate-y-[3px] shadow-sm">
+                                 }} className="w-full py-4 bg-rose-500 text-white border-b-[3px] border-rose-700 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110 active:border-b-0 active:translate-y-[3px] shadow-sm">
                                     <span className="material-icons-round text-lg">delete</span>
                                     Eliminar bloqueo{deleteRecurrenceMode === 'all' ? 's' : ''}
                                  </button>
                               </div>
                            ) : (
-                              <button onClick={deleteAppointment} className="py-5 bg-rose-50 text-rose-500 border-b-[3px] border-rose-200 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-rose-500 hover:border-rose-600 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">delete</span> Anular Evento</button>
+                              <button onClick={deleteAppointment} className="py-5 bg-rose-50 text-rose-500 border-b-[3px] border-rose-200 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-rose-500 hover:border-rose-600 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">delete</span> Anular Evento</button>
                            )}
                            {editingApp.patientPhone && editingApp.status !== 'Bloqueado' && (
                               <a
                                  href={`https://wa.me/${editingApp.patientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${editingApp.patientName}, te recordamos tu cita el ${editingApp.date} a las ${editingApp.time}. ¡Te esperamos!`)}`}
                                  target="_blank"
                                  rel="noreferrer"
-                                 className="py-5 bg-[#25D366] text-white border-b-[3px] border-green-700 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110 active:border-b-0 active:translate-y-[3px] shadow-sm"
+                                 className="py-5 bg-[#25D366] text-white border-b-[3px] border-green-700 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:brightness-110 active:border-b-0 active:translate-y-[3px] shadow-sm"
                               >
                                  <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current shrink-0">
                                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
