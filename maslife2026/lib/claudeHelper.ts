@@ -31,7 +31,11 @@ export async function callClaudeAPI(request: ClaudeRequest): Promise<any> {
 
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
-    throw new Error(errData?.error?.message || `Error ${response.status}`);
+    // La API devuelve el error en dos formas: {error: "texto"} y {error: {message}}.
+    const errMsg = typeof errData?.error === 'string'
+      ? errData.error
+      : (errData?.error?.message || `Error ${response.status}`);
+    throw new Error(errMsg);
   }
 
   return response.json();
