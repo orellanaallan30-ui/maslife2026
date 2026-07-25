@@ -3,6 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useClinic } from '../ClinicContext';
 import { Appointment } from '../types';
 import supabaseService from '../supabaseService';
+import { supabase } from '../supabaseClient';
+import { callClaudeAPI } from '../lib/claudeHelper';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -212,9 +214,13 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
 
       case 'web_search': {
         try {
+          const { data: { session } } = await supabase.auth.getSession();
           const r = await fetch('/api/web-search', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+            },
             body: JSON.stringify({ query: args.query }),
           });
           if (!r.ok) return 'Error al buscar en internet.';
@@ -255,28 +261,13 @@ REGLAS:
 
   // --- Llamada a Claude API via serverless function ---
   const callClaude = async (msgHistory: ClaudeMessage[]): Promise<any> => {
-    // Intentar con serverless function primero
-    const apiEndpoint = import.meta.env.VITE_AI_ENDPOINT || '/api/ai-agent';
-
-    const response = await fetch(apiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: msgHistory,
-        system: getSystemPrompt(),
-        tools: claudeTools
-      })
+    // Usa el helper compartido: adjunta el token de sesión (Authorization: Bearer).
+    // Sin ese header, /api/ai-agent responde 401 y el asistente nunca funciona.
+    return callClaudeAPI({
+      messages: msgHistory as any,
+      system: getSystemPrompt(),
+      tools: claudeTools,
     });
-
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      const errMsg = typeof errData?.error === 'string'
-        ? errData.error
-        : (errData?.error?.message || `Error ${response.status}`);
-      throw new Error(errMsg);
-    }
-
-    return response.json();
   };
 
   // --- Main Chat Handler ---
@@ -285,7 +276,7 @@ REGLAS:
     if (!textToSend.trim() || isProcessing) return;
 
     const sanitizedText = textToSend.trim()
-      .replace(/[ --]/g, '')
+      .replace(/[\x00-\x1f\x7f-\x9f]/g, '')
       .slice(0, 500);
 
     setMessages(prev => [...prev, { role: 'user', text: sanitizedText }]);
