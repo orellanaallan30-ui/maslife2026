@@ -1,96 +1,16 @@
 // Vercel Serverless — AgenteMasLife Clínico con búsqueda web
-// Ejecuta un loop agentico completo: Claude → tool_use → búsqueda → respuesta final
+// La búsqueda corre server-side en Anthropic, restringida a fuentes confiables.
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
+import { WEB_SEARCH_TOOL, INSTRUCCIONES_BUSQUEDA, resolverPauseTurn } from './_lib/webSearch';
 
-// ── Función de búsqueda web (Tavily → Brave → DuckDuckGo) ────────────────────
-async function searchWeb(query: string): Promise<string> {
-  // Tavily (mejor para agentes IA)
-  if (process.env.TAVILY_API_KEY) {
-    try {
-      const r = await fetch('https://api.tavily.com/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          api_key: process.env.TAVILY_API_KEY,
-          query,
-          max_results: 4,
-          include_answer: true,
-          search_depth: 'advanced',
-        }),
-      });
-      if (r.ok) {
-        const d = await r.json();
-        const lines: string[] = [];
-        if (d.answer) lines.push(`**Resumen IA:** ${d.answer}`);
-        (d.results || []).slice(0, 3).forEach((res: any) =>
-          lines.push(`📄 **${res.title}**\n${res.content?.substring(0, 400) ?? ''}\n🔗 ${res.url}`)
-        );
-        if (lines.length) return lines.join('\n\n');
-      }
-    } catch { /* fall through */ }
-  }
-
-  // Brave Search
-  if (process.env.BRAVE_SEARCH_API_KEY) {
-    try {
-      const r = await fetch(
-        `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=4&search_lang=es`,
-        { headers: { Accept: 'application/json', 'Accept-Encoding': 'gzip', 'X-Subscription-Token': process.env.BRAVE_SEARCH_API_KEY } }
-      );
-      if (r.ok) {
-        const d = await r.json();
-        const results = (d.web?.results || []).slice(0, 4)
-          .map((res: any) => `📄 **${res.title}**\n${res.description ?? ''}\n🔗 ${res.url}`)
-          .join('\n\n');
-        if (results) return results;
-      }
-    } catch { /* fall through */ }
-  }
-
-  // DuckDuckGo (sin API key)
-  try {
-    const r = await fetch(
-      `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`,
-      { headers: { 'User-Agent': 'MasLife-Clinical-AI/1.0' } }
-    );
-    const d = await r.json();
-    const parts: string[] = [];
-    if (d.AbstractText) parts.push(d.AbstractText);
-    if (d.Answer)       parts.push(`Dato directo: ${d.Answer}`);
-    const related = (d.RelatedTopics || []).slice(0, 5).filter((t: any) => t.Text).map((t: any) => `• ${t.Text}`);
-    if (related.length) parts.push(`Temas relacionados:\n${related.join('\n')}`);
-    return parts.join('\n\n') || 'Sin resultados. Intenta con términos más específicos.';
-  } catch {
-    return 'Error de conexión al motor de búsqueda.';
-  }
-}
-
-// ── Definición de tools disponibles para el agente ───────────────────────────
-const TOOLS = [
-  {
-    name: 'web_search',
-    description: `Busca información actualizada en internet. Úsala para:
-- Protocolos y guías clínicas (MINSAL, NICE, GPC)
-- Información sobre fármacos, dosis, efectos adversos, interacciones
-- Estudios recientes, revisiones sistemáticas
-- Criterios diagnósticos DSM-5 / CIE-11 / ICD-10
-- Escalas de evaluación clínica (EVA, Barthel, MMSE, etc.)
-- Cualquier información médica que requiera datos actualizados
-Puedes buscar en español o inglés.`,
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        query: {
-          type: 'string',
-          description: 'Consulta de búsqueda. Sé específico. Ej: "guía MINSAL lumbalgia crónica 2023" o "escala de ansiedad de Hamilton criterios"',
-        },
-      },
-      required: ['query'],
-    },
-  },
-];
+// ── Herramienta de búsqueda: nativa de Claude, restringida a fuentes confiables ──
+// Antes se usaba una cadena propia Tavily → Brave → DuckDuckGo. Requería claves
+// externas y, sin ellas, DuckDuckGo (API de "respuestas instantáneas") no hace
+// búsqueda web real y nunca encontraba literatura clínica. La búsqueda nativa
+// corre en los servidores de Anthropic con la misma ANTHROPIC_API_KEY.
+const TOOLS = [WEB_SEARCH_TOOL];
 
 // ── Handler principal ─────────────────────────────────────────────────────────
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -126,7 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: 4096,
-        system: system || '',
+        system: (system || '') + INSTRUCCIONES_BUSQUEDA,
         messages: msgs,
         tools: TOOLS,
       }),
@@ -139,35 +59,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   };
 
   try {
-    let currentMessages = [...messages];
-    let response = await callClaude(currentMessages);
-    let iterations = 0;
-    const MAX_ITERATIONS = 5;
-
-    // Loop agentico: Claude puede buscar múltiples veces antes de responder
-    while (response.stop_reason === 'tool_use' && iterations < MAX_ITERATIONS) {
-      iterations++;
-      const toolUseBlocks = (response.content as any[]).filter(b => b.type === 'tool_use');
-      const toolResults: any[] = [];
-
-      for (const block of toolUseBlocks) {
-        let result = '';
-        if (block.name === 'web_search') {
-          result = await searchWeb(block.input.query);
-        } else {
-          result = `Herramienta "${block.name}" no disponible en este agente.`;
-        }
-        toolResults.push({ type: 'tool_result', tool_use_id: block.id, content: result });
-      }
-
-      currentMessages = [
-        ...currentMessages,
-        { role: 'assistant', content: response.content },
-        { role: 'user', content: toolResults },
-      ];
-
-      response = await callClaude(currentMessages);
-    }
+    const currentMessages = [...messages];
+    // La búsqueda la ejecuta Anthropic server-side y vuelve resuelta en la misma
+    // respuesta. Solo hay que continuar si el loop interno pide `pause_turn`.
+    const first = await callClaude(currentMessages);
+    const response = await resolverPauseTurn(first, currentMessages, callClaude);
 
     return res.status(200).json(response);
   } catch (error: any) {

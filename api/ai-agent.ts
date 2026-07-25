@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
+import { WEB_SEARCH_TOOL, INSTRUCCIONES_BUSQUEDA, resolverPauseTurn } from './_lib/webSearch';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
@@ -27,8 +28,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // El cliente puede pedir más tokens (informes largos); tope duro de 4096
   const maxTokens = typeof max_tokens === 'number' && max_tokens > 0 ? Math.min(max_tokens, 4096) : 2048;
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+  // El cliente aporta sus herramientas de agenda (las ejecuta él). La búsqueda
+  // web se sirve server-side desde Anthropic y restringida a fuentes confiables,
+  // así que se descarta cualquier `web_search` que mande el cliente — evita
+  // nombres duplicados si quedó JS antiguo en caché.
+  const herramientasCliente = Array.isArray(tools)
+    ? tools.filter((t: any) => t?.name !== 'web_search')
+    : [];
+  const herramientas = [...herramientasCliente, WEB_SEARCH_TOOL];
+
+  const callClaude = async (msgs: any[]) => {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'x-api-key': ANTHROPIC_API_KEY,
@@ -38,20 +48,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         model: 'claude-sonnet-5',
         max_tokens: maxTokens,
-        system: system || '',
-        messages,
-        tools: tools || [],
+        system: (system || '') + INSTRUCCIONES_BUSQUEDA,
+        messages: msgs,
+        tools: herramientas,
       }),
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: errorData });
+    if (!r.ok) {
+      const errorData = await r.json().catch(() => ({}));
+      const err: any = new Error(errorData?.error?.message || `Anthropic error ${r.status}`);
+      err.status = r.status;
+      err.payload = errorData;
+      throw err;
     }
+    return r.json();
+  };
 
-    const data = await response.json();
+  try {
+    const primera = await callClaude(messages);
+    // La búsqueda se resuelve sola en el servidor; solo continuamos si el loop
+    // interno de Anthropic pide `pause_turn`.
+    const data = await resolverPauseTurn(primera, messages, callClaude);
+
+
     return res.status(200).json(data);
   } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    return res.status(error?.status || 500).json({ error: error?.payload?.error || error.message });
   }
 }
