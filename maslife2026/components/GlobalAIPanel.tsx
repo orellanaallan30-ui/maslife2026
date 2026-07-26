@@ -5,6 +5,8 @@ import { Appointment } from '../types';
 import supabaseService from '../supabaseService';
 import { callClaudeAPI } from '../lib/claudeHelper';
 import { buscarSolape as buscarSolapeEn, validarJornada as validarJornadaEn } from '../lib/agendaConflict';
+import { DIAS_SEMANA, indiceDia, horarioDelDia, rangoValido, citasAfectadasPorHorario } from '../lib/scheduleRules';
+import { saveProfessional } from '../supabaseService';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -22,7 +24,7 @@ interface GlobalAIPanelProps {
 }
 
 const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
-  const { appointments, addAppointment, updateAppointment, deleteAppointment, patients, loggedPro, addPatient } = useClinic();
+  const { appointments, addAppointment, updateAppointment, deleteAppointment, patients, loggedPro, addPatient, updatePro } = useClinic();
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: 'assistant', text: '¡Hola! Soy tu Asistente MasLife con Claude IA. Puedo gestionar tu agenda: agendar citas, consultar tu calendario, reagendar o cancelar citas, y bloquear horarios. ¿En qué te ayudo?' }
   ]);
@@ -90,6 +92,22 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
           status: { type: 'string', description: 'Nuevo estado: Confirmado | Llegado | En Sesión | Finalizado | Cancelado' },
         },
         required: ['patient_name', 'status']
+      }
+    },
+    {
+      name: 'update_schedule',
+      description: 'Modifica la jornada semanal de atención del profesional (qué días trabaja y en qué horario). AFECTA LA DISPONIBILIDAD PÚBLICA que ven los pacientes al reservar, por eso exige DOBLE confirmación: primero confirmed=true, y si hay citas ya agendadas que quedarían fuera, además confirmed_impact=true.',
+      input_schema: {
+        type: 'object' as const,
+        properties: {
+          day: { type: 'string', description: 'Día de la semana en español: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado o Domingo' },
+          active: { type: 'boolean', description: 'true si ese día se atiende, false si pasa a no laboral (opcional)' },
+          start: { type: 'string', description: 'Hora de inicio HH:MM (opcional)' },
+          end: { type: 'string', description: 'Hora de término HH:MM (opcional)' },
+          confirmed: { type: 'boolean', description: 'Primera confirmación: true SOLO si el usuario confirmó el cambio.' },
+          confirmed_impact: { type: 'boolean', description: 'Segunda confirmación: true SOLO si el usuario aceptó explícitamente que hay citas agendadas que quedarán fuera del nuevo horario.' },
+        },
+        required: ['day']
       }
     },
     {
@@ -310,6 +328,68 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
         return `✅ Cita de ${cita.patientName} (${cita.date} ${cita.time}) marcada como "${status}".`;
       }
 
+      case 'update_schedule': {
+        const { day, active, start, end, confirmed, confirmed_impact } = args;
+
+        const idx = indiceDia(day);
+        if (idx === null) {
+          return `ERROR: No reconozco el día "${day}". Usa Lunes, Martes, Miércoles, Jueves, Viernes, Sábado o Domingo.`;
+        }
+
+        const actual = horarioDelDia(loggedPro?.schedule as any, idx);
+        const nuevo = {
+          active: typeof active === 'boolean' ? active : actual.active,
+          start: start || actual.start,
+          end: end || actual.end,
+        };
+
+        if (nuevo.active && !rangoValido(nuevo.start, nuevo.end)) {
+          return `ERROR: El horario ${nuevo.start}–${nuevo.end} no es válido: la hora de inicio debe ser anterior a la de término.`;
+        }
+
+        const descripcion = nuevo.active
+          ? `${DIAS_SEMANA[idx]} de ${nuevo.start} a ${nuevo.end}`
+          : `${DIAS_SEMANA[idx]} pasa a NO laboral`;
+
+        // 1ª confirmación: el cambio afecta lo que ven los pacientes al reservar.
+        if (confirmed !== true) {
+          return `REQUIRES_CONFIRMATION: Cambiar tu jornada a "${descripcion}" (antes: ${actual.active ? `${actual.start}–${actual.end}` : 'no laboral'}). Esto MODIFICA LA DISPONIBILIDAD PÚBLICA que ven tus pacientes al reservar online. ¿Confirmas?`;
+        }
+
+        // 2ª confirmación: solo si hay citas ya agendadas que quedarían fuera.
+        const hoyISO = new Date().toISOString().split('T')[0];
+        const afectadas = citasAfectadasPorHorario(appointments as any, idx, nuevo, hoyISO);
+
+        if (afectadas.length > 0 && confirmed_impact !== true) {
+          const lista = afectadas
+            .slice(0, 5)
+            .map(c => `• ${c.date} ${c.time} — ${c.patientName}`)
+            .join('\n');
+          const resto = afectadas.length > 5 ? `\n…y ${afectadas.length - 5} más.` : '';
+          return `REQUIRES_CONFIRMATION: ATENCIÓN — hay ${afectadas.length} cita(s) ya agendada(s) que quedarían FUERA del nuevo horario:\n${lista}${resto}\n\nEsas citas NO se cancelan ni se mueven: seguirán en tu agenda, pero fuera de tu jornada declarada. ¿Confirmas el cambio de todas formas?`;
+        }
+
+        if (!loggedPro) return 'ERROR: No hay un profesional con sesión activa.';
+
+        const perfilActualizado = {
+          ...loggedPro,
+          schedule: { ...(loggedPro.schedule || {}), [idx]: nuevo },
+        };
+
+        // Mismo patrón que Ajustes: estado local + persistencia en Supabase.
+        updatePro(perfilActualizado);
+        try {
+          await saveProfessional(perfilActualizado);
+        } catch (e: any) {
+          return `ERROR: No se pudo guardar la jornada en el servidor (${e?.message || 'error'}). El cambio no quedó aplicado.`;
+        }
+
+        const aviso = afectadas.length > 0
+          ? ` Recuerda: ${afectadas.length} cita(s) ya agendada(s) quedaron fuera de esa franja.`
+          : '';
+        return `✅ Jornada actualizada: ${descripcion}.${aviso}`;
+      }
+
       default:
         return 'Función no reconocida.';
     }
@@ -323,7 +403,7 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
 
     return `Eres el Asistente Inteligente de MasLife, un sistema de gestión clínica privado.
 Tu rol es ayudar al profesional ${loggedPro?.name || 'Doctor'} (${loggedPro?.specialty || 'Especialista'}) a gestionar su agenda.
-Puedes: consultar la agenda, agendar citas, bloquear horarios, reagendar, cancelar, registrar pacientes nuevos y cambiar el estado de una cita (Llegado, En Sesión, Finalizado).
+Puedes: consultar la agenda, agendar citas, bloquear horarios, reagendar, cancelar, registrar pacientes nuevos, cambiar el estado de una cita (Llegado, En Sesión, Finalizado) y modificar la jornada semanal de atención.
 Hoy es ${dayOfWeek}, ${todayStr}.
 
 REGLAS:
@@ -336,6 +416,7 @@ REGLAS:
 7. PROTOCOLO DE CONFIRMACIÓN: Para cancelar, reagendar o crear un paciente, primero llama la función con confirmed=false. Si el resultado contiene 'REQUIRES_CONFIRMATION', pregunta al usuario. Solo cuando diga SÍ, llama nuevamente con confirmed=true.
 7b. Si book_appointment devuelve 'SIN_PACIENTE', pregunta al profesional si quiere registrarlo; si acepta, usa create_patient y luego reintenta book_appointment.
 7c. Si una función devuelve un texto que empieza con 'ERROR:', NO digas que la acción se completó: explica el motivo y propone una alternativa (p. ej. otro horario libre).
+7d. update_schedule tiene DOBLE confirmación y cambia lo que ven los pacientes al reservar. Nunca la llames con confirmed=true por iniciativa propia: primero muestra el cambio y espera un SÍ; si luego avisa de citas que quedan fuera, transmite esa lista al usuario y espera un SEGUNDO SÍ antes de usar confirmed_impact=true.
 8. Si el usuario dice "hoy", usa ${todayStr}. Si dice "mañana", calcula el día siguiente.
 9. Sé conciso, profesional y amigable. Máximo 3 oraciones por respuesta.
 10. Responde siempre en español.`;
