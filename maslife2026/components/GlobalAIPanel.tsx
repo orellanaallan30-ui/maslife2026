@@ -4,6 +4,7 @@ import { useClinic } from '../ClinicContext';
 import { Appointment } from '../types';
 import supabaseService from '../supabaseService';
 import { callClaudeAPI } from '../lib/claudeHelper';
+import { buscarSolape as buscarSolapeEn, validarJornada as validarJornadaEn } from '../lib/agendaConflict';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -64,6 +65,34 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
       }
     },
     {
+      name: 'create_patient',
+      description: 'Registra un paciente nuevo en la ficha del profesional. Úsala cuando el paciente no exista y el usuario confirme que quiere crearlo. Pide confirmación antes de ejecutar con confirmed=true.',
+      input_schema: {
+        type: 'object' as const,
+        properties: {
+          name: { type: 'string', description: 'Nombre completo del paciente' },
+          rut: { type: 'string', description: 'RUT del paciente (opcional)' },
+          phone: { type: 'string', description: 'Teléfono (opcional)' },
+          email: { type: 'string', description: 'Email (opcional)' },
+          confirmed: { type: 'boolean', description: 'true SOLO si el usuario confirmó explícitamente crear al paciente.' },
+        },
+        required: ['name']
+      }
+    },
+    {
+      name: 'change_appointment_status',
+      description: 'Cambia el estado de una cita (Confirmado, Llegado, En Sesión, Finalizado, Cancelado). Úsala cuando el profesional indique que el paciente llegó, entró a sesión o terminó.',
+      input_schema: {
+        type: 'object' as const,
+        properties: {
+          patient_name: { type: 'string', description: 'Nombre del paciente' },
+          date: { type: 'string', description: 'Fecha de la cita YYYY-MM-DD (opcional)' },
+          status: { type: 'string', description: 'Nuevo estado: Confirmado | Llegado | En Sesión | Finalizado | Cancelado' },
+        },
+        required: ['patient_name', 'status']
+      }
+    },
+    {
       name: 'cancel_appointment',
       description: 'Cancela una cita existente. SIEMPRE pide confirmación antes de ejecutar con confirmed=true.',
       input_schema: {
@@ -92,6 +121,13 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
     },
   ];
 
+  // --- Reglas de agenda: mismas que la reserva online (lib/agendaConflict) ---
+  const buscarSolape = (fecha: string, hora: string, dur: number, ignorarId?: string) =>
+    buscarSolapeEn(appointments, fecha, hora, dur, ignorarId);
+
+  const validarJornada = (hora: string, dur: number) =>
+    validarJornadaEn(hora, dur, loggedPro?.workingHours);
+
   // --- Ejecutores de funciones ---
   const executeFunction = async (name: string, args: any): Promise<string> => {
     switch (name) {
@@ -109,9 +145,17 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
 
       case 'book_appointment': {
         const { patient_name, date, time, is_block } = args;
-        const conflict = appointments.find(a => a.date === date && a.time === time);
+        const nuevaDur = is_block ? 60 : (loggedPro?.services[0]?.duration || 60);
+
+        // Jornada laboral: evita agendar de madrugada o fuera de horario.
+        const jornada = validarJornada(time, nuevaDur);
+        if (jornada) return jornada;
+
+        // Conflicto por SOLAPE (no solo hora exacta) y excluyendo canceladas —
+        // misma regla que la reserva online (api/_lib/booking.ts).
+        const conflict = buscarSolape(date, time, nuevaDur);
         if (conflict) {
-          return `ERROR: Ya existe una cita a las ${time} del ${date} con ${conflict.patientName}. Horario ocupado.`;
+          return `ERROR: Se solapa con la cita de ${conflict.patientName} (${conflict.time}, ${conflict.duration || 60} min) del ${date}. Elige otro horario.`;
         }
 
         const matchedPatient = patients.find(p =>
@@ -128,7 +172,7 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
           serviceName: is_block ? 'Bloqueo' : (loggedPro?.services[0]?.name || 'Consulta'),
           date,
           time,
-          duration: is_block ? 60 : (loggedPro?.services[0]?.duration || 60),
+          duration: nuevaDur,
           type: is_block ? 'Personal' : 'Presencial',
           status: is_block ? 'Bloqueado' : 'Confirmado',
           price: is_block ? 0 : (loggedPro?.services[0]?.price || 0),
@@ -141,15 +185,20 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
 
         if (!matchedPatient && !is_block) {
           // No crear paciente automáticamente — pedimos confirmación
-          return `⚠️ No encontré a "${patient_name}" en la lista de pacientes. ¿Quieres que lo registre como paciente nuevo para agendar la cita? Responde "Sí, registrar a ${patient_name}" para confirmar.`;
+          return `SIN_PACIENTE: "${patient_name}" no está registrado. Ofrece crearlo con create_patient y, una vez creado, vuelve a intentar book_appointment.`;
         }
 
-        addAppointment(newApp);
+        // Esperar a Supabase: antes se respondía "✅ agendada" sin saber si se
+        // había guardado, y el usuario veía después una notificación de error.
+        const res = await addAppointment(newApp);
+        if (!res.ok) {
+          return `ERROR: No se pudo guardar la cita en el servidor (${res.error || 'error desconocido'}). No quedó agendada.`;
+        }
 
         if (is_block) {
           return `✅ Horario bloqueado el ${date} a las ${time}. Motivo: "${patient_name}".`;
         }
-        return `✅ Cita agendada para ${newApp.patientName} el ${date} a las ${time}.${matchedPatient ? ' (Paciente encontrado)' : ' (Paciente nuevo registrado)'}`;
+        return `✅ Cita agendada para ${newApp.patientName} el ${date} a las ${time}.`;
       }
 
       case 'cancel_appointment': {
@@ -189,15 +238,76 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
           return `REQUIRES_CONFIRMATION: Reagendar cita de ${match.patientName} de ${match.date} ${match.time} → ${new_date} ${new_time}. ¿Confirmas?`;
         }
 
-        const conflict = appointments.find(a => a.date === new_date && a.time === new_time && a.id !== match.id);
+        // Mismo criterio que al agendar: solape real, sin contar canceladas y
+        // sin que la cita choque consigo misma.
+        const jornadaR = validarJornada(new_time, match.duration || 60);
+        if (jornadaR) return jornadaR;
+
+        const conflict = buscarSolape(new_date, new_time, match.duration || 60, match.id);
         if (conflict) {
-          return `ERROR: Horario ${new_time} del ${new_date} ocupado por ${conflict.patientName}.`;
+          return `ERROR: Se solapa con la cita de ${conflict.patientName} (${conflict.time}, ${conflict.duration || 60} min) del ${new_date}. Elige otro horario.`;
         }
 
         const oldDate = match.date;
         const oldTime = match.time;
         updateAppointment({ ...match, date: new_date, time: new_time });
         return `✅ Cita de ${match.patientName} reagendada de ${oldDate} ${oldTime} → ${new_date} ${new_time}.`;
+      }
+
+      case 'create_patient': {
+        const { name: nombre, rut, phone, email, confirmed } = args;
+        if (!nombre?.trim()) return 'ERROR: Falta el nombre del paciente.';
+
+        const yaExiste = patients.find(p =>
+          p.name.toLowerCase().trim() === nombre.toLowerCase().trim()
+        );
+        if (yaExiste) return `El paciente "${yaExiste.name}" ya está registrado. No hace falta crearlo.`;
+
+        if (!confirmed) {
+          return `REQUIRES_CONFIRMATION: Registrar a "${nombre}" como paciente nuevo. ¿Confirmas?`;
+        }
+
+        // Misma forma que crea el panel de pacientes (PatientList.handleSubmit).
+        const nuevo: any = {
+          id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
+          name: nombre.trim(),
+          rut: (rut || '').trim(),
+          phone: (phone || '').trim(),
+          email: (email || '').trim(),
+          age: 0,
+          gender: 'No especificado',
+          status: 'Evaluación',
+          prevision: 'Fonasa',
+          birthDate: '',
+          address: '',
+          allergies: [],
+          medicalHistory: '',
+          attachments: [],
+          customFields: [],
+          archived: false,
+          professionalId: loggedPro?.id,
+        };
+        addPatient(nuevo);
+        return `✅ Paciente "${nuevo.name}" registrado. Ya puedes agendarle una cita.`;
+      }
+
+      case 'change_appointment_status': {
+        const { patient_name, date, status } = args;
+        const validos = ['Confirmado', 'Llegado', 'En Sesión', 'Finalizado', 'Cancelado'];
+        if (!validos.includes(status)) {
+          return `ERROR: Estado inválido. Debe ser uno de: ${validos.join(', ')}.`;
+        }
+
+        const matches = appointments.filter(a =>
+          a.patientName.toLowerCase().includes(patient_name.toLowerCase()) &&
+          (!date || a.date === date)
+        );
+        if (matches.length === 0) return `No encontré citas para "${patient_name}"${date ? ' el ' + date : ''}.`;
+        if (matches.length > 1) return `Encontré ${matches.length} citas para "${patient_name}". Indica la fecha.`;
+
+        const cita = matches[0];
+        updateAppointment({ ...cita, status: status as Appointment['status'] });
+        return `✅ Cita de ${cita.patientName} (${cita.date} ${cita.time}) marcada como "${status}".`;
       }
 
       default:
@@ -213,6 +323,7 @@ const GlobalAIPanel: React.FC<GlobalAIPanelProps> = ({ isOpen, onClose }) => {
 
     return `Eres el Asistente Inteligente de MasLife, un sistema de gestión clínica privado.
 Tu rol es ayudar al profesional ${loggedPro?.name || 'Doctor'} (${loggedPro?.specialty || 'Especialista'}) a gestionar su agenda.
+Puedes: consultar la agenda, agendar citas, bloquear horarios, reagendar, cancelar, registrar pacientes nuevos y cambiar el estado de una cita (Llegado, En Sesión, Finalizado).
 Hoy es ${dayOfWeek}, ${todayStr}.
 
 REGLAS:
@@ -222,7 +333,9 @@ REGLAS:
 4. Valida nombres de pacientes antes de realizar cambios.
 5. No inventes datos que no existan en la agenda.
 6. Mantén confidencialidad médica.
-7. PROTOCOLO DE CONFIRMACIÓN: Para cancelar o reagendar, primero llama la función con confirmed=false. Si el resultado contiene 'REQUIRES_CONFIRMATION', pregunta al usuario. Solo cuando diga SÍ, llama nuevamente con confirmed=true.
+7. PROTOCOLO DE CONFIRMACIÓN: Para cancelar, reagendar o crear un paciente, primero llama la función con confirmed=false. Si el resultado contiene 'REQUIRES_CONFIRMATION', pregunta al usuario. Solo cuando diga SÍ, llama nuevamente con confirmed=true.
+7b. Si book_appointment devuelve 'SIN_PACIENTE', pregunta al profesional si quiere registrarlo; si acepta, usa create_patient y luego reintenta book_appointment.
+7c. Si una función devuelve un texto que empieza con 'ERROR:', NO digas que la acción se completó: explica el motivo y propone una alternativa (p. ej. otro horario libre).
 8. Si el usuario dice "hoy", usa ${todayStr}. Si dice "mañana", calcula el día siguiente.
 9. Sé conciso, profesional y amigable. Máximo 3 oraciones por respuesta.
 10. Responde siempre en español.`;
