@@ -24,7 +24,8 @@ interface ClinicContextType {
   // Citas
   appointments: Appointment[];
   setAppointments: (apps: Appointment[] | ((prev: Appointment[]) => Appointment[])) => void;
-  addAppointment: (app: Appointment) => Promise<void>;
+  /** Devuelve `{ ok }` tras confirmar (o no) el guardado en Supabase. Nunca lanza. */
+  addAppointment: (app: Appointment) => Promise<{ ok: boolean; error?: string }>;
   batchAddAppointments: (apps: Appointment[]) => Promise<void>;
   updateAppointment: (app: Appointment) => void;
   deleteAppointment: (id: string) => void;
@@ -330,13 +331,21 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setProfessionals(prev => [...prev, pro]);
   };
 
-  const addAppointment = async (app: Appointment) => {
+  /**
+   * Agrega una cita. Devuelve `{ ok }` para que quien lo necesite (p. ej. el
+   * agente IA) pueda **esperar la confirmación real de Supabase** antes de
+   * decirle al usuario que quedó agendada. Nunca lanza: los llamadores que no
+   * la esperan (la agenda manual) siguen comportándose igual que antes.
+   */
+  const addAppointment = async (app: Appointment): Promise<{ ok: boolean; error?: string }> => {
     setAppointments(prev => [...prev, app]);
     addNotification(`Nueva cita: ${app.patientName} - ${app.serviceName} (${app.date} ${app.time})`, 'appointment');
+    let saveOk = true;
+    let saveError: string | undefined;
     // Persistir en Supabase — si falla, avisar en vez de ocultar el error.
     // Caso FK 23503: la cita apunta a un paciente que solo existe en este
     // dispositivo (ficha nunca sincronizada) → subir la ficha y reintentar una vez.
-    saveAppointment(app).catch(async err => {
+    await saveAppointment(app).catch(async err => {
       const msg = String(err?.message || err || '');
       const isPatientFk = (err?.code === '23503' || msg.includes('23503') || msg.includes('foreign key')) && app.patientId;
       if (isPatientFk) {
@@ -352,6 +361,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         }
       }
       console.error('[addAppointment] No se pudo guardar la cita en Supabase:', (err as any)?.message || err);
+      saveOk = false;
+      saveError = String((err as any)?.message || err || 'error desconocido');
       notifyWriteError(err, `⚠️ La cita de ${app.patientName} NO se guardó en el servidor: el horario seguirá visible como disponible para tus pacientes. Créala de nuevo.`);
     });
 
@@ -385,6 +396,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       const waMsg = `Nueva cita agendada:\nPaciente: ${app.patientName}\nServicio: ${app.serviceName}\nFecha: ${app.date}\nHora: ${app.time}\nModalidad: ${app.type}`;
       console.log(`[Notif] WhatsApp para ${loggedPro.name}: ${waMsg}`);
     }
+
+    return { ok: saveOk, error: saveError };
   };
 
   const batchAddAppointments = async (apps: Appointment[]) => {
