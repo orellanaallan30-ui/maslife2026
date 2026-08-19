@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; color: #111827; background: #fff; }
+    a { color: #003366; text-decoration: none; }
+    a:hover { color: #FF6B00; }
+  </style>
+</helmet>
+
+<div style="width: 1120px; padding: 0 0 56px 0; background: #fff;">
+
+  <!-- Navbar -->
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 72px; padding: 0 48px; border-bottom: 1px solid #E5E7EB;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 30px; height: 30px; border-radius: 9px; background: #003366; display: flex; align-items: center; justify-content: center;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <span style="font-size: 17px; font-weight: 700; letter-spacing: -0.01em;">Agenda <span style="color: #003366;">+Life</span></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <span style="font-size: 14px; font-weight: 500; color: #6B7280;">Iniciar sesión</span>
+      <div style="padding: 10px 20px; border-radius: 14px; background: #FF6B00; color: #fff; font-size: 14px; font-weight: 600;">Prueba 1 mes gratis</div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px; align-items: center; padding: 64px 48px 56px 48px;">
+
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+      <div style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 999px; background: #F8FAFC; border: 1px solid #E5E7EB; color: #003366; font-size: 12px; font-weight: 600; margin-bottom: 22px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.2 6.2L20.5 11l-6.3 1.8L12 19l-2.2-6.2L3.5 11l6.3-1.8z"/></svg>
+        Un subproducto de Clínica +Life
+      </div>
+
+      <h1 style="font-size: 52px; font-weight: 800; line-height: 1.05; letter-spacing: -0.025em; margin: 0 0 20px 0;">
+        Haz crecer tus servicios con <span style="color: #003366;">Agenda +Life</span>
+      </h1>
+
+      <p style="font-size: 17px; line-height: 1.65; color: #6B7280; margin: 0 0 30px 0; max-width: 460px; text-wrap: pretty;">
+        La agenda con IA que automatiza tu consulta: reservas 24/7, cobros online, fichas clínicas y recordatorios. Tú atiendes; el resto se ocupa solo.
+      </p>
+
+      <div style="display: flex; gap: 12px; margin-bottom: 26px;">
+        <div style="padding: 15px 26px; border-radius: 16px; background: #FF6B00; color: #fff; font-size: 15px; font-weight: 600; box-shadow: 0 16px 40px -14px rgba(255,107,0,.6);">Prueba 1 mes gratis</div>
+        <div style="padding: 15px 24px; border-radius: 16px; background: #fff; color: #003366; border: 1.5px solid #E5E7EB; font-size: 15px; font-weight: 600;">Ver cómo funciona</div>
+      </div>
+
+      <!-- Prueba social honesta: sin cifras infladas -->
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; gap: 18px;">
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span style="font-size: 13px; font-weight: 500; color: #6B7280;">Sin tarjeta de crédito</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span style="font-size: 13px; font-weight: 500; color: #6B7280;">Sin permanencia</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span style="font-size: 13px; font-weight: 500; color: #6B7280;">Cancelas cuando quieras</span>
+          </div>
+        </div>
+        <p style="font-size: 12px; color: #9CA3AF; margin: 0;">Respaldado por Clínica +Life · Datos protegidos según Ley 21.719</p>
+      </div>
+    </div>
+
+    <!-- Mockup del panel -->
+    <div style="position: relative;">
+      <div style="border-radius: 22px; border: 1px solid #E5E7EB; background: #fff; box-shadow: 0 30px 70px -30px rgba(0,51,102,.28); overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 7px; padding: 13px 16px; border-bottom: 1px solid #E5E7EB; background: #F8FAFC;">
+          <div style="width: 9px; height: 9px; border-radius: 50%; background: #FF6B00;"></div>
+          <div style="width: 9px; height: 9px; border-radius: 50%; background: #E5E7EB;"></div>
+          <div style="width: 9px; height: 9px; border-radius: 50%; background: #E5E7EB;"></div>
+          <span style="margin-left: 8px; font-size: 11px; font-weight: 600; color: #6B7280;">Mi agenda · Hoy</span>
+        </div>
+
+        <div style="padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 13px; border: 1px solid #E5E7EB;">
+            <div style="width: 42px; text-align: center; font-size: 12px; font-weight: 700; color: #003366;">09:00</div>
+            <div style="flex-grow: 1;">
+              <div style="font-size: 13px; font-weight: 600;">Camila Rojas</div>
+              <div style="font-size: 11px; color: #6B7280;">Kinesiología · 45 min</div>
+            </div>
+            <div style="padding: 4px 9px; border-radius: 999px; background: #ECFDF5; color: #059669; font-size: 10px; font-weight: 700;">Pagado</div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 13px; border: 1px solid #E5E7EB;">
+            <div style="width: 42px; text-align: center; font-size: 12px; font-weight: 700; color: #003366;">11:30</div>
+            <div style="flex-grow: 1;">
+              <div style="font-size: 13px; font-weight: 600;">Diego Fuentes</div>
+              <div style="font-size: 11px; color: #6B7280;">Evaluación inicial · 60 min</div>
+            </div>
+            <div style="padding: 4px 9px; border-radius: 999px; background: #ECFDF5; color: #059669; font-size: 10px; font-weight: 700;">Pagado</div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 13px; border: 1.5px dashed #E5E7EB; background: #F8FAFC;">
+            <div style="width: 42px; text-align: center; font-size: 12px; font-weight: 700; color: #9CA3AF;">15:00</div>
+            <div style="flex-grow: 1; font-size: 12px; color: #9CA3AF;">Disponible para reservar</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 4px;">
+            <div style="padding: 13px; border-radius: 13px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+              <div style="font-size: 10px; font-weight: 600; color: #6B7280; margin-bottom: 3px;">Ingresos del mes</div>
+              <div style="font-size: 19px; font-weight: 800; color: #059669;">$185.000</div>
+            </div>
+            <div style="padding: 13px; border-radius: 13px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+              <div style="font-size: 10px; font-weight: 600; color: #6B7280; margin-bottom: 3px;">Reservas online</div>
+              <div style="font-size: 19px; font-weight: 800; color: #003366;">12</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta flotante IA -->
+      <div style="position: absolute; bottom: -22px; left: -26px; width: 218px; padding: 14px; border-radius: 16px; background: #fff; box-shadow: 0 20px 45px -16px rgba(0,0,0,.24); border: 1px solid #E5E7EB;">
+        <div style="display: flex; align-items: center; gap: 9px;">
+          <div style="width: 30px; height: 30px; border-radius: 10px; background: #003366; display: flex; align-items: center; justify-content: center;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.2 6.2L20.5 11l-6.3 1.8L12 19l-2.2-6.2L3.5 11l6.3-1.8z"/></svg>
+          </div>
+          <div>
+            <div style="font-size: 12px; font-weight: 700;">Incluye Asistente IA</div>
+            <div style="font-size: 10px; color: #6B7280;">Redacta informes por ti</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

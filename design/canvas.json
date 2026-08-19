@@ -1,0 +1,33 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "1 · Hero", "x": 0, "y": 0, "w": 1120, "h": 700 },
+    { "file": "Beneficios.dc.html", "title": "2 · Beneficios", "x": 1200, "y": 0, "w": 1120, "h": 900 },
+    { "file": "Tarifas.dc.html", "title": "3 · Tarifas (nueva)", "x": 0, "y": 780, "w": 1120, "h": 880 },
+    { "file": "Acceso.dc.html", "title": "4 · Registro y login", "x": 1200, "y": 980, "w": 1120, "h": 800 },
+    { "file": "FAQ.dc.html", "title": "5 · FAQ y cierre", "x": 0, "y": 1740, "w": 1120, "h": 1180 }
+  ],
+  "annotations": [
+    {
+      "id": "nota-tarifas",
+      "x": -320,
+      "y": 780,
+      "w": 280,
+      "text": "SECCIÓN NUEVA\n\nHoy el precio ($24.990) solo aparece escondido dentro de una respuesta del FAQ. Un profesional que entra a \"ver cuánto cuesta\" no lo encuentra.\n\nRevisa: el cálculo de cuántas sesiones cubren el plan tiene marcadores [TU PRECIO] y [N] para que los completes tú."
+    },
+    {
+      "id": "nota-prueba-social",
+      "x": -320,
+      "y": 0,
+      "w": 280,
+      "text": "CIFRA RETIRADA\n\nLa landing actual dice \"Más de 30 profesionales ya utilizan Agenda +Life\", pero la base de datos tiene 3.\n\nLa reemplacé por ganchos verdaderos (sin tarjeta, sin permanencia, respaldo de Clínica +Life). Cuando tengas volumen real, se puede volver a poner una cifra."
+    },
+    {
+      "id": "nota-acceso",
+      "x": 2400,
+      "y": 980,
+      "w": 280,
+      "text": "CIERRA EL EMBUDO\n\nHoy el registro y el login están en teal y dicen \"Agenda Maslife\": el profesional hace clic en un CTA naranjo y aterriza en otra marca.\n\nAquí van con azul/naranjo y \"+Life\", para que el recorrido se sienta continuo."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

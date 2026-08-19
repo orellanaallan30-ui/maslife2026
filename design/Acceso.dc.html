@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; color: #111827; background: #F8FAFC; }
+    a { color: #003366; text-decoration: none; }
+    a:hover { color: #FF6B00; }
+  </style>
+</helmet>
+
+<!-- Registro y login con la marca +Life: hoy están en teal y dicen
+     "Agenda Maslife", lo que rompe el embudo justo al hacer clic en el CTA. -->
+<div style="width: 1120px; padding: 56px 48px; background: #F8FAFC;">
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; align-items: start;">
+
+    <!-- REGISTRO -->
+    <div>
+      <div style="font-size: 12px; font-weight: 700; color: #6B7280; margin-bottom: 12px;">Crear cuenta · /pro/register</div>
+
+      <div style="border-radius: 24px; background: #fff; border: 1px solid #E5E7EB; box-shadow: 0 24px 56px -28px rgba(0,51,102,.25); overflow: hidden;">
+
+        <div style="padding: 26px 28px 0 28px;">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <div style="width: 34px; height: 34px; border-radius: 11px; background: #003366; display: flex; align-items: center; justify-content: center;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 16px; font-weight: 700; letter-spacing: -0.01em;">Agenda <span style="color: #003366;">+Life</span></div>
+              <div style="font-size: 11px; color: #6B7280;">clinicamaslife.cl</div>
+            </div>
+          </div>
+
+          <!-- Pasos -->
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <div style="width: 26px; height: 26px; border-radius: 9px; background: #003366; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">1</div>
+              <span style="font-size: 12px; font-weight: 600; color: #111827;">Perfil</span>
+            </div>
+            <div style="flex-grow: 1; height: 3px; border-radius: 999px; background: #E5E7EB; position: relative;">
+              <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 50%; border-radius: 999px; background: #003366;"></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <div style="width: 26px; height: 26px; border-radius: 9px; background: #fff; border: 1.5px solid #E5E7EB; color: #9CA3AF; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">2</div>
+              <span style="font-size: 12px; font-weight: 600; color: #9CA3AF;">Servicios</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 22px 28px 28px 28px; display: flex; flex-direction: column; gap: 13px;">
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="font-size: 12px; font-weight: 600; color: #374151;">Nombre completo</label>
+            <div style="padding: 13px 15px; border-radius: 14px; background: #F8FAFC; border: 1.5px solid #E5E7EB; font-size: 14px; color: #9CA3AF;">Sebastián Orellana</div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="font-size: 12px; font-weight: 600; color: #374151;">Email</label>
+            <div style="padding: 13px 15px; border-radius: 14px; background: #fff; border: 1.5px solid #003366; font-size: 14px; color: #111827; box-shadow: 0 0 0 4px rgba(0,51,102,.08);">tu@correo.cl</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label style="font-size: 12px; font-weight: 600; color: #374151;">Especialidad</label>
+              <div style="padding: 13px 15px; border-radius: 14px; background: #F8FAFC; border: 1.5px solid #E5E7EB; font-size: 14px; color: #9CA3AF;">Kinesiología</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label style="font-size: 12px; font-weight: 600; color: #374151;">Ciudad</label>
+              <div style="padding: 13px 15px; border-radius: 14px; background: #F8FAFC; border: 1.5px solid #E5E7EB; font-size: 14px; color: #9CA3AF;">Ovalle</div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: flex-start; gap: 9px; padding: 12px 14px; border-radius: 13px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+            <div style="width: 17px; height: 17px; border-radius: 5px; border: 1.5px solid #003366; background: #003366; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <span style="font-size: 12px; line-height: 1.5; color: #6B7280;">Acepto los Términos y la Política de Privacidad</span>
+          </div>
+
+          <div style="padding: 15px; border-radius: 16px; background: #FF6B00; color: #fff; font-size: 14px; font-weight: 600; text-align: center; box-shadow: 0 14px 34px -12px rgba(255,107,0,.6);">
+            Siguiente
+          </div>
+
+          <p style="font-size: 11px; color: #9CA3AF; text-align: center; margin: 0;">Primer mes gratis · Sin tarjeta de crédito</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div>
+      <div style="font-size: 12px; font-weight: 700; color: #6B7280; margin-bottom: 12px;">Iniciar sesión · /pro/login</div>
+
+      <div style="border-radius: 24px; background: #fff; border: 1px solid #E5E7EB; box-shadow: 0 24px 56px -28px rgba(0,51,102,.25); padding: 32px 28px;">
+
+        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 26px;">
+          <div style="width: 46px; height: 46px; border-radius: 15px; background: #003366; display: flex; align-items: center; justify-content: center; margin-bottom: 14px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div style="font-size: 19px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px;">Agenda <span style="color: #003366;">+Life</span></div>
+          <div style="font-size: 13px; color: #6B7280;">Entra a tu panel profesional</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="font-size: 12px; font-weight: 600; color: #374151;">Email</label>
+            <div style="padding: 13px 15px; border-radius: 14px; background: #F8FAFC; border: 1.5px solid #E5E7EB; font-size: 14px; color: #9CA3AF;">tu@correo.cl</div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="font-size: 12px; font-weight: 600; color: #374151;">Contraseña</label>
+            <div style="padding: 13px 15px; border-radius: 14px; background: #F8FAFC; border: 1.5px solid #E5E7EB; font-size: 14px; color: #9CA3AF; display: flex; align-items: center; justify-content: space-between;">
+              <span>••••••••</span>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+
+          <div style="text-align: right;">
+            <span style="font-size: 12px; font-weight: 600; color: #003366;">¿Olvidaste tu contraseña?</span>
+          </div>
+
+          <div style="padding: 15px; border-radius: 16px; background: #FF6B00; color: #fff; font-size: 14px; font-weight: 600; text-align: center; box-shadow: 0 14px 34px -12px rgba(255,107,0,.6);">
+            Entrar
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; margin: 4px 0;">
+            <div style="flex-grow: 1; height: 1px; background: #E5E7EB;"></div>
+            <span style="font-size: 11px; color: #9CA3AF;">o</span>
+            <div style="flex-grow: 1; height: 1px; background: #E5E7EB;"></div>
+          </div>
+
+          <div style="padding: 14px; border-radius: 16px; background: #fff; border: 1.5px solid #E5E7EB; color: #003366; font-size: 14px; font-weight: 600; text-align: center;">
+            Crear cuenta nueva
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; padding: 16px 18px; border-radius: 16px; background: #fff; border: 1px solid #E5E7EB;">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 3l8 4v5c0 5-3.4 8.4-8 9.6C7.4 20.4 4 17 4 12V7z"/></svg>
+          <div style="font-size: 12px; line-height: 1.55; color: #6B7280;">
+            Tu sesión y las fichas de tus pacientes viajan cifradas. Cada profesional accede solo a sus propios datos.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -7,3 +7,9 @@ dist-ssr/
 .DS_Store
 *.log
 .vercel
+
+# Lienzos de Claude Design: se versionan las fuentes editables (*.dc.html y
+# canvas.json), no el archivo publicado — son ~2 MB de editor empaquetado que
+# se regenera desde esas fuentes.
+design/*.html
+!design/*.dc.html
