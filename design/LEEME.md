@@ -88,17 +88,13 @@ sienta continuo.
 
 ---
 
-## Pendiente: dos datos tuyos
+## Resuelto: la tarjeta de retorno ya no necesita datos tuyos
 
-En la sección de Tarifas quedaron dos marcadores. No los inventé porque
-dependen de tu tarifa real:
+En vez de fijar un precio de ejemplo, la sección de Tarifas trae una
+**calculadora**: el profesional escribe cuánto cobra por sesión y la página le
+dice con cuántas reservas del mes queda cubierto el plan.
 
-- `[TU PRECIO POR SESIÓN]`
-- `[N] sesiones` — cuántas sesiones cubren los $24.990 del plan
-
-El argumento es simple y potente: *"si tu consulta vale X, el plan se paga con
-las primeras N sesiones del mes; lo demás es ganancia"*. Necesita tus números
-para funcionar.
+Sirve para cualquier especialidad y no depende de una tarifa de referencia.
 
 ---
 
@@ -124,9 +120,35 @@ en "+Life" recibirá correos y verá un panel que aún dicen "Agenda Maslife".
 
 ---
 
+## Estado: el diseño unificado ya está en el código
+
+`oficial/Main.dc.html` es el diseño unificado (tu landing condensada + la
+sección de Tarifas, con las tres dudas de dinero una sola vez, dentro de
+Tarifas). Ya está trasladado a `maslife2026/pages/ProLanding.tsx`, la ruta
+`/unete`.
+
+Orden final de la página:
+`Navbar → Hero (con el precio al lado del botón) → Beneficios → Cómo funciona →
+Funciones → Tarifas → Integraciones → FAQ → Cierre`.
+
+### Afirmaciones que hubo que corregir
+
+Al trasladar el diseño se auditó cada promesa de la landing contra el código.
+Estas no tenían respaldo y se corrigieron:
+
+| Decía | Realidad | Quedó |
+|---|---|---|
+| Integraciones con Google Meet, WhatsApp Business, WebPay, Zoom, Google Drive y Gmail | No existe una línea de código de ninguna | Solo **Google Calendar** y **Mercado Pago**, que sí están implementados |
+| "Recordatorios automáticos" | No hay ningún cron; `emailService.ts::sendAppointmentReminder` es código muerto que nadie importa | "**Confirmaciones automáticas**": el correo al reservar con la invitación `.ics`, que es lo que sí ocurre |
+| "Citas recurrentes" | La recurrencia solo existe para bloqueos administrativos | "**Bloqueos y horarios recurrentes**" |
+| "Más de 30 profesionales ya utilizan Agenda +Life" | La base de datos tiene 3 | Eliminado, reemplazado por tres garantías verificables |
+| 3 testimonios firmados con nombre y especialidad | Inventados | Eliminados hasta tener citas reales |
+
+"Videollamadas" y "Recetas" siguen marcadas *Próximamente*, que es correcto.
+
 ## Siguiente paso
 
-Revisa el lienzo y ajusta lo que quieras. Cuando esté aprobado, el diseño se
-traslada al código (`maslife2026/pages/ProLanding.tsx`, `ProfessionalRegistration.tsx`
-y `ProfessionalLogin.tsx`) con la verificación habitual: TypeScript sin errores,
-93 tests, build, y el límite de 12 funciones serverless de Vercel.
+Queda pendiente la **continuidad de marca del embudo**: `/pro/register` y
+`/pro/login` siguen en color teal y con el nombre "Agenda Maslife", mientras la
+landing es azul/naranjo y dice "+Life". Es una tanda aparte, con el alcance de
+renombrado descrito arriba.

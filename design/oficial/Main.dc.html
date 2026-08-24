@@ -1,0 +1,293 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; color: #111827; background: #fff; }
+    a { color: #003366; text-decoration: none; }
+    a:hover { color: #FF6B00; }
+  </style>
+</helmet>
+
+<div style="width: 1120px; background: #fff;">
+
+  <!-- ══════════ NAVBAR ══════════ -->
+  <div style="display: flex; align-items: center; justify-content: space-between; height: 68px; padding: 0 48px; border-bottom: 1px solid #E5E7EB;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="width: 30px; height: 30px; border-radius: 9px; background: #003366; display: flex; align-items: center; justify-content: center;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+      </div>
+      <span style="font-size: 17px; font-weight: 700; letter-spacing: -0.01em;">Agenda <span style="color: #003366;">+Life</span></span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <span style="font-size: 14px; font-weight: 500; color: #6B7280;">Iniciar sesión</span>
+      <div style="padding: 10px 20px; border-radius: 14px; background: #FF6B00; color: #fff; font-size: 14px; font-weight: 600;">Prueba 1 mes gratis</div>
+    </div>
+  </div>
+
+  <!-- ══════════ HERO ══════════ -->
+  <div style="display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: center; padding: 52px 48px 44px 48px;">
+
+    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+      <div style="display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 999px; background: #F8FAFC; border: 1px solid #E5E7EB; color: #003366; font-size: 12px; font-weight: 600; margin-bottom: 18px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.2 6.2L20.5 11l-6.3 1.8L12 19l-2.2-6.2L3.5 11l6.3-1.8z"></path></svg>
+        Un subproducto de Clínica +Life
+      </div>
+
+      <h1 style="font-size: 50px; font-weight: 800; line-height: 1.05; letter-spacing: -0.025em; margin: 0 0 16px 0;">
+        Tu agenda, cobros y fichas en <span style="color: #003366;">un solo lugar</span>
+      </h1>
+
+      <p style="font-size: 17px; line-height: 1.6; color: #6B7280; margin: 0 0 24px 0; max-width: 440px; text-wrap: pretty;">
+        Reservas 24/7, pagos online, fichas clínicas y confirmaciones automáticas. Tú atiendes; el resto se ocupa solo.
+      </p>
+
+      <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
+        <div style="padding: 15px 28px; border-radius: 16px; background: #FF6B00; color: #fff; font-size: 16px; font-weight: 700; white-space: nowrap; flex-shrink: 0; box-shadow: 0 16px 40px -14px rgba(255,107,0,.6);">Crear mi cuenta gratis</div>
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 14px; font-weight: 700; color: #111827;">30 días gratis, después $24.990/mes</span>
+          <span style="font-size: 13px; color: #6B7280;">Sin tarjeta, sin permanencia.</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+          <span style="font-size: 13px; font-weight: 500; color: #6B7280;">Tus pagos van directo a tu MercadoPago</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+          <span style="font-size: 13px; font-weight: 500; color: #6B7280;">Sincronizado con Google Calendar</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+          <span style="font-size: 13px; font-weight: 500; color: #6B7280;">Fichas cifradas, Ley 21.719</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mockup del panel -->
+    <div style="border-radius: 22px; border: 1px solid #E5E7EB; background: #fff; box-shadow: 0 30px 70px -30px rgba(0,51,102,.28); overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 7px; padding: 13px 16px; border-bottom: 1px solid #E5E7EB; background: #F8FAFC;">
+        <div style="width: 9px; height: 9px; border-radius: 50%; background: #FF6B00;"></div>
+        <div style="width: 9px; height: 9px; border-radius: 50%; background: #E5E7EB;"></div>
+        <div style="width: 9px; height: 9px; border-radius: 50%; background: #E5E7EB;"></div>
+        <span style="margin-left: 8px; font-size: 11px; font-weight: 600; color: #6B7280;">Mi agenda · Hoy</span>
+      </div>
+      <div style="padding: 18px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 13px; border: 1px solid #E5E7EB;">
+          <div style="width: 42px; text-align: center; font-size: 12px; font-weight: 700; color: #003366;">09:00</div>
+          <div style="flex-grow: 1;">
+            <div style="font-size: 13px; font-weight: 600;">Camila Rojas</div>
+            <div style="font-size: 11px; color: #6B7280;">Kinesiología · 45 min</div>
+          </div>
+          <div style="padding: 4px 9px; border-radius: 999px; background: #ECFDF5; color: #059669; font-size: 10px; font-weight: 700;">Pagado</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 13px; border: 1px solid #E5E7EB;">
+          <div style="width: 42px; text-align: center; font-size: 12px; font-weight: 700; color: #003366;">11:30</div>
+          <div style="flex-grow: 1;">
+            <div style="font-size: 13px; font-weight: 600;">Diego Fuentes</div>
+            <div style="font-size: 11px; color: #6B7280;">Evaluación inicial · 60 min</div>
+          </div>
+          <div style="padding: 4px 9px; border-radius: 999px; background: #ECFDF5; color: #059669; font-size: 10px; font-weight: 700;">Pagado</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 13px; border-radius: 13px; border: 1.5px dashed #E5E7EB; background: #F8FAFC;">
+          <div style="width: 42px; text-align: center; font-size: 12px; font-weight: 700; color: #9CA3AF;">15:00</div>
+          <div style="flex-grow: 1; font-size: 12px; color: #9CA3AF;">Disponible para reservar</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 4px;">
+          <div style="padding: 13px; border-radius: 13px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+            <div style="font-size: 10px; font-weight: 600; color: #6B7280; margin-bottom: 3px;">Ingresos del mes</div>
+            <div style="font-size: 19px; font-weight: 800; color: #059669;">$185.000</div>
+          </div>
+          <div style="padding: 13px; border-radius: 13px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+            <div style="font-size: 10px; font-weight: 600; color: #6B7280; margin-bottom: 3px;">Reservas online</div>
+            <div style="font-size: 19px; font-weight: 800; color: #003366;">12</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ QUÉ INCLUYE (beneficios) ══════════ -->
+  <div style="padding: 0 48px 52px 48px;">
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+      <div style="padding: 20px; border-radius: 18px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M19 8v6M22 11h-6"></path></svg>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 5px 0;">Más pacientes</h3>
+        <p style="font-size: 13px; line-height: 1.55; color: #6B7280; margin: 0;">Perfil en el buscador de Clínica +Life y reservas solas, 24/7.</p>
+      </div>
+      <div style="padding: 20px; border-radius: 18px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><rect x="2" y="5" width="20" height="14" rx="2.5"></rect><path d="M2 10h20"></path></svg>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 5px 0;">Cobros y confirmaciones</h3>
+        <p style="font-size: 13px; line-height: 1.55; color: #6B7280; margin: 0;">Cobra por adelantado con MercadoPago, con confirmación automática por email y sincronización con Google Calendar.</p>
+      </div>
+      <div style="padding: 20px; border-radius: 18px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><path d="M15 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"></path><path d="M14 3v5h5M9 13h6M9 17h4"></path></svg>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 5px 0;">Fichas clínicas</h3>
+        <p style="font-size: 13px; line-height: 1.55; color: #6B7280; margin: 0;">Por especialidad, con informes PDF, consentimientos y rutinas.</p>
+      </div>
+      <div style="padding: 20px; border-radius: 18px; background: #003366; border: 1px solid #003366;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;"><path d="M12 3l2.2 6.2L20.5 11l-6.3 1.8L12 19l-2.2-6.2L3.5 11l6.3-1.8z"></path></svg>
+        <h3 style="font-size: 15px; font-weight: 700; margin: 0 0 5px 0; color: #fff;">Asistente IA incluido</h3>
+        <p style="font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.72); margin: 0;">Redacta informes, resume fichas y gestiona tu agenda por chat.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ TARIFAS ══════════ -->
+  <div style="background: #F8FAFC; border-top: 1px solid #E5E7EB; border-bottom: 1px solid #E5E7EB; padding: 56px 48px;">
+
+    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 36px;">
+      <div style="display: inline-flex; align-items: center; gap: 7px; padding: 7px 14px; border-radius: 999px; background: #fff; border: 1px solid #E5E7EB; color: #003366; font-size: 12px; font-weight: 600; margin-bottom: 16px;">
+        Tarifas
+      </div>
+      <h2 style="font-size: 38px; font-weight: 800; letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 12px 0;">
+        Un solo plan. Todo incluido.
+      </h2>
+      <p style="font-size: 16px; line-height: 1.6; color: #6B7280; margin: 0; max-width: 480px; text-wrap: pretty;">
+        Sin módulos que se cobran aparte ni sorpresas. El primer mes es gratis y no necesitas tarjeta para empezar.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start;">
+
+      <!-- Tarjeta del plan -->
+      <div style="border-radius: 24px; border: 2px solid #003366; background: #fff; overflow: hidden; box-shadow: 0 28px 64px -28px rgba(0,51,102,.3);">
+
+        <div style="padding: 12px 24px; background: #003366; display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 12px; font-weight: 700; color: #fff; letter-spacing: 0.02em;">PLAN PRO</span>
+          <span style="padding: 4px 11px; border-radius: 999px; background: #FF6B00; color: #fff; font-size: 11px; font-weight: 700;">1er mes gratis</span>
+        </div>
+
+        <div style="padding: 28px;">
+          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px;">
+            <span style="font-size: 44px; font-weight: 800; letter-spacing: -0.03em; color: #111827;">$24.990</span>
+            <span style="font-size: 16px; font-weight: 500; color: #6B7280;">/ mes</span>
+          </div>
+          <p style="font-size: 13px; color: #6B7280; margin: 0 0 20px 0;">IVA incluido · Cancelas cuando quieras</p>
+
+          <div style="padding: 14px 16px; border-radius: 14px; background: #F8FAFC; border: 1px solid #E5E7EB; margin-bottom: 20px;">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF6B00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l2.5 2.5"></path></svg>
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 2px;">Empiezas pagando $0</div>
+                <div style="font-size: 12px; color: #6B7280; line-height: 1.5;">30 días con todas las funciones. Recién al día 31 decides si continúas.</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px;">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M20 6L9 17l-5-5"></path></svg>
+              <span style="font-size: 14px; line-height: 1.5;">Agenda online 24/7 y perfil en el buscador</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M20 6L9 17l-5-5"></path></svg>
+              <span style="font-size: 14px; line-height: 1.5;">Cobros con MercadoPago <strong style="font-weight: 600;">directo a tu cuenta</strong></span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M20 6L9 17l-5-5"></path></svg>
+              <span style="font-size: 14px; line-height: 1.5;">Fichas clínicas por especialidad e informes PDF</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M20 6L9 17l-5-5"></path></svg>
+              <span style="font-size: 14px; line-height: 1.5;">Asistente IA: informes, resúmenes y agenda por chat</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M20 6L9 17l-5-5"></path></svg>
+              <span style="font-size: 14px; line-height: 1.5;">Confirmaciones automáticas y sincronización con Google Calendar</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M20 6L9 17l-5-5"></path></svg>
+              <span style="font-size: 14px; line-height: 1.5;">Rutinas de ejercicio y planes enviables al paciente</span>
+            </div>
+          </div>
+
+          <div style="padding: 16px; border-radius: 16px; background: #FF6B00; color: #fff; font-size: 15px; font-weight: 700; text-align: center; box-shadow: 0 16px 40px -14px rgba(255,107,0,.6);">
+            Empezar mi mes gratis
+          </div>
+          <p style="font-size: 12px; color: #9CA3AF; text-align: center; margin: 12px 0 0 0;">No pedimos tarjeta de crédito para registrarte.</p>
+        </div>
+      </div>
+
+      <!-- Retorno + las tres dudas de plata (aquí, no repetidas arriba) -->
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+
+        <div style="padding: 24px; border-radius: 20px; background: #fff; border: 1px solid #E5E7EB;">
+          <h3 style="font-size: 17px; font-weight: 700; margin: 0 0 8px 0;">¿Cuánto tiene que rendir para pagarse?</h3>
+          <p style="font-size: 14px; line-height: 1.6; color: #6B7280; margin: 0 0 16px 0;">
+            Escribe cuánto cobras por sesión y calculamos con cuántas reservas del mes queda cubierto el plan. Lo que agendes de ahí en adelante es ganancia.
+          </p>
+          <div style="display: flex; align-items: center; gap: 14px; padding: 15px 16px; border-radius: 14px; background: #F8FAFC; border: 1px solid #E5E7EB;">
+            <div style="flex-grow: 1;">
+              <div style="font-size: 11px; font-weight: 600; color: #6B7280; margin-bottom: 3px;">Costo del plan</div>
+              <div style="font-size: 20px; font-weight: 800; color: #111827;">$24.990</div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            <div style="flex-grow: 1;">
+              <div style="font-size: 11px; font-weight: 600; color: #6B7280; margin-bottom: 3px;">Se cubre con (ej. $25.000/sesión)</div>
+              <div style="font-size: 20px; font-weight: 800; color: #059669;">1 sesión</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: 24px; border-radius: 20px; background: #fff; border: 1px solid #E5E7EB;">
+          <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><rect x="2" y="5" width="20" height="14" rx="2.5"></rect><path d="M2 10h20"></path></svg>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; margin-bottom: 3px;">El dinero de tus pacientes es tuyo</div>
+              <div style="font-size: 13px; line-height: 1.55; color: #6B7280;">Conectas tu propia cuenta de MercadoPago. Los pagos llegan directo a ti — la plataforma no retiene ni administra tu dinero.</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; margin-bottom: 3px;">Sin permanencia ni letra chica</div>
+              <div style="font-size: 13px; line-height: 1.55; color: #6B7280;">Cancelas desde tu panel cuando quieras. No hay costo de salida ni cláusulas escondidas.</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><path d="M12 3l8 4v5c0 5-3.4 8.4-8 9.6C7.4 20.4 4 17 4 12V7z"></path></svg>
+            <div>
+              <div style="font-size: 14px; font-weight: 700; margin-bottom: 3px;">Tus fichas te pertenecen</div>
+              <div style="font-size: 13px; line-height: 1.55; color: #6B7280;">Datos cifrados y separados por profesional, según la Ley 21.719. Puedes exportar tus fichas en PDF cuando quieras.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ CIERRE ══════════ -->
+  <div style="padding: 52px 48px 56px 48px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px; padding: 40px 44px; border-radius: 26px; background: #003366;">
+      <div>
+        <h2 style="font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin: 0 0 8px 0; color: #fff;">Partir toma menos que una sesión</h2>
+        <p style="font-size: 15px; line-height: 1.6; color: rgba(255,255,255,.75); margin: 0; max-width: 460px; text-wrap: pretty;">Creas tu cuenta, configuras horarios y precios, y tu agenda queda publicada. Primer mes gratis.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: stretch; gap: 10px; flex-shrink: 0;">
+        <div style="padding: 16px 32px; border-radius: 16px; background: #FF6B00; color: #fff; font-size: 16px; font-weight: 700; text-align: center;">Crear mi cuenta gratis</div>
+        <span style="font-size: 12px; color: rgba(255,255,255,.7); text-align: center;">¿Ya tienes cuenta? Inicia sesión</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
