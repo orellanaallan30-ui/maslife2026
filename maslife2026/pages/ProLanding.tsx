@@ -117,34 +117,35 @@ const ProLanding: React.FC = () => {
   const orangeBtn = 'inline-flex items-center justify-center gap-2 rounded-2xl font-bold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0';
 
   return (
-    <div className="landing-page w-full h-full overflow-y-auto scroll-smooth relative bg-white" style={{ ...FONT, color: TEXT }}>
+    <div className="pro-landing w-full h-full overflow-y-auto scroll-smooth relative bg-white" style={{ ...FONT, color: TEXT }}>
 
       {/* ═══════════ NAVBAR ═══════════ */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 lg:px-[6vw]"
         style={{ height: 72, background: 'rgba(255,255,255,.92)', backdropFilter: 'blur(14px)', borderBottom: `1px solid ${BORDER}` }}>
         <div className="flex items-center gap-2 cursor-pointer shrink-0" onClick={() => navigate('/')}>
-          <img src={logoClinica} alt="Clínica +Life" className="w-auto object-contain h-20 lg:h-24"
+          <img src={logoClinica} alt="Clínica +Life" className="w-auto object-contain h-11 lg:h-16"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <span className="hidden lg:inline text-sm font-extrabold" style={{ color: BLUE }}>Agenda +Life</span>
+          <span className="text-sm lg:text-base font-extrabold whitespace-nowrap" style={{ color: BLUE }}>Agenda +Life</span>
         </div>
         <div className="flex items-center gap-2 lg:gap-4">
           <a href="#tarifas" className="hidden lg:inline text-sm font-semibold px-3 py-2 rounded-xl transition-colors hover:bg-slate-50" style={{ color: MUTED }}>
             Tarifas
           </a>
           <button onClick={() => navigate('/pro/login')}
-            className="text-sm font-semibold px-3 py-2 rounded-xl transition-colors hover:bg-slate-50" style={{ color: MUTED }}>
-            Iniciar sesión
+            className="text-sm font-semibold px-2 lg:px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-slate-50" style={{ color: MUTED }}>
+            Entrar
           </button>
           <button onClick={goRegister}
-            className={`${orangeBtn} text-sm px-5 py-2.5`}
+            className={`${orangeBtn} text-sm px-4 lg:px-5 py-2.5 whitespace-nowrap`}
             style={{ background: ORANGE, boxShadow: '0 8px 24px -10px rgba(255,107,0,.55)' }}>
-            Quiero mi mes gratis
+            <span className="lg:hidden">Mes gratis</span>
+            <span className="hidden lg:inline">Quiero mi mes gratis</span>
           </button>
         </div>
       </nav>
 
       {/* ═══════════ HERO — banda blanca ═══════════ */}
-      <section className="relative flex items-center px-5 lg:px-[6vw] pt-28 pb-16 lg:pt-32 lg:pb-24 overflow-hidden">
+      <section className="relative flex items-center px-5 lg:px-[6vw] pt-24 pb-16 lg:pt-28 lg:pb-24 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true"
           style={{ background: 'radial-gradient(ellipse 70% 50% at 85% 20%, rgba(0,51,102,.06), transparent 60%)' }} />
         <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
@@ -189,7 +190,7 @@ const ProLanding: React.FC = () => {
 
           {/* Derecha: mockup del dashboard */}
           <motion.div initial={{ opacity: 0, y: 36 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, delay: 0.1, ease: 'easeOut' }}
-            className="relative">
+            className="relative mb-16 lg:mb-6">
             <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ border: `1px solid ${BORDER}`, background: '#fff' }}>
               {/* Barra superior del mockup */}
               <div className="flex items-center gap-1.5 px-4 py-3" style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
@@ -236,19 +237,13 @@ const ProLanding: React.FC = () => {
                     </div>
                   ))}
                 </div>
-                {/* Chips inferiores */}
-                <div className="col-span-5 flex flex-wrap gap-1.5">
-                  {['Agenda', 'Pagos', 'Confirmaciones', 'IA', 'Estadísticas', 'Chat IA'].map(c => (
-                    <span key={c} className="text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,51,102,.07)', color: BLUE }}>{c}</span>
-                  ))}
-                </div>
               </div>
             </div>
             {/* Tarjeta flotante IA */}
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -bottom-6 -left-3 lg:-left-10 max-w-[240px] rounded-2xl bg-white p-4 shadow-2xl"
+              className="absolute -bottom-14 -left-2 lg:-left-12 max-w-[240px] rounded-2xl bg-white p-4 shadow-2xl"
               style={{ border: `1px solid ${BORDER}` }}>
               <div className="flex items-center gap-2 mb-1.5">
                 <span className="w-7 h-7 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,107,0,.12)' }}>
