@@ -15,8 +15,15 @@ const TEXT = '#111827';
 const MUTED = '#6B7280';
 const BORDER = '#E5E7EB';
 const CARD = '#F8FAFC';
+const GREEN = '#059669';
 
 const INTER = { fontFamily: "'Inter', system-ui, sans-serif" };
+
+// Precio del plan Pro. Vive aquí y se reutiliza en la sección de tarifas y en el
+// FAQ, para que no queden dos cifras distintas en la misma página.
+const PLAN_MENSUAL = 24990;
+
+const clp = (n: number) => `$${new Intl.NumberFormat('es-CL').format(n)}`;
 
 // Fade-up estándar del brief: suave, 200-300ms, al entrar en viewport.
 const fadeUp = {
@@ -26,13 +33,33 @@ const fadeUp = {
   transition: { duration: 0.3, ease: 'easeOut' as const },
 };
 
+// Check verde reutilizable de la tarjeta del plan.
+const Check: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <li className="flex items-start gap-2.5">
+    <span className="material-icons-round text-[18px] shrink-0 mt-0.5" style={{ color: GREEN }}>check</span>
+    <span className="text-sm leading-relaxed" style={{ color: TEXT }}>{children}</span>
+  </li>
+);
+
 const ProLanding: React.FC = () => {
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  // Calculadora de retorno: el profesional escribe cuánto cobra por sesión y ve
+  // cuántas sesiones cubren el plan. Se guarda como string para poder dejar el
+  // campo vacío sin que aparezca un 0 pegado.
+  const [precioSesion, setPrecioSesion] = useState('25000');
+  const precioNum = Number(precioSesion) || 0;
+  const sesionesParaCubrir = precioNum > 0 ? Math.ceil(PLAN_MENSUAL / precioNum) : null;
+
+  const onPrecioChange = (v: string) => {
+    const soloDigitos = v.replace(/\D/g, '').slice(0, 7); // tope 9.999.999
+    setPrecioSesion(soloDigitos);
+  };
+
   usePageMeta({
     title: 'Agenda +Life — Agenda inteligente con IA para profesionales de salud | 1 mes gratis',
-    description: 'La agenda impulsada por IA que automatiza tu consulta: reservas online 24/7, pagos, fichas clínicas y recordatorios. Para kinesiólogos, nutricionistas, psicólogos y más. Primer mes gratis, sin tarjeta.',
+    description: 'La agenda impulsada por IA que automatiza tu consulta: reservas online 24/7, pagos con MercadoPago, fichas clínicas y confirmaciones automáticas. Para kinesiólogos, nutricionistas, psicólogos y más. Primer mes gratis, sin tarjeta.',
     canonicalPath: '/unete',
   });
 
@@ -40,8 +67,8 @@ const ProLanding: React.FC = () => {
 
   const benefits = [
     { icon: 'person_add', title: 'Consigue más pacientes', desc: 'Apareces en el buscador de Clínica +Life y tus pacientes reservan solos, 24/7.' },
-    { icon: 'event_available', title: 'Agenda inteligente', desc: 'Bloqueos, citas recurrentes y disponibilidad en tiempo real, sin dobles reservas.' },
-    { icon: 'notifications_active', title: 'Recordatorios automáticos', desc: 'Confirmaciones y recordatorios por email con invitación a calendario incluida.' },
+    { icon: 'event_available', title: 'Agenda inteligente', desc: 'Bloqueos, horarios recurrentes y disponibilidad en tiempo real, sin dobles reservas.' },
+    { icon: 'mark_email_read', title: 'Confirmaciones automáticas', desc: 'Al reservar, paciente y profesional reciben el correo con la invitación de calendario adjunta.' },
     { icon: 'payments', title: 'Cobros online', desc: 'Cobra por adelantado con MercadoPago y reduce las inasistencias.' },
     { icon: 'clinical_notes', title: 'Historial clínico', desc: 'Fichas por especialidad, informes PDF, consentimientos y rutinas enviables.' },
     { icon: 'auto_awesome', title: 'IA integrada', desc: 'Asistente que redacta informes, resume fichas y te ayuda en cada sesión.' },
@@ -50,13 +77,13 @@ const ProLanding: React.FC = () => {
   const steps = [
     { n: '1', title: 'Regístrate', desc: 'Crea tu cuenta en minutos. Sin tarjeta.' },
     { n: '2', title: 'Configura tu agenda', desc: 'Servicios, precios y horarios disponibles.' },
-    { n: '3', title: 'La IA trabaja por ti', desc: 'Reservas, recordatorios e informes automáticos.' },
+    { n: '3', title: 'La IA trabaja por ti', desc: 'Reservas, confirmaciones e informes automáticos.' },
     { n: '4', title: 'Atiende más pacientes', desc: 'Tu agenda se llena mientras tú te enfocas en atender.' },
   ];
 
   const features = [
     { icon: 'calendar_month', label: 'Agenda online' },
-    { icon: 'event_repeat', label: 'Citas recurrentes' },
+    { icon: 'event_repeat', label: 'Bloqueos y horarios recurrentes' },
     { icon: 'chat', label: 'Envíos por WhatsApp' },
     { icon: 'mark_email_read', label: 'Confirmaciones automáticas' },
     { icon: 'credit_card', label: 'Pagos online' },
@@ -69,16 +96,32 @@ const ProLanding: React.FC = () => {
     { icon: 'folder_shared', label: 'Documentos y PDF' },
   ];
 
-  const testimonials = [
-    { initials: 'RO', name: 'Rodrigo O.', role: 'Kinesiólogo', quote: 'Mis pacientes reservan solos y las rutinas les llegan por WhatsApp con imágenes. Me ahorro horas de administración a la semana.' },
-    { initials: 'CM', name: 'Carla M.', role: 'Nutricionista', quote: 'El plan alimentario se envía en un clic y la ficha calcula todo automáticamente. Se ve profesional y a los pacientes les encanta.' },
-    { initials: 'JS', name: 'Javiera S.', role: 'Psicóloga', quote: 'Agenda, pagos y ficha en un solo lugar. Lo que antes hacía en tres aplicaciones distintas ahora está todo integrado.' },
+  // Lo que trae el plan (sección de tarifas).
+  const incluye = [
+    'Agenda online 24/7 y perfil en el buscador',
+    'Cobros con MercadoPago directo a tu cuenta',
+    'Fichas clínicas por especialidad e informes PDF',
+    'Asistente IA: informes, resúmenes y agenda por chat',
+    'Confirmaciones automáticas y sincronización con Google Calendar',
+    'Rutinas de ejercicio y planes enviables al paciente',
   ];
 
-  const integrations = ['Google Calendar', 'Google Meet', 'WhatsApp Business', 'Mercado Pago', 'WebPay', 'Zoom', 'Google Drive', 'Gmail'];
+  // Las tres dudas de dinero que frenan una suscripción. Aparecen una sola vez
+  // en la página, dentro de tarifas.
+  const dudasDinero = [
+    { icon: 'account_balance_wallet', title: 'El dinero de tus pacientes es tuyo', desc: 'Conectas tu propia cuenta de MercadoPago. Los pagos llegan directo a ti — la plataforma no retiene ni administra tu dinero.' },
+    { icon: 'close', title: 'Sin permanencia ni letra chica', desc: 'Cancelas desde tu panel cuando quieras. No hay costo de salida ni cláusulas escondidas.' },
+    { icon: 'shield', title: 'Tus fichas te pertenecen', desc: 'Datos cifrados y separados por profesional, según la Ley 21.719. Puedes exportar tus fichas en PDF cuando quieras.' },
+  ];
+
+  // Solo integraciones que existen de verdad en la plataforma.
+  const integrations = [
+    { name: 'Google Calendar', desc: 'Tus citas se sincronizan con tu calendario en ambos sentidos.' },
+    { name: 'Mercado Pago', desc: 'Conectas tu cuenta y cobras las reservas por adelantado.' },
+  ];
 
   const faqs = [
-    { q: '¿Cuánto cuesta Agenda +Life?', a: 'El plan Pro cuesta $24.990/mes. Todos los profesionales nuevos tienen el primer mes completamente gratis, con acceso a todas las funciones.' },
+    { q: '¿Cuánto cuesta Agenda +Life?', a: `El plan Pro cuesta ${clp(PLAN_MENSUAL)}/mes. Todos los profesionales nuevos tienen el primer mes completamente gratis, con acceso a todas las funciones.` },
     { q: '¿Necesito tarjeta de crédito para probar?', a: 'No. Te registras, activas tu cuenta y usas la plataforma completa durante 30 días sin ingresar ningún medio de pago.' },
     { q: '¿Hay permanencia mínima o contrato?', a: 'No. Puedes cancelar cuando quieras, sin costos de salida ni letra chica.' },
     { q: '¿Cómo se protegen los datos de mis pacientes?', a: 'Los datos clínicos se almacenan cifrados con acceso restringido por profesional, en cumplimiento de la Ley 21.719 de protección de datos personales de Chile.' },
@@ -100,6 +143,9 @@ const ProLanding: React.FC = () => {
           <span className="hidden lg:inline text-sm font-bold" style={{ color: BLUE }}>Agenda +Life</span>
         </div>
         <div className="flex items-center gap-2 lg:gap-4">
+          <a href="#tarifas" className="hidden lg:inline text-sm font-medium px-3 py-2 rounded-xl transition-colors hover:bg-slate-50" style={{ color: MUTED }}>
+            Tarifas
+          </a>
           <button onClick={() => navigate('/pro/login')}
             className="text-sm font-medium px-3 py-2 rounded-xl transition-colors hover:bg-slate-50" style={{ color: MUTED }}>
             Iniciar sesión
@@ -113,7 +159,7 @@ const ProLanding: React.FC = () => {
       </nav>
 
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative min-h-screen flex items-center px-5 lg:px-[6vw] pt-28 pb-16 lg:py-0 overflow-hidden">
+      <section className="relative flex items-center px-5 lg:px-[6vw] pt-28 pb-16 lg:pt-32 lg:pb-24 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" aria-hidden="true"
           style={{ background: 'radial-gradient(ellipse 70% 50% at 85% 20%, rgba(0,51,102,.05), transparent 60%)' }} />
         <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
@@ -125,36 +171,34 @@ const ProLanding: React.FC = () => {
               Un subproducto de Clínica +Life
             </span>
             <h1 className="text-[clamp(2.3rem,7vw,3.6rem)] font-extrabold leading-[1.05] tracking-tight mb-6" style={{ color: TEXT }}>
-              Haz crecer tus servicios con <span style={{ color: BLUE }}>Agenda +Life</span>
+              Tu agenda, cobros y fichas en <span style={{ color: BLUE }}>un solo lugar</span>
             </h1>
             <p className="text-base lg:text-lg font-normal leading-relaxed mb-8 max-w-lg" style={{ color: MUTED }}>
-              La agenda inteligente impulsada por IA que automatiza tu consulta, organiza tus pacientes y te ayuda a conseguir más reservas.
+              Reservas 24/7, pagos online, fichas clínicas y confirmaciones automáticas. Tú atiendes; el resto se ocupa solo.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 mb-9">
+
+            {/* CTA con el precio al lado: quien llega a ver cuánto cuesta lo ve aquí */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-8">
               <button onClick={goRegister}
-                className={`${orangeBtn} text-base px-7 py-4`}
+                className={`${orangeBtn} text-base px-7 py-4 shrink-0`}
                 style={{ background: ORANGE, boxShadow: '0 16px 40px -14px rgba(255,107,0,.6)' }}>
-                Quiero mi mes gratis
+                Crear mi cuenta gratis
                 <span className="material-icons-round text-lg">arrow_forward</span>
               </button>
-              <a href="#funciones"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl font-semibold text-base px-7 py-4 transition-all duration-200 hover:-translate-y-0.5"
-                style={{ background: '#fff', color: BLUE, border: `1.5px solid ${BORDER}` }}>
-                Ver demostración
-              </a>
-            </div>
-            {/* Prueba social */}
-            <div className="flex items-center gap-3">
-              <div className="flex -space-x-2">
-                {['RO', 'CM', 'JS', 'MP'].map((ini, i) => (
-                  <div key={i} className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white border-2 border-white"
-                    style={{ background: `hsl(${210 + i * 14}, 55%, ${38 + i * 6}%)` }}>{ini}</div>
-                ))}
-              </div>
               <div>
-                <div className="text-sm" style={{ color: '#f59e0b' }}>★★★★★</div>
-                <p className="text-xs font-medium" style={{ color: MUTED }}>Más de 30 profesionales ya utilizan Agenda +Life</p>
+                <p className="text-sm font-bold" style={{ color: TEXT }}>30 días gratis, después {clp(PLAN_MENSUAL)}/mes</p>
+                <p className="text-[13px]" style={{ color: MUTED }}>Sin tarjeta, sin permanencia.</p>
               </div>
+            </div>
+
+            {/* Tres garantías verificables */}
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-x-5 gap-y-2">
+              {['Tus pagos van directo a tu MercadoPago', 'Sincronizado con Google Calendar', 'Fichas cifradas, Ley 21.719'].map(t => (
+                <span key={t} className="flex items-center gap-1.5 text-[13px] font-medium" style={{ color: MUTED }}>
+                  <span className="material-icons-round text-[16px]" style={{ color: GREEN }}>check</span>
+                  {t}
+                </span>
+              ))}
             </div>
           </motion.div>
 
@@ -172,7 +216,7 @@ const ProLanding: React.FC = () => {
                 <div className="col-span-5 grid grid-cols-3 gap-3">
                   {[
                     { l: 'Citas hoy', v: '8', c: BLUE },
-                    { l: 'Ingresos', v: '$185.000', c: '#059669' },
+                    { l: 'Ingresos', v: '$185.000', c: GREEN },
                     { l: 'Ocupación', v: '92%', c: ORANGE },
                   ].map(s => (
                     <div key={s.l} className="rounded-2xl p-3" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
@@ -197,9 +241,9 @@ const ProLanding: React.FC = () => {
                 <div className="col-span-3 rounded-2xl p-3 space-y-2" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
                   <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: MUTED }}>Próximas reservas</p>
                   {[
-                    { t: '09:00', n: 'María P.', tag: 'Pagado', tc: '#059669' },
+                    { t: '09:00', n: 'María P.', tag: 'Pagado', tc: GREEN },
                     { t: '10:00', n: 'Jorge L.', tag: 'Online', tc: BLUE },
-                    { t: '11:30', n: 'Sofía R.', tag: 'Recordado', tc: ORANGE },
+                    { t: '11:30', n: 'Sofía R.', tag: 'Confirmado', tc: ORANGE },
                   ].map(r => (
                     <div key={r.t} className="flex items-center justify-between bg-white rounded-xl px-2.5 py-2" style={{ border: `1px solid ${BORDER}` }}>
                       <span className="text-[11px] font-bold" style={{ color: TEXT }}>{r.t} · {r.n}</span>
@@ -209,7 +253,7 @@ const ProLanding: React.FC = () => {
                 </div>
                 {/* Chips inferiores */}
                 <div className="col-span-5 flex flex-wrap gap-1.5">
-                  {['Agenda', 'Pagos', 'Recordatorios', 'IA', 'Estadísticas', 'Chat IA'].map(c => (
+                  {['Agenda', 'Pagos', 'Confirmaciones', 'IA', 'Estadísticas', 'Chat IA'].map(c => (
                     <span key={c} className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: 'rgba(0,51,102,.06)', color: BLUE }}>{c}</span>
                   ))}
                 </div>
@@ -228,7 +272,7 @@ const ProLanding: React.FC = () => {
                 <p className="text-xs font-bold" style={{ color: TEXT }}>Incluye Asistente IA</p>
               </div>
               <p className="text-[11px] leading-relaxed" style={{ color: MUTED }}>
-                La IA responde consultas frecuentes, agenda pacientes, envía recordatorios y optimiza tu tiempo.
+                La IA responde consultas frecuentes, agenda pacientes, redacta informes y optimiza tu tiempo.
               </p>
             </motion.div>
           </motion.div>
@@ -302,67 +346,142 @@ const ProLanding: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══════════ BANNER 1 MES GRATIS ═══════════ */}
-      <section className="px-5 lg:px-[6vw] py-14" style={{ background: BLUE }}>
-        <motion.div {...fadeUp} className="max-w-4xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-6 text-center lg:text-left">
-          <div className="flex items-center gap-4">
-            <span className="material-icons-round text-4xl text-white/90 shrink-0">redeem</span>
-            <div>
-              <p className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight">🎁 1 MES GRATIS</p>
-              <p className="text-sm text-white/80 mt-1">Todos los profesionales nuevos obtienen acceso completo durante su primer mes.</p>
-            </div>
-          </div>
-          <button onClick={goRegister}
-            className={`${orangeBtn} text-base px-7 py-4 shrink-0`}
-            style={{ background: ORANGE, boxShadow: '0 16px 40px -14px rgba(255,107,0,.5)' }}>
-            Comenzar ahora
-          </button>
-        </motion.div>
-      </section>
-
-      {/* ═══════════ TESTIMONIOS ═══════════ */}
-      <section className="px-5 lg:px-[6vw] py-20 lg:py-28">
+      {/* ═══════════ TARIFAS ═══════════ */}
+      <section id="tarifas" className="px-5 lg:px-[6vw] py-20 lg:py-28"
+        style={{ background: CARD, borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, scrollMarginTop: 80 }}>
         <div className="max-w-6xl mx-auto">
-          <motion.h2 {...fadeUp} className="text-3xl lg:text-4xl font-extrabold tracking-tight text-center mb-12" style={{ color: TEXT }}>
-            Profesionales que ya crecieron
-          </motion.h2>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {testimonials.map((t, i) => (
-              <motion.div key={t.name} {...fadeUp} transition={{ duration: 0.3, delay: i * 0.07 }}
-                className="rounded-3xl p-6 flex flex-col gap-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-                <div className="text-sm" style={{ color: '#f59e0b' }}>★★★★★</div>
-                <p className="text-sm leading-relaxed flex-1" style={{ color: TEXT }}>"{t.quote}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                    style={{ background: BLUE }}>{t.initials}</div>
+
+          <motion.div {...fadeUp} className="text-center mb-12">
+            <span className="inline-block text-[11px] font-semibold px-3 py-1.5 rounded-full mb-4 bg-white"
+              style={{ border: `1px solid ${BORDER}`, color: BLUE }}>
+              Tarifas
+            </span>
+            <h2 className="text-3xl lg:text-4xl font-extrabold tracking-tight mb-3" style={{ color: TEXT }}>
+              Un solo plan. Todo incluido.
+            </h2>
+            <p className="max-w-lg mx-auto" style={{ color: MUTED }}>
+              Sin módulos que se cobran aparte ni sorpresas. El primer mes es gratis y no necesitas tarjeta para empezar.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+
+            {/* Tarjeta del plan */}
+            <motion.div {...fadeUp} className="rounded-3xl overflow-hidden bg-white"
+              style={{ border: `2px solid ${BLUE}`, boxShadow: '0 28px 64px -28px rgba(0,51,102,.3)' }}>
+              <div className="flex items-center justify-between px-6 py-3" style={{ background: BLUE }}>
+                <span className="text-xs font-bold tracking-wide text-white">PLAN PRO</span>
+                <span className="text-[11px] font-bold text-white px-2.5 py-1 rounded-full" style={{ background: ORANGE }}>1er mes gratis</span>
+              </div>
+
+              <div className="p-6 lg:p-7">
+                <div className="flex items-baseline gap-2 mb-1.5">
+                  <span className="text-[2.6rem] leading-none font-extrabold tracking-tight" style={{ color: TEXT }}>{clp(PLAN_MENSUAL)}</span>
+                  <span className="text-base font-medium" style={{ color: MUTED }}>/ mes</span>
+                </div>
+                <p className="text-[13px] mb-6" style={{ color: MUTED }}>IVA incluido · Cancelas cuando quieras</p>
+
+                <div className="rounded-2xl p-4 mb-6 flex items-start gap-2.5" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+                  <span className="material-icons-round text-[19px] shrink-0" style={{ color: ORANGE }}>schedule</span>
                   <div>
-                    <p className="text-sm font-bold" style={{ color: TEXT }}>{t.name}</p>
-                    <p className="text-xs" style={{ color: MUTED }}>{t.role}</p>
+                    <p className="text-[13px] font-bold mb-0.5" style={{ color: TEXT }}>Empiezas pagando $0</p>
+                    <p className="text-xs leading-relaxed" style={{ color: MUTED }}>30 días con todas las funciones. Recién al día 31 decides si continúas.</p>
+                  </div>
+                </div>
+
+                <ul className="flex flex-col gap-2.5 mb-7">
+                  {incluye.map(item => <Check key={item}>{item}</Check>)}
+                </ul>
+
+                <button onClick={goRegister}
+                  className={`${orangeBtn} w-full text-base px-6 py-4`}
+                  style={{ background: ORANGE, boxShadow: '0 16px 40px -14px rgba(255,107,0,.6)' }}>
+                  Empezar mi mes gratis
+                </button>
+                <p className="text-xs text-center mt-3" style={{ color: '#9CA3AF' }}>No pedimos tarjeta de crédito para registrarte.</p>
+              </div>
+            </motion.div>
+
+            {/* Calculadora de retorno + las tres dudas de dinero */}
+            <div className="flex flex-col gap-5">
+
+              <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.06 }}
+                className="rounded-3xl p-6 bg-white" style={{ border: `1px solid ${BORDER}` }}>
+                <h3 className="font-bold text-base mb-2" style={{ color: TEXT }}>¿Cuánto tiene que rendir para pagarse?</h3>
+                <p className="text-sm leading-relaxed mb-5" style={{ color: MUTED }}>
+                  Escribe cuánto cobras por sesión y calculamos con cuántas reservas del mes queda cubierto el plan. Lo que agendes de ahí en adelante es ganancia.
+                </p>
+
+                <label htmlFor="precio-sesion" className="block text-[11px] font-semibold mb-1.5" style={{ color: MUTED }}>
+                  Tu precio por sesión
+                </label>
+                <div className="flex items-center rounded-2xl px-4 mb-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+                  <span className="text-base font-bold mr-1" style={{ color: MUTED }}>$</span>
+                  <input
+                    id="precio-sesion"
+                    type="text"
+                    inputMode="numeric"
+                    value={precioSesion}
+                    onChange={e => onPrecioChange(e.target.value)}
+                    placeholder="25000"
+                    aria-label="Tu precio por sesión en pesos"
+                    className="w-full bg-transparent py-3.5 text-lg font-bold outline-none"
+                    style={{ color: TEXT }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 rounded-2xl p-4" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold mb-0.5" style={{ color: MUTED }}>Costo del plan</p>
+                    <p className="text-xl font-extrabold" style={{ color: TEXT }}>{clp(PLAN_MENSUAL)}</p>
+                  </div>
+                  <span className="material-icons-round shrink-0" style={{ color: '#9CA3AF' }}>arrow_forward</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-semibold mb-0.5" style={{ color: MUTED }}>Se cubre con</p>
+                    <p className="text-xl font-extrabold" style={{ color: GREEN }}>
+                      {sesionesParaCubrir === null
+                        ? '—'
+                        : `${sesionesParaCubrir} ${sesionesParaCubrir === 1 ? 'sesión' : 'sesiones'}`}
+                    </p>
                   </div>
                 </div>
               </motion.div>
-            ))}
+
+              <motion.div {...fadeUp} transition={{ duration: 0.3, delay: 0.12 }}
+                className="rounded-3xl p-6 bg-white flex flex-col gap-5" style={{ border: `1px solid ${BORDER}` }}>
+                {dudasDinero.map(d => (
+                  <div key={d.title} className="flex items-start gap-3">
+                    <span className="material-icons-round text-[20px] shrink-0 mt-0.5" style={{ color: BLUE }}>{d.icon}</span>
+                    <div>
+                      <p className="text-sm font-bold mb-1" style={{ color: TEXT }}>{d.title}</p>
+                      <p className="text-[13px] leading-relaxed" style={{ color: MUTED }}>{d.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+
+            </div>
           </div>
         </div>
       </section>
 
       {/* ═══════════ INTEGRACIONES ═══════════ */}
-      <section className="px-5 lg:px-[6vw] py-14" style={{ background: CARD }}>
-        <motion.div {...fadeUp} className="max-w-5xl mx-auto text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-6" style={{ color: MUTED }}>Se integra con las herramientas que ya usas</p>
-          <div className="flex flex-wrap justify-center gap-3">
-            {integrations.map(name => (
-              <span key={name} className="px-5 py-2.5 rounded-2xl bg-white text-sm font-semibold transition-all hover:-translate-y-0.5 hover:shadow-md"
-                style={{ border: `1px solid ${BORDER}`, color: TEXT }}>
-                {name}
-              </span>
+      <section className="px-5 lg:px-[6vw] py-16 lg:py-20">
+        <motion.div {...fadeUp} className="max-w-3xl mx-auto text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-8" style={{ color: MUTED }}>Se conecta con las herramientas que ya usas</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-left">
+            {integrations.map(it => (
+              <div key={it.name} className="rounded-2xl p-5 bg-white transition-all hover:-translate-y-0.5 hover:shadow-md" style={{ border: `1px solid ${BORDER}` }}>
+                <p className="text-sm font-bold mb-1" style={{ color: TEXT }}>{it.name}</p>
+                <p className="text-[13px] leading-relaxed" style={{ color: MUTED }}>{it.desc}</p>
+              </div>
             ))}
           </div>
         </motion.div>
       </section>
 
       {/* ═══════════ FAQ ═══════════ */}
-      <section className="px-5 lg:px-[6vw] py-20 lg:py-28">
+      <section className="px-5 lg:px-[6vw] py-20 lg:py-28" style={{ background: CARD }}>
         <div className="max-w-2xl mx-auto">
           <motion.h2 {...fadeUp} className="text-3xl lg:text-4xl font-extrabold tracking-tight text-center mb-10" style={{ color: TEXT }}>
             Preguntas frecuentes
@@ -393,13 +512,13 @@ const ProLanding: React.FC = () => {
       <section className="px-5 lg:px-[6vw] py-20 lg:py-28 text-center" style={{ background: BLUE }}>
         <motion.div {...fadeUp} className="max-w-2xl mx-auto">
           <h2 className="text-3xl lg:text-5xl font-extrabold tracking-tight text-white mb-4">
-            Empieza hoy y deja que la IA gestione tu consulta.
+            Partir toma menos que una sesión.
           </h2>
-          <p className="text-white/80 mb-9">Más tiempo para tus pacientes. Menos tiempo organizando tu agenda.</p>
+          <p className="text-white/80 mb-9">Creas tu cuenta, configuras horarios y precios, y tu agenda queda publicada. Primer mes gratis.</p>
           <button onClick={goRegister}
             className={`${orangeBtn} text-base px-9 py-4`}
             style={{ background: ORANGE, boxShadow: '0 20px 48px -16px rgba(255,107,0,.55)' }}>
-            Comenzar gratis
+            Crear mi cuenta gratis
             <span className="material-icons-round text-lg">arrow_forward</span>
           </button>
           <p className="text-xs text-white/60 mt-4">No necesitas tarjeta de crédito.</p>
