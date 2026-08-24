@@ -13,3 +13,8 @@ dist-ssr/
 # se regenera desde esas fuentes.
 design/*.html
 !design/*.dc.html
+
+# Paquete descargable y copia de trabajo extraída del lienzo publicado:
+# ambos se regeneran desde design/*.dc.html
+landing-agenda-life.zip
+design/actual/
