@@ -12,6 +12,12 @@ const escapeHtml = (s: string): string =>
 
 // Registro permanente de cada webhook en Supabase para diagnóstico. Best-effort:
 // nunca rompe el procesamiento del webhook si el insert falla.
+//
+// OJO: el cliente de Supabase NO lanza excepción cuando el insert falla, devuelve
+// { error }. Un try/catch por sí solo deja el fallo invisible y `webhook_events`
+// aparece vacía aunque MercadoPago sí esté llamando — por ejemplo si falta
+// SUPABASE_SERVICE_ROLE_KEY y se cae a la clave anónima, que RLS rechaza. Por eso
+// aquí se inspecciona `error` explícitamente y se escribe en los logs de Vercel.
 async function logWebhookEvent(fields: {
   event_type?: string;
   action?: string;
@@ -24,7 +30,15 @@ async function logWebhookEvent(fields: {
   detail?: string;
 }): Promise<void> {
   try {
-    await supabase.from('webhook_events').insert(fields);
+    const { error } = await supabase.from('webhook_events').insert(fields);
+    if (error) {
+      console.error(
+        '[mp-webhook] insert en webhook_events RECHAZADO:', error.message,
+        '| code:', error.code,
+        '| usando service_role:', Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+        '| evento:', JSON.stringify(fields),
+      );
+    }
   } catch (e) {
     console.error('[mp-webhook] no se pudo registrar webhook_event:', e);
   }
