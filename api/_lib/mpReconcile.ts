@@ -94,13 +94,23 @@ export async function confirmPaidAppointment(
     })
     .eq('id', appointmentId)
     .eq('payment_status', 'Pendiente')
+    // Solo las reservas vigentes se auto-confirman. Una que ya expiró está en
+    // 'Cancelado' y su horario puede haberlo tomado otro paciente: re-confirmarla
+    // en silencio provocaría una doble reserva. Ese caso se atiende aparte.
+    .eq('status', 'Pendiente')
     .select(APPOINTMENT_FIELDS);
 
   if (error) {
     console.error('[mpReconcile] no se pudo confirmar la cita:', appointmentId, error.message);
     return false;
   }
-  if (!updated?.length) return false; // ya estaba confirmada
+  if (!updated?.length) {
+    // No se actualizó: o ya estaba confirmada, o la reserva expiró y se canceló
+    // mientras el pago seguía en camino. El segundo caso hay que avisarlo: hay
+    // dinero cobrado sin cita vigente.
+    await registrarPagoDeReservaExpirada(appointmentId, amount, paidAt);
+    return false;
+  }
 
   const apt = updated[0];
 
@@ -132,6 +142,46 @@ export async function confirmPaidAppointment(
 
   await sendBookingEmailsIfUnclaimed(apt);
   return true;
+}
+
+/**
+ * El pago llegó cuando la reserva ya había expirado y se canceló. No se puede
+ * re-tomar el horario —puede estar ocupado por otro paciente— pero tampoco se
+ * puede dejar dinero cobrado sin que nadie se entere: se registra el pago y se
+ * avisa al profesional para que contacte al paciente y reagende.
+ *
+ * Silencioso si la reserva simplemente ya estaba confirmada (el caso normal
+ * cuando el webhook y la conciliación llegan casi a la vez).
+ */
+async function registrarPagoDeReservaExpirada(
+  appointmentId: string,
+  amount: number,
+  paidAt: string,
+): Promise<void> {
+  try {
+    const { data: filas } = await supabase
+      .from('appointments')
+      .update({ payment_status: 'Pagado', payment_amount: amount, paid_at: paidAt })
+      .eq('id', appointmentId)
+      .eq('status', 'Cancelado')
+      .eq('payment_status', 'Pendiente')
+      .select(APPOINTMENT_FIELDS);
+
+    if (!filas?.length) return; // ya estaba confirmada: nada que avisar
+
+    const apt = filas[0];
+    console.warn('[mpReconcile] pago de una reserva ya expirada:', appointmentId);
+    const cuando = `${apt.date} ${String(apt.time).slice(0, 5)}`;
+    const { error } = await supabase.from('pro_notifications').insert({
+      professional_id: apt.professional_id,
+      patient_id: apt.patient_id || null,
+      kind: 'booking',
+      body: `Pago recibido de una reserva que ya había expirado: ${apt.patient_name} — ${apt.service_name}, ${cuando}. Contacta al paciente para reagendar.`,
+    });
+    if (error) console.error('[mpReconcile] no se pudo avisar del pago tardío:', error.message);
+  } catch (e) {
+    console.error('[mpReconcile] registrarPagoDeReservaExpirada error:', e);
+  }
 }
 
 /**
