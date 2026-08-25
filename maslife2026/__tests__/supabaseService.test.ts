@@ -492,6 +492,28 @@ describe('getAppointments', () => {
     });
   });
 
+  it('recorta los segundos de la hora que devuelve Postgres', async () => {
+    // La columna `time` vuelve como "13:00:00" y toda la app compara en HH:MM.
+    // Sin recortar, la grilla de la agenda evalúa "13:00:00" === "13:00" → false
+    // y NINGUNA cita se pinta en su hora tras recargar la página. Fue el fallo
+    // del 26/08: los contadores veían las citas, la grilla no.
+    vi.mocked(supabase.from).mockReturnValueOnce(
+      makeBuilder({ data: [{ ...sampleDBAppointment, time: '13:00:00' }], error: null }),
+    );
+
+    const [cita] = await getAppointments('pro-1');
+    expect(cita.time).toBe('13:00');
+  });
+
+  it('no rompe si la hora viene vacía o nula', async () => {
+    vi.mocked(supabase.from).mockReturnValueOnce(
+      makeBuilder({ data: [{ ...sampleDBAppointment, time: null }], error: null }),
+    );
+
+    const [cita] = await getAppointments('pro-1');
+    expect(cita.time).toBe('');
+  });
+
   it('retorna array vacío cuando Supabase devuelve null', async () => {
     vi.mocked(supabase.from).mockReturnValueOnce(makeBuilder({ data: null, error: null }));
 

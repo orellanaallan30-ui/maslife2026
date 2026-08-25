@@ -27,11 +27,16 @@ export interface Jornada {
 const DUR_DEFECTO = 60;
 
 /**
- * Citas que realmente ocupan el día: se excluyen las canceladas, igual que el
- * índice `uq_slot_active` (WHERE status <> 'Cancelado').
+ * Citas que realmente ocupan el día. Se excluyen las canceladas y las ya
+ * finalizadas, igual que el índice `uq_slot_active`
+ * (WHERE status NOT IN ('Cancelado','Finalizado'), migración 0016).
+ *
+ * Una sesión terminada no ocupa: atendido el paciente, el profesional puede
+ * reutilizar esa casilla. Esta lista y el índice deben decir lo mismo, o la
+ * agenda ofrecería una hora que la base de datos rechaza.
  */
 export function citasQueOcupan<T extends FranjaOcupada>(citas: T[], fecha: string): T[] {
-  return citas.filter(a => a.date === fecha && a.status !== 'Cancelado');
+  return citas.filter(a => a.date === fecha && a.status !== 'Cancelado' && a.status !== 'Finalizado');
 }
 
 /**

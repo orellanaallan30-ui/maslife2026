@@ -526,7 +526,14 @@ function mapDBtoAppointment(a: Record<string, unknown>): Appointment {
     id: a.id as string, patientId: a.patient_id as string, patientName: a.patient_name as string,
     patientPhone: a.patient_phone as string, doctorName: a.doctor_name as string,
     specialty: a.specialty as string, serviceName: a.service_name as string,
-    date: a.date as string, time: a.time as string, duration: a.duration as number,
+    date: a.date as string,
+    // Postgres devuelve la columna `time` con segundos ("13:00:00") y toda la app
+    // trabaja en HH:MM: la grilla de la agenda compara `a.time === "13:00"`, así
+    // que sin recortar aquí NINGUNA cita se pintaba en su hora tras recargar
+    // —ni las reservas web ni las creadas a mano—, aunque los contadores, que
+    // filtran solo por fecha, sí las vieran. Se normaliza en el límite.
+    time: String(a.time ?? '').slice(0, 5),
+    duration: a.duration as number,
     type: a.type as Appointment['type'], status: a.status as Appointment['status'],
     price: a.price as number, paymentStatus: a.payment_status as Appointment['paymentStatus'],
     notes: a.notes as string, color: a.color as string,
