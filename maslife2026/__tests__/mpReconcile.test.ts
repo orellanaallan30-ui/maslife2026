@@ -14,6 +14,7 @@ type Escenario = {
   token: string | null;
   confirmadas: string[];   // ids que el UPDATE dio por actualizados
   ingresos: unknown[];     // filas insertadas en transactions
+  avisos: unknown[];       // filas insertadas en pro_notifications
   errorLectura?: string;
 };
 
@@ -36,6 +37,16 @@ function tablaAppointments() {
   };
   return chain;
 }
+
+// syncAppointmentToGoogle hace su propia red; se simula para aislar la lógica.
+const sincronizadas: string[] = [];
+let googleFalla = false;
+vi.mock('../../api/_lib/googleCalendar', () => ({
+  syncAppointmentToGoogle: async (_pro: string, id: string) => {
+    if (googleFalla) throw new Error('Google caído');
+    sincronizadas.push(id);
+  },
+}));
 
 vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({
@@ -67,6 +78,9 @@ vi.mock('@supabase/supabase-js', () => ({
           }),
         };
       }
+      if (tabla === 'pro_notifications') {
+        return { insert: async (fila: unknown) => { esc.avisos.push(fila); return { error: null }; } };
+      }
       if (tabla === 'transactions') {
         return { insert: async (fila: unknown) => { esc.ingresos.push(fila); return { error: null }; } };
       }
@@ -78,7 +92,7 @@ vi.mock('@supabase/supabase-js', () => ({
   }),
 }));
 
-const { reconcilePendingWithMP } = await import('../../api/_lib/mpReconcile');
+const { reconcilePendingWithMP, confirmPaidAppointment } = await import('../../api/_lib/mpReconcile');
 
 const respuestaMP = (resultados: unknown[]) => ({
   ok: true,
@@ -87,7 +101,9 @@ const respuestaMP = (resultados: unknown[]) => ({
 
 describe('reconcilePendingWithMP', () => {
   beforeEach(() => {
-    esc = { pendientes: [], token: 'TOKEN-DEL-PROFESIONAL', confirmadas: [], ingresos: [] };
+    esc = { pendientes: [], token: 'TOKEN-DEL-PROFESIONAL', confirmadas: [], ingresos: [], avisos: [] };
+    sincronizadas.length = 0;
+    googleFalla = false;
     vi.stubGlobal('fetch', vi.fn());
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -162,5 +178,45 @@ describe('reconcilePendingWithMP', () => {
     esc.errorLectura = 'permission denied';
 
     expect(await reconcilePendingWithMP('pro-1')).toBe(0);
+  });
+});
+
+describe('confirmPaidAppointment', () => {
+  beforeEach(() => {
+    esc = { pendientes: [], token: 'TOKEN', confirmadas: ['cita-1'], ingresos: [], avisos: [] };
+    sincronizadas.length = 0;
+    googleFalla = false;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) } as any));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+  afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+  it('avisa en la campana del panel, no solo por correo', async () => {
+    await confirmPaidAppointment('cita-1', 1000, '2026-08-25T03:17:45Z');
+    expect(esc.avisos).toHaveLength(1);
+    expect((esc.avisos[0] as any).kind).toBe('booking');
+    expect((esc.avisos[0] as any).body).toContain('Nueva cita pagada');
+  });
+
+  it('sincroniza la cita con el Google Calendar del profesional', async () => {
+    // Esto antes solo ocurría si el paciente volvía del checkout: al cerrar la
+    // pestaña, la cita se cobraba pero nunca llegaba al calendario.
+    await confirmPaidAppointment('cita-1', 1000, '2026-08-25T03:17:45Z');
+    expect(sincronizadas).toEqual(['cita-1']);
+  });
+
+  it('si Google falla, la cita igual queda confirmada', async () => {
+    googleFalla = true;
+    expect(await confirmPaidAppointment('cita-1', 1000, '2026-08-25T03:17:45Z')).toBe(true);
+    expect(esc.ingresos).toHaveLength(1);
+  });
+
+  it('una segunda llamada no duplica ingreso, aviso ni evento', async () => {
+    esc.confirmadas = [];  // el UPDATE no actualiza nada: ya estaba confirmada
+    expect(await confirmPaidAppointment('cita-1', 1000, '2026-08-25T03:17:45Z')).toBe(false);
+    expect(esc.ingresos).toHaveLength(0);
+    expect(esc.avisos).toHaveLength(0);
+    expect(sincronizadas).toHaveLength(0);
   });
 });

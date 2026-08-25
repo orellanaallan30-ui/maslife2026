@@ -2,29 +2,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, confirmBookingPaid, claimNotify, releaseStaleHolds, BookingInput, UUID_RE } from './_lib/booking';
-import { getValidToken, appointmentToGCalEvent, createGCalEvent } from './_lib/googleCalendar';
-import { reconcilePendingWithMP } from './_lib/mpReconcile';
+import { syncAppointmentToGoogle } from './_lib/googleCalendar';
+import { reconcilePendingWithMP, notificarCitaEnPanel } from './_lib/mpReconcile';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY!
 );
 
-// Agenda una reserva de paciente en el Google Calendar del profesional (si lo
-// tiene conectado). Server-side vía refresh token guardado — no necesita la
-// sesión del profesional. Best-effort: nunca voltea una reserva ya confirmada.
-async function syncBookingToGoogle(professionalId: string, appointmentId: string): Promise<void> {
-  try {
-    const gc = await getValidToken(professionalId);
-    if (!gc) return; // el profesional no conectó Google
-    const { data: row } = await supabase.from('appointments').select('*').eq('id', appointmentId).single();
-    if (!row || row.google_event_id) return; // ya sincronizada
-    const eventId = await createGCalEvent(gc.token, gc.calendarId, appointmentToGCalEvent(row));
-    if (eventId) await supabase.from('appointments').update({ google_event_id: eventId }).eq('id', appointmentId);
-  } catch (e) {
-    console.error('[book-appointment] Google Calendar sync falló:', e);
-  }
-}
 
 /**
  * Endpoint de reservas para pacientes anónimos. El cliente NO escribe en
@@ -128,7 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           String(payment.external_reference) === String(appointmentId)
         ) {
           const ok = await confirmBookingPaid(appointmentId, Math.round(Number(payment.transaction_amount) || 0));
-          if (ok) await syncBookingToGoogle(app.professional_id, appointmentId);
+          if (ok) await syncAppointmentToGoogle(app.professional_id, appointmentId);
           // El cliente solo debe enviar correos si ganó el claim (evita duplicado con el webhook).
           const claimed = ok ? await claimNotify(appointmentId) : null;
           return res.status(200).json({ confirmed: ok, shouldNotify: !!claimed });
@@ -167,6 +152,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(result.code || 500).json({ error: result.error || 'No se pudo registrar la cita' });
   }
 
-  await syncBookingToGoogle(prepared.pro.id, result.id);
+  await syncAppointmentToGoogle(prepared.pro.id, result.id);
+
+  // Aviso en la campana del panel. Aquí sí al crearse: una reserva sin pago queda
+  // firme de inmediato, no es un cupo retenido que pueda evaporarse.
+  await notificarCitaEnPanel({
+    id: result.id,
+    professional_id: prepared.pro.id,
+    patient_id: null,
+    patient_name: input.patientName,
+    service_name: prepared.service.name,
+    date: input.date,
+    time: input.time,
+  }, false);
+
   return res.status(200).json({ saved: true, appointmentId: result.id });
 }

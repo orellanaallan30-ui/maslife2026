@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
+import { syncAppointmentToGoogle } from './googleCalendar';
 
 // Conciliación de pagos con MercadoPago.
 //
@@ -23,7 +24,7 @@ const supabase = createClient(
 
 // Campos que necesitan tanto la conciliación como el envío de correos.
 const APPOINTMENT_FIELDS =
-  'id, professional_id, patient_name, patient_email, doctor_name, service_name, date, time, type, duration, payment_amount, notified_at';
+  'id, professional_id, patient_id, patient_name, patient_email, doctor_name, service_name, date, time, type, duration, payment_amount, notified_at';
 
 /**
  * Envía los correos de la reserva reclamando el envío de forma atómica, para que
@@ -113,8 +114,50 @@ export async function confirmPaidAppointment(
   });
   if (txErr) console.error('[mpReconcile] no se pudo registrar el ingreso:', txErr.message);
 
+  await notificarCitaEnPanel(apt, true);
+
+  // El calendario del profesional. Vivía solo dentro de book-appointment, así que
+  // una cita confirmada por el webhook o por la conciliación —es decir, cuando el
+  // paciente cerró la pestaña— se cobraba pero nunca aparecía en su calendario.
+  //
+  // Va envuelto aunque la propia función ya capture: en este punto la cita YA está
+  // marcada como pagada, y un fallo aquí impediría el envío de los correos que
+  // vienen después. Un problema con Google no puede dejar sin avisar de una cita
+  // que ya se cobró.
+  try {
+    await syncAppointmentToGoogle(apt.professional_id, apt.id);
+  } catch (e) {
+    console.error('[mpReconcile] sync con Google falló, la cita sigue confirmada:', e);
+  }
+
   await sendBookingEmailsIfUnclaimed(apt);
   return true;
+}
+
+/**
+ * Deja el aviso en la campana del panel. La tabla pro_notifications se creó para
+ * eventos de rutinas ('evidence' | 'session' | 'message') y ninguna reserva había
+ * escrito nunca en ella: el profesional solo se enteraba por correo.
+ *
+ * No necesita migración — patient_id y routine_id son nulables y kind es texto
+ * libre. Escribe con service_role, que pasa por encima de RLS.
+ */
+export async function notificarCitaEnPanel(
+  apt: Record<string, any>,
+  pagada: boolean,
+): Promise<void> {
+  try {
+    const cuando = `${apt.date} ${String(apt.time).slice(0, 5)}`;
+    const { error } = await supabase.from('pro_notifications').insert({
+      professional_id: apt.professional_id,
+      patient_id: apt.patient_id || null,
+      kind: 'booking',
+      body: `${pagada ? 'Nueva cita pagada' : 'Nueva cita'}: ${apt.patient_name} — ${apt.service_name}, ${cuando}`,
+    });
+    if (error) console.error('[mpReconcile] no se pudo dejar el aviso en la campana:', error.message);
+  } catch (e) {
+    console.error('[mpReconcile] notificarCitaEnPanel error:', e);
+  }
 }
 
 /**
