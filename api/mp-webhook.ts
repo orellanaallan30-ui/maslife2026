@@ -174,16 +174,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { type, data, action } = req.body || {};
   console.log('[mp-webhook]', type, action, data?.id);
 
+  // Deja constancia de la llegada ANTES de intentar nada. Los registros
+  // específicos de más abajo (matched_updated, ignored_status, error) solo se
+  // escriben si el pago prospera, así que sin esta fila un webhook que no
+  // concilia no deja rastro alguno — y la tabla vacía se interpreta como "MP
+  // nunca llamó", que fue justamente lo que nos despistó.
+  await logWebhookEvent({
+    event_type: type, action, mp_data_id: data?.id ? String(data.id) : undefined,
+    signature_valid: true, outcome: 'received',
+  });
+
   const ACCESS_TOKEN = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
 
   if (type === 'payment' || type === 'order') {
     const paymentId = data?.id;
+    if (!paymentId || !ACCESS_TOKEN) {
+      await logWebhookEvent({
+        event_type: type, action, mp_data_id: paymentId ? String(paymentId) : undefined,
+        signature_valid: true, outcome: 'error',
+        detail: !paymentId ? 'el aviso no trae data.id' : 'falta MERCADOPAGO_ACCESS_TOKEN',
+      });
+    }
     if (paymentId && ACCESS_TOKEN) {
       try {
         const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
           headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
         });
         const payment = await mpRes.json();
+
+        // Un error de la API y un pago no aprobado no son lo mismo. Sin mirar
+        // mpRes.ok, la respuesta de error de MercadoPago trae `status: 404`, que
+        // simplemente no coincide con 'approved' y el fallo pasa por pago
+        // rechazado. Es lo que devuelve el simulador del panel, cuyo id es falso.
+        if (!mpRes.ok) {
+          console.error('[mp-webhook] la consulta del pago falló:', mpRes.status, JSON.stringify(payment).slice(0, 200));
+          await logWebhookEvent({
+            event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true,
+            outcome: 'error',
+            detail: `consulta a MercadoPago devolvió HTTP ${mpRes.status}: ${JSON.stringify(payment).slice(0, 300)}`,
+          });
+          return res.status(200).json({ received: true });
+        }
+
         console.log('[mp-webhook] payment status:', payment.status, payment.status_detail, payment.external_reference);
 
         // Conciliación: external_reference = id (UUID) de la cita. La tabla NO
@@ -229,6 +261,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           } else {
             await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, outcome: 'ignored_status', detail: 'cita no pendiente o ref no aprobada' });
           }
+        } else {
+          // El pago llegó pero no se concilia: puede estar pendiente o rechazado,
+          // o venir sin external_reference. Sin esta fila el aviso desaparecía
+          // sin dejar constancia y no había forma de saber por qué.
+          await logWebhookEvent({
+            event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true,
+            mp_status: payment.status ? String(payment.status) : undefined,
+            outcome: 'ignored_status',
+            detail: !ref ? 'el pago no trae external_reference'
+              : !REF_UUID.test(ref) ? `external_reference no es un UUID de cita: ${ref}`
+              : `pago no aprobado (${payment.status})`,
+          });
         }
       } catch (e) {
         console.error('[mp-webhook] Error consultando pago:', e);
@@ -239,6 +283,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (type === 'preapproval') {
     const preapprovalId = data?.id;
+    if (!preapprovalId || !ACCESS_TOKEN) {
+      await logWebhookEvent({
+        event_type: type, action, mp_data_id: preapprovalId ? String(preapprovalId) : undefined,
+        signature_valid: true, outcome: 'error',
+        detail: !preapprovalId ? 'el aviso no trae data.id' : 'falta MERCADOPAGO_ACCESS_TOKEN',
+      });
+    }
     if (preapprovalId && ACCESS_TOKEN) {
       try {
         const mpRes = await fetch(`https://api.mercadopago.com/preapproval/${preapprovalId}`, {
@@ -300,6 +351,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await logWebhookEvent({ event_type: 'preapproval', mp_data_id: String(preapprovalId), signature_valid: true, outcome: 'error', detail: String(e) });
       }
     }
+  }
+
+  // Tipos que ninguna rama atiende (plan, invoice, point_integration_wh…). No es
+  // un error, pero conviene que quede anotado: si algún día MercadoPago empieza a
+  // avisar de algo que sí nos importa, se verá aquí en vez de perderse.
+  if (type !== 'payment' && type !== 'order' && type !== 'preapproval') {
+    await logWebhookEvent({
+      event_type: type, action, mp_data_id: data?.id ? String(data.id) : undefined,
+      signature_valid: true, outcome: 'ignored_type',
+      detail: `tipo de evento sin rama que lo atienda: ${type}`,
+    });
   }
 
   return res.status(200).json({ received: true });
