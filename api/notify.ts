@@ -124,9 +124,12 @@ const FONT_SERIF = `Georgia,'Times New Roman',serif`;
 const FONT_SANS = `'Manrope','Helvetica Neue',Helvetica,Arial,sans-serif`;
 
 // El logo se sirve desde public/ en una URL estable — los archivos de assets/ los
-// empaqueta Vite con un hash y no sirven para un correo. Está recortado y
-// aplanado contra el teal de la cabecera (4,6 KB): varios clientes ignoran el
-// canal alfa de un PNG y pintarían un recuadro blanco alrededor.
+// empaqueta Vite con un hash y no sirven para un correo.
+//
+// Va sobre PLACA BLANCA, con el margen horneado en el propio PNG: el logo de la
+// agenda tiene blancos y turquesa, así que aplanado contra el teal de la cabecera
+// se deshacía. Sobre blanco conserva todos sus colores, y el margen va en la
+// imagen porque los clientes de correo tratan el padding de forma dispar.
 //
 // Va SIEMPRE con `alt` con el nombre de la marca: Outlook bloquea las imágenes
 // por defecto, y sin eso la cabecera llegaría decapitada. Ese era el motivo del
@@ -140,8 +143,8 @@ const soloHoraMinuto = (t: unknown) => String(t ?? '').slice(0, 5);
 function emailShell(opts: { kicker?: string; title: string; subtitle?: string; bodyHtml: string }): string {
   return `<div style="font-family:${FONT_SANS};max-width:600px;margin:0 auto;background:#f4f6f8;padding:24px;">
     <div style="background:linear-gradient(135deg,${BRAND_TEAL},${BRAND_TEAL_DEEP});border-radius:16px 16px 0 0;padding:36px 32px 32px;text-align:center;">
-      <img src="${LOGO_URL}" width="200" alt="Clínica Mas Life"
-           style="display:block;margin:0 auto 12px;width:200px;max-width:70%;height:auto;border:0;outline:none;text-decoration:none;font-family:${FONT_SERIF};font-size:22px;font-weight:700;color:#ffffff;">
+      <img src="${LOGO_URL}" width="210" alt="Agenda Online · Clínica Mas Life"
+           style="display:block;margin:0 auto 14px;width:210px;max-width:72%;height:auto;border:0;outline:none;text-decoration:none;border-radius:14px;font-family:${FONT_SERIF};font-size:20px;font-weight:700;color:#ffffff;">
       <div style="color:rgba(255,255,255,.85);font-size:11px;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">clinicamaslife.cl</div>
     </div>
     <div style="background:#ffffff;padding:34px 32px;border-left:1px solid #e6ebf0;border-right:1px solid #e6ebf0;">
