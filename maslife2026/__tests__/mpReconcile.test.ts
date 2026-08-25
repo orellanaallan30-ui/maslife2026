@@ -15,6 +15,7 @@ type Escenario = {
   confirmadas: string[];   // ids que el UPDATE dio por actualizados
   ingresos: unknown[];     // filas insertadas en transactions
   avisos: unknown[];       // filas insertadas en pro_notifications
+  canceladas?: string[];   // citas cuyo hold ya expiró (status 'Cancelado')
   errorLectura?: string;
 };
 
@@ -54,21 +55,34 @@ vi.mock('@supabase/supabase-js', () => ({
       if (tabla === 'appointments') {
         return {
           select: () => tablaAppointments(),
-          update: (campos: any) => ({
-            eq: (_c: string, valor: string) => ({
-              eq: () => ({
-                select: async () => ({
-                  data: esc.confirmadas.includes(valor)
-                    ? [{ id: valor, professional_id: 'pro-1', patient_name: 'Juan', service_name: 'prueba', ...campos }]
+          // Cadena flexible: acepta cualquier número de .eq()/.is() y resuelve al
+          // llamar .select(), como el cliente real. Así el doble no se rompe cada
+          // vez que la consulta gana un filtro.
+          update: (campos: any) => {
+            const filtros: Record<string, unknown> = {};
+            const chain: any = {
+              eq(col: string, valor: unknown) { filtros[col] = valor; return this; },
+              is(col: string, valor: unknown) { filtros[col] = valor; return this; },
+              select: async () => {
+                const id = String(filtros.id ?? '');
+                // La conciliación exige status 'Pendiente'; la rama de pago tardío
+                // exige 'Cancelado'. El escenario dice en cuál está cada cita.
+                const estadoPedido = filtros.status;
+                const estadoReal = esc.canceladas?.includes(id) ? 'Cancelado' : 'Pendiente';
+                const coincide = esc.confirmadas.includes(id)
+                  && (estadoPedido === undefined || estadoPedido === estadoReal);
+                return {
+                  data: coincide
+                    ? [{ id, professional_id: 'pro-1', patient_id: null, patient_name: 'Juan',
+                         service_name: 'prueba', date: '2026-08-26', time: '13:00:00', ...campos }]
                     : [],
                   error: null,
-                }),
-              }),
-              is: () => ({
-                select: () => ({ maybeSingle: async () => ({ data: null }) }),
-              }),
-            }),
-          }),
+                };
+              },
+              maybeSingle: async () => ({ data: null }),
+            };
+            return chain;
+          },
         };
       }
       if (tabla === 'professional_secrets') {
@@ -218,5 +232,44 @@ describe('confirmPaidAppointment', () => {
     expect(esc.ingresos).toHaveLength(0);
     expect(esc.avisos).toHaveLength(0);
     expect(sincronizadas).toHaveLength(0);
+  });
+});
+
+describe('pago que llega cuando la reserva ya expiró', () => {
+  // El agujero que cerraba este cambio: si el cupo se libera antes de que el pago
+  // se acredite, el dinero entra igual. Antes la fila se borraba y ese pago
+  // quedaba huérfano; ahora la reserva queda 'Cancelado' y el caso se atiende.
+  beforeEach(() => {
+    esc = { pendientes: [], token: 'TOKEN', confirmadas: ['cita-1'], canceladas: ['cita-1'],
+            ingresos: [], avisos: [] };
+    sincronizadas.length = 0;
+    googleFalla = false;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) } as any));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+  afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+  it('NO re-toma el horario de una reserva cancelada', async () => {
+    // Podría estar ocupado por otro paciente: re-confirmarla sería doble reserva.
+    expect(await confirmPaidAppointment('cita-1', 1000, '2026-08-25T03:17:45Z')).toBe(false);
+    expect(sincronizadas).toHaveLength(0);
+    expect(esc.ingresos).toHaveLength(0);
+  });
+
+  it('avisa al profesional para que contacte al paciente y reagende', async () => {
+    await confirmPaidAppointment('cita-1', 1000, '2026-08-25T03:17:45Z');
+    expect(esc.avisos).toHaveLength(1);
+    expect((esc.avisos[0] as any).body).toContain('ya había expirado');
+    expect((esc.avisos[0] as any).body).toContain('reagendar');
+  });
+
+  it('no avisa nada si la cita simplemente ya estaba confirmada', async () => {
+    // Caso normal: el webhook y la conciliación llegan casi a la vez. No es un
+    // problema y no debe generar ruido en la campana.
+    esc.confirmadas = [];
+    expect(await confirmPaidAppointment('cita-1', 1000, '2026-08-25T03:17:45Z')).toBe(false);
+    expect(esc.avisos).toHaveLength(0);
   });
 });

@@ -298,10 +298,16 @@ export async function releaseStaleHolds(professionalId: string): Promise<void> {
   const { error: e1 } = await base.is('mp_preference_id', null).lt('created_at', cutoffEarly);
   if (e1) console.error('[booking] stale-hold cleanup (sin checkout) error:', e1.message);
 
+  // Las que SÍ llegaron a MercadoPago se cancelan, no se borran. Un pago puede
+  // acreditarse tarde (una tarjeta en revisión queda 'in_process' un buen rato), y
+  // si la fila desaparece el dinero llega sin cita a la que asociarlo y ninguna
+  // conciliación puede encontrarla — que es exactamente cómo se perdió la cita del
+  // 25/08. Cancelada libera el cupo igual (citasQueOcupan y la consulta de
+  // disponibilidad excluyen 'Cancelado') pero conserva el rastro del pago.
   const cutoffLate = new Date(Date.now() - 45 * 60 * 1000).toISOString();
   const { error: e2 } = await supabase
     .from('appointments')
-    .delete()
+    .update({ status: 'Cancelado' })
     .eq('professional_id', professionalId)
     .eq('status', 'Pendiente')
     .eq('payment_status', 'Pendiente')

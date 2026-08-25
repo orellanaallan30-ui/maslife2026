@@ -129,6 +129,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // en la aplicación que creó el cobro — recordar que la preferencia se crea
     // con el token OAuth de CADA profesional, no con el de la plataforma.
     notification_url: `${ALLOWED_ORIGIN}/api/mp-webhook`,
+    // Solo medios de pago inmediatos. 'ticket' es cupón y efectivo (Servipag y
+    // similares), 'atm' es transferencia y cajero: ambos tardan de 1 a 3 días en
+    // acreditarse. Para una hora que puede ser mañana eso no sirve, y además abre
+    // un agujero real: el cupo se libera antes de que el pago llegue, y el dinero
+    // termina acreditado sin cita asociada. Quedan tarjetas y saldo de MercadoPago.
+    payment_methods: {
+      excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }],
+    },
     auto_return: 'approved',
     statement_descriptor: 'CLINICAMASLIFE',
     ...(payer?.email && { payer: { email: String(payer.email), name: payer.name ? String(payer.name) : undefined } }),
