@@ -116,6 +116,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }],
     external_reference: appointmentId,
     back_urls: { success: backWithFlag, failure: backWithFlag, pending: backWithFlag },
+    // Sin esto, la confirmación del pago depende de que el paciente vuelva a la
+    // página (?mp_return=1): si cierra la pestaña, la cita queda en Pendiente y
+    // releaseStaleHolds la elimina. Fijar la URL aquí hace que MercadoPago avise
+    // servidor a servidor, y además funciona sea cual sea el webhook configurado
+    // en la aplicación que creó el cobro — recordar que la preferencia se crea
+    // con el token OAuth de CADA profesional, no con el de la plataforma.
+    notification_url: `${ALLOWED_ORIGIN}/api/mp-webhook`,
     auto_return: 'approved',
     statement_descriptor: 'CLINICAMASLIFE',
     ...(payer?.email && { payer: { email: String(payer.email), name: payer.name ? String(payer.name) : undefined } }),
