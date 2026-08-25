@@ -32,6 +32,12 @@ const ON_BLUE_SOFT = 'rgba(255,255,255,.78)';
 // FAQ, para que no queden dos cifras distintas en la misma página.
 const PLAN_MENSUAL = 24990;
 
+// Comisión de la plataforma por cobro online. Debe coincidir con
+// MP_MARKETPLACE_FEE_PCT en api/process-payment.ts: si cambia allá, cambia aquí.
+// Se declara en la página porque MercadoPago no la desglosa en su comprobante y
+// el profesional no la vería hasta revisar la aritmética de su liquidación.
+const COMISION_PCT = 2;
+
 const clp = (n: number) => `$${new Intl.NumberFormat('es-CL').format(n)}`;
 
 // Fade-up estándar del brief: suave, 200-300ms, al entrar en viewport.
@@ -59,7 +65,10 @@ const ProLanding: React.FC = () => {
   // campo vacío sin que aparezca un 0 pegado.
   const [precioSesion, setPrecioSesion] = useState('25000');
   const precioNum = Number(precioSesion) || 0;
-  const sesionesParaCubrir = precioNum > 0 ? Math.ceil(PLAN_MENSUAL / precioNum) : null;
+  // Sobre el neto, no sobre el bruto: de cada cobro online se descuenta la
+  // comisión, así que hacen falta algo más de sesiones de las que parecería.
+  const netoPorSesion = precioNum * (1 - COMISION_PCT / 100);
+  const sesionesParaCubrir = netoPorSesion > 0 ? Math.ceil(PLAN_MENSUAL / netoPorSesion) : null;
 
   const onPrecioChange = (v: string) => {
     const soloDigitos = v.replace(/\D/g, '').slice(0, 7); // tope 9.999.999
@@ -94,7 +103,7 @@ const ProLanding: React.FC = () => {
   // Las tres dudas de dinero que frenan una suscripción. Aparecen una sola vez
   // en la página, dentro de tarifas.
   const dudasDinero = [
-    { icon: 'account_balance_wallet', title: 'El dinero de tus pacientes es tuyo', desc: 'Conectas tu propia cuenta de MercadoPago. Los pagos llegan directo a ti — la plataforma no retiene ni administra tu dinero.' },
+    { icon: 'account_balance_wallet', title: 'El dinero de tus pacientes es tuyo', desc: `Conectas tu propia cuenta de MercadoPago y el dinero entra ahí, no a una cuenta nuestra. De cada cobro online se descuenta la comisión de MercadoPago y un ${COMISION_PCT}% de la plataforma; lo que cobras en consulta no paga comisión.` },
     { icon: 'lock_open', title: 'Sin permanencia ni letra chica', desc: 'Cancelas desde tu panel cuando quieras. No hay costo de salida ni cláusulas escondidas.' },
     { icon: 'shield', title: 'Tus fichas te pertenecen', desc: 'Datos cifrados y separados por profesional, según la Ley 21.719. Puedes exportar tus fichas en PDF cuando quieras.' },
   ];
@@ -110,7 +119,7 @@ const ProLanding: React.FC = () => {
     { q: '¿Necesito tarjeta de crédito para probar?', a: 'No. Te registras, activas tu cuenta y usas la plataforma completa durante 30 días sin ingresar ningún medio de pago.' },
     { q: '¿Hay permanencia mínima o contrato?', a: 'No. Puedes cancelar cuando quieras, sin costos de salida ni letra chica.' },
     { q: '¿Cómo se protegen los datos de mis pacientes?', a: 'Los datos clínicos se almacenan cifrados con acceso restringido por profesional, en cumplimiento de la Ley 21.719 de protección de datos personales de Chile.' },
-    { q: '¿Cómo recibo los pagos de mis pacientes?', a: 'Conectas tu cuenta de MercadoPago y los pagos de las reservas llegan directo a ti. La plataforma no retiene tu dinero.' },
+    { q: '¿Cómo recibo los pagos de mis pacientes?', a: `Conectas tu cuenta de MercadoPago y el dinero de las reservas entra directamente ahí. Sobre cada cobro online se descuentan dos comisiones: la de MercadoPago y un ${COMISION_PCT}% de la plataforma. Por ejemplo, de una sesión de $25.000 recibes alrededor de $23.500. Los pagos que cobras presencialmente no pagan nada.` },
     { q: '¿Sirve para mi especialidad?', a: 'Sí. Hay fichas específicas para kinesiología, nutrición, psicología y terapia ocupacional, y una ficha configurable con campos personalizados para cualquier otra especialidad.' },
   ];
 
@@ -324,7 +333,13 @@ const ProLanding: React.FC = () => {
                   <span className="text-[2.8rem] leading-none font-black tracking-tight" style={{ color: TEXT }}>{clp(PLAN_MENSUAL)}</span>
                   <span className="text-base font-semibold" style={{ color: MUTED }}>/ mes</span>
                 </div>
-                <p className="text-[13px] font-medium mb-6" style={{ color: MUTED }}>IVA incluido · Cancelas cuando quieras</p>
+                <p className="text-[13px] font-medium mb-2" style={{ color: MUTED }}>IVA incluido · Cancelas cuando quieras</p>
+                {/* La comisión por transacción se declara junto al precio, no escondida
+                    en el FAQ: es parte de lo que el profesional paga y decide con ella. */}
+                <p className="text-[13px] font-semibold mb-6" style={{ color: TEXT }}>
+                  + {COMISION_PCT}% por cobro online
+                  <span className="font-medium" style={{ color: MUTED }}> — lo que cobras en consulta no paga comisión.</span>
+                </p>
 
                 <div className="rounded-2xl p-4 mb-6 flex items-start gap-3" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
                   <span className="material-icons-round text-[19px] shrink-0" style={{ color: ORANGE }}>schedule</span>

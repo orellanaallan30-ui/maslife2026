@@ -90,9 +90,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── Token del vendedor: el pago se cobra a la cuenta MP del profesional ──
   const ACCESS_TOKEN = secret.mp_access_token.trim();
+  // Comisión de la plataforma por cobro online. MercadoPago la descuenta antes de
+  // acreditarle al profesional y NO la desglosa en su correo, así que es fácil que
+  // pase inadvertida: en un cobro de $1.000 el profesional ve "-$38 de MercadoPago"
+  // y recibe $912, no $962. Está declarada en la landing (/unete) — si se cambia
+  // aquí, hay que cambiarla también allá.
+  // Ojo: si MP_MARKETPLACE_FEE_PCT está definida en Vercel, gana sobre este valor.
   let marketplaceFee: number | undefined;
   {
-    const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 5);
+    const pct = Number(process.env.MP_MARKETPLACE_FEE_PCT ?? 2);
     const fee = Math.round(amountDue * pct / 100);
     if (fee > 0 && fee < amountDue) marketplaceFee = fee;
   }
