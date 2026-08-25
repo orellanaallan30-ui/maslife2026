@@ -106,8 +106,8 @@ function cleanLine(str: unknown): string {
   return String(str ?? '').replace(/[\r\n]+/g, ' ').trim();
 }
 
-const ROW_LABEL = `padding:8px 0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;`;
-const ROW_VALUE = `padding:8px 0;color:#0f172a;font-weight:bold;text-align:right;`;
+const ROW_LABEL = `padding:9px 12px 9px 0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;vertical-align:middle;width:38%;`;
+const ROW_VALUE = `padding:9px 0;color:#0f172a;font-weight:bold;text-align:right;vertical-align:middle;`;
 const INFO_BOX = `background:#f0fdfa;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #00a89e;`;
 
 // ── Plantilla de marca MasLife para TODOS los correos ────────────────────────
@@ -118,16 +118,31 @@ const BRAND_TEAL_DEEP = '#007e77';
 
 // Tipografías seguras para correo: los clientes descartan las fuentes web
 // (Manrope/Fraunces), así que usamos un serif elegante (Georgia) para el wordmark
-// y los títulos, y un sans limpio para el cuerpo. Sin emojis ni imágenes.
+// y los títulos, y un sans limpio para el cuerpo. Sin emojis; la única imagen es
+// el logo, y siempre con texto alternativo.
 const FONT_SERIF = `Georgia,'Times New Roman',serif`;
 const FONT_SANS = `'Manrope','Helvetica Neue',Helvetica,Arial,sans-serif`;
+
+// El logo se sirve desde public/ en una URL estable — los archivos de assets/ los
+// empaqueta Vite con un hash y no sirven para un correo. Está recortado y
+// aplanado contra el teal de la cabecera (4,6 KB): varios clientes ignoran el
+// canal alfa de un PNG y pintarían un recuadro blanco alrededor.
+//
+// Va SIEMPRE con `alt` con el nombre de la marca: Outlook bloquea las imágenes
+// por defecto, y sin eso la cabecera llegaría decapitada. Ese era el motivo del
+// "sin imágenes" original.
+const LOGO_URL = `${(process.env.PUBLIC_BASE_URL || 'https://clinicamaslife.cl').replace(/\/$/, '')}/logo-email.png`;
+
+// Postgres devuelve la columna `time` como "11:00:00" y en el correo se leía
+// "Hora 11:00:00". Se recorta aquí, que es donde se arma el mensaje.
+const soloHoraMinuto = (t: unknown) => String(t ?? '').slice(0, 5);
 
 function emailShell(opts: { kicker?: string; title: string; subtitle?: string; bodyHtml: string }): string {
   return `<div style="font-family:${FONT_SANS};max-width:600px;margin:0 auto;background:#f4f6f8;padding:24px;">
     <div style="background:linear-gradient(135deg,${BRAND_TEAL},${BRAND_TEAL_DEEP});border-radius:16px 16px 0 0;padding:36px 32px 32px;text-align:center;">
-      <div style="width:56px;height:56px;line-height:56px;margin:0 auto 14px;background:#ffffff;border-radius:15px;font-family:${FONT_SERIF};font-size:24px;font-weight:700;color:${BRAND_TEAL};box-shadow:0 4px 12px rgba(0,0,0,.12);">ML</div>
-      <div style="font-family:${FONT_SERIF};font-size:27px;font-weight:700;color:#ffffff;letter-spacing:.2px;">Clínica Mas Life</div>
-      <div style="color:rgba(255,255,255,.82);font-size:11px;margin-top:7px;letter-spacing:2px;text-transform:uppercase;">clinicamaslife.cl</div>
+      <img src="${LOGO_URL}" width="200" alt="Clínica Mas Life"
+           style="display:block;margin:0 auto 12px;width:200px;max-width:70%;height:auto;border:0;outline:none;text-decoration:none;font-family:${FONT_SERIF};font-size:22px;font-weight:700;color:#ffffff;">
+      <div style="color:rgba(255,255,255,.85);font-size:11px;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">clinicamaslife.cl</div>
     </div>
     <div style="background:#ffffff;padding:34px 32px;border-left:1px solid #e6ebf0;border-right:1px solid #e6ebf0;">
       ${opts.kicker ? `<div style="text-align:center;color:${BRAND_TEAL};font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">${escapeHtml(opts.kicker)}</div>` : ''}
@@ -159,7 +174,7 @@ function professionalNewBookingHtml(p: { professionalName: string; patientName: 
           ${tableRow('Paciente', p.patientName)}
           ${tableRow('Servicio', p.serviceName || 'General')}
           ${tableRow('Fecha', p.date)}
-          ${tableRow('Hora', p.time)}
+          ${tableRow('Hora', soloHoraMinuto(p.time))}
           ${tableRow('Modalidad', p.type || 'Presencial')}
         </table>
       </div>`,
@@ -182,7 +197,7 @@ function patientConfirmationHtml(p: { patientName: string; doctorName: string; s
           ${tableRow('Profesional', p.doctorName)}
           ${tableRow('Servicio', p.serviceName || 'Consulta')}
           ${tableRow('Fecha', p.date)}
-          ${tableRow('Hora', p.time)}
+          ${tableRow('Hora', soloHoraMinuto(p.time))}
           ${tableRow('Modalidad', p.type || 'Presencial')}
           ${paidRow}
         </table>
@@ -206,7 +221,7 @@ function paymentReceiptHtml(p: { patientName: string; doctorName: string; servic
           ${tableRow('Profesional', p.doctorName)}
           ${tableRow('Servicio', p.serviceName || 'Consulta')}
           ${tableRow('Fecha', p.date)}
-          ${tableRow('Hora', p.time)}
+          ${tableRow('Hora', soloHoraMinuto(p.time))}
           ${p.transactionRef ? tableRow('Referencia', p.transactionRef) : ''}
           ${tableRow('Monto Pagado', priceStr)}
         </table>

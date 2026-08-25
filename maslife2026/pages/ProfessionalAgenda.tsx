@@ -948,22 +948,29 @@ const ProfessionalAgenda: React.FC = () => {
 
             {/* MODAL EDICIÓN */}
             {isEditModalOpen && editingApp && (
-               <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[100] flex items-start justify-center p-6 pt-12 overflow-y-auto">
-                  <div className="bg-white w-full max-w-lg rounded-blob-lg shadow-modal border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300">
-                     <div className={`p-8 md:p-10 ${editingApp.status === 'Bloqueado' ? 'bg-slate-800' : (editingApp.color || 'bg-primary')} text-white relative flex flex-col items-center text-center`}>
-                        <button onClick={() => setIsEditModalOpen(false)} className="absolute top-6 right-6 w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-95"><span className="material-icons-round text-2xl">close</span></button>
-                        <div className="w-20 h-20 rounded-blob-2xs bg-white/20 flex items-center justify-center font-black text-4xl mb-6 shadow-xl backdrop-blur-md border border-white/20">{editingApp.patientName.charAt(0)}</div>
-                        <h3 className="text-3xl font-black tracking-tight mb-3">{editingApp.patientName}</h3>
-                        <div className="flex items-center gap-3 opacity-90 border border-white/20 px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm shadow-sm">
+               <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[100] flex items-start lg:items-center justify-center p-3 pt-6 lg:p-6">
+                  {/* Altura acotada y desplazamiento DENTRO de la tarjeta: antes el que
+                      se desplazaba era el fondo, y en el teléfono el final del contenido
+                      —contacto, crear ficha, agendar próxima sesión— quedaba tapado por
+                      la barra de navegación inferior y era inalcanzable.
+                      El alto descuenta la barra inferior (~76px) para que el borde de la
+                      tarjeta no quede por detrás de ella; dvh en vez de vh porque el
+                      navegador móvil oculta y muestra su propia barra. */}
+                  <div className="bg-white w-full max-w-lg rounded-blob-lg shadow-modal border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[calc(100dvh-8rem)] lg:max-h-[92vh]">
+                     <div className={`shrink-0 p-5 lg:p-10 ${editingApp.status === 'Bloqueado' ? 'bg-slate-800' : (editingApp.color || 'bg-primary')} text-white relative flex flex-col items-center text-center`}>
+                        <button onClick={() => setIsEditModalOpen(false)} className="absolute top-4 right-4 lg:top-6 lg:right-6 w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all active:scale-95"><span className="material-icons-round text-2xl">close</span></button>
+                        <div className="w-14 h-14 lg:w-20 lg:h-20 rounded-blob-2xs bg-white/20 flex items-center justify-center font-black text-2xl lg:text-4xl mb-3 lg:mb-6 shadow-xl backdrop-blur-md border border-white/20">{editingApp.patientName.charAt(0)}</div>
+                        <h3 className="text-xl lg:text-3xl font-black tracking-tight mb-2 lg:mb-3">{editingApp.patientName}</h3>
+                        <div className="flex items-center gap-2 lg:gap-3 opacity-90 border border-white/20 px-3 lg:px-4 py-1.5 lg:py-2 rounded-xl bg-white/10 backdrop-blur-sm shadow-sm">
                            <span className="material-icons-round text-sm">schedule</span>
                            <p className="text-[11px] font-black uppercase tracking-widest">{editingApp.time} • {editingApp.date}</p>
                         </div>
                      </div>
 
-                     <div className="p-8 md:p-10 space-y-8">
+                     <div className="flex-1 overflow-y-auto p-5 lg:p-10 pb-24 lg:pb-10 space-y-5 lg:space-y-8">
                         <div className="grid grid-cols-2 gap-4">
                            {(['Confirmado', 'Llegado', 'En Sesión', 'Finalizado'] as const).map(s => (
-                              <button key={s} onClick={() => handleStatusChange(s)} className={`py-4 rounded-xl text-[11px] font-black uppercase tracking-widest border-b-[3px] active:border-b-0 active:translate-y-[3px] transition-all shadow-sm flex items-center justify-center gap-2 ${editingApp.status === s ? 'bg-emerald-500 border-emerald-700 text-white scale-[1.02]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300 hover:text-black hover:bg-slate-100'}`}>
+                              <button key={s} onClick={() => handleStatusChange(s)} className={`py-3 lg:py-4 rounded-xl text-[11px] font-black uppercase tracking-widest border-b-[3px] active:border-b-0 active:translate-y-[3px] transition-all shadow-sm flex items-center justify-center gap-2 ${editingApp.status === s ? 'bg-emerald-500 border-emerald-700 text-white scale-[1.02]' : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-slate-300 hover:text-black hover:bg-slate-100'}`}>
                                  {editingApp.status === s && <span className="material-icons-round text-sm">check_circle</span>}
                                  {s}
                               </button>
