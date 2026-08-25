@@ -220,6 +220,43 @@ const ProfessionalAgenda: React.FC = () => {
       setIsEditModalOpen(true);
    };
 
+   /**
+    * Abre el alta de cita con los datos del paciente ya puestos, para agendarle
+    * la siguiente sesión sin tener que teclearlos de nuevo. Deja al profesional
+    * eligiendo solo fecha y hora.
+    */
+   const agendarProximaSesion = () => {
+      if (!editingApp) return;
+      const app = editingApp;
+      setIsEditModalOpen(false);
+      setEditingApp(null);
+
+      // Por defecto, la misma hora dentro de una semana: es la pauta más común en
+      // tratamientos, y de todas formas el profesional puede cambiarla.
+      const proxima = new Date(`${app.date}T00:00:00`);
+      proxima.setDate(proxima.getDate() + 7);
+      const fecha = formatDate(proxima);
+
+      setSelectedSlot({ time: app.time, date: fecha });
+      setNewPatientForm({
+         name: app.patientName || '',
+         rut: app.patientRut || '',
+         phone: app.patientPhone || '',
+         email: app.patientEmail || '',
+      });
+      setSelectedColor(app.color || 'bg-primary');
+      setBlockNote('');
+      setBlockDate(fecha);
+      setBlockTimes([app.time]);
+      // Si ya tiene ficha se elige de la lista; si vino de una reserva web, se
+      // crea con los datos que la propia cita trae.
+      setActiveTab(app.patientId ? 'existing' : 'new');
+      setSelectedServiceId('');
+      setAppointmentNotes('');
+      setCurrentDate(proxima);
+      setIsCreateModalOpen(true);
+   };
+
    const handleAddAppointment = (patient: Partial<Patient> | null, isBlock: boolean = false) => {
       if (!selectedSlot) return;
       const newApp: Appointment = {
@@ -454,7 +491,10 @@ const ProfessionalAgenda: React.FC = () => {
                   {viewMode === 'day' ? (
                      <div className="grid grid-cols-1 divide-y-2 divide-slate-100">
                         {hours.map(hour => {
-                           const appsInSlot = appointments.filter(a => a.time === hour && a.date === formatDate(currentDate));
+                           // Las finalizadas ya no ocupan: atendido el paciente, la casilla
+                           // vuelve a quedar libre para agendar la siguiente. Coincide con
+                           // citasQueOcupan y con el índice uq_slot_active (migración 0016).
+                           const appsInSlot = appointments.filter(a => a.time === hour && a.date === formatDate(currentDate) && a.status !== 'Finalizado');
                            return (
                                <div key={hour} className="flex min-h-[52px] sm:min-h-[70px] group">
                                   <div className="w-24 shrink-0 flex items-center justify-center border-r-2 border-slate-100 bg-slate-50/50">
@@ -475,7 +515,20 @@ const ProfessionalAgenda: React.FC = () => {
                                                        {/* Un cupo retenido durante el pago no es una cita: se muestra
                                                            apagado y con su propia etiqueta, para que no se confunda
                                                            con una reserva confirmada. */}
-                                                       <p className={`text-[11px] font-black uppercase tracking-widest ${app.status === 'Bloqueado' ? 'text-white/70' : esCupoEnEspera(app) ? 'text-slate-400' : 'opacity-70'}`}>{esCupoEnEspera(app) ? 'Esperando pago' : `${app.serviceName} • ${app.status}`}</p>
+                                                       {/* Lo primero que necesita ver el profesional es si el dinero
+                                                           está: por eso el pago manda sobre el estado de la cita. */}
+                                                       <p className={`text-[11px] font-black uppercase tracking-widest ${app.status === 'Bloqueado' ? 'text-white/70' : esCupoEnEspera(app) ? 'text-slate-400' : 'opacity-70'}`}>
+                                                          {esCupoEnEspera(app)
+                                                             ? 'Esperando pago'
+                                                             : app.status === 'Bloqueado'
+                                                                ? app.status
+                                                                : <>
+                                                                     {app.paymentStatus === 'Pagado' && (
+                                                                        <span className="text-emerald-600 mr-1.5">● Pagado</span>
+                                                                     )}
+                                                                     {app.serviceName} • {app.status}
+                                                                  </>}
+                                                       </p>
                                                     </div>
                                                 </div>
                                                 <span className="material-icons-round text-2xl opacity-30">more_vert</span>
@@ -514,7 +567,7 @@ const ProfessionalAgenda: React.FC = () => {
                                   </div>
                                   {weekDays.map((day, idx) => {
                                      const dateStr = formatDate(day);
-                                     const appsInSlot = appointments.filter(a => a.time === hour && a.date === dateStr);
+                                     const appsInSlot = appointments.filter(a => a.time === hour && a.date === dateStr && a.status !== 'Finalizado');
                                      return (
                                         <div key={`${hour}-${idx}`} className={`flex-1 min-w-[150px] p-1 flex flex-col gap-1 border-r-2 border-slate-50 ${day.toDateString() === new Date().toDateString() ? 'bg-primary/5' : ''}`}>
                                            {appsInSlot.length > 0 ? (
@@ -1026,6 +1079,12 @@ const ProfessionalAgenda: React.FC = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                            {editingApp.status !== 'Bloqueado' && editingApp.patientId && (
                               <button onClick={() => navigate(`/pro/record/${editingApp.patientId}`)} className="py-5 bg-slate-50 text-slate-600 border-b-[3px] border-slate-200 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-900 hover:border-slate-800 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">description</span> Ficha Médica</button>
+                           )}
+                           {editingApp.status !== 'Bloqueado' && (
+                              <button onClick={agendarProximaSesion}
+                                 className="py-5 bg-slate-50 text-slate-600 border-b-[3px] border-slate-200 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-900 hover:border-slate-800 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm">
+                                 <span className="material-icons-round text-lg">event_repeat</span> Agendar próxima sesión
+                              </button>
                            )}
                            {editingApp.status !== 'Bloqueado' && !editingApp.patientId && (
                               <button onClick={crearFichaDesdeCita} disabled={creandoFicha}

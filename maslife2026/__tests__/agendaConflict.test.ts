@@ -82,3 +82,29 @@ describe('validarJornada', () => {
     expect(validarJornada('03:00', 60, undefined)).toBeNull();
   });
 });
+
+describe('citasQueOcupan — una sesión finalizada libera el cupo', () => {
+  // Debe decir lo mismo que el índice uq_slot_active (migración 0016):
+  // WHERE status NOT IN ('Cancelado','Finalizado'). Si divergen, la agenda
+  // ofrecería una hora que la base de datos rechaza al agendar.
+  const base = { date: '2026-08-26', time: '13:00', duration: 60 };
+
+  it('excluye las finalizadas', () => {
+    const citas = [{ ...base, status: 'Finalizado' } as any];
+    expect(citasQueOcupan(citas, '2026-08-26')).toHaveLength(0);
+  });
+
+  it('excluye las canceladas', () => {
+    const citas = [{ ...base, status: 'Cancelado' } as any];
+    expect(citasQueOcupan(citas, '2026-08-26')).toHaveLength(0);
+  });
+
+  it('mantiene las vigentes', () => {
+    const citas = [
+      { ...base, status: 'Confirmado' } as any,
+      { ...base, time: '14:00', status: 'En Sesión' } as any,
+      { ...base, time: '15:00', status: 'Pendiente' } as any,
+    ];
+    expect(citasQueOcupan(citas, '2026-08-26')).toHaveLength(3);
+  });
+});
