@@ -3,6 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { Appointment } from '../types';
 import { useClinic } from '../ClinicContext';
 import { supabase } from '../supabaseClient';
+import { esCupoEnEspera } from '../lib/holds';
 
 
 const ProfessionalDashboard: React.FC = () => {
@@ -157,6 +158,10 @@ const ProfessionalDashboard: React.FC = () => {
       .filter(a =>
         (!a.professionalId || a.professionalId === loggedPro.id) &&
         a.status !== 'Cancelado' && a.status !== 'Finalizado' && a.status !== 'Bloqueado' &&
+        // Una reserva web sin pagar es solo un cupo retenido mientras el paciente
+        // está en MercadoPago, no una cita: no debe figurar aquí como si lo fuera.
+        // Si no paga, se libera sola.
+        !esCupoEnEspera(a) &&
         (a.date > todayStr || (a.date === todayStr && a.time >= nowTime))
       )
       .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))

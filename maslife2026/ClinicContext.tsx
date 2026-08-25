@@ -184,6 +184,17 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
       isFetchingRef.current = true;
       if (!silent) setIsLoading(true);
       try {
+        // Red de seguridad de pagos: antes de leer, le preguntamos a MercadoPago
+        // si alguna reserva pendiente ya se pagó. Cubre el caso en que el paciente
+        // pagó pero cerró la pestaña y MercadoPago tampoco avisó — así el
+        // profesional ve la cita confirmada al abrir el panel, sin hacer nada.
+        // Best-effort: si falla, la carga sigue igual.
+        await fetch('/api/book-appointment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'reconcile', professionalId: loggedPro.id }),
+        }).catch(err => console.error('[reconcile]', err?.message));
+
         const [supaPatients, supaApps, supaTransactions, supaNotifs] = await Promise.all([
           getPatients(loggedPro.id),
           getAppointments(loggedPro.id),

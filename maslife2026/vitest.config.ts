@@ -25,6 +25,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
+      // Los módulos de api/_lib viven fuera de esta carpeta, así que no alcanzan
+      // node_modules por resolución normal. Sin este alias, cualquier test sobre
+      // api/_lib que importe el cliente de Supabase falla al resolverlo — aunque
+      // el test lo tenga simulado, Vite necesita resolver el identificador.
+      '@supabase/supabase-js': path.resolve(__dirname, 'node_modules/@supabase/supabase-js'),
     },
   },
 });

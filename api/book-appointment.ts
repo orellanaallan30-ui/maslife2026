@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, confirmBookingPaid, claimNotify, releaseStaleHolds, BookingInput, UUID_RE } from './_lib/booking';
 import { getValidToken, appointmentToGCalEvent, createGCalEvent } from './_lib/googleCalendar';
+import { reconcilePendingWithMP } from './_lib/mpReconcile';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -74,6 +75,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const body = req.body || {};
+
+  // ── Conciliar pagos pendientes contra MercadoPago ──
+  // Lo llama el panel del profesional al abrir la agenda. Sirve de red de
+  // seguridad para cuando el paciente pagó pero cerró la pestaña y MercadoPago
+  // tampoco avisó: en vez de esperar el aviso, preguntamos nosotros.
+  if (body.action === 'reconcile') {
+    const proId = String(body.professionalId || '');
+    if (!UUID_RE.test(proId)) return res.status(400).json({ error: 'professional_id inválido' });
+    const confirmadas = await reconcilePendingWithMP(proId);
+    return res.status(200).json({ ok: true, confirmadas });
+  }
 
   // ── Confirmar pago verificándolo contra MercadoPago ──
   if (body.action === 'confirm') {

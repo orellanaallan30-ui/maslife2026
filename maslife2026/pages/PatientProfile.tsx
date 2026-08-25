@@ -256,7 +256,23 @@ const PatientProfile: React.FC = () => {
       return;
     }
 
-    if (!raw) { setIsConfirmed(true); return; }
+    // Sin localStorage (pestaña cerrada, otro dispositivo, modo privado) antes se
+    // daba la cita por confirmada sin avisarle al servidor: el paciente veía
+    // "listo" y la cita seguía Pendiente, camino a liberarse. MercadoPago sí
+    // devuelve external_reference en la URL de retorno, así que se usa como
+    // respaldo para confirmarla igual.
+    if (!raw) {
+      const refUrl = params.get('external_reference');
+      if (refUrl && paymentId) {
+        fetch('/api/book-appointment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'confirm', appointmentId: refUrl, paymentId }),
+        }).catch(err => console.error('[mp_return] confirmación de respaldo falló:', err?.message));
+      }
+      setIsConfirmed(true);
+      return;
+    }
 
     (async () => {
       try {

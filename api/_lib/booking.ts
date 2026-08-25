@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { toMinutes, rangesOverlap } from './overlap';
+import { reconcilePendingWithMP } from './mpReconcile';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -279,6 +280,12 @@ export async function releaseBooking(id: string): Promise<void> {
  *   pagaba y quedaba sin cita).
  */
 export async function releaseStaleHolds(professionalId: string): Promise<void> {
+  // Antes de borrar nada, preguntarle a MercadoPago si alguna de estas reservas
+  // ya está pagada. Es la última barrera contra destruir una cita cuyo pago sí se
+  // acreditó: pasó de verdad el 25/08, cuando el paciente cerró la pestaña y
+  // MercadoPago nunca llamó al webhook. Nunca borrar sin preguntar primero.
+  await reconcilePendingWithMP(professionalId);
+
   const base = supabase
     .from('appointments')
     .delete()
