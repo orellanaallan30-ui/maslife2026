@@ -2,11 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Appointment, Patient } from '../types';
 import { useClinic } from '../ClinicContext';
+import { esCupoEnEspera } from '../lib/holds';
 
 const ProfessionalAgenda: React.FC = () => {
    const navigate = useNavigate();
    const location = useLocation();
-   const { appointments: allAppointments, patients, addAppointment, batchAddAppointments, updateAppointment, deleteAppointment: onRemoveApp, deleteAppointmentsByRecurrence, setPatients: setContextPatients, loggedPro, logout, isLoading } = useClinic();
+   const { appointments: allAppointments, patients, addPatient, addAppointment, batchAddAppointments, updateAppointment, deleteAppointment: onRemoveApp, deleteAppointmentsByRecurrence, setPatients: setContextPatients, loggedPro, logout, isLoading } = useClinic();
 
    // Solo citas de este profesional
    const appointments = useMemo(
@@ -27,6 +28,7 @@ const ProfessionalAgenda: React.FC = () => {
    const [activeTab, setActiveTab] = useState<'existing' | 'new' | 'block'>('existing');
    const [selectedSlot, setSelectedSlot] = useState<{ time: string, date: string } | null>(null);
    const [editingApp, setEditingApp] = useState<Appointment | null>(null);
+   const [creandoFicha, setCreandoFicha] = useState(false);
    const [searchQuery, setSearchQuery] = useState('');
    const [newPatientForm, setNewPatientForm] = useState({ name: '', rut: '', phone: '', email: '' });
    const [blockNote, setBlockNote] = useState('');
@@ -338,6 +340,41 @@ const ProfessionalAgenda: React.FC = () => {
       }
    };
 
+   // Da de alta al paciente de una reserva web, que llega sin ficha (patientId
+   // nulo), usando los datos que la propia cita ya trae, y enlaza ambos.
+   const crearFichaDesdeCita = async () => {
+      if (!editingApp || creandoFicha) return;
+      setCreandoFicha(true);
+      try {
+         // Misma forma que crea el panel de pacientes (PatientList.handleSubmit).
+         const nuevo: any = {
+            id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
+            name: editingApp.patientName,
+            rut: '',
+            phone: editingApp.patientPhone || '',
+            email: editingApp.patientEmail || '',
+            age: 0,
+            gender: 'No especificado',
+            status: 'Nuevo',
+            prevision: 'Fonasa',
+            birthDate: '',
+            address: '',
+            allergies: [],
+            medicalHistory: '',
+            attachments: [],
+            customFields: [],
+            archived: false,
+            professionalId: loggedPro?.id,
+         };
+         addPatient(nuevo);
+         updateAppointment({ ...editingApp, patientId: nuevo.id });
+         setEditingApp({ ...editingApp, patientId: nuevo.id });
+         navigate(`/pro/record/${nuevo.id}`);
+      } finally {
+         setCreandoFicha(false);
+      }
+   };
+
    const monthName = currentDate.toLocaleDateString('es-ES', { month: 'long' });
    const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
@@ -396,10 +433,10 @@ const ProfessionalAgenda: React.FC = () => {
                {/* Stat chips — fila horizontal scrollable */}
                <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 lg:mx-0 lg:px-0 lg:grid lg:grid-cols-4">
                   {[
-                    { icon: 'event', label: 'Citas hoy', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').length },
+                    { icon: 'event', label: 'Citas hoy', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado' && !esCupoEnEspera(a)).length },
                     { icon: 'check_circle', label: 'Confirmadas', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status === 'Confirmado').length },
-                    { icon: 'payments', label: 'Ingreso hoy', value: '$' + appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado').reduce((sum, a) => sum + (a.price || 0), 0).toLocaleString('es-CL') },
-                    { icon: 'date_range', label: 'Esta semana', value: appointments.filter(a => weekDays.some(d => formatDate(d) === a.date) && a.status !== 'Cancelado').length },
+                    { icon: 'payments', label: 'Ingreso hoy', value: '$' + appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado' && !esCupoEnEspera(a)).reduce((sum, a) => sum + (a.price || 0), 0).toLocaleString('es-CL') },
+                    { icon: 'date_range', label: 'Esta semana', value: appointments.filter(a => weekDays.some(d => formatDate(d) === a.date) && a.status !== 'Cancelado' && !esCupoEnEspera(a)).length },
                   ].map(({ icon, label, value }) => (
                     <div key={label} className="bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex items-center gap-2 shrink-0 min-w-[130px] md:min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -434,8 +471,11 @@ const ProfessionalAgenda: React.FC = () => {
                                                        <span className="material-icons-round text-lg">{styles.icon}</span>
                                                     </div>
                                                     <div>
-                                                       <p className={`font-black text-base tracking-tight mb-0 ${app.status === 'Bloqueado' ? 'text-white' : 'text-slate-900'}`}>{app.patientName}</p>
-                                                       <p className={`text-[11px] font-black uppercase tracking-widest ${app.status === 'Bloqueado' ? 'text-white/70' : 'opacity-70'}`}>{app.serviceName} • {app.status}</p>
+                                                       <p className={`font-black text-base tracking-tight mb-0 ${app.status === 'Bloqueado' ? 'text-white' : esCupoEnEspera(app) ? 'text-slate-400' : 'text-slate-900'}`}>{app.patientName}</p>
+                                                       {/* Un cupo retenido durante el pago no es una cita: se muestra
+                                                           apagado y con su propia etiqueta, para que no se confunda
+                                                           con una reserva confirmada. */}
+                                                       <p className={`text-[11px] font-black uppercase tracking-widest ${app.status === 'Bloqueado' ? 'text-white/70' : esCupoEnEspera(app) ? 'text-slate-400' : 'opacity-70'}`}>{esCupoEnEspera(app) ? 'Esperando pago' : `${app.serviceName} • ${app.status}`}</p>
                                                     </div>
                                                 </div>
                                                 <span className="material-icons-round text-2xl opacity-30">more_vert</span>
@@ -961,9 +1001,38 @@ const ProfessionalAgenda: React.FC = () => {
                            </div>
                         </div>
 
+                        {/* Datos de contacto del paciente. Una reserva hecha desde la web
+                            no trae patientId (el paciente aún no existe como ficha), así que
+                            antes este bloque entero desaparecía y el profesional se quedaba
+                            sin forma de contactarlo pese a tener el pago cobrado. */}
+                        {editingApp.status !== 'Bloqueado' && (editingApp.patientEmail || editingApp.patientPhone) && (
+                           <div className="pt-4 space-y-2">
+                              <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Contacto del paciente</label>
+                              {editingApp.patientEmail && (
+                                 <a href={`mailto:${editingApp.patientEmail}`} className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-xl text-sm font-semibold text-slate-700 break-all hover:bg-slate-100 transition-colors">
+                                    <span className="material-icons-round text-base text-slate-400 shrink-0">mail</span>
+                                    {editingApp.patientEmail}
+                                 </a>
+                              )}
+                              {editingApp.patientPhone && (
+                                 <a href={`tel:${editingApp.patientPhone}`} className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors">
+                                    <span className="material-icons-round text-base text-slate-400 shrink-0">call</span>
+                                    {editingApp.patientPhone}
+                                 </a>
+                              )}
+                           </div>
+                        )}
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                            {editingApp.status !== 'Bloqueado' && editingApp.patientId && (
                               <button onClick={() => navigate(`/pro/record/${editingApp.patientId}`)} className="py-5 bg-slate-50 text-slate-600 border-b-[3px] border-slate-200 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-slate-900 hover:border-slate-800 hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm"><span className="material-icons-round text-lg">description</span> Ficha Médica</button>
+                           )}
+                           {editingApp.status !== 'Bloqueado' && !editingApp.patientId && (
+                              <button onClick={crearFichaDesdeCita} disabled={creandoFicha}
+                                 className="py-5 bg-primary/10 text-primary border-b-[3px] border-primary/30 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:bg-primary hover:border-primary hover:text-white active:border-b-0 active:translate-y-[3px] shadow-sm disabled:opacity-60">
+                                 <span className="material-icons-round text-lg">person_add</span>
+                                 {creandoFicha ? 'Creando…' : 'Crear ficha'}
+                              </button>
                            )}
                            {editingApp.status === 'Bloqueado' && editingApp.recurrenceId ? (
                               <div className="col-span-2 space-y-3">

@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { confirmPaidAppointment } from './_lib/mpReconcile';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -78,51 +79,6 @@ async function notifyAdminOrphanPreapproval(payerEmail: string, mpStatus: string
   }
 }
 
-// Envía los correos de confirmación/comprobante de una cita pagada, pero SOLO si
-// nadie los envió aún (claim atómico sobre notified_at). Respaldo para el caso en
-// que el paciente pagó y no volvió del checkout. Best-effort: nunca rompe el webhook.
-async function sendBookingEmailsIfUnclaimed(apt: Record<string, any>): Promise<void> {
-  try {
-    // Claim atómico: solo un proceso (cliente o webhook) envía los correos.
-    const { data: claimed } = await supabase
-      .from('appointments')
-      .update({ notified_at: new Date().toISOString() })
-      .eq('id', apt.id)
-      .is('notified_at', null)
-      .select('id')
-      .maybeSingle();
-    if (!claimed) return; // el cliente ya notificó
-
-    const { data: pro } = await supabase
-      .from('professionals')
-      .select('email, name')
-      .eq('id', apt.professional_id)
-      .maybeSingle();
-    if (!pro?.email) return;
-
-    const base = (process.env.PUBLIC_BASE_URL || 'https://clinicamaslife.cl').replace(/\/$/, '');
-    await fetch(`${base}/api/notify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        to: pro.email,
-        professionalName: apt.doctor_name || pro.name,
-        patientName: apt.patient_name,
-        patientEmail: apt.patient_email || undefined,
-        serviceName: apt.service_name,
-        date: apt.date,
-        time: apt.time,
-        type: apt.type,
-        duration: apt.duration,
-        price: apt.payment_amount,
-        isReceipt: true,
-      }),
-    }).catch(e => console.error('[mp-webhook] notify falló:', e));
-  } catch (e) {
-    console.error('[mp-webhook] sendBookingEmailsIfUnclaimed error:', e);
-  }
-}
-
 function validateSignature(req: VercelRequest, secret: string): boolean {
   try {
     const xSignature = req.headers['x-signature'] as string;
@@ -147,7 +103,22 @@ function validateSignature(req: VercelRequest, secret: string): boolean {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
+  // Antes esto era `if (req.method !== 'POST') return res.status(405).end()`, que
+  // cortaba ANTES de registrar nada. Una notificación IPN disparada por el
+  // notification_url de la preferencia puede llegar como GET
+  // (?topic=payment&id=…), y desaparecía sin dejar rastro: la tabla quedaba vacía
+  // y parecía que MercadoPago nunca había llamado. Ahora queda constancia.
+  if (req.method !== 'POST') {
+    const topic = (req.query.topic || req.query.type) as string | undefined;
+    const ipnId = (req.query['data.id'] || req.query.id) as string | undefined;
+    console.log('[mp-webhook] llegada no-POST:', req.method, 'topic:', topic, 'id:', ipnId);
+    await logWebhookEvent({
+      event_type: topic, mp_data_id: ipnId ? String(ipnId) : undefined,
+      signature_valid: false, outcome: 'ignored_method',
+      detail: `MercadoPago llamó con ${req.method} (formato IPN). Query: ${JSON.stringify(req.query).slice(0, 300)}`,
+    });
+    return res.status(200).json({ received: true });
+  }
 
   const WEBHOOK_SECRET = process.env.MERCADOPAGO_WEBHOOK_SECRET;
 
@@ -225,41 +196,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const REF_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         if (payment.status === 'approved' && ref && REF_UUID.test(ref)) {
           const amount = Math.round(Number(payment.transaction_amount) || 0);
-          const { data: updated, error } = await supabase
-            .from('appointments')
-            .update({
-              status: 'Confirmado',
-              payment_status: 'Pagado',
-              payment_amount: amount,
-              paid_at: payment.date_approved || new Date().toISOString(),
-            })
-            .eq('id', ref)
-            .eq('payment_status', 'Pendiente')
-            .select('id, professional_id, patient_name, patient_email, doctor_name, service_name, date, time, type, duration, payment_amount, notified_at');
-
-          if (error) {
-            console.error('[mp-webhook] reconcile error:', error.message);
-            await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, outcome: 'error', detail: error.message });
-          } else if (updated?.length) {
+          // Misma rutina que usa la conciliación activa (_lib/mpReconcile): marca
+          // la cita, registra el ingreso y envía los correos. Compartirla evita
+          // que las dos vías se desincronicen.
+          const confirmada = await confirmPaidAppointment(
+            ref, amount, payment.date_approved || new Date().toISOString(),
+          );
+          if (confirmada) {
             console.log('[mp-webhook] cita conciliada:', ref);
-            // Registrar ingreso en transactions para el panel de finanzas
-            const apt = updated[0];
-            const { error: txErr } = await supabase.from('transactions').insert({
-              id: crypto.randomUUID(),
-              professional_id: apt.professional_id,
-              amount,
-              description: `Cita: ${apt.patient_name} - ${apt.service_name}`,
-              date: new Date().toISOString().split('T')[0],
-              type: 'Ingreso',
-            });
-            if (txErr) console.error('[mp-webhook] transaction insert error:', txErr.message);
-            await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, matched_professional_id: apt.professional_id, outcome: 'matched_updated', detail: `cita ${ref}` });
-            // Respaldo de correos: si el cliente no volvió del checkout (localStorage
-            // perdido), nadie habría notificado. Reclamamos el envío atómicamente
-            // (notified_at) para no duplicar con el cliente, y enviamos vía /api/notify.
-            await sendBookingEmailsIfUnclaimed(apt);
+            await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, outcome: 'matched_updated', detail: `cita ${ref}` });
           } else {
-            await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, outcome: 'ignored_status', detail: 'cita no pendiente o ref no aprobada' });
+            await logWebhookEvent({ event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true, mp_status: payment.status, outcome: 'ignored_status', detail: 'la cita ya estaba confirmada o no existe' });
           }
         } else {
           // El pago llegó pero no se concilia: puede estar pendiente o rechazado,
