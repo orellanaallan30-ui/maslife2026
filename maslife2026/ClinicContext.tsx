@@ -202,7 +202,8 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
           getProNotifications(loggedPro.id),
         ]);
 
-        // Notificaciones del paciente (evidencia / sesión / mensaje) → campana.
+        // Notificaciones del servidor → campana: reservas web ('booking') y
+        // eventos de rutinas del paciente (evidencia / sesión / mensaje).
         // Solo llegan las NO leídas; se agregan las nuevas sin duplicar.
         setNotifications(prev => {
           const have = new Set(prev.map(n => n.id));
@@ -212,7 +213,9 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               id: `db-${r.id}`,
               title: r.body || 'Nueva actividad de un paciente',
               time: new Date(r.created_at).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
-              type: 'patient' as const,
+              // 'booking' lo escribe el servidor al confirmarse una reserva web;
+              // el resto son eventos de rutinas del paciente.
+              type: (r.kind === 'booking' ? 'appointment' : 'patient') as 'appointment' | 'patient',
               read: false,
               patientId: r.patient_id || undefined,
             }));

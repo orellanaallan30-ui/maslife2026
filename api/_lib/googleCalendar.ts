@@ -325,3 +325,29 @@ export async function doIncrementalSync(professionalId: string): Promise<void> {
       .eq('professional_id', professionalId);
   }
 }
+
+/**
+ * Sincroniza una reserva al Google Calendar del profesional, si lo tiene
+ * conectado. Server-side vía refresh token guardado — no necesita la sesión del
+ * profesional, así que sirve también para reservas de pacientes anónimos.
+ *
+ * Vivía dentro de api/book-appointment.ts, y por eso solo corría cuando el
+ * paciente VOLVÍA del checkout. Si cerraba la pestaña, la cita se confirmaba y se
+ * cobraba pero nunca llegaba al calendario. Al vivir aquí la usan los tres
+ * caminos: reserva sin pago, retorno del checkout, y webhook/reconciliación.
+ *
+ * Best-effort e idempotente: el guard de google_event_id evita duplicar el evento
+ * si se llama dos veces, y ningún fallo de Google voltea una reserva confirmada.
+ */
+export async function syncAppointmentToGoogle(professionalId: string, appointmentId: string): Promise<void> {
+  try {
+    const gc = await getValidToken(professionalId);
+    if (!gc) return; // el profesional no conectó Google
+    const { data: row } = await supabase.from('appointments').select('*').eq('id', appointmentId).single();
+    if (!row || row.google_event_id) return; // ya sincronizada
+    const eventId = await createGCalEvent(gc.token, gc.calendarId, appointmentToGCalEvent(row));
+    if (eventId) await supabase.from('appointments').update({ google_event_id: eventId }).eq('id', appointmentId);
+  } catch (e) {
+    console.error('[googleCalendar] sync de reserva falló:', e);
+  }
+}
