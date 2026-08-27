@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { askClaude, askClaudeWithImages } from '../lib/claudeHelper';
 import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField, ClinicalFile, MealPlanRow } from '../types';
@@ -236,6 +236,38 @@ const ClinicalRecord: React.FC = () => {
   });
 
   // ── Detección de especialidad ──────────────────────────────────────────────
+  // ── Secciones plegables ────────────────────────────────────────────────────
+  // La ficha mostraba todos los campos a la vez y saturaba la pantalla. Ahora
+  // cada bloque se pliega, y se recuerda POR PROFESIONAL cómo lo dejó: quien
+  // siempre usa rangos de movimiento se los encuentra abiertos la próxima vez, y
+  // quien no los usa nunca deja de verlos. Es preferencia de interfaz, no dato
+  // clínico, así que vive en localStorage y no en Supabase.
+  const CLAVE_SECCIONES = `maslife_secciones_${loggedPro?.id || 'anon'}`;
+  const ABIERTAS_POR_DEFECTO: Record<string, boolean> = {
+    'ki-antro': true, 'ki-postural': false, 'ki-rom': false, 'ki-tests': false,
+  };
+
+  const [seccionesAbiertas, setSeccionesAbiertas] = useState<Record<string, boolean>>(() => {
+    try {
+      const guardado = localStorage.getItem(CLAVE_SECCIONES);
+      if (guardado) return { ...ABIERTAS_POR_DEFECTO, ...JSON.parse(guardado) };
+    } catch { /* modo privado o JSON corrupto: se usan los valores por defecto */ }
+    return ABIERTAS_POR_DEFECTO;
+  });
+
+  const seccionAbierta = useCallback(
+    (id: string) => seccionesAbiertas[id] ?? ABIERTAS_POR_DEFECTO[id] ?? true,
+    [seccionesAbiertas],
+  );
+
+  const alternarSeccion = useCallback((id: string) => {
+    setSeccionesAbiertas(prev => {
+      const siguiente = { ...prev, [id]: !(prev[id] ?? ABIERTAS_POR_DEFECTO[id] ?? true) };
+      try { localStorage.setItem(CLAVE_SECCIONES, JSON.stringify(siguiente)); } catch { /* ignorado */ }
+      return siguiente;
+    });
+  }, [CLAVE_SECCIONES]);
+
   const specialtyKey = useMemo(() => {
     const s = (loggedPro?.specialty || '').toLowerCase();
     if (s.includes('psicolog') || s.includes('psiquiat')) return 'psicologia';
@@ -395,7 +427,14 @@ const ClinicalRecord: React.FC = () => {
   const chatSessionRef = useRef<any>(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    (() => {
+      // scrollIntoView sube por TODOS los ancestros con scroll: movía también los
+      // dos contenedores de App.tsx y la ficha entera saltaba de sección. Aquí se
+      // desplaza solo el panel del chat.
+      const fin = chatEndRef.current;
+      const caja = fin?.parentElement;
+      if (fin && caja) caja.scrollTop = caja.scrollHeight;
+    })();
   }, [chatMessages]);
 
   // Cargar historial de versiones SOAP (CENS RCE — trazabilidad)
@@ -662,6 +701,11 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     );
   };
 
+  // Sin botón en la interfaz: FHIR es el estándar para que OTRO sistema de salud
+  // importe la ficha, y hoy no hay ninguno al otro lado. Se conserva la función
+  // —no es código muerto por descuido— para el día que haya que integrarse con
+  // un hospital o una isapre. Su único consumidor era el botón que se retiró.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleExportFhir = () => {
     if (!loggedPro) { toast.error('No hay profesional conectado'); return; }
     const patientObj = { ...safePatient, ...personalData, soap } as Patient;
@@ -1242,7 +1286,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
       <main className={`flex-1 min-h-0 overflow-y-auto custom-scrollbar relative ${specialtyKey === 'nutricion' ? 'bg-[#FDF2F8]' : 'bg-white lg:bg-slate-100'}`}>
         <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 py-3 lg:py-4 flex items-center justify-between gap-3 shadow-sm no-print">
           {/* Patient info */}
-          <div className="flex items-center gap-3 lg:gap-6 min-w-0">
+          <div className="flex items-center gap-4 lg:gap-6 min-w-0">
             <div className="w-10 h-10 lg:w-16 lg:h-16 rounded-xl lg:rounded-2xl overflow-hidden border-2 border-primary/30 shadow-md bg-primary/5 flex items-center justify-center shrink-0">
               <span className="material-icons-round text-slate-500 text-2xl lg:text-4xl">person</span>
             </div>
@@ -1279,15 +1323,6 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             >
               <span className="material-icons-round text-lg">assignment</span>
               <span className="hidden lg:inline">ORDEN</span>
-            </button>
-            {/* FHIR — desktop only */}
-            <button
-              onClick={handleExportFhir}
-              className="hidden lg:flex px-4 py-3 rounded-2xl font-black text-[11px] uppercase tracking-[0.05em] items-center gap-2 bg-violet-50 border border-violet-200 text-violet-600 shadow-sm hover:bg-violet-100 transition-all border-b-4 border-violet-300 active:border-b-0 active:translate-y-1"
-              title="Exportar registro en formato FHIR R4 (estándar interoperabilidad)"
-            >
-              <span className="material-icons-round text-lg">data_object</span>
-              FHIR
             </button>
             {/* Compartir */}
             <div className="relative">
@@ -1380,7 +1415,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Identificación del Paciente</h2>
               <button onClick={addCustomField} className="text-xs font-black text-primary bg-primary/5 px-6 py-3 rounded-xl no-print hover:bg-primary/10 transition-all">+ AGREGAR CAMPO</button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
               {[
                 { label: 'Nombre Completo', val: personalData.name, k: 'name' },
                 { label: 'RUT / ID', val: personalData.rut, k: 'rut' },
@@ -1396,7 +1431,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     type={f.t || 'text'}
                     value={f.val}
                     onChange={e => { setPersonalData({ ...personalData, [f.k]: f.t === 'number' ? Number(e.target.value) : e.target.value }); setIsDirtyTrue(); }}
-                    className={`w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700`}
+                    className={`w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700`}
                   />
                 </div>
               ))}
@@ -1417,7 +1452,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <input
                     value={cf.value}
                     onChange={e => { updateCustomField(idx, 'value', e.target.value); setIsDirtyTrue(); }}
-                    className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
+                    className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all print:bg-white text-slate-700"
                   />
                 </div>
               ))}
@@ -1459,8 +1494,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             </div>
 
             {/* ── 1. Datos Antropométricos ─────────────────────── */}
-            <div>
-              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Datos Antropométricos</h3>
+            <div className={seccionAbierta('ki-antro') ? '' : 'pb-0'}>
+              <button type="button" onClick={() => alternarSeccion('ki-antro')}
+                className="w-full flex items-center gap-2 mb-4 text-left group/sec">
+                <h3 className="flex-1 text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3">Datos Antropométricos</h3>
+                <span className="material-icons-round text-slate-400 text-lg transition-transform print:hidden" style={{ transform: seccionAbierta('ki-antro') ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+              </button>
+              <div className={seccionAbierta('ki-antro') ? 'block' : 'hidden print:block'}>
               {renderSectionFields('ki-antropometria')}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {[
@@ -1497,10 +1537,16 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 )}
               </div>
             </div>
+            </div>
 
             {/* ── 2. Evaluación Postural Estructurada ──────────── */}
-            <div>
-              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Evaluación Postural Estructurada</h3>
+            <div className={seccionAbierta('ki-postural') ? '' : 'pb-0'}>
+              <button type="button" onClick={() => alternarSeccion('ki-postural')}
+                className="w-full flex items-center gap-2 mb-4 text-left group/sec">
+                <h3 className="flex-1 text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3">Evaluación Postural Estructurada</h3>
+                <span className="material-icons-round text-slate-400 text-lg transition-transform print:hidden" style={{ transform: seccionAbierta('ki-postural') ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+              </button>
+              <div className={seccionAbierta('ki-postural') ? 'block' : 'hidden print:block'}>
               {renderSectionFields('ki-postural')}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
                 {([
@@ -1538,10 +1584,16 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 />
               </div>
             </div>
+            </div>
 
             {/* ── 3. ROM ─────────────────────────────────────────── */}
-            <div>
-              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Rango de Movimiento (ROM) en grados</h3>
+            <div className={seccionAbierta('ki-rom') ? '' : 'pb-0'}>
+              <button type="button" onClick={() => alternarSeccion('ki-rom')}
+                className="w-full flex items-center gap-2 mb-4 text-left group/sec">
+                <h3 className="flex-1 text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3">Rango de Movimiento (ROM)</h3>
+                <span className="material-icons-round text-slate-400 text-lg transition-transform print:hidden" style={{ transform: seccionAbierta('ki-rom') ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+              </button>
+              <div className={seccionAbierta('ki-rom') ? 'block' : 'hidden print:block'}>
               {renderSectionFields('ki-rom')}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {romDefs.map((def, idx) => (
@@ -1586,7 +1638,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                         value={kiRom[def.id] || ''}
                         onChange={e => { setKiRom(p => ({ ...p, [def.id]: e.target.value })); setIsDirtyTrue(); }}
                         placeholder={def.normal}
-                        className="w-full bg-white shadow-input-inset border rounded-2xl py-3 px-3 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                        className="w-full bg-white shadow-input-inset border rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
                         style={{ borderColor: def.color ? `${def.color}66` : '#cbd5e1' }}
                       />
                       <span className="text-xs font-black text-slate-500">°</span>
@@ -1601,10 +1653,16 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 + Agregar campo ROM
               </button>
             </div>
+            </div>
 
             {/* ── 4. Tests Especiales ────────────────────────────── */}
-            <div>
-              <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3 mb-4">Tests Especiales</h3>
+            <div className={seccionAbierta('ki-tests') ? '' : 'pb-0'}>
+              <button type="button" onClick={() => alternarSeccion('ki-tests')}
+                className="w-full flex items-center gap-2 mb-4 text-left group/sec">
+                <h3 className="flex-1 text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3">Tests Especiales</h3>
+                <span className="material-icons-round text-slate-400 text-lg transition-transform print:hidden" style={{ transform: seccionAbierta('ki-tests') ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+              </button>
+              <div className={seccionAbierta('ki-tests') ? 'block' : 'hidden print:block'}>
               {renderSectionFields('ki-tests')}
               {/* Selector de zona afectada → tests recomendados */}
               <div className="mb-4 space-y-3 no-print">
@@ -1698,6 +1756,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 </div>
               )}
             </div>
+            </div>
           </section>
 
           {/* ── Análisis Biomecánico con IA (fotos + resultado) ── */}
@@ -1715,7 +1774,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             </div>
             {renderSectionFields('biomecanica')}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-6">
                 {/* Slots etiquetados */}
                 <div className="grid grid-cols-2 gap-4">
@@ -2015,7 +2074,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             {renderSectionFields('nutricion')}
 
             {/* Inputs antropométricos */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
               {[
                 { l: 'Peso (kg)',        v: nutPeso,    set: (n: number) => { setNutPeso(n);    setIsDirtyTrue(); } },
                 { l: 'Talla (cm)',       v: nutTalla,   set: (n: number) => { setNutTalla(n);   setIsDirtyTrue(); } },
@@ -2025,7 +2084,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <div key={f.l} className="space-y-2">
                   <label htmlFor={`nut-antropo-${idx}`} className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                   <input id={`nut-antropo-${idx}`} type="number" step="0.1" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
+                    className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 focus:bg-white transition-all" />
                 </div>
               ))}
             </div>
@@ -2046,7 +2105,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <div className="space-y-3">
                 <label htmlFor="nut-activity-level" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Nivel de Actividad Física</label>
                 <select id="nut-activity-level" value={nutActivity} onChange={e => { setNutActivity(e.target.value as ActivityLevel); setIsDirtyTrue(); }}
-                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 transition-all">
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all">
                   {(Object.entries(ACTIVITY_FACTORS) as [ActivityLevel, { label: string; factor: number }][]).map(([k, v]) => (
                     <option key={k} value={k}>{v.label}</option>
                   ))}
@@ -2095,7 +2154,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <div key={f.l} className="space-y-2">
                     <label htmlFor={`nut-composicion-${idx}`} className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{f.l}</label>
                     <input id={`nut-composicion-${idx}`} type="number" step="0.01" value={f.v || ''} onChange={e => f.set(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 focus:bg-white transition-all" />
+                      className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 focus:bg-white transition-all" />
                   </div>
                 ))}
               </div>
@@ -2243,13 +2302,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <label htmlFor="nut-recall24" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Recordatorio 24 Horas</label>
                 <textarea id="nut-recall24" value={nutRecall24} onChange={e => { setNutRecall24(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Todo lo que el paciente comió y bebió en las últimas 24 horas, con horarios y cantidades aproximadas..."
-                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
                 <label htmlFor="nut-diet-history" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Historia Dietética</label>
                 <textarea id="nut-diet-history" value={nutDietHistory} onChange={e => { setNutDietHistory(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Dietas previas, intolerancias, alergias alimentarias, patrones de alimentación, relación con la comida..."
-                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 resize-none transition-all" />
               </div>
             </div>
 
@@ -2259,13 +2318,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <label htmlFor="nut-goals" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Objetivos Nutricionales</label>
                 <textarea id="nut-goals" value={nutGoals} onChange={e => { setNutGoals(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Reducir peso corporal 5 kg en 3 meses, normalizar glicemia..."
-                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
                 <label htmlFor="nut-supplements" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Suplementación Indicada</label>
                 <textarea id="nut-supplements" value={nutSupplements} onChange={e => { setNutSupplements(e.target.value); setIsDirtyTrue(); }} rows={4}
                   placeholder="Ej: Vitamina D 2000 UI/día, Omega-3 1g/día..."
-                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-emerald-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 resize-none transition-all" />
               </div>
             </div>
 
@@ -2374,13 +2433,13 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <label htmlFor="psych-history" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Antecedentes Psiquiátricos / Psicológicos</label>
                 <textarea id="psych-history" value={psychPsychHistory} onChange={e => { setPsychPsychHistory(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Diagnósticos previos, hospitalizaciones, intentos de autolesión, medicación psiquiátrica..."
-                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 resize-none transition-all" />
               </div>
               <div className="space-y-2">
                 <label htmlFor="psych-intervention" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Técnica / Intervención Aplicada</label>
                 <textarea id="psych-intervention" value={psychIntervention} onChange={e => { setPsychIntervention(e.target.value); setIsDirtyTrue(); }} rows={5}
                   placeholder="Ej: TCC — reestructuración cognitiva de pensamientos automáticos negativos. EMDR fase 3..."
-                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 resize-none transition-all" />
               </div>
             </div>
 
@@ -2389,7 +2448,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
               <label htmlFor="psych-next-objective" className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Objetivo Próxima Sesión</label>
               <textarea id="psych-next-objective" value={psychNextObjective} onChange={e => { setPsychNextObjective(e.target.value); setIsDirtyTrue(); }} rows={3}
                 placeholder="Ej: Trabajar exposición gradual a situaciones sociales. Revisar registro de pensamientos..."
-                className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-violet-500/10 resize-none transition-all" />
+                className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 resize-none transition-all" />
             </div>
 
             {/* Escalas PHQ-9 / GAD-7 con historial */}
@@ -2398,7 +2457,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           )}
 
           {/* ── Nota Clínica SOAP ── */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-10">
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <div className="lg:col-span-2">{renderSectionFields('soap')}</div>
             {(SOAP_LABELS[specialtyKey] || SOAP_LABELS.kinesiologia).map(f => (
               <div key={f.k} className="bg-white rounded-blob-xl border border-slate-200 shadow-section overflow-hidden flex flex-col group hover:-translate-y-1 hover:shadow-xl transition-all">
@@ -2527,7 +2586,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
         {/* ── Historial de versiones SOAP (CENS RCE) ── */}
         {soapVersions.length > 0 && (
-          <div className="px-6 md:px-10 pb-6 no-print">
+          <div className="max-w-6xl mx-auto px-3 lg:px-6 pb-6 no-print">
             <button
               onClick={() => setShowVersions(v => !v)}
               className="flex items-center gap-2 text-[11px] font-black text-slate-600 uppercase tracking-widest hover:text-slate-700 transition-colors"
