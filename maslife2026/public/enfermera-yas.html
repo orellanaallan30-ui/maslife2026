@@ -1539,9 +1539,9 @@
 
     <div class="card" style="margin-bottom:18px;">
       <div class="tag">Paso 2</div>
-      <h3>Qué quieres que haga</h3>
+      <h3>Pregúntale o pídele algo</h3>
       <div class="chip-row" id="chipRow"></div>
-      <textarea class="ag-textarea" id="agInstruction" placeholder="Ejemplo: crea una pestaña de estudio sobre shock séptico con un esquema de fisiopatología, una tabla de drogas vasoactivas y 8 preguntas de práctica."></textarea>
+      <textarea class="ag-textarea" id="agInstruction" placeholder="Puedes preguntarle una duda (¿por qué sube la presión meseta?) o pedirle material (créame una pestaña sobre shock séptico con preguntas de práctica). Si la duda da para más, él mismo te ofrecerá armarla."></textarea>
       <div class="dictate-row">
         <button class="btn mic-btn" id="micDictar" type="button">
           <span class="mic-ico">🎤</span><span id="micDictarTxt">Dictar por voz</span>
@@ -1555,7 +1555,7 @@
       </div>
 
       <div class="quiz-nav">
-        <button class="btn btn-primary" id="agRun">✦ Generar con el agente</button>
+        <button class="btn btn-primary" id="agRun">✦ Preguntar o pedir</button>
         <button class="btn" id="agManual">Modo manual · copiar prompt</button>
         <button class="btn spacer" id="agClear">Limpiar</button>
       </div>
@@ -1598,7 +1598,7 @@
 
       <div class="chip-row" id="voiceChips" style="margin-top:14px;"></div>
 
-      <div class="transcript" id="transcript" style="display:none;"></div>
+      <div class="transcript" id="transcript"></div>
       <button class="btn btn-block" id="callClear" style="display:none; margin-top:10px;">Borrar conversación</button>
 
       <div class="ag-status" id="voiceStatus"></div>
@@ -3358,9 +3358,11 @@
         });
       },
       /* La IA pasa por el servidor: la clave nunca toca el navegador. */
-      consultar: function(system, messages, maxTokens){
-        return pedir({ accion: 'ia', system: system, messages: messages, max_tokens: maxTokens })
-          .then(function(r){ return r.texto || ''; });
+      consultar: function(system, messages, maxTokens, tools){
+        return pedir({ accion:'ia', system:system, messages:messages, max_tokens:maxTokens, tools:tools })
+          .then(function(r){
+            return { texto: r.texto || '', herramientas: r.herramientas || [], restantes: r.restantes };
+          });
       }
     };
   })();
@@ -3884,13 +3886,21 @@
       }
       ag.busy = true;
       $ag('agRun').disabled = true;
-      setStatus('agStatus','work','<span class="spinner"></span>Generando el módulo. Esto puede tardar algunos segundos...');
-      llamarAgente(instr).then(function(mod){
-        var id = crearPestanaModulo(mod);
-        setStatus('agStatus','info','Listo. Se creó la pestaña <b>'+esc(mod.titulo||'nueva')+'</b> arriba.');
-        showTab(id);
+      setStatus('agStatus','work','<span class="spinner"></span>Pensando...');
+      // La misma conversación que la voz: si es una duda, responde; si pides
+      // material —o aceptas cuando te lo ofrece—, crea la pestaña.
+      agregarTurno('user', instr);
+      conversar(instr).then(function(r){
+        if(r.texto) agregarTurno('bot', r.texto);
+        if(r.creada){
+          setStatus('agStatus','info','Listo. Se creó la pestaña <b>'+esc(r.creada.titulo)+'</b> arriba.');
+          showTab(r.creada.id);
+        } else {
+          setStatus('agStatus','info','Respondido abajo. Si quieres que lo convierta en pestaña, pídeselo.');
+        }
+        $ag('agInstruction').value = '';
       }).catch(function(e){
-        setStatus('agStatus','err','No se pudo generar: '+esc(e.message));
+        setStatus('agStatus','err','No se pudo: '+esc(e.message));
       }).then(function(){
         ag.busy = false;
         $ag('agRun').disabled = false;
@@ -4103,70 +4113,111 @@
     if(l) l.textContent = '';
   }
 
-  /* ---- Llamada al agente en modo conversación (texto plano) ---- */
-  function preguntarPorVoz(pregunta){
-    var cfg = ag.cfg;
-    var contexto = materialTexto();
+  /* ================= ASISTENTE UNIFICADO =================
+     Una sola vía para todo: preguntar una duda, pedir una tarea o hablar por voz.
+     Antes había dos caminos separados —uno que SIEMPRE creaba una pestaña y otro
+     solo de conversación—, así que para resolver una duda simple no quedaba más
+     remedio que generar material que nadie pidió.
+
+     Ahora el asistente responde conversando y, cuando el tema da para una pestaña
+     de estudio, la ofrece. Solo la crea si ella acepta o la pide directamente. La
+     decisión la toma el modelo mediante una herramienta: si la usa, hay pestaña;
+     si no, hay respuesta hablada.                                              */
+
+  var HERRAMIENTA_MODULO = {
+    name: 'crear_modulo',
+    description: [
+      'Crea una pestaña de estudio nueva dentro de la app.',
+      'ÚSALA SOLO si la estudiante pide explícitamente material (una pestaña, un resumen,',
+      'un esquema, preguntas de práctica, flashcards) o si ya aceptó tu ofrecimiento de crearlo.',
+      'Para una duda puntual NO la uses: responde conversando. Si crees que el tema merece',
+      'material, termina tu respuesta ofreciéndolo, y espera a que ella diga que sí.'
+    ].join(' '),
+    input_schema: {
+      type: 'object',
+      properties: {
+        titulo: { type: 'string', description: 'Nombre corto de la pestaña' },
+        secciones: {
+          type: 'array',
+          description: 'Secciones del módulo, con el mismo esquema de siempre: tipo texto, tabla, esquema, pasos, flashcards, preguntas o alerta.',
+          items: { type: 'object' }
+        }
+      },
+      required: ['titulo', 'secciones']
+    }
+  };
+
+  var SYS_TUTOR = [
+    'Eres el tutor de enfermería y cuidados críticos de una estudiante universitaria chilena.',
+    'Conversas con ella y, cuando hace falta, le construyes material de estudio.',
+    '',
+    'CÓMO RESPONDER:',
+    '- Español de Chile, cercano y directo, como si le explicaras a alguien al lado.',
+    '- Tus respuestas pueden leerse en voz alta: nada de viñetas, asteriscos, encabezados ni emojis.',
+    '- Sé breve, entre 40 y 120 palabras, salvo que te pidan profundizar.',
+    '- Si enumeras, usa "primero", "segundo", "y por último".',
+    '- Di números y unidades como se pronuncian: "veintiocho a treinta y dos milímetros de mercurio".',
+    '- Explica el porqué, no solo el dato.',
+    '- Si no tienes certeza sobre un protocolo local, dilo y sugiere confirmarlo con su docente.',
+    '',
+    'CUÁNDO CREAR MATERIAL:',
+    '- Una duda puntual se responde conversando. NO crees una pestaña por iniciativa propia.',
+    '- Si el tema da para estudiarlo a fondo, responde y termina ofreciéndolo:',
+    '  "si quieres te armo una pestaña con esto". Espera a que acepte.',
+    '- Si te lo pide, o si ya aceptó, usa la herramienta crear_modulo.',
+    '- Al usarla, acompáñala de una frase corta diciendo qué creaste.'
+  ].join('\n');
+
+  /* Punto único de entrada: lo usan el botón de texto y la llamada por voz. */
+  function conversar(pregunta){
     var hist = voz.historial.slice(-8).map(function(t){
-      return {role: t.who === 'user' ? 'user' : 'assistant', content: t.text};
+      return { role: t.who === 'user' ? 'user' : 'assistant', content: t.text };
     });
-
-    if(cfg.mode === 'proxy'){
-      if(!cfg.endpoint) return Promise.reject(new Error('Falta configurar la URL de tu endpoint.'));
-      return fetch(cfg.endpoint, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          modo:'conversacion',
-          pregunta: pregunta,
-          historial: hist,
-          material: contexto,
-          sistema: SYS_VOZ
-        })
-      }).then(function(r){
-        if(!r.ok) throw new Error('El endpoint respondió '+r.status+'.');
-        return r.json();
-      }).then(function(d){
-        var t = d && (d.respuesta || d.texto || d.text);
-        if(typeof t === 'string' && t.trim()) return t.trim();
-        throw new Error('El endpoint no devolvió una respuesta de texto.');
-      });
+    var contexto = materialTexto();
+    var texto = pregunta;
+    if(contexto && !hist.length){
+      texto = 'Material que estoy estudiando:\n\n' + contexto.slice(0, 40000) + '\n\nMi pregunta: ' + pregunta;
     }
 
-    if(cfg.mode === 'direct'){
-      if(!cfg.key) return Promise.reject(new Error('Falta la clave de API.'));
-      var msgs = hist.slice();
-      var texto = pregunta;
-      if(contexto && !voz.historial.length){
-        texto = 'Material que estoy estudiando:\n\n' + contexto.slice(0, 40000) + '\n\nMi pregunta: ' + pregunta;
-      }
-      msgs.push({role:'user', content: texto});
-      return fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{
-          'Content-Type':'application/json',
-          'x-api-key': cfg.key,
-          'anthropic-version':'2023-06-01',
-          'anthropic-dangerous-direct-browser-access':'true'
-        },
-        body: JSON.stringify({
-          model: cfg.model || 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          system: SYS_VOZ,
-          messages: msgs
-        })
-      }).then(function(r){
-        if(!r.ok) return r.text().then(function(t){ throw new Error('API '+r.status+': '+t.slice(0,150)); });
-        return r.json();
-      }).then(function(d){
-        return (d.content||[]).filter(function(x){return x.type==='text';}).map(function(x){return x.text;}).join('\n').trim();
+    // Los adjuntos solo viajan en el primer turno: repetirlos gastaría cupo.
+    var content = [];
+    if(!hist.length){
+      archivosBinarios().slice(0, 6).forEach(function(f){
+        if(!f.b64) return;
+        if(f.tipo === 'imagen'){
+          content.push({ type:'image', source:{ type:'base64', media_type: f.media || 'image/png', data: f.b64 } });
+        } else if(f.tipo === 'pdf'){
+          content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data: f.b64 } });
+        }
       });
     }
+    content.push({ type:'text', text: texto });
 
-    return Promise.reject(new Error('No hay agente conectado. Configura la conexión en la sección de más abajo.'));
+    var mensajes = hist.concat([{ role:'user', content: content }]);
+
+    return NUBE.consultar(SYS_TUTOR, mensajes, 8000, [HERRAMIENTA_MODULO]).then(function(r){
+      var creada = null;
+      (r.herramientas || []).forEach(function(h){
+        if(h.name !== 'crear_modulo' || !h.input) return;
+        try{ creada = { id: crearPestanaModulo(h.input), titulo: h.input.titulo || 'nueva' }; }
+        catch(e){ /* si el módulo viene mal formado, la conversación sigue */ }
+      });
+      return { texto: r.texto || '', creada: creada, restantes: r.restantes };
+    });
   }
 
-  /* ---- Ciclo de la llamada ---- */
+  /* ---- Llamada al agente en modo conversación (texto plano) ---- */
+  function preguntarPorVoz(pregunta){
+    // Delega en la vía única: hablar y escribir son la misma conversación, con el
+    // mismo historial. Si el asistente decide crear una pestaña, se anuncia.
+    return conversar(pregunta).then(function(r){
+      if(r.creada && !r.texto) return 'Listo, te armé la pestaña ' + r.creada.titulo + '.';
+      if(r.creada) return r.texto + ' Te dejé la pestaña ' + r.creada.titulo + ' arriba.';
+      if(!r.texto) throw new Error('El asistente no devolvió respuesta.');
+      return r.texto;
+    });
+  }
+
   function setFase(f, estado, live){
     voz.fase = f;
     var orb = $ag('callOrb'), ico = $ag('orbIco');
