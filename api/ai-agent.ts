@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
 import { WEB_SEARCH_TOOL, INSTRUCCIONES_BUSQUEDA, resolverPauseTurn } from './_lib/webSearch';
+import { atenderModoEstudio } from './_lib/studyApp';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
@@ -8,6 +9,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  // ── App de estudio ──────────────────────────────────────────────────────────
+  // Va montada aquí y no en su propio archivo porque el plan Vercel Hobby admite
+  // 12 funciones serverless y ya están las 12: la 13ª rompe el despliegue en
+  // silencio. Se resuelve y se retorna ANTES de requireSupabaseAuth, que exige
+  // sesión de profesional; quien usa la app de estudio se identifica con un token
+  // de enlace. El camino del profesional, más abajo, queda intacto.
+  if (req.body?.modo === 'estudio') {
+    return atenderModoEstudio(req, res);
+  }
 
   const user = await requireSupabaseAuth(req, res);
   if (!user) return;
