@@ -3358,6 +3358,42 @@
         });
       },
       /* La IA pasa por el servidor: la clave nunca toca el navegador. */
+      /* Consulta en flujo: llama a onTexto con cada fragmento según llega, para
+         poder hablar antes de que el modelo termine. Si falla por lo que sea,
+         quien la usa reintenta por la vía normal — una avería aquí no puede
+         dejarla sin asistente. */
+      consultarEnFlujo: function(system, messages, maxTokens, tools, onTexto){
+        return fetch('/api/ai-agent', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            modo:'estudio', token:token, app:APP, accion:'ia',
+            system:system, messages:messages, max_tokens:maxTokens,
+            tools:tools, stream:true
+          })
+        }).then(function(r){
+          if(!r.ok || !r.body) throw new Error('El servidor respondió ' + r.status);
+          var lector = r.body.getReader(), dec = new TextDecoder();
+          var resto = '', texto = '', herramientas = [];
+          function leer(){
+            return lector.read().then(function(res){
+              if(res.done) return { texto: texto, herramientas: herramientas };
+              resto += dec.decode(res.value, { stream:true });
+              var lineas = resto.split('\n');
+              resto = lineas.pop() || '';
+              lineas.forEach(function(l){
+                if(!l.trim()) return;
+                var ev; try{ ev = JSON.parse(l); }catch(e){ return; }
+                if(ev.t === 'texto'){ texto += ev.v; if(onTexto) onTexto(ev.v, texto); }
+                else if(ev.t === 'fin'){ herramientas = ev.herramientas || []; }
+                else if(ev.t === 'error'){ throw new Error(ev.v); }
+              });
+              return leer();
+            });
+          }
+          return leer();
+        });
+      },
       consultar: function(system, messages, maxTokens, tools){
         return pedir({ accion:'ia', system:system, messages:messages, max_tokens:maxTokens, tools:tools })
           .then(function(r){
@@ -4007,11 +4043,32 @@
     '- Si no tienes certeza sobre un protocolo local, dilo y sugiere confirmarlo con su docente o el manual de la unidad.'
   ].join('\n');
 
+  /* Las voces se ordenan por calidad, no por el orden que da el sistema. iOS
+     entrega primero la voz básica, así que sin esto daba igual que ella
+     descargara la voz "Mejorada" en Ajustes: la app seguiría usando la mala. */
   function ttsVocesEs(){
     if(!TTS) return [];
     var todas = TTS.getVoices() || [];
     var es = todas.filter(function(v){ return /^es/i.test(v.lang); });
-    return es.length ? es : todas;
+    var lista = es.length ? es : todas;
+
+    function calidad(v){
+      var n = (v.name || '');
+      if(/siri/i.test(n)) return 0;                                   // la mejor en iOS
+      if(/premium|enhanced|mejorad|neural/i.test(n)) return 1;
+      return 2;
+    }
+    function idioma(v){
+      var l = (v.lang || '').toLowerCase();
+      if(l.indexOf('es-cl') === 0) return 0;   // español de Chile, el suyo
+      if(l.indexOf('es-mx') === 0) return 1;
+      if(l.indexOf('es-us') === 0) return 2;
+      if(l.indexOf('es-es') === 0) return 3;
+      return 4;
+    }
+    return lista.slice().sort(function(a, b){
+      return (calidad(a) - calidad(b)) || (idioma(a) - idioma(b));
+    });
   }
   function pintarVoces(){
     var sel = $ag('voiceSel'); if(!sel) return;
@@ -4040,22 +4097,65 @@
     if(typeof TTS.onvoiceschanged !== 'undefined') TTS.onvoiceschanged = pintarVoces;
   }
 
+  /* iOS solo deja reproducir voz si hubo un gesto del usuario, y aquí el audio
+     llega DESPUÉS de esperar al servidor, cuando ese permiso ya caducó. Emitir
+     una locución mínima durante el toque deja la voz "autorizada" para lo que
+     venga después. Se llama al pulsar el círculo de la llamada. */
+  var ttsDesbloqueado = false;
+  function desbloquearVoz(){
+    if(ttsDesbloqueado || !TTS) return;
+    try{
+      var u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      TTS.speak(u);
+      ttsDesbloqueado = true;
+    }catch(e){}
+  }
+
+  /* Trocea en frases y las encola una a una en vez de mandar un bloque largo:
+     Safari trunca las locuciones largas, y así además "Deja de hablar" corta al
+     instante en vez de esperar a que termine todo el texto. */
+  function trocearFrases(texto){
+    return String(texto)
+      .replace(/[*_#`>]/g,'')
+      .replace(/\s+/g,' ')
+      .trim()
+      .split(/(?<=[.!?…])\s+/)
+      .reduce(function(acc, frase){
+        // Frases muy cortas se pegan a la anterior: cortar cada dos palabras
+        // suena peor que una frase algo más larga.
+        if(acc.length && (acc[acc.length-1].length + frase.length) < 90){
+          acc[acc.length-1] += ' ' + frase;
+        } else if(frase){
+          acc.push(frase);
+        }
+        return acc;
+      }, []);
+  }
+
   function hablar(texto, alTerminar){
     if(!TTS || !texto){ if(alTerminar) alTerminar(); return; }
     try{ TTS.cancel(); }catch(e){}
-    var limpio = String(texto)
-      .replace(/[*_#`>]/g,'')
-      .replace(/\s+/g,' ')
-      .trim();
-    var u = new SpeechSynthesisUtterance(limpio);
-    u.lang = 'es-CL';
-    u.rate = voz.rate;
+
+    var frases = trocearFrases(texto);
+    if(!frases.length){ if(alTerminar) alTerminar(); return; }
+
     var vs = ttsVocesEs();
-    var elegida = vs.filter(function(v){ return v.name === voz.vozSel; })[0];
-    if(elegida){ u.voice = elegida; u.lang = elegida.lang; }
-    u.onend = function(){ if(alTerminar) alTerminar(); };
-    u.onerror = function(){ if(alTerminar) alTerminar(); };
-    try{ TTS.speak(u); }catch(e){ if(alTerminar) alTerminar(); }
+    var elegida = vs.filter(function(v){ return v.name === voz.vozSel; })[0] || vs[0];
+
+    var i = 0;
+    function siguiente(){
+      if(i >= frases.length){ if(alTerminar) alTerminar(); return; }
+      var u = new SpeechSynthesisUtterance(frases[i++]);
+      u.lang = elegida ? elegida.lang : 'es-CL';
+      u.rate = voz.rate;
+      if(elegida) u.voice = elegida;
+      u.onend = siguiente;
+      // Un fallo en una frase no debe dejar la respuesta a medias: se sigue.
+      u.onerror = siguiente;
+      try{ TTS.speak(u); }catch(e){ siguiente(); }
+    }
+    siguiente();
   }
   function callarse(){
     if(TTS){ try{ TTS.cancel(); }catch(e){} }
@@ -4169,7 +4269,7 @@
   ].join('\n');
 
   /* Punto único de entrada: lo usan el botón de texto y la llamada por voz. */
-  function conversar(pregunta){
+  function conversar(pregunta, lector){
     var hist = voz.historial.slice(-8).map(function(t){
       return { role: t.who === 'user' ? 'user' : 'assistant', content: t.text };
     });
@@ -4195,26 +4295,66 @@
 
     var mensajes = hist.concat([{ role:'user', content: content }]);
 
-    return NUBE.consultar(SYS_TUTOR, mensajes, 8000, [HERRAMIENTA_MODULO]).then(function(r){
+    function interpretar(r, enFlujo){
       var creada = null;
       (r.herramientas || []).forEach(function(h){
         if(h.name !== 'crear_modulo' || !h.input) return;
         try{ creada = { id: crearPestanaModulo(h.input), titulo: h.input.titulo || 'nueva' }; }
         catch(e){ /* si el módulo viene mal formado, la conversación sigue */ }
       });
-      return { texto: r.texto || '', creada: creada, restantes: r.restantes };
-    });
+      return { texto: r.texto || '', creada: creada, restantes: r.restantes, enFlujo: !!enFlujo };
+    }
+
+    // Con lector (voz) se intenta el flujo; sin él, o si el flujo falla, se usa
+    // la vía normal, que ya está probada.
+    if(lector){
+      return NUBE.consultarEnFlujo(SYS_TUTOR, mensajes, 8000, [HERRAMIENTA_MODULO], lector.alLlegar)
+        .then(function(r){ return interpretar(r, true); })
+        .catch(function(){
+          return NUBE.consultar(SYS_TUTOR, mensajes, 8000, [HERRAMIENTA_MODULO])
+            .then(function(r){ return interpretar(r, false); });
+        });
+    }
+    return NUBE.consultar(SYS_TUTOR, mensajes, 8000, [HERRAMIENTA_MODULO])
+      .then(function(r){ return interpretar(r, false); });
   }
 
   /* ---- Llamada al agente en modo conversación (texto plano) ---- */
+  /* Habla lo que va llegando, frase por frase, sin esperar a que el modelo
+     termine. Es lo que hace que la conversación se sienta viva en vez de dejar
+     un silencio largo antes de la primera palabra. */
+  function hablarSegunLlega(){
+    var pendiente = '', hablando = false;
+    function purgar(fin){
+      // Solo se pronuncia lo que ya es una frase cerrada: cortar a media frase
+      // suena peor que esperar medio segundo más.
+      var corte = fin ? pendiente.length : Math.max(
+        pendiente.lastIndexOf('. '), pendiente.lastIndexOf('? '),
+        pendiente.lastIndexOf('! '), pendiente.lastIndexOf('… ')
+      ) + 1;
+      if(corte <= 0) return;
+      var trozo = pendiente.slice(0, corte).trim();
+      pendiente = pendiente.slice(corte);
+      if(!trozo) return;
+      hablando = true;
+      hablar(trozo, function(){ hablando = false; });
+    }
+    return {
+      alLlegar: function(fragmento){ pendiente += fragmento; if(!hablando) purgar(false); },
+      alTerminar: function(){ purgar(true); }
+    };
+  }
+
   function preguntarPorVoz(pregunta){
-    // Delega en la vía única: hablar y escribir son la misma conversación, con el
-    // mismo historial. Si el asistente decide crear una pestaña, se anuncia.
-    return conversar(pregunta).then(function(r){
-      if(r.creada && !r.texto) return 'Listo, te armé la pestaña ' + r.creada.titulo + '.';
-      if(r.creada) return r.texto + ' Te dejé la pestaña ' + r.creada.titulo + ' arriba.';
+    // Misma conversación que el texto, mismo historial. La diferencia es que
+    // aquí se usa el flujo para empezar a hablar cuanto antes.
+    var lector = hablarSegunLlega();
+    return conversar(pregunta, lector).then(function(r){
+      lector.alTerminar();
+      if(r.creada && !r.texto) return { texto:'Listo, te armé la pestaña ' + r.creada.titulo + '.', yaHablado:false };
+      if(r.creada) return { texto: r.texto + ' Te dejé la pestaña ' + r.creada.titulo + ' arriba.', yaHablado:r.enFlujo };
       if(!r.texto) throw new Error('El asistente no devolvió respuesta.');
-      return r.texto;
+      return { texto: r.texto, yaHablado: r.enFlujo };
     });
   }
 
@@ -4311,16 +4451,28 @@
   function procesarPregunta(texto){
     agregarTurno('user', texto);
     setFase('thinking','Pensando la respuesta...','');
-    preguntarPorVoz(texto).then(function(resp){
+    preguntarPorVoz(texto).then(function(r){
       if(!voz.enLlamada) return;
+      var resp = r.texto;
       voz.ultimoTexto = resp;
       agregarTurno('bot', resp);
       setFase('speaking','Respondiendo', resp.slice(0,180) + (resp.length>180?'...':''));
-      hablar(resp, function(){
+
+      function alSoltar(){
         if(!voz.enLlamada) return;
         if($ag('callAuto').checked){ setTimeout(escuchar, 320); }
         else { setFase('idle','Toca el círculo para hacer otra pregunta',''); }
-      });
+      }
+
+      // Si vino por flujo, ya se fue hablando mientras llegaba: repetirlo ahora
+      // sonaría dos veces. Solo hay que esperar a que termine la cola.
+      if(r.yaHablado){
+        var esperar = setInterval(function(){
+          if(!TTS || !TTS.speaking){ clearInterval(esperar); alSoltar(); }
+        }, 300);
+      } else {
+        hablar(resp, alSoltar);
+      }
     }).catch(function(e){
       setStatus('voiceStatus','err','No se pudo responder: '+esc(e.message));
       setFase('idle','Toca el círculo para reintentar','');
@@ -4353,12 +4505,16 @@
   /* ---- Enganches de la interfaz de voz ---- */
   if($ag('micDictar')){
     $ag('micDictar').addEventListener('click', function(){
+      desbloquearVoz();
       if(voz.dictando) detenerDictado(); else iniciarDictado();
     });
   }
 
   if($ag('callOrb')){
     $ag('callOrb').addEventListener('click', function(){
+      // Aquí, dentro del gesto: iOS solo autoriza la voz si el primer speak()
+      // ocurre durante un toque, y el audio real llega después de la red.
+      desbloquearVoz();
       if(voz.fase === 'speaking'){ callarse(); setFase('idle','Toca el círculo para hablar',''); return; }
       if(voz.fase === 'listening'){
         if(voz.recLlamada){ try{ voz.recLlamada.stop(); }catch(e){} }
