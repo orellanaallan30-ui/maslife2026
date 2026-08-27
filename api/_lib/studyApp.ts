@@ -127,6 +127,102 @@ const herramientasUsadas = (data: any): Array<{ name: string; input: unknown }> 
     .filter((b: any) => b?.type === 'tool_use')
     .map((b: any) => ({ name: b.name, input: b.input }));
 
+/**
+ * Igual que la consulta normal, pero devolviendo la respuesta como flujo de
+ * eventos según llega de Anthropic. La app va hablando cada frase completa sin
+ * esperar el final, que es lo que hace que la conversación se sienta viva.
+ *
+ * Formato de salida (una línea JSON por evento, separadas por \n):
+ *   {"t":"texto","v":"..."}       fragmento de texto
+ *   {"t":"fin","herramientas":[]} cierre, con las pestañas que pidió crear
+ *   {"t":"error","v":"..."}       fallo a mitad del flujo
+ */
+async function responderEnFlujo(
+  res: VercelResponse,
+  cuerpo: { system?: string; messages: unknown[]; maxTokens: number; tools?: unknown[] },
+  restantes: number,
+): Promise<void> {
+  const clave = process.env.ANTHROPIC_API_KEY!;
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': clave,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-5',
+      max_tokens: cuerpo.maxTokens,
+      system: cuerpo.system || '',
+      messages: cuerpo.messages,
+      stream: true,
+      ...(cuerpo.tools?.length ? { tools: cuerpo.tools } : {}),
+    }),
+  });
+
+  if (!r.ok || !r.body) {
+    const detalle = await r.json().catch(() => ({}));
+    const e: any = new Error(detalle?.error?.message || `Anthropic respondió ${r.status}`);
+    e.status = r.status;
+    throw e;
+  }
+
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  const enviar = (o: unknown) => res.write(JSON.stringify(o) + '\n');
+
+  // Las herramientas llegan troceadas como input_json_delta: se acumula el JSON
+  // de cada bloque y se interpreta al cerrarlo.
+  const herramientas: Array<{ name: string; input: unknown }> = [];
+  const enCurso = new Map<number, { name: string; json: string }>();
+
+  const lector = r.body.getReader();
+  const dec = new TextDecoder();
+  let resto = '';
+
+  try {
+    for (;;) {
+      const { done, value } = await lector.read();
+      if (done) break;
+      resto += dec.decode(value, { stream: true });
+      const lineas = resto.split('\n');
+      resto = lineas.pop() || '';
+
+      for (const linea of lineas) {
+        if (!linea.startsWith('data:')) continue;
+        const crudo = linea.slice(5).trim();
+        if (!crudo || crudo === '[DONE]') continue;
+
+        let ev: any;
+        try { ev = JSON.parse(crudo); } catch { continue; }
+
+        if (ev.type === 'content_block_start' && ev.content_block?.type === 'tool_use') {
+          enCurso.set(ev.index, { name: ev.content_block.name, json: '' });
+        } else if (ev.type === 'content_block_delta') {
+          if (ev.delta?.type === 'text_delta' && ev.delta.text) {
+            enviar({ t: 'texto', v: ev.delta.text });
+          } else if (ev.delta?.type === 'input_json_delta') {
+            const b = enCurso.get(ev.index);
+            if (b) b.json += ev.delta.partial_json || '';
+          }
+        } else if (ev.type === 'content_block_stop') {
+          const b = enCurso.get(ev.index);
+          if (b) {
+            try { herramientas.push({ name: b.name, input: JSON.parse(b.json || '{}') }); }
+            catch { /* herramienta mal formada: la conversación sigue igual */ }
+            enCurso.delete(ev.index);
+          }
+        }
+      }
+    }
+    enviar({ t: 'fin', herramientas, restantes });
+  } catch (e: any) {
+    enviar({ t: 'error', v: e?.message || 'Se cortó la respuesta' });
+  } finally {
+    res.end();
+  }
+}
+
 export async function atenderModoEstudio(req: VercelRequest, res: VercelResponse) {
   const { token, accion, app } = req.body || {};
 
@@ -189,13 +285,21 @@ export async function atenderModoEstudio(req: VercelRequest, res: VercelResponse
         });
       }
 
-      const { messages, system, max_tokens, tools } = req.body;
+      const { messages, system, max_tokens, tools, stream } = req.body;
       if (!Array.isArray(messages) || !messages.length) {
         return res.status(400).json({ error: 'messages requerido' });
       }
       const maxTokens = typeof max_tokens === 'number' && max_tokens > 0
         ? Math.min(max_tokens, 8000)
         : 4000;
+
+      // La voz pide el flujo para empezar a hablar antes; el texto no lo necesita.
+      if (stream === true) {
+        return responderEnFlujo(res, {
+          system, messages, maxTokens,
+          tools: Array.isArray(tools) ? tools : undefined,
+        }, restantes);
+      }
 
       const data = await llamarClaude({
         system, messages, maxTokens,
