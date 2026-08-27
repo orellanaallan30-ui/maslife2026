@@ -165,8 +165,11 @@ const ClinicalRecord: React.FC = () => {
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [soapVersions, setSoapVersions] = useState<Array<{ saved_at: string; saved_by_name: string; soap_snapshot: Record<string, string> }>>([]);
   const [showVersions, setShowVersions] = useState(false);
-  const [consentWarning, setConsentWarning] = useState(false);
   const [existingConsent, setExistingConsent] = useState<InformedConsent | null>(null);
+  // Solo ACCEPTED cuenta como firmado. Se deduce del registro en vez de guardarse
+  // aparte: un booleano paralelo podía quedar desfasado del estado real y acabar
+  // afirmando "firmado" sobre un consentimiento apenas enviado.
+  const consentFirmado = existingConsent?.status === 'ACCEPTED';
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -244,6 +247,7 @@ const ClinicalRecord: React.FC = () => {
   // clínico, así que vive en localStorage y no en Supabase.
   const CLAVE_SECCIONES = `maslife_secciones_${loggedPro?.id || 'anon'}`;
   const ABIERTAS_POR_DEFECTO: Record<string, boolean> = {
+    'consentimiento': false,
     'ki-antro': true, 'ki-postural': false, 'ki-rom': false, 'ki-tests': false,
   };
 
@@ -470,7 +474,7 @@ const ClinicalRecord: React.FC = () => {
       .then(({ data, error }) => {
         if (error) return;
         const row = data && data[0];
-        if (!row) { setExistingConsent(null); setConsentWarning(true); return; }
+        if (!row) { setExistingConsent(null); return; }
         setExistingConsent({
           id: row.id,
           patientId: row.patient_id,
@@ -489,7 +493,6 @@ const ClinicalRecord: React.FC = () => {
           consentText: row.consent_text,
           verificationCode: row.verification_code,
         });
-        setConsentWarning(row.status !== 'ACCEPTED');
       });
   }, [initialPatient?.id, loggedPro?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1388,27 +1391,57 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
         <div className="max-w-6xl mx-auto p-3 lg:p-6 space-y-4 lg:space-y-10 pb-24 print:p-0">
           {/* Consentimiento informado — Ley 20.584 / CENS RCE.
               Aviso + panel para generar/compartir el enlace de firma y ver su estado. */}
+          {/* Plegado a una franja de una línea: el aviso y el panel ocupaban buena
+              parte de la primera pantalla en CADA ficha. La señal no se pierde —
+              si falta la firma la franja va en ámbar y dice qué hacer— porque el
+              consentimiento lo exige la Ley 20.584 y no puede quedar escondido. */}
+          {/* Solo con el paciente ya guardado: antes de eso no hay a quién pedirle
+              la firma, y la franja verde afirmaría "firmado" sin haber consultado
+              nada. El verde se apoya en el estado real del registro, no en la
+              ausencia de aviso. */}
+          {loggedPro && initialPatient?.id && (
           <div className="no-print space-y-3">
-            {consentWarning && (
-              <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-2xl px-5 py-4">
-                <span className="material-icons-round text-amber-500 text-lg shrink-0 mt-0.5">warning</span>
-                <div className="flex-1">
-                  <p className="text-xs font-black text-amber-800">Sin consentimiento informado aceptado</p>
-                  <p className="text-xs text-amber-700 mt-0.5">
-                    Este paciente aún no firma su consentimiento informado (requerido por Ley 20.584 y CENS RCE). Genera el enlace aquí abajo y compártelo por WhatsApp — el paciente firma desde su teléfono en 1 minuto.
-                  </p>
-                </div>
-              </div>
-            )}
-            {loggedPro && initialPatient?.id && (
+            <button
+              type="button"
+              onClick={() => alternarSeccion('consentimiento')}
+              aria-expanded={seccionAbierta('consentimiento')}
+              className={`w-full flex items-center gap-3 rounded-2xl px-4 py-2.5 border transition-colors text-left ${
+                consentFirmado
+                  ? 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100'
+                  : 'bg-amber-50 border-amber-300 hover:bg-amber-100'
+              }`}
+            >
+              <span className={`material-icons-round text-lg shrink-0 ${consentFirmado ? 'text-emerald-600' : 'text-amber-500'}`}>
+                {consentFirmado ? 'verified' : 'warning'}
+              </span>
+              <span className={`flex-1 text-xs font-black ${consentFirmado ? 'text-emerald-800' : 'text-amber-800'}`}>
+                Consentimiento informado
+                <span className="font-bold"> · {consentFirmado ? 'firmado' : 'pendiente de firma'}</span>
+              </span>
+              <span className={`text-[11px] font-black uppercase tracking-wider shrink-0 ${consentFirmado ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {seccionAbierta('consentimiento') ? 'Ocultar' : consentFirmado ? 'Ver' : 'Generar enlace'}
+              </span>
+              <span
+                className={`material-icons-round text-lg shrink-0 transition-transform ${consentFirmado ? 'text-emerald-600' : 'text-amber-500'}`}
+                style={{ transform: seccionAbierta('consentimiento') ? 'rotate(180deg)' : 'none' }}
+              >expand_more</span>
+            </button>
+
+            <div className={seccionAbierta('consentimiento') ? 'space-y-3' : 'hidden'}>
+              {!consentFirmado && (
+                <p className="text-xs text-amber-700 px-4">
+                  Este paciente aún no firma su consentimiento informado (requerido por Ley 20.584 y CENS RCE). Genera el enlace aquí abajo y compártelo por WhatsApp — el paciente firma desde su teléfono en 1 minuto.
+                </p>
+              )}
               <ConsentSendPanel
                 patient={safePatient}
                 loggedPro={loggedPro}
                 existingConsent={existingConsent}
-                onSent={c => { setExistingConsent(c); setConsentWarning(true); }}
+                onSent={c => setExistingConsent(c)}
               />
-            )}
+            </div>
           </div>
+          )}
 
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 print:border-none print:shadow-none">
             <div className="flex justify-between items-center mb-8">
