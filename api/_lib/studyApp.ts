@@ -79,6 +79,7 @@ async function llamarClaude(body: {
   system?: string;
   messages: unknown[];
   maxTokens: number;
+  tools?: unknown[];
 }): Promise<any> {
   const clave = process.env.ANTHROPIC_API_KEY;
   if (!clave) {
@@ -98,6 +99,7 @@ async function llamarClaude(body: {
       max_tokens: body.maxTokens,
       system: body.system || '',
       messages: body.messages,
+      ...(body.tools?.length ? { tools: body.tools } : {}),
     }),
   });
   if (!r.ok) {
@@ -118,6 +120,12 @@ const textoDe = (data: any): string =>
     .map((b: any) => b.text)
     .join('')
     .trim();
+
+// Bloques de uso de herramienta: es como el asistente pide crear una pestaña.
+const herramientasUsadas = (data: any): Array<{ name: string; input: unknown }> =>
+  (data?.content || [])
+    .filter((b: any) => b?.type === 'tool_use')
+    .map((b: any) => ({ name: b.name, input: b.input }));
 
 export async function atenderModoEstudio(req: VercelRequest, res: VercelResponse) {
   const { token, accion, app } = req.body || {};
@@ -181,7 +189,7 @@ export async function atenderModoEstudio(req: VercelRequest, res: VercelResponse
         });
       }
 
-      const { messages, system, max_tokens } = req.body;
+      const { messages, system, max_tokens, tools } = req.body;
       if (!Array.isArray(messages) || !messages.length) {
         return res.status(400).json({ error: 'messages requerido' });
       }
@@ -189,8 +197,15 @@ export async function atenderModoEstudio(req: VercelRequest, res: VercelResponse
         ? Math.min(max_tokens, 8000)
         : 4000;
 
-      const data = await llamarClaude({ system, messages, maxTokens });
-      return res.status(200).json({ texto: textoDe(data), restantes });
+      const data = await llamarClaude({
+        system, messages, maxTokens,
+        tools: Array.isArray(tools) ? tools : undefined,
+      });
+      return res.status(200).json({
+        texto: textoDe(data),
+        herramientas: herramientasUsadas(data),
+        restantes,
+      });
     }
 
     return res.status(400).json({ error: 'Acción no reconocida' });
