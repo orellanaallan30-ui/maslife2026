@@ -18,9 +18,11 @@
 }
 
 /* Custom Scrollbar */
+/* 6px con pulgar #e2e8f0 sobre fondo blanco era invisible: en una ficha larga no
+   se veía por dónde ibas. Sigue discreta, pero se encuentra. */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -28,12 +30,29 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: #94a3b8;
   border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+  background: #64748b;
+  background-clip: content-box;
+}
+
+/* Firefox no entiende ::-webkit-scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
+
+/* La ficha vive dentro de TRES contenedores con scroll anidados (App.tsx:554,
+   App.tsx:163 y el <main> de la ficha). Sin esto, al llegar al final de uno el
+   navegador propaga la rueda al padre y la pantalla "salta de sección". */
+.custom-scrollbar,
+.scroll-aislado {
+  overscroll-behavior: contain;
 }
 
 /* ── Landing cinematográfica ── */

@@ -160,7 +160,7 @@ const ProLayout: React.FC = () => {
     <div className="flex flex-1 min-h-0 overflow-hidden bg-white">
       <Sidebar onLogout={() => logout(navigate, 'PROFESSIONAL')} onToggleAI={() => setShowAI(p => !p)} />
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        <div key={location.pathname} className="flex-1 min-h-0 flex flex-col overflow-y-auto fade-in">
+        <div key={location.pathname} className="flex-1 min-h-0 flex flex-col overflow-y-auto scroll-aislado fade-in">
           <Outlet />
         </div>
       </div>
@@ -551,7 +551,7 @@ const AppContent: React.FC = () => {
   return (
     <div className="h-screen flex flex-col bg-white font-sans overflow-hidden">
       <Navbar view={view} setView={setView} />
-      <div className="flex-1 min-h-0 flex overflow-y-auto">
+      <div className="flex-1 min-h-0 flex overflow-y-auto scroll-aislado">
         <Routes>
           {/* Públicas */}
           <Route path="/"                    element={<MainHome />} />

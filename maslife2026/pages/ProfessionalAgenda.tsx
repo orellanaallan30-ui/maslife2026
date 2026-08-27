@@ -427,7 +427,7 @@ const ProfessionalAgenda: React.FC = () => {
    return (
       <div className="flex-1 flex flex-col min-h-0 w-full bg-[#f8fafc]">
          <main className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-3 md:p-12 pb-24 md:pb-12">
-            <div className="max-w-7xl mx-auto space-y-3 md:space-y-10">
+            <div className="max-w-5xl mx-auto space-y-3 lg:space-y-5">
 
                 {/* Barra compacta: título + navegación + tabs — todo en una fila en mobile */}
                 <div className="flex items-center gap-2">
@@ -496,7 +496,7 @@ const ProfessionalAgenda: React.FC = () => {
                            // citasQueOcupan y con el índice uq_slot_active (migración 0016).
                            const appsInSlot = appointments.filter(a => a.time === hour && a.date === formatDate(currentDate) && a.status !== 'Finalizado');
                            return (
-                               <div key={hour} className="flex min-h-[52px] sm:min-h-[70px] group">
+                               <div key={hour} className="flex min-h-[48px] lg:min-h-[56px] group">
                                   <div className="w-24 shrink-0 flex items-center justify-center border-r-2 border-slate-100 bg-slate-50/50">
                                      <span className="text-sm font-bold text-slate-900 uppercase">{hour}</span>
                                   </div>
@@ -536,9 +536,9 @@ const ProfessionalAgenda: React.FC = () => {
                                           );
                                        })
                                     ) : (
-                                       <button onClick={() => handleSlotClick(hour, formatDate(currentDate))} className="flex-1 rounded-2xl border-2 border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-3 text-slate-400 hover:text-primary group active:scale-[0.98]">
-                                          <span className="material-icons-round text-2xl group-hover:scale-110 transition-transform">add_circle_outline</span>
-                                          <span className="text-[12px] font-black uppercase tracking-widest">Disponible</span>
+                                       <button onClick={() => handleSlotClick(hour, formatDate(currentDate))} className="flex-1 rounded-xl border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-start gap-2 pl-4 text-slate-300 hover:text-primary group active:scale-[0.99]">
+                                          <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">add_circle_outline</span>
+                                          <span className="text-[11px] font-bold uppercase tracking-wider">Disponible</span>
                                        </button>
                                     )}
                                  </div>
