@@ -248,6 +248,7 @@ const ClinicalRecord: React.FC = () => {
   const CLAVE_SECCIONES = `maslife_secciones_${loggedPro?.id || 'anon'}`;
   const ABIERTAS_POR_DEFECTO: Record<string, boolean> = {
     'consentimiento': false,
+    'signos': true,   // dato de toda consulta, no opcional como ROM
     'ki-antro': true, 'ki-postural': false, 'ki-rom': false, 'ki-tests': false,
   };
 
@@ -423,8 +424,12 @@ const ClinicalRecord: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // El saludo era condicional a VITE_AI_ENABLED, una variable que no gobernaba
+  // nada: handleAiAnalysis llama a /api/clinical-agent sin consultarla y no estaba
+  // definida en ningún entorno. Resultado: el agente funcionaba y aun así recibía
+  // al profesional con «no habilitada en este entorno».
   const [chatMessages, setChatMessages] = useState<Message[]>([
-    { role: 'model', text: (import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? `AgenteMasLife conectado. Analizando la ficha de ${personalData.name}. ¿Deseas un análisis de evolución o biomecánico?` : "Error: IA AgenteMasLife no habilitada en este entorno. Contacta al administrador." }
+    { role: 'model', text: `AgenteMasLife conectado. Analizando la ficha de ${personalData.name}. ¿Deseas un análisis de evolución o biomecánico?` }
   ]);
   const [userInput, setUserInput] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -1794,7 +1799,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
           {/* ── Análisis Biomecánico con IA (fotos + resultado) ── */}
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 overflow-hidden relative">
-            <div className="flex flex-wrap justify-between items-center gap-4 mb-10">
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
               <div>
                 <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
                 <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Claude Vision — procesa las fotografías reales del paciente</p>
@@ -1807,15 +1812,19 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             </div>
             {renderSectionFields('biomecanica')}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-6">
-                {/* Slots etiquetados */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Slots etiquetados.
+                    En escritorio van en una sola fila: en 2×2 cada recuadro medía
+                    ~260px y estiraba la sección entera a unos 800px de alto. En
+                    móvil se quedan en 2×2, donde la columna ocupa todo el ancho y
+                    una sola fila los dejaría en miniaturas de 78px. */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {(['Anterior','Posterior','Lateral Der.','Lateral Izq.'] as const).map((label, idx) => (
                     <div key={label} className="space-y-1">
                       <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest text-center">{label}</p>
                       {analysisImages[idx] ? (
-                        <div className="relative aspect-square rounded-blob-md overflow-hidden border-4 border-slate-50 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
+                        <div className="relative aspect-square rounded-blob-md overflow-hidden border-2 border-slate-100 shadow-md group cursor-pointer" onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }}>
                           <img src={analysisImages[idx]} className="w-full h-full object-cover" alt={label} />
                           <div className="absolute inset-0 bg-black/40 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
                             <button onClick={e => { e.stopPropagation(); uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="w-8 h-8 bg-white text-slate-700 rounded-lg flex items-center justify-center shadow-xl no-print" title="Reemplazar">
@@ -1827,8 +1836,8 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                           </div>
                         </div>
                       ) : (
-                        <button onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="aspect-square w-full rounded-blob-md border-4 border-dashed border-slate-100 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-500 hover:border-primary hover:text-primary transition-all no-print group">
-                          <span className="material-icons-round text-3xl group-hover:scale-110 transition-transform">add_a_photo</span>
+                        <button onClick={() => { uploadSlotRef.current = idx; posturalInputRef.current?.click(); }} className="aspect-square w-full rounded-blob-md border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-500 hover:border-primary hover:text-primary transition-all no-print group">
+                          <span className="material-icons-round text-2xl group-hover:scale-110 transition-transform">add_a_photo</span>
                           <span className="text-[11px] font-black uppercase tracking-widest">Cargar</span>
                         </button>
                       )}
@@ -1840,7 +1849,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <button
                   onClick={runAdvancedAnalysis}
                   disabled={isAnalyzing || analysisImages.filter(Boolean).length === 0}
-                  className="w-full py-6 bg-slate-900 border-b-4 border-slate-800 text-white rounded-blob-md font-black text-[11px] uppercase tracking-[0.05em] flex items-center justify-center gap-3 shadow-pop active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:border-b-4 no-print"
+                  className="w-full py-4 bg-slate-900 border-b-4 border-slate-800 text-white rounded-blob-md font-black text-[11px] uppercase tracking-[0.05em] flex items-center justify-center gap-3 shadow-pop active:border-b-0 active:translate-y-1 hover:brightness-110 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:border-b-4 no-print"
                 >
                   <span className={`material-icons-round ${isAnalyzing ? 'animate-spin' : ''}`}>{isAnalyzing ? 'sync' : 'biotech'}</span>
                   {isAnalyzing ? 'Procesando imágenes con IA...' : `Ejecutar Análisis ${analysisType}`}
@@ -1850,15 +1859,15 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   onClick={() => setShowBiomechReport(true)}
                   disabled={!biomechReport}
                   title={biomechReport ? 'Ver informe biomecánico visual' : 'Ejecuta primero un análisis con IA'}
-                  className="w-full py-5 bg-gradient-to-r from-amber-400 to-amber-500 border-b-4 border-amber-600 text-slate-950 rounded-blob-md font-black text-[11px] uppercase tracking-[0.05em] flex items-center justify-center gap-3 shadow-amber-500/50 active:border-b-0 active:translate-y-1 hover:brightness-105 transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4 no-print"
+                  className="w-full py-3 bg-gradient-to-r from-amber-400 to-amber-500 border-b-4 border-amber-600 text-slate-950 rounded-blob-md font-black text-[11px] uppercase tracking-[0.05em] flex items-center justify-center gap-3 shadow-amber-500/50 active:border-b-0 active:translate-y-1 hover:brightness-105 transition-all disabled:opacity-40 disabled:translate-y-0 disabled:border-b-4 no-print"
                 >
                   <span className="material-icons-round">insights</span>
                   Informe Visual — Postura · Simetrías · ROM
                 </button>
               </div>
 
-              <div className="bg-slate-50 rounded-xl lg:rounded-blob-lg p-4 lg:p-10 border border-slate-100 min-h-[200px] lg:min-h-[350px] flex flex-col shadow-inner relative">
-                <div className="flex items-center justify-between mb-8">
+              <div className="bg-slate-50 rounded-xl lg:rounded-blob-lg p-4 lg:p-6 border border-slate-100 min-h-[180px] lg:min-h-[280px] flex flex-col shadow-inner relative">
+                <div className="flex items-center justify-between mb-4">
                   <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Informe IA Estructurado</h4>
                   {analysisResult && (
                     <button
@@ -1869,12 +1878,12 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 </div>
                 <div className="flex-1 text-sm font-medium text-slate-600 leading-relaxed whitespace-pre-wrap">
                   {isAnalyzing ? (
-                    <div className="h-full flex flex-col items-center justify-center space-y-6 py-20">
-                      <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                    <div className="h-full flex flex-col items-center justify-center space-y-4 py-10">
+                      <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
                       <p className="text-xs font-black text-primary uppercase tracking-[0.06em] animate-pulse">Procesando anatomía digital...</p>
                     </div>
                   ) : (
-                    analysisResult || <div className="text-center py-20 text-slate-500 italic">Cargue fotografías posturales y ejecute el análisis para que la IA evalúe lo que ve en las imágenes reales.</div>
+                    analysisResult || <div className="text-center py-10 text-slate-500 italic">Cargue fotografías posturales y ejecute el análisis para que la IA evalúe lo que ve en las imágenes reales.</div>
                   )}
                 </div>
               </div>
@@ -2086,20 +2095,49 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           </>)}
 
           {/* ── Signos Vitales ─────────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            {[
-              { l: 'FC (LPM)', k: 'heartRate', c: 'text-rose-500' },
-              { l: 'SIS (MMHG)', k: 'systolic', c: 'text-primary' },
-              { l: 'DIA (MMHG)', k: 'diastolic', c: 'text-blue-500' },
-              { l: 'Sat O2 (%)', k: 'oxygenSaturation', c: 'text-teal-500' },
-              { l: 'Temp (°C)', k: 'temperature', c: 'text-amber-500' }
-            ].map(v => (
-              <div key={v.k} className="bg-white p-8 rounded-blob-lg border border-slate-100 shadow-section text-center group hover:-translate-y-1 hover:shadow-xl transition-all">
-                <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-4">{v.l}</p>
-                <input type="number" value={(vitals as any)[v.k]} onChange={e => { setVitals({ ...vitals, [v.k]: Number(e.target.value) }); setIsDirtyTrue(); }} className={`w-full bg-transparent border-none p-0 text-4xl font-black ${v.c} text-center focus:ring-0`} />
+          {/* Eran 5 tarjetas sueltas entre dos secciones, con el número a text-4xl
+              y sin borde: parecían un panel de monitor, no campos de la ficha, y
+              desentonaban con todo lo demás. Ahora es una sección como las otras y
+              los campos miden lo mismo que los de Identificación. Se conserva el
+              color por métrica, que sí es código clínico y no adorno. */}
+          <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-6 print:border-none print:shadow-none">
+            <button
+              type="button"
+              onClick={() => alternarSeccion('signos')}
+              aria-expanded={seccionAbierta('signos')}
+              className="w-full flex items-center gap-2 text-left print:hidden"
+            >
+              <h2 className="flex-1 text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Signos Vitales</h2>
+              <span
+                className="material-icons-round text-slate-400 text-lg shrink-0 transition-transform"
+                style={{ transform: seccionAbierta('signos') ? 'rotate(180deg)' : 'none' }}
+              >expand_more</span>
+            </button>
+            {/* print:block — plegarla no puede sacarla de la ficha impresa. */}
+            <div className={`${seccionAbierta('signos') ? 'block' : 'hidden'} print:block`}>
+              <h2 className="hidden print:block text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4 mb-4">Signos Vitales</h2>
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                {[
+                  { l: 'FC (LPM)', k: 'heartRate', c: 'text-rose-500' },
+                  { l: 'SIS (MMHG)', k: 'systolic', c: 'text-primary' },
+                  { l: 'DIA (MMHG)', k: 'diastolic', c: 'text-blue-500' },
+                  { l: 'Sat O2 (%)', k: 'oxygenSaturation', c: 'text-teal-500' },
+                  { l: 'Temp (°C)', k: 'temperature', c: 'text-amber-500' }
+                ].map(v => (
+                  <div key={v.k} className="space-y-2">
+                    <label htmlFor={`vital-${v.k}`} className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">{v.l}</label>
+                    <input
+                      id={`vital-${v.k}`}
+                      type="number"
+                      value={(vitals as any)[v.k]}
+                      onChange={e => { setVitals({ ...vitals, [v.k]: Number(e.target.value) }); setIsDirtyTrue(); }}
+                      className={`w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all print:bg-white ${v.c}`}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          </section>
 
           {specialtyKey === 'nutricion' && (
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 space-y-10">
@@ -2654,14 +2692,6 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
           </div>
         )}
 
-        <div className="fixed bottom-10 right-10 z-50 no-print flex flex-col items-end gap-4 animate-in slide-in-from-bottom-10 duration-700">
-          <div className="bg-white/90 backdrop-blur-md px-6 py-3 rounded-full border border-slate-200 shadow-2xl flex items-center gap-4">
-            <div className={`w-3 h-3 ${(import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? 'bg-emerald-500 shadow-emerald-500/70' : 'bg-rose-500 shadow-rose-500/70'} rounded-full animate-pulse`}></div>
-            <p className="text-xs font-black text-slate-500 uppercase tracking-[0.25em]">
-              {(import.meta.env.VITE_AI_ENABLED || process.env.AI_ENABLED) ? 'IA AgenteMasLife Conectada' : 'IA AgenteMasLife Offline'}
-            </p>
-          </div>
-        </div>
       </main>
 
       {showAiPanel && (
