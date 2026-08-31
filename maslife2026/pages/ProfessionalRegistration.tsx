@@ -240,7 +240,14 @@ const ProfessionalRegistration: React.FC = () => {
       fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'pro-welcome', to: emailLower, professionalName: form.name.trim() }),
+        // trialEndDate va al correo para que diga la fecha exacta en que termina
+        // la prueba, en vez de un "30 días" que el profesional tiene que calcular.
+        body: JSON.stringify({
+          action: 'pro-welcome',
+          to: emailLower,
+          professionalName: form.name.trim(),
+          trialEndDate: trialEnd.toISOString().slice(0, 10),
+        }),
       }).catch(() => {});
 
       // Fallback muy raro: si el auto-confirm + login fallaron, guiar al login.

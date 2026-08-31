@@ -193,6 +193,96 @@ function ctaButton(href: string, label: string): string {
 // "Hora 11:00:00". Se recorta aquí, que es donde se arma el mensaje.
 const soloHoraMinuto = (t: unknown) => String(t ?? '').slice(0, 5);
 
+// Lo que incluye el plan y las condiciones comerciales. Copiado literalmente de
+// la sección Tarifas de la landing (pages/ProLanding.tsx) para que el correo y
+// la web no puedan contradecirse: si allí cambia el precio o la comisión, esto
+// hay que cambiarlo con ello.
+const BENEFICIOS_PLAN = [
+  'Agenda online 24/7',
+  'Perfil en el buscador',
+  'Cobros con MercadoPago a tu cuenta',
+  'Fichas clínicas por especialidad',
+  'Informes PDF',
+  'Asistente IA',
+  'Confirmaciones automáticas',
+  'Sincronización con Google Calendar',
+  'Rutinas y planes enviables al paciente',
+];
+
+const SELLOS_PLAN: Array<{ t: string; d: string }> = [
+  { t: 'Sin permanencia', d: 'Cancelas cuando quieras' },
+  { t: '2% por cobro online', d: 'Lo que cobras en consulta no paga comisión' },
+  { t: 'Un solo plan', d: 'Sin módulos que se cobran aparte' },
+];
+
+/** "2026-09-27" → "27 de septiembre de 2026". Cadena vacía si no hay fecha válida. */
+function fechaLarga(v: unknown): string {
+  const s = String(v ?? '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
+  // Mediodía para que el cambio de huso no desplace el día.
+  return new Date(`${s}T12:00:00`).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// ── Piezas para correos por franjas ──────────────────────────────────────────
+// El correo rico se construye con bandas de ancho completo, no con imágenes: en
+// Outlook y Gmail las fotos vienen bloqueadas por defecto, así que una banda
+// hecha de fotografía llega vacía a mucha gente. Con tipografía y color se ve
+// igual siempre.
+
+/**
+ * Banda de beneficios: título y lista de píldoras.
+ * Cada píldora es una tabla porque el motor Word de Outlook no respeta el
+ * padding de un <span>, y quedarían pegadas al borde.
+ */
+function bandaBeneficios(titulo: string, items: string[]): string {
+  const pildoras = items.map(t => `
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="display:inline-block;margin:0 6px 8px 0;border-collapse:separate;">
+      <tr><td bgcolor="${SURFACE}" style="background-color:${SURFACE};border:1px solid ${BORDER};border-radius:999px;padding:7px 14px;font-family:${FONT_SANS};font-size:13px;line-height:18px;color:${INK_BODY};white-space:nowrap;">${escapeHtml(t)}</td></tr>
+    </table>`).join('');
+  return `        <tr>
+          <td class="ml-pad" bgcolor="${SURFACE_TEAL}" style="background-color:${SURFACE_TEAL};border-top:1px solid ${BORDER};padding:26px 32px 22px;">
+            <div style="font-family:${FONT_SANS};font-size:16px;line-height:1.35;font-weight:800;color:${INK};letter-spacing:-0.2px;margin:0 0 14px;">${escapeHtml(titulo)}</div>
+            ${pildoras}
+          </td>
+        </tr>`;
+}
+
+/**
+ * Fila de sellos de confianza: tres columnas de texto, sin iconos.
+ * En móvil las celdas se apilan por la media query `.ml-sello`.
+ */
+function bandaSellos(sellos: Array<{ t: string; d: string }>): string {
+  const celdas = sellos.map(s => `
+    <td class="ml-sello" align="center" width="33%" style="padding:6px 10px;vertical-align:top;">
+      <div style="font-family:${FONT_SANS};font-size:13px;line-height:18px;font-weight:800;color:${INK};">${escapeHtml(s.t)}</div>
+      <div style="font-family:${FONT_SANS};font-size:12px;line-height:17px;color:${INK_MUTED};padding-top:3px;">${escapeHtml(s.d)}</div>
+    </td>`).join('');
+  return `        <tr>
+          <td class="ml-pad" bgcolor="${SURFACE}" style="background-color:${SURFACE};border-top:1px solid ${BORDER};padding:22px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>${celdas}</tr></table>
+          </td>
+        </tr>`;
+}
+
+/**
+ * Tabla de importes con filas alternas y total destacado, al estilo de un
+ * comprobante. El total va con borde superior y no con negrita sola, porque
+ * algunos clientes aplanan los pesos tipográficos.
+ */
+function tablaImportes(filas: Array<{ l: string; v: string }>, total?: { l: string; v: string }): string {
+  const cuerpo = filas.map((f, i) => `
+    <tr>
+      <td bgcolor="${i % 2 ? SURFACE : SURFACE_SOFT}" style="background-color:${i % 2 ? SURFACE : SURFACE_SOFT};font-family:${FONT_SANS};font-size:14px;line-height:20px;color:${INK_BODY};padding:11px 14px;">${escapeHtml(f.l)}</td>
+      <td bgcolor="${i % 2 ? SURFACE : SURFACE_SOFT}" align="right" style="background-color:${i % 2 ? SURFACE : SURFACE_SOFT};font-family:${FONT_SANS};font-size:14px;line-height:20px;color:${INK};font-weight:700;padding:11px 14px;word-break:break-word;">${escapeHtml(f.v)}</td>
+    </tr>`).join('');
+  const pie = total ? `
+    <tr>
+      <td style="font-family:${FONT_SANS};font-size:15px;line-height:21px;color:${INK};font-weight:800;padding:13px 14px;border-top:2px solid ${BORDER};">${escapeHtml(total.l)}</td>
+      <td align="right" style="font-family:${FONT_SANS};font-size:15px;line-height:21px;color:${INK};font-weight:800;padding:13px 14px;border-top:2px solid ${BORDER};">${escapeHtml(total.v)}</td>
+    </tr>` : '';
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${BORDER};border-radius:12px;margin:18px 0;">${cuerpo}${pie}</table>`;
+}
+
 // ── Plantilla de marca MasLife para TODOS los correos ────────────────────────
 // Devuelve un documento HTML completo, no un fragmento. Hace falta para tres
 // cosas que un <div> suelto no permite: color-scheme, las media queries de modo
@@ -211,6 +301,12 @@ function emailShell(opts: {
   preheader?: string;
   /** Línea legal o de baja bajo el pie. HTML de confianza, no de usuario. */
   footerExtra?: string;
+  /**
+   * Bandas a ancho completo entre la tarjeta y el pie: `<tr>` sueltos, con su
+   * propio fondo. Es lo que permite el correo por franjas sin que la tarjeta
+   * blanca tenga que contenerlo todo. HTML de confianza, no de usuario.
+   */
+  bandas?: string;
 }): string {
   // El año iba escrito a mano. Se calcula en hora de Chile porque Vercel corre
   // en UTC: el 31 de diciembre a las 21:00 en Santiago ya es 1 de enero en UTC.
@@ -248,6 +344,12 @@ function emailShell(opts: {
     .ml-wrap{width:100% !important;max-width:100% !important;}
     .ml-pad{padding-left:20px !important;padding-right:20px !important;}
     .ml-h1{font-size:21px !important;}
+  }
+  /* Los sellos se apilan solo en pantallas realmente estrechas. El corte va por
+     debajo de los 600px del propio correo: si compartiera el de arriba, un
+     cliente con el panel de lectura a 600px ya los vería apilados. */
+  @media only screen and (max-width:479px){
+    .ml-sello{display:block !important;width:100% !important;padding-bottom:14px !important;}
   }
   /* Modo oscuro: el correo se mantiene CLARO a propósito y solo se oscurece el
      marco. La placa del logo se fija en blanco porque el PNG lleva el blanco
@@ -296,6 +398,7 @@ function emailShell(opts: {
             ${opts.bodyHtml}
           </td>
         </tr>
+${opts.bandas || ''}
 
         <tr>
           <td class="ml-foot ml-pad" align="center" bgcolor="${SURFACE_SOFT}" style="background-color:${SURFACE_SOFT};border-top:1px solid ${BORDER};padding:22px 32px 24px;border-radius:0 0 15px 15px;">
@@ -776,27 +879,101 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const RESEND_KEY = process.env.RESEND_API_KEY;
     if (!RESEND_KEY) return res.status(200).json({ ok: false, skipped: true });
     const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
-    const { to, professionalName } = req.body || {};
+    const { to, professionalName, trialEndDate } = req.body || {};
     if (!to || !EMAIL_RE.test(String(to))) return res.status(400).json({ error: 'Email inválido' });
+    const finPrueba = fechaLarga(trialEndDate);
     const html = emailShell({
       kicker: 'Bienvenida',
       title: `¡Bienvenido/a a Clínica Mas Life, ${String(professionalName || '')}!`,
-      subtitle: 'Tu cuenta ya está activa',
+      subtitle: 'Tu cuenta ya está activa y tu prueba de 30 días empezó hoy',
+      preheader: finPrueba
+        ? `Tienes acceso completo hasta el ${finPrueba}, sin tarjeta.`
+        : 'Tienes 30 días de acceso completo, sin tarjeta.',
       bodyHtml: `
-        <p style="color:#334155;font-size:15px;margin:0 0 16px;">Tienes <strong>30 días gratis</strong> para probar todo, sin permanencia.</p>
-        <p style="color:#475569;font-size:14px;margin:0 0 8px;">Para empezar:</p>
-        <ol style="color:#475569;font-size:14px;line-height:1.8;margin:0 0 8px;padding-left:20px;">
+        <p style="font-family:${FONT_SANS};color:${INK_BODY};font-size:15px;line-height:1.65;margin:0 0 16px;">Ya puedes usar la plataforma completa durante <strong>30 días</strong>, sin ingresar ningún medio de pago${finPrueba ? ` — tu prueba va hasta el <strong>${escapeHtml(finPrueba)}</strong>` : ''}.</p>
+        <p style="font-family:${FONT_SANS};color:${INK_BODY};font-size:14px;line-height:1.65;margin:0 0 8px;">Tres pasos para empezar a recibir pacientes:</p>
+        <ol style="font-family:${FONT_SANS};color:${INK_BODY};font-size:14px;line-height:1.8;margin:0 0 8px;padding-left:20px;">
           <li>Completa tu perfil (foto, especialidad y ciudad).</li>
           <li>Agrega tus servicios con precio y duración.</li>
-          <li>Comparte tu link de reservas y empieza a recibir pacientes.</li>
+          <li>Comparte tu link de reservas.</li>
         </ol>
         <div style="text-align:center;margin:24px 0 8px;">
           ${ctaButton('https://clinicamaslife.cl/pro/dashboard', 'Ir a mi panel →')}
         </div>
-        <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">Si no creaste esta cuenta, ignora este correo.</p>`,
+        <p style="font-family:${FONT_SANS};color:${INK_MUTED};font-size:12px;text-align:center;margin:16px 0 0;">Si no creaste esta cuenta, ignora este correo.</p>`,
+      bandas: bandaBeneficios('Todo esto está incluido', BENEFICIOS_PLAN) + bandaSellos(SELLOS_PLAN),
     });
-    await sendEmail(RESEND_KEY, FROM, String(to), '¡Tu cuenta en Clínica Mas Life está lista!', html).catch(() => null);
-    return res.status(200).json({ ok: true });
+    const enviado = await sendEmail(RESEND_KEY, FROM, String(to), '¡Tu cuenta en Clínica Mas Life está lista!', html)
+      .catch(e => { console.error('[notify] pro-welcome no se pudo enviar:', e?.message); return null; });
+    return res.status(200).json({ ok: !!enviado });
+  }
+
+  // ── Suscripción activada ──────────────────────────────────────────────────
+  // Hasta ahora el profesional pagaba y no recibía nada: el webhook de
+  // MercadoPago actualizaba la base y solo dejaba un log. Este es el
+  // comprobante de ese cobro.
+  //
+  // Los importes NO se escriben aquí: llegan de la respuesta de MercadoPago
+  // (auto_recurring), que es lo que realmente se le cobró. Si el precio del plan
+  // cambiara, un literal en el código mentiría sobre el cargo real.
+  if (req.body?.action === 'pro-subscription-active') {
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(200).json({ ok: false, skipped: true });
+    const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+    const { professionalId, amount, currency, nextPaymentDate, subscriptionId } = req.body || {};
+    if (!professionalId) return res.status(400).json({ error: 'professionalId requerido' });
+
+    // El destinatario NO se acepta del cuerpo de la petición. Este endpoint es
+    // alcanzable desde fuera, y dejar elegir el "para" convertiría un correo que
+    // dice "se te cobró $X" en una herramienta de phishing con nuestra marca.
+    // Se resuelve contra la base, y solo se envía si la suscripción está
+    // realmente activa: así el correo no puede afirmar algo que no ocurrió.
+    const { data: pro, error: proError } = await supabase
+      .from('professionals')
+      .select('name, email, subscription_status')
+      .eq('id', professionalId)
+      .maybeSingle();
+    if (proError) {
+      console.error('[notify] pro-subscription-active: no se pudo leer el profesional:', proError.message);
+      return res.status(500).json({ error: 'No se pudo verificar la suscripción.' });
+    }
+    if (!pro) return res.status(404).json({ error: 'Profesional no encontrado' });
+    if ((pro as any).subscription_status !== 'active') {
+      return res.status(409).json({ error: 'La suscripción no figura activa.' });
+    }
+    const to = String((pro as any).email || '');
+    const professionalName = String((pro as any).name || '');
+    if (!EMAIL_RE.test(to)) return res.status(400).json({ error: 'El profesional no tiene un email válido.' });
+
+    const monto = Number(amount) > 0
+      ? `$${Number(amount).toLocaleString('es-CL')}${currency && String(currency) !== 'CLP' ? ` ${escapeHtml(String(currency))}` : ''}`
+      : '';
+    const proximo = fechaLarga(nextPaymentDate);
+
+    const filas: Array<{ l: string; v: string }> = [{ l: 'Plan', v: 'Pro — mensual' }];
+    if (monto) filas.push({ l: 'Cargo mensual', v: `${monto} · IVA incluido` });
+    if (proximo) filas.push({ l: 'Próximo cobro', v: proximo });
+    if (subscriptionId) filas.push({ l: 'N.º de suscripción', v: String(subscriptionId) });
+
+    const html = emailShell({
+      kicker: 'Suscripción activa',
+      title: 'Tu plan Pro está activo',
+      subtitle: monto ? `Se activó el cobro mensual de ${monto}` : 'Se activó tu cobro mensual',
+      preheader: proximo ? `Tu próximo cobro es el ${proximo}.` : 'Tu suscripción quedó activa.',
+      bodyHtml: `
+        <p style="font-family:${FONT_SANS};color:${INK_BODY};font-size:15px;line-height:1.65;margin:0 0 8px;">Hola <strong>${escapeHtml(String(professionalName || 'Profesional'))}</strong>,</p>
+        <p style="font-family:${FONT_SANS};color:${INK_BODY};font-size:15px;line-height:1.65;margin:0 0 4px;">Tu suscripción quedó activa y tu perfil sigue publicado, sin interrupciones. Guarda este correo como comprobante.</p>
+        ${tablaImportes(filas, monto ? { l: 'Total cobrado', v: monto } : undefined)}
+        <p style="font-family:${FONT_SANS};color:${INK_MUTED};font-size:13px;line-height:1.6;margin:0 0 4px;">El cobro se renueva solo cada mes. Puedes cancelarlo cuando quieras desde MercadoPago o desde Ajustes, sin costos de salida.</p>
+        <div style="text-align:center;margin:24px 0 8px;">
+          ${ctaButton('https://clinicamaslife.cl/pro/dashboard', 'Ir a mi panel →')}
+        </div>`,
+      bandas: bandaBeneficios('Lo que tienes activo', BENEFICIOS_PLAN) + bandaSellos(SELLOS_PLAN),
+      footerExtra: 'Recibes este correo porque activaste la suscripción del plan Pro.',
+    });
+    const enviado = await sendEmail(RESEND_KEY, FROM, String(to), 'Tu plan Pro está activo — Clínica Mas Life', html)
+      .catch(e => { console.error('[notify] pro-subscription-active no se pudo enviar:', e?.message); return null; });
+    return res.status(200).json({ ok: !!enviado });
   }
 
   // ── Envío masivo a inscritos en charlas (solo admin) ──────────────────────
