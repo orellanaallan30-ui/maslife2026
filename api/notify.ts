@@ -106,58 +106,213 @@ function cleanLine(str: unknown): string {
   return String(str ?? '').replace(/[\r\n]+/g, ' ').trim();
 }
 
-const ROW_LABEL = `padding:9px 12px 9px 0;color:#94a3b8;font-size:11px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;vertical-align:middle;width:38%;`;
-const ROW_VALUE = `padding:9px 0;color:#0f172a;font-weight:bold;text-align:right;vertical-align:middle;`;
-const INFO_BOX = `background:#f0fdfa;border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid #00a89e;`;
+// ── Tokens de marca para los correos ─────────────────────────────────────────
+// Paleta alineada al frontend, con una distinción que en pantalla no hace falta
+// pero en correo sí: el turquesa de marca sirve para rellenos, no para texto.
+const BRAND_TEAL = '#00a89e';       // filetes, botones, bordes de acento
+const BRAND_TEAL_DEEP = '#007e77';  // bordes y estados
+// #00a89e sobre blanco da ~2,6:1 de contraste y no se lee como texto. Este tono
+// ronda 4,9:1 y es el que se usa para kickers y enlaces.
+const BRAND_TEAL_INK = '#00695f';
 
-// ── Plantilla de marca MasLife para TODOS los correos ────────────────────────
-// Header teal con el nombre de la clínica, tarjeta de contenido y footer oscuro
-// con copyright (estilo profesional, tipo Passline pero con nuestra marca).
-const BRAND_TEAL = '#00a89e';
-const BRAND_TEAL_DEEP = '#007e77';
+const INK = '#0f172a';        // titulares
+const INK_BODY = '#334155';   // párrafos
+// Antes las etiquetas iban en #94a3b8 (2,6:1). "Paciente", "Fecha" y "Hora" son
+// información clínica, no decoración: tienen que leerse.
+const INK_MUTED = '#5b6b7f';
 
-// Tipografías seguras para correo: los clientes descartan las fuentes web
-// (Manrope/Fraunces), así que usamos un serif elegante (Georgia) para el wordmark
-// y los títulos, y un sans limpio para el cuerpo. Sin emojis; la única imagen es
-// el logo, y siempre con texto alternativo.
-const FONT_SERIF = `Georgia,'Times New Roman',serif`;
-const FONT_SANS = `'Manrope','Helvetica Neue',Helvetica,Arial,sans-serif`;
+const SURFACE = '#ffffff';
+const SURFACE_PAGE = '#eef2f6';  // marco exterior
+const SURFACE_SOFT = '#f6f8fa';  // pie
+const SURFACE_TEAL = '#f0fdfa';
+const BORDER = '#e2e8f0';
+
+const EMAIL_W = 600;
+
+// Tipografía: una sola familia para todo el correo.
+//
+// Antes los títulos iban en Georgia y el cuerpo en sans. La idea era un serif
+// elegante, pero la fuente display de la marca es Fraunces y NINGÚN cliente de
+// correo carga fuentes web: Georgia era el sustituto de un sustituto, con el
+// coste visual de la mezcla y sin la marca a cambio. A ojo no lee como
+// editorial, lee como una fuente que no cargó.
+//
+// 'Segoe UI' es imprescindible en el stack: ante una familia desconocida el
+// motor Word de Outlook cae a Times New Roman, así que sin ella había riesgo de
+// serif involuntario incluso en el cuerpo.
+const FONT_SANS = `'Manrope','Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif`;
+
+const ROW_LABEL = `padding:9px 12px 9px 0;color:${INK_MUTED};font-size:11px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;vertical-align:middle;width:38%;font-family:${FONT_SANS};`;
+const ROW_VALUE = `padding:9px 0;color:${INK};font-weight:bold;text-align:right;vertical-align:middle;font-family:${FONT_SANS};`;
+// font-family explícito: Outlook no hereda la fuente de forma fiable dentro de
+// tablas anidadas.
+const INFO_BOX = `background-color:${SURFACE_TEAL};border-radius:12px;padding:20px;margin:20px 0;border-left:4px solid ${BRAND_TEAL};font-family:${FONT_SANS};`;
 
 // El logo se sirve desde public/ en una URL estable — los archivos de assets/ los
 // empaqueta Vite con un hash y no sirven para un correo.
 //
-// Va sobre PLACA BLANCA, con el margen horneado en el propio PNG: el logo de la
-// agenda tiene blancos y turquesa, así que aplanado contra el teal de la cabecera
-// se deshacía. Sobre blanco conserva todos sus colores, y el margen va en la
-// imagen porque los clientes de correo tratan el padding de forma dispar.
+// Va sobre PLACA BLANCA, con el margen horneado en el propio PNG. Antes iba
+// montado sobre un degradado turquesa, y ahí estaba el choque de marca: el logo
+// es naranja y cian, y encima del verde de la plataforma leían como dos empresas
+// distintas. Sobre blanco cada uno conserva lo suyo.
 //
-// Va SIEMPRE con `alt` con el nombre de la marca: Outlook bloquea las imágenes
-// por defecto, y sin eso la cabecera llegaría decapitada. Ese era el motivo del
-// "sin imágenes" original.
+// Va SIEMPRE con `alt`: Outlook y Gmail bloquean las imágenes de remitentes
+// desconocidos, y sin eso la cabecera llega decapitada.
 const LOGO_URL = `${(process.env.PUBLIC_BASE_URL || 'https://clinicamaslife.cl').replace(/\/$/, '')}/logo-email.png`;
+// El PNG mide 344×204. Mostrado a 172×102 queda a densidad 2× exacta: nítido en
+// pantallas retina sin regenerar el archivo. A los 210px anteriores estaba a
+// 1,64× y los biseles se veían blandos.
+const LOGO_W = 172;
+const LOGO_H = 102;
+
+// Solo se aceptan enlaces http(s) en un href. El enlace de calificación se
+// construye con un slug que llega en el cuerpo de la petición: sin esto, unas
+// comillas rompen el atributo e inyectan HTML en un correo dirigido a un
+// paciente.
+function safeUrl(u: unknown): string {
+  const s = String(u ?? '').trim();
+  return /^https?:\/\//i.test(s) ? escapeHtml(s) : '#';
+}
+
+// Botón de acción que sobrevive a Outlook: el color va en `bgcolor` además de en
+// CSS, y el padding se declara en el <td> (mso-padding-alt) y en el <a>, porque
+// el motor Word ignora el padding de un <a> suelto y dejaba un rectángulo sin
+// área táctil. Pierde las esquinas redondeadas en Outlook y nada más — no vale
+// la pena una capa de VML por eso.
+function ctaButton(href: string, label: string): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto;border-collapse:separate;">
+      <tr>
+        <td align="center" bgcolor="${BRAND_TEAL}" style="background-color:${BRAND_TEAL};border-radius:12px;mso-padding-alt:14px 32px;">
+          <a href="${safeUrl(href)}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:${FONT_SANS};font-size:15px;line-height:20px;font-weight:800;color:#ffffff;text-decoration:none;border-radius:12px;mso-text-raise:2px;">${escapeHtml(label)}</a>
+        </td>
+      </tr>
+    </table>`;
+}
 
 // Postgres devuelve la columna `time` como "11:00:00" y en el correo se leía
 // "Hora 11:00:00". Se recorta aquí, que es donde se arma el mensaje.
 const soloHoraMinuto = (t: unknown) => String(t ?? '').slice(0, 5);
 
-function emailShell(opts: { kicker?: string; title: string; subtitle?: string; bodyHtml: string }): string {
-  return `<div style="font-family:${FONT_SANS};max-width:600px;margin:0 auto;background:#f4f6f8;padding:24px;">
-    <div style="background:linear-gradient(135deg,${BRAND_TEAL},${BRAND_TEAL_DEEP});border-radius:16px 16px 0 0;padding:36px 32px 32px;text-align:center;">
-      <img src="${LOGO_URL}" width="210" alt="Agenda Online · Clínica Mas Life"
-           style="display:block;margin:0 auto 14px;width:210px;max-width:72%;height:auto;border:0;outline:none;text-decoration:none;border-radius:14px;font-family:${FONT_SERIF};font-size:20px;font-weight:700;color:#ffffff;">
-      <div style="color:rgba(255,255,255,.85);font-size:11px;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">clinicamaslife.cl</div>
-    </div>
-    <div style="background:#ffffff;padding:34px 32px;border-left:1px solid #e6ebf0;border-right:1px solid #e6ebf0;">
-      ${opts.kicker ? `<div style="text-align:center;color:${BRAND_TEAL};font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">${escapeHtml(opts.kicker)}</div>` : ''}
-      <h1 style="font-family:${FONT_SERIF};color:#0f172a;font-size:24px;font-weight:700;margin:0 0 ${opts.subtitle ? '6px' : '20px'};text-align:center;line-height:1.25;">${escapeHtml(opts.title)}</h1>
-      ${opts.subtitle ? `<p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 24px;">${escapeHtml(opts.subtitle)}</p>` : ''}
-      ${opts.bodyHtml}
-    </div>
-    <div style="background:#0e1b2b;border-radius:0 0 16px 16px;padding:24px 32px;text-align:center;">
-      <div style="font-family:${FONT_SERIF};font-size:17px;font-weight:700;color:#ffffff;">Clínica Mas Life</div>
-      <div style="color:#7a8aa0;font-size:11px;margin-top:7px;letter-spacing:.2px;">© 2026 Clínica Mas Life · Todos los derechos reservados.</div>
-    </div>
-  </div>`;
+// ── Plantilla de marca MasLife para TODOS los correos ────────────────────────
+// Devuelve un documento HTML completo, no un fragmento. Hace falta para tres
+// cosas que un <div> suelto no permite: color-scheme, las media queries de modo
+// oscuro y el bloque condicional de Outlook. Ninguna de las plantillas anida el
+// resultado dentro de más HTML — todas lo pasan tal cual a Resend.
+//
+// El layout es de tablas, no de divs, porque el motor Word de Outlook ignora
+// `max-width` en un div y el correo se estiraba a todo el ancho de la ventana.
+// Un atributo `width` en una tabla lo respeta siempre.
+function emailShell(opts: {
+  kicker?: string;
+  title: string;
+  subtitle?: string;
+  bodyHtml: string;
+  /** Texto de vista previa en la bandeja. Sin esto arrancaba con el alt del logo. */
+  preheader?: string;
+  /** Línea legal o de baja bajo el pie. HTML de confianza, no de usuario. */
+  footerExtra?: string;
+}): string {
+  // El año iba escrito a mano. Se calcula en hora de Chile porque Vercel corre
+  // en UTC: el 31 de diciembre a las 21:00 en Santiago ya es 1 de enero en UTC.
+  // Y va DENTRO de la función, no como constante de módulo: un lambda tibio que
+  // sobreviva al cambio de año seguiría emitiendo el año viejo durante días.
+  const year = new Intl.DateTimeFormat('es-CL', { timeZone: 'America/Santiago', year: 'numeric' }).format(new Date());
+  const preheader = opts.preheader || opts.subtitle || opts.title;
+  // Empuja el cuerpo fuera de la vista previa de la bandeja.
+  const relleno = '&#8199;&#65279;&#847; '.repeat(30);
+
+  return `<!DOCTYPE html>
+<html lang="es" dir="ltr" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
+<title>${escapeHtml(opts.title)}</title>
+<!--[if mso]>
+<xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+<style>
+  body,table,td,p,h1,a,li{font-family:'Segoe UI',Arial,sans-serif !important;}
+  table{border-collapse:collapse !important;}
+  td{mso-line-height-rule:exactly;}
+</style>
+<![endif]-->
+<style>
+  :root{color-scheme:light dark;supported-color-schemes:light dark;}
+  body,table,td,p,a,h1{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
+  table,td{mso-table-lspace:0pt;mso-table-rspace:0pt;}
+  img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none;}
+  a{color:${BRAND_TEAL_INK};}
+  @media only screen and (max-width:620px){
+    .ml-wrap{width:100% !important;max-width:100% !important;}
+    .ml-pad{padding-left:20px !important;padding-right:20px !important;}
+    .ml-h1{font-size:21px !important;}
+  }
+  /* Modo oscuro: el correo se mantiene CLARO a propósito y solo se oscurece el
+     marco. La placa del logo se fija en blanco porque el PNG lleva el blanco
+     horneado —si el cliente oscurece la celda queda un rectángulo flotando— y
+     la tarjeta también, porque los cuerpos de las plantillas traen sus colores
+     en línea y desde aquí no se pueden reasignar. */
+  @media (prefers-color-scheme: dark){
+    .ml-page{background-color:#0b1220 !important;}
+    .ml-plate,.ml-card,.ml-shell{background-color:${SURFACE} !important;}
+    .ml-foot{background-color:${SURFACE_SOFT} !important;}
+    .ml-foot-ink{color:${INK} !important;}
+    .ml-foot-muted{color:${INK_MUTED} !important;}
+  }
+  /* Outlook.com y Outlook Android no soportan la media query: reescriben el DOM
+     añadiendo este atributo. */
+  [data-ogsc] .ml-page{background-color:#0b1220 !important;}
+  [data-ogsc] .ml-plate,[data-ogsc] .ml-card,[data-ogsc] .ml-shell{background-color:${SURFACE} !important;}
+  [data-ogsc] .ml-foot{background-color:${SURFACE_SOFT} !important;}
+  [data-ogsc] .ml-foot-ink{color:${INK} !important;}
+  [data-ogsc] .ml-foot-muted{color:${INK_MUTED} !important;}
+</style>
+</head>
+<body class="ml-page" style="margin:0;padding:0;width:100%;background-color:${SURFACE_PAGE};">
+<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${escapeHtml(preheader)}${relleno}</div>
+<table role="presentation" class="ml-page" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${SURFACE_PAGE}" style="background-color:${SURFACE_PAGE};">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+      <table role="presentation" class="ml-wrap ml-shell" width="${EMAIL_W}" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="${SURFACE}" style="width:${EMAIL_W}px;max-width:${EMAIL_W}px;background-color:${SURFACE};border:1px solid ${BORDER};border-radius:16px;">
+
+        <tr><td height="4" bgcolor="${BRAND_TEAL}" style="height:4px;line-height:4px;font-size:0;background-color:${BRAND_TEAL};border-radius:15px 15px 0 0;">&nbsp;</td></tr>
+
+        <tr>
+          <td class="ml-plate ml-pad" align="center" bgcolor="${SURFACE}" style="background-color:${SURFACE};padding:26px 32px 18px;">
+            <img src="${LOGO_URL}" width="${LOGO_W}" height="${LOGO_H}" alt="Clínica Mas Life · Agenda Online"
+                 style="display:block;margin:0 auto;width:${LOGO_W}px;height:${LOGO_H}px;max-width:60%;border:0;background-color:${SURFACE};font-family:${FONT_SANS};font-size:19px;line-height:26px;font-weight:800;color:${BRAND_TEAL_INK};text-decoration:none;">
+            <div style="font-family:${FONT_SANS};color:${INK_MUTED};font-size:11px;line-height:16px;letter-spacing:2px;text-transform:uppercase;padding-top:10px;">clinicamaslife.cl</div>
+          </td>
+        </tr>
+        <tr><td style="padding:0 32px;"><div style="height:1px;line-height:1px;font-size:0;background-color:${BORDER};">&nbsp;</div></td></tr>
+
+        <tr>
+          <td class="ml-card ml-pad" bgcolor="${SURFACE}" style="background-color:${SURFACE};padding:30px 32px 34px;font-family:${FONT_SANS};font-size:15px;line-height:1.65;color:${INK_BODY};">
+            ${opts.kicker ? `<div style="font-family:${FONT_SANS};text-align:center;color:${BRAND_TEAL_INK};font-size:11px;line-height:16px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 10px;">${escapeHtml(opts.kicker)}</div>` : ''}
+            <h1 class="ml-h1" style="font-family:${FONT_SANS};color:${INK};font-size:24px;line-height:1.28;font-weight:800;letter-spacing:-0.2px;margin:0 0 ${opts.subtitle ? '8px' : '22px'};text-align:center;">${escapeHtml(opts.title)}</h1>
+            ${opts.subtitle ? `<p style="font-family:${FONT_SANS};color:${INK_MUTED};font-size:13px;line-height:1.55;text-align:center;margin:0 0 24px;">${escapeHtml(opts.subtitle)}</p>` : ''}
+            ${opts.bodyHtml}
+          </td>
+        </tr>
+
+        <tr>
+          <td class="ml-foot ml-pad" align="center" bgcolor="${SURFACE_SOFT}" style="background-color:${SURFACE_SOFT};border-top:1px solid ${BORDER};padding:22px 32px 24px;border-radius:0 0 15px 15px;">
+            <div class="ml-foot-ink" style="font-family:${FONT_SANS};font-size:15px;line-height:22px;font-weight:800;color:${INK};letter-spacing:-0.2px;">Clínica Mas Life</div>
+            <div class="ml-foot-muted" style="font-family:${FONT_SANS};font-size:12px;line-height:18px;color:${INK_MUTED};padding-top:4px;">Agenda online para profesionales de la salud</div>
+            ${opts.footerExtra ? `<div class="ml-foot-muted" style="font-family:${FONT_SANS};font-size:11px;line-height:17px;color:${INK_MUTED};padding-top:10px;">${opts.footerExtra}</div>` : ''}
+            <div class="ml-foot-muted" style="font-family:${FONT_SANS};font-size:11px;line-height:17px;color:${INK_MUTED};padding-top:10px;">© ${year} Clínica Mas Life · Todos los derechos reservados.</div>
+          </td>
+        </tr>
+
+      </table>
+      <div style="font-family:${FONT_SANS};font-size:11px;line-height:16px;color:${INK_MUTED};padding:14px 8px 0;max-width:${EMAIL_W}px;">Correo automático de <a href="https://clinicamaslife.cl" style="color:${BRAND_TEAL_INK};text-decoration:underline;">clinicamaslife.cl</a></div>
+    </td>
+  </tr>
+</table>
+</body>
+</html>`;
 }
 
 // value se escapa como HTML; los labels son literales de confianza
@@ -279,8 +434,8 @@ function exerciseRoutineHtml(p: { professionalName: string; patientName: string;
     </tr>`).join('');
   return emailShell({
     kicker: 'Rutina de ejercicios',
-    title: escapeHtml(p.routineTitle),
-    subtitle: `De parte de ${escapeHtml(p.professionalName)}`,
+    title: p.routineTitle,
+    subtitle: `De parte de ${p.professionalName}`,
     bodyHtml: `
       <p style="color:#334155;font-size:15px;margin:0 0 16px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
       <p style="color:#475569;font-size:14px;margin:0 0 20px;line-height:1.6;">Tu kinesiólogo/a te envió la siguiente rutina de ejercicios. Encontrarás el detalle completo con imágenes en el PDF adjunto.</p>
@@ -298,8 +453,8 @@ function mealPlanHtml(p: { professionalName: string; patientName: string; planTi
     </tr>`).join('');
   return emailShell({
     kicker: 'Plan alimentario',
-    title: escapeHtml(p.planTitle),
-    subtitle: `De parte de ${escapeHtml(p.professionalName)}`,
+    title: p.planTitle,
+    subtitle: `De parte de ${p.professionalName}`,
     bodyHtml: `
       <p style="color:#334155;font-size:15px;margin:0 0 16px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
       <p style="color:#475569;font-size:14px;margin:0 0 20px;line-height:1.6;">Tu nutricionista te envió tu plan alimentario. Encontrarás el detalle completo en el PDF adjunto.</p>
@@ -322,9 +477,7 @@ function ratingRequestHtml(p: { professionalName: string; patientName: string; s
       </p>
       <div style="text-align:center;margin:0 0 24px;font-size:32px;letter-spacing:4px;color:#f59e0b;">★★★★★</div>
       <div style="text-align:center;margin:0 0 24px;">
-        <a href="${p.reviewLink}" style="display:inline-block;background:${BRAND_TEAL};color:white;text-decoration:none;font-weight:800;font-size:15px;padding:14px 32px;border-radius:12px;">
-          Dejar mi calificación →
-        </a>
+        ${ctaButton(p.reviewLink, 'Dejar mi calificación →')}
       </div>
       <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">Tu RUT solo se usa para verificar que fuiste atendido/a. No se publica.</p>`,
   });
@@ -336,10 +489,8 @@ function charlaBlastHtml(nombre: string, asunto: string, mensaje: string): strin
     title: asunto,
     bodyHtml: `
       <p style="color:#334155;font-size:16px;margin:0 0 20px;">Hola <strong>${escapeHtml(nombre)}</strong>,</p>
-      <div style="color:#334155;font-size:15px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(mensaje)}</div>
-      <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0;" />
-      <p style="color:#94a3b8;font-size:12px;text-align:center;margin:0;">Recibiste este mensaje porque te inscribiste a las charlas gratuitas de Clínica Mas Life.<br>
-      Para no recibir más comunicaciones, responde este email solicitando darte de baja.</p>`,
+      <div style="color:${INK_BODY};font-size:15px;line-height:1.7;white-space:pre-wrap;">${escapeHtml(mensaje)}</div>`,
+    footerExtra: 'Recibiste este mensaje porque te inscribiste a las charlas gratuitas de Clínica Mas Life.<br>Para no recibir más comunicaciones, responde este email solicitando darte de baja.',
   });
 }
 
@@ -579,8 +730,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
     const FROM = process.env.EMAIL_FROM || 'notificaciones@clinicamaslife.cl';
 
-    const reviewLink = `https://clinicamaslife.cl/p/${proSlug || professionalId}?review=1&name=${encodeURIComponent(String(patientName))}`;
-    const subject = `¿Cómo fue tu atención con ${escapeHtml(String(professionalName))}?`;
+    // El slug llega en el cuerpo de la petición y acaba dentro de un href. Se
+    // acota a lo que puede ser un slug real; cualquier otra cosa cae al id, que
+    // ya viene validado contra la base.
+    const slugSeguro = /^[a-z0-9-]{1,80}$/i.test(String(proSlug || '')) ? String(proSlug) : '';
+    const reviewLink = `https://clinicamaslife.cl/p/${slugSeguro || professionalId}?review=1&name=${encodeURIComponent(String(patientName))}`;
+    const subject = cleanLine(`¿Cómo fue tu atención con ${professionalName}?`);
     await sendEmail(RESEND_KEY, FROM, String(patientEmail), subject,
       ratingRequestHtml({
         professionalName: String(professionalName),
@@ -636,7 +791,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           <li>Comparte tu link de reservas y empieza a recibir pacientes.</li>
         </ol>
         <div style="text-align:center;margin:24px 0 8px;">
-          <a href="https://clinicamaslife.cl/pro/dashboard" style="display:inline-block;background:${BRAND_TEAL};color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-weight:800;font-size:15px;">Ir a mi panel →</a>
+          ${ctaButton('https://clinicamaslife.cl/pro/dashboard', 'Ir a mi panel →')}
         </div>
         <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">Si no creaste esta cuenta, ignora este correo.</p>`,
     });
