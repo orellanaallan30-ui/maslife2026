@@ -79,6 +79,41 @@ async function notifyAdminOrphanPreapproval(payerEmail: string, mpStatus: string
   }
 }
 
+/**
+ * Avisa al profesional de que su suscripción quedó activa, con el comprobante
+ * del cobro. Va por /api/notify para reutilizar la plantilla de marca — el mismo
+ * camino que usa _lib/mpReconcile para las citas pagadas.
+ *
+ * Best-effort: si el correo falla, el webhook NO falla. La suscripción ya quedó
+ * activada en la base, que es lo que no se puede perder; MercadoPago reintenta
+ * el webhook ante un error y no queremos que un fallo de correo dispare
+ * reintentos ni deje el evento como no procesado. El fallo se registra.
+ */
+async function notificarSuscripcionActiva(p: {
+  professionalId: string;
+  amount?: unknown;
+  currency?: unknown;
+  nextPaymentDate?: unknown;
+  subscriptionId: string;
+}): Promise<void> {
+  try {
+    const base = (process.env.PUBLIC_BASE_URL || 'https://clinicamaslife.cl').replace(/\/$/, '');
+    const r = await fetch(`${base}/api/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'pro-subscription-active', ...p }),
+    });
+    if (!r.ok) {
+      const detalle = await r.text().catch(() => '');
+      console.error('[mp-webhook] no se pudo avisar de la suscripción activa:', r.status, detalle.slice(0, 200));
+    } else {
+      console.log('[mp-webhook] aviso de suscripción activa enviado');
+    }
+  } catch (e) {
+    console.error('[mp-webhook] error avisando de la suscripción activa:', e);
+  }
+}
+
 function validateSignature(req: VercelRequest, secret: string): boolean {
   try {
     const xSignature = req.headers['x-signature'] as string;
@@ -285,6 +320,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             } else {
               console.log('[mp-webhook] subscription updated for', masked, '->', newStatus);
               await logWebhookEvent({ event_type: 'preapproval', mp_data_id: String(preapprovalId), signature_valid: true, mp_status: String(sub.status), payer_email: email, matched_professional_id: updatedPros[0].id, outcome: 'matched_updated' });
+
+              // El profesional pagaba y no recibía nada: aquí solo se escribía un
+              // log. Los importes salen de la respuesta de MercadoPago, que es lo
+              // que de verdad se cobró, no de un precio escrito en el código.
+              if (newStatus === 'active') {
+                await notificarSuscripcionActiva({
+                  professionalId: updatedPros[0].id,
+                  amount: sub?.auto_recurring?.transaction_amount,
+                  currency: sub?.auto_recurring?.currency_id,
+                  nextPaymentDate: sub?.next_payment_date,
+                  subscriptionId: String(preapprovalId),
+                });
+              }
             }
           } else {
             // Estado de MP que no mapeamos (p.ej. 'pending') — lo registramos para no perderlo.
