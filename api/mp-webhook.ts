@@ -70,7 +70,23 @@ async function notifyAdminOrphanPreapproval(payerEmail: string, mpStatus: string
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, to: [ADMIN_EMAIL], subject: '⚠️ Pago de suscripción sin profesional vinculado', html }),
+      body: JSON.stringify({
+        from: FROM, to: [ADMIN_EMAIL],
+        subject: '⚠️ Pago de suscripción sin profesional vinculado',
+        html,
+        // Parte de texto: es una alerta de incidencia y tiene que llegar sí o sí.
+        text: [
+          'PAGO DE SUSCRIPCIÓN SIN PROFESIONAL VINCULADO',
+          '',
+          'MercadoPago reportó un evento de suscripción pero ningún profesional tiene ese email registrado. La suscripción NO se reactivó automáticamente.',
+          '',
+          `Email del pago (MP): ${payerEmail}`,
+          `Estado en MP: ${mpStatus}`,
+          `Preapproval ID: ${preapprovalId}`,
+          '',
+          'Acción: entra al panel admin, busca al profesional y usa "Activar suscripción", o corrige el email registrado para que coincida con el de MercadoPago.',
+        ].join('\n'),
+      }),
     });
     if (!resp.ok) console.error('[mp-webhook] fallo al enviar alerta admin:', resp.status);
     else console.log('[mp-webhook] alerta de conciliación enviada al admin');

@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { htmlAtexto } from './_lib/emailText';
 
 function verifyAdminJwt(token: string, secret: string): boolean {
   try {
@@ -498,7 +499,9 @@ async function sendEmail(
   // adjunto .ics de invitación de calendario, ambos pueden coexistir.
   attachment?: { filename: string; contentBase64: string; contentType: string }
 ) {
-  const body: Record<string, unknown> = { from, to: [to], subject, html };
+  // `text` va SIEMPRE: es lo que convierte el mensaje en multipart y lo que
+  // miran los filtros antispam. Se deriva del propio HTML.
+  const body: Record<string, unknown> = { from, to: [to], subject, html, text: htmlAtexto(html) };
   const attachments: Array<{ filename: string; content: string; content_type: string }> = [];
   if (icsContent) {
     attachments.push({
@@ -1016,7 +1019,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         from: FROM,
         to: [r.email],
         subject: cleanAsunto,
-        html: charlaBlastHtml(r.nombre, cleanAsunto, mensaje),
+        // Los blast no pasan por sendEmail: el texto plano se añade aquí también.
+        ...(cuerpo => ({ html: cuerpo, text: htmlAtexto(cuerpo) }))(charlaBlastHtml(r.nombre, cleanAsunto, mensaje)),
       }));
       const batchRes = await fetch('https://api.resend.com/emails/batch', {
         method: 'POST',
@@ -1065,7 +1069,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         from: FROM,
         to: [r.email],
         subject: cleanAsunto,
-        html: charlaBlastHtml(r.name, cleanAsunto, mensaje),
+        // Los blast no pasan por sendEmail: el texto plano se añade aquí también.
+        ...(cuerpo => ({ html: cuerpo, text: htmlAtexto(cuerpo) }))(charlaBlastHtml(r.name, cleanAsunto, mensaje)),
       }));
       const batchRes = await fetch('https://api.resend.com/emails/batch', {
         method: 'POST',
