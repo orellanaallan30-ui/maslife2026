@@ -76,8 +76,8 @@ const ProLanding: React.FC = () => {
   };
 
   usePageMeta({
-    title: 'Agenda +Life — Agenda inteligente con IA para profesionales de salud | 1 mes gratis',
-    description: 'La agenda impulsada por IA que automatiza tu consulta: reservas online 24/7, pagos con MercadoPago, fichas clínicas y confirmaciones automáticas. Para kinesiólogos, nutricionistas, psicólogos y más. Primer mes gratis, sin tarjeta.',
+    title: 'Agenda +Life — Agenda inteligente con IA para profesionales de salud | 30 días gratis',
+    description: 'La agenda impulsada por IA que automatiza tu consulta: reservas online 24/7, pagos con MercadoPago, fichas clínicas y confirmaciones automáticas. Para kinesiólogos, nutricionistas, psicólogos y más. 30 días gratis, sin tarjeta.',
     canonicalPath: '/unete',
   });
 
@@ -115,7 +115,7 @@ const ProLanding: React.FC = () => {
   ];
 
   const faqs = [
-    { q: '¿Cuánto cuesta Agenda +Life?', a: `El plan Pro cuesta ${clp(PLAN_MENSUAL)}/mes. Todos los profesionales nuevos tienen el primer mes completamente gratis, con acceso a todas las funciones.` },
+    { q: '¿Cuánto cuesta Agenda +Life?', a: `El plan Pro cuesta ${clp(PLAN_MENSUAL)}/mes. Todos los profesionales nuevos tienen 30 días completamente gratis, con acceso a todas las funciones.` },
     { q: '¿Necesito tarjeta de crédito para probar?', a: 'No. Te registras, activas tu cuenta y usas la plataforma completa durante 30 días sin ingresar ningún medio de pago.' },
     { q: '¿Hay permanencia mínima o contrato?', a: 'No. Puedes cancelar cuando quieras, sin costos de salida ni letra chica.' },
     { q: '¿Cómo se protegen los datos de mis pacientes?', a: 'Los datos clínicos se almacenan cifrados con acceso restringido por profesional, en cumplimiento de la Ley 21.719 de protección de datos personales de Chile.' },
@@ -147,8 +147,8 @@ const ProLanding: React.FC = () => {
           <button onClick={goRegister}
             className={`${orangeBtn} text-sm px-4 lg:px-5 py-2.5 whitespace-nowrap`}
             style={{ background: ORANGE, boxShadow: '0 8px 24px -10px rgba(255,107,0,.55)' }}>
-            <span className="lg:hidden">Mes gratis</span>
-            <span className="hidden lg:inline">Quiero mi mes gratis</span>
+            <span className="lg:hidden">30 días gratis</span>
+            <span className="hidden lg:inline">Quiero mis 30 días gratis</span>
           </button>
         </div>
       </nav>
@@ -314,7 +314,7 @@ const ProLanding: React.FC = () => {
               Un solo plan. Todo incluido.
             </h2>
             <p className="max-w-lg mx-auto font-medium" style={{ color: MUTED }}>
-              Sin módulos que se cobran aparte ni sorpresas. El primer mes es gratis y no necesitas tarjeta para empezar.
+              Sin módulos que se cobran aparte ni sorpresas. Los primeros 30 días son gratis y no necesitas tarjeta para empezar.
             </p>
           </motion.div>
 
@@ -325,7 +325,7 @@ const ProLanding: React.FC = () => {
               style={{ border: `2px solid ${BLUE}`, boxShadow: '0 28px 64px -28px rgba(0,51,102,.3)' }}>
               <div className="flex items-center justify-between px-7 py-3.5" style={{ background: BLUE }}>
                 <span className="text-xs font-extrabold tracking-wide text-white">PLAN PRO</span>
-                <span className="text-[11px] font-extrabold text-white px-2.5 py-1 rounded-full" style={{ background: ORANGE }}>1er mes gratis</span>
+                <span className="text-[11px] font-extrabold text-white px-2.5 py-1 rounded-full" style={{ background: ORANGE }}>30 días gratis</span>
               </div>
 
               <div className="p-7 flex flex-col flex-1">
@@ -357,7 +357,7 @@ const ProLanding: React.FC = () => {
                   <button onClick={goRegister}
                     className={`${orangeBtn} w-full text-base px-6 py-4`}
                     style={{ background: ORANGE, boxShadow: '0 16px 40px -14px rgba(255,107,0,.6)' }}>
-                    Empezar mi mes gratis
+                    Empezar mis 30 días gratis
                   </button>
                   <p className="text-xs font-medium text-center mt-3" style={{ color: '#9CA3AF' }}>No pedimos tarjeta de crédito para registrarte.</p>
                 </div>
@@ -485,7 +485,7 @@ const ProLanding: React.FC = () => {
             Partir toma menos que una sesión.
           </h2>
           <p className="font-medium mb-9" style={{ color: ON_BLUE_SOFT }}>
-            Creas tu cuenta, configuras horarios y precios, y tu agenda queda publicada. Primer mes gratis.
+            Creas tu cuenta, configuras horarios y precios, y tu agenda queda publicada. 30 días gratis.
           </p>
           <button onClick={goRegister}
             className={`${orangeBtn} text-base px-9 py-4`}

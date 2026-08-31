@@ -142,7 +142,7 @@ const TermsOfService: React.FC = () => {
             personalizado. Al registrarse usando dicho enlace:
           </p>
           <ul className="list-disc list-inside space-y-1 text-slate-700 mt-2">
-            <li>El nuevo profesional referido obtiene <strong>su primer mes de suscripción completamente gratis</strong> (30 días adicionales al período de prueba estándar).</li>
+            <li>El nuevo profesional referido accede al <strong>período de prueba estándar de 30 días</strong>, con todas las funciones y sin requerir medio de pago. El enlace de referido no otorga días adicionales.</li>
             <li>El profesional referidor recibe un <strong>descuento de CLP $1.000</strong> aplicable en su próxima renovación de suscripción, de forma automática al completarse el registro del referido.</li>
           </ul>
           <p className="mt-2">
