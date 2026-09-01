@@ -152,9 +152,14 @@ export function evaluarCalidad(pts: Punto[], plano: 'frontal' | 'sagital'): Avis
   const mensajes: string[] = [];
   let nivel: AvisoCalidad['nivel'] = 'ok';
 
+  // En sagital solo se exige el lado visible: pedir los dos invalidaría toda foto
+  // de perfil, porque el hemicuerpo lejano siempre queda tapado.
+  const ladoS = ladoMasVisible(pts);
   const requeridos = plano === 'frontal'
     ? [PUNTO.hombroIzq, PUNTO.hombroDer, PUNTO.caderaIzq, PUNTO.caderaDer]
-    : [PUNTO.hombroIzq, PUNTO.caderaIzq, PUNTO.rodillaIzq, PUNTO.tobilloIzq];
+    : ladoS === 'Izq'
+      ? [PUNTO.hombroIzq, PUNTO.caderaIzq, PUNTO.rodillaIzq, PUNTO.tobilloIzq]
+      : [PUNTO.hombroDer, PUNTO.caderaDer, PUNTO.rodillaDer, PUNTO.tobilloDer];
 
   const pocoVisibles = requeridos.filter(i => (pts[i]?.visibilidad ?? 1) < 0.6);
   if (pocoVisibles.length) {
@@ -178,10 +183,14 @@ export function evaluarCalidad(pts: Punto[], plano: 'frontal' | 'sagital'): Avis
 
   // Rodillas: en bipedestación el ángulo cadera-rodilla-tobillo ronda los 180°.
   // Una desviación grande significa pierna flexionada, no una alteración del eje.
-  for (const [iC, iR, iT] of [
-    [PUNTO.caderaIzq, PUNTO.rodillaIzq, PUNTO.tobilloIzq],
-    [PUNTO.caderaDer, PUNTO.rodillaDer, PUNTO.tobilloDer],
-  ] as const) {
+  // En sagital solo la pierna visible: la lejana está tapada y su posición
+  // inferida daría un falso "rodilla flexionada".
+  const piernas = plano === 'frontal'
+    ? [[PUNTO.caderaIzq, PUNTO.rodillaIzq, PUNTO.tobilloIzq], [PUNTO.caderaDer, PUNTO.rodillaDer, PUNTO.tobilloDer]]
+    : ladoS === 'Izq'
+      ? [[PUNTO.caderaIzq, PUNTO.rodillaIzq, PUNTO.tobilloIzq]]
+      : [[PUNTO.caderaDer, PUNTO.rodillaDer, PUNTO.tobilloDer]];
+  for (const [iC, iR, iT] of piernas) {
     const c = pts[iC], r = pts[iR], t = pts[iT];
     if (!c || !r || !t) continue;
     if (Math.abs(180 - anguloEn(c, r, t)) > 30) {
@@ -295,9 +304,31 @@ export function medicionesFrontales(pts: Punto[]): Medicion[] {
   return m;
 }
 
-/** Vista lateral: alineación sagital. */
-export function medicionesSagitales(pts: Punto[], lado: 'Izq' | 'Der' = 'Izq'): Medicion[] {
+/**
+ * En una foto de perfil el hemicuerpo más alejado de la cámara queda oculto y el
+ * detector lo sitúa por inferencia, con baja confianza. Medir sobre ese lado da
+ * cifras inventadas por el modelo de pose. Se elige el lado que realmente se ve.
+ */
+export function ladoMasVisible(pts: Punto[]): 'Izq' | 'Der' {
+  const clave = [
+    [PUNTO.orejaIzq, PUNTO.orejaDer],
+    [PUNTO.hombroIzq, PUNTO.hombroDer],
+    [PUNTO.caderaIzq, PUNTO.caderaDer],
+    [PUNTO.rodillaIzq, PUNTO.rodillaDer],
+    [PUNTO.tobilloIzq, PUNTO.tobilloDer],
+  ] as const;
+  let izq = 0, der = 0;
+  for (const [i, d] of clave) {
+    izq += pts[i]?.visibilidad ?? 0;
+    der += pts[d]?.visibilidad ?? 0;
+  }
+  return der > izq ? 'Der' : 'Izq';
+}
+
+/** Vista lateral: alineación sagital. Sin indicar lado, se usa el más visible. */
+export function medicionesSagitales(pts: Punto[], lado?: 'Izq' | 'Der'): Medicion[] {
   const m: Medicion[] = [];
+  lado = lado || ladoMasVisible(pts);
   const oreja = pts[lado === 'Izq' ? PUNTO.orejaIzq : PUNTO.orejaDer];
   const hombro = pts[lado === 'Izq' ? PUNTO.hombroIzq : PUNTO.hombroDer];
   const cadera = pts[lado === 'Izq' ? PUNTO.caderaIzq : PUNTO.caderaDer];
