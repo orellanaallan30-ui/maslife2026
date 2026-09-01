@@ -7,6 +7,8 @@ import { useClinic } from '../ClinicContext';
 import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
 import { toast } from '../lib/toast';
 import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF } from '../pdfExport';
+import MedicionPostural from '../components/MedicionPostural';
+import type { Medicion } from '../lib/biomecanica';
 import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
 import { auditService } from '../auditService';
@@ -421,6 +423,14 @@ const ClinicalRecord: React.FC = () => {
   const [files, setFiles] = useState<ClinicalFile[]>(safePatient.attachments || []);
 
   const [analysisType, setAnalysisType] = useState<'Postural' | 'Marcha' | 'Musculoesquelético'>('Postural');
+  // Medición angular: qué foto se está midiendo y qué salió.
+  const [slotMedicion, setSlotMedicion] = useState(0);
+  const [medicionesAngulares, setMedicionesAngulares] = useState<Medicion[]>(
+    (savedSpec.medicionesAngulares as Medicion[]) || []
+  );
+  // Solo se mide sobre fotos: los fotogramas de vídeo llegan en base64 y el
+  // detector los acepta igual, pero se prioriza el hueco elegido si tiene algo.
+  const imagenParaMedir = analysisImages[slotMedicion] || analysisImages.find(Boolean) || '';
   const [analysisResult, setAnalysisResult] = useState<string>((savedSpec.analysisResult as string) || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -804,6 +814,14 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         .map(([k, v]) => `${k}: ${v}°`)
         .join(', ');
 
+      // Ángulos medidos sobre la propia foto. Este es el cambio de fondo: antes
+      // se le pedía al modelo que estimara cifras que no podía obtener; ahora
+      // recibe medidas reales y su trabajo es interpretarlas, que es lo que un
+      // modelo de lenguaje sí sabe hacer.
+      const angulosCtx = medicionesAngulares.length
+        ? medicionesAngulares.map(m => `${m.etiqueta}: ${m.valor}${m.unidad} (${m.severidad})`).join('; ')
+        : '';
+
       // Cada tipo de análisis mira cosas distintas. Antes los tres compartían
       // instrucciones puramente posturales: elegir "Marcha" y subir un vídeo
       // caminando producía igualmente un informe de postura estática.
@@ -832,6 +850,7 @@ Tipo de análisis solicitado: ${analysisType}
 ${kiAnthro.weight ? `Peso: ${kiAnthro.weight} kg` : ''}${kiAnthro.height ? `, Talla: ${kiAnthro.height} cm` : ''}${kiImc ? `, IMC: ${kiImc}` : ''}
 ${posturalCtx ? `Hallazgos posturales registrados por el profesional: ${posturalCtx}` : ''}
 ${romCtx ? `ROM medido por el profesional: ${romCtx}` : ''}
+${angulosCtx ? `ÁNGULOS MEDIDOS SOBRE LA FOTOGRAFÍA (detección de puntos anatómicos, no estimación): ${angulosCtx}` : ''}
 
 ${GUIA_POR_TIPO[analysisType]}
 
@@ -870,7 +889,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
         `Eres un kinesiólogo clínico experto en análisis postural y biomecánico. Analiza las imágenes proporcionadas y redacta un informe técnico en español para que lo revise un profesional colegiado.
 
 REGLA INNEGOCIABLE: no inventes mediciones. No des cifras en centímetros, grados ni porcentajes deducidas de una imagen: no hay calibración, escala de referencia ni marcadores anatómicos que las respalden. Describe lo que se ve en términos cualitativos ("hombro derecho aparentemente descendido respecto al izquierdo") y, cuando una magnitud sea clínicamente relevante, di con qué instrumento habría que medirla.
-Los únicos números que puedes citar son los que el profesional ya midió y aparecen en el contexto.
+Los únicos números que puedes citar son los medidos que aparecen en el contexto: el ROM del profesional y los ángulos calculados sobre la fotografía. Interprétalos, relaciónalos entre sí y explica qué sugieren; no los recalcules ni añadas otros.
 Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, dilo en vez de suponerlo.`,
         4096
       );
@@ -918,6 +937,15 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
   // Extrae N fotogramas de un video local vía <video>+<canvas>. La API de visión
   // analiza imágenes (no video): los fotogramas entran al mismo pipeline y sirven
   // para evaluar marcha, sentadilla u otros movimientos.
+  // Vigencia de las URLs firmadas de las fotos clínicas.
+  //
+  // Eran 5 años. Una URL firmada es una credencial al portador: cualquiera que la
+  // tenga ve la fotografía, sin sesión y sin dejar rastro de quién fue. Y queda
+  // guardada en claro en specialty_data, así que se filtra con cualquier volcado
+  // de la ficha. 30 días acota la ventana sin obligar a regenerarla en cada
+  // consulta; si caduca, se vuelve a abrir la ficha y se firma de nuevo.
+  const TTL_FIRMA_SEG = 60 * 60 * 24 * 30;
+
   const extractVideoFrames = (file: File, count = 4): Promise<string[]> =>
     new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
@@ -967,18 +995,35 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
           .then(({ error: vErr }) => { if (vErr) console.error('[video upload]', vErr.message); });
 
         const frames = await extractVideoFrames(file, 4);
+
+        // Los fotogramas se suben como archivos y en la ficha queda su URL.
+        // Antes se guardaban como data URLs en base64 dentro de specialty_data:
+        // ~1 MB de texto por evaluación metido en una columna jsonb, mientras
+        // que las fotos normales guardaban solo un enlace.
+        const urls = await Promise.all(frames.map(async (dataUrl, n) => {
+          const blob = await (await fetch(dataUrl)).blob();
+          const fpath = `${loggedPro?.id || 'unknown'}/${Date.now()}-fotograma-${n}.jpg`;
+          const { data: sub, error: subErr } = await supabase.storage
+            .from('clinical-images').upload(fpath, blob, { upsert: true, contentType: 'image/jpeg' });
+          if (subErr || !sub) throw new Error(subErr?.message || 'no se pudo subir el fotograma');
+          const { data: firmada, error: firmaErr } = await supabase.storage
+            .from('clinical-images').createSignedUrl(sub.path, TTL_FIRMA_SEG);
+          if (firmaErr || !firmada?.signedUrl) throw new Error('no se pudo firmar el fotograma');
+          return firmada.signedUrl;
+        }));
+
         const slot = uploadSlotRef.current;
         setAnalysisImages(prev => {
           const next = [...prev];
           if (slot >= 0) {
             let s = slot;
-            for (const f of frames) { if (s > 3) break; next[s] = f; s++; }
+            for (const f of urls) { if (s > 3) break; next[s] = f; s++; }
             return next.slice(0, 4);
           }
-          return [...next, ...frames].slice(0, 4);
+          return [...next, ...urls].slice(0, 4);
         });
         setIsDirtyTrue();
-        toast.success(`Video procesado: ${frames.length} fotogramas listos para el análisis.`);
+        toast.success(`Video procesado: ${urls.length} fotogramas listos para el análisis.`);
       } catch {
         toast.error('No se pudo procesar el video. Intenta con formato MP4.');
       }
@@ -998,7 +1043,7 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
     }
     const { data: signed, error: signErr } = await supabase.storage
       .from('clinical-images')
-      .createSignedUrl(uploaded.path, 60 * 60 * 24 * 365 * 5); // 5 años
+      .createSignedUrl(uploaded.path, TTL_FIRMA_SEG);
     if (signErr || !signed?.signedUrl) {
       toast.error('No se pudo generar el acceso a la imagen. Intenta de nuevo.');
       return;
@@ -1305,6 +1350,8 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
         // estructurado sin el razonamiento que lo sostenía.
         biomechReport,
         analysisResult,
+        // Ángulos medidos sobre las fotos: son datos, no interpretación.
+        medicionesAngulares,
         // Antecedentes mórbidos/quirúrgicos (antes solo vivían en la sesión de edición)
         morbidos,
         quirurgicos,
@@ -1872,8 +1919,8 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
           <section className="bg-white rounded-2xl lg:rounded-blob-xl p-4 lg:p-10 shadow-section border border-slate-200 overflow-hidden relative">
             <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
               <div>
-                <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
-                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">La IA describe las imágenes; no toma mediciones sobre ellas</p>
+                <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico</h2>
+                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Medición de ángulos sobre la foto · Lectura con IA</p>
               </div>
               <div className="flex bg-slate-50/80 shadow-inner border border-slate-200 p-2 rounded-2xl no-print">
                 {(['Postural', 'Marcha', 'Musculoesquelético'] as const).map(t => (
@@ -1882,6 +1929,34 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
               </div>
             </div>
             {renderSectionFields('biomecanica')}
+
+            {/* Medición angular sobre la foto. Va ANTES del informe de la IA a
+                propósito: primero lo que se mide, después lo que se interpreta. */}
+            {imagenParaMedir && (
+              <div className="mb-6 rounded-blob-md border border-slate-200 bg-slate-50/60 p-4 lg:p-6 no-print">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-primary pl-3">
+                    Medición angular
+                  </h3>
+                  <div className="flex gap-1.5">
+                    {(['Anterior','Posterior','Lateral Der.','Lateral Izq.'] as const).map((label, idx) => (
+                      analysisImages[idx] ? (
+                        <button key={label} type="button" onClick={() => setSlotMedicion(idx)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                            slotMedicion === idx ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 border border-slate-200'
+                          }`}>{label}</button>
+                      ) : null
+                    ))}
+                  </div>
+                </div>
+                <MedicionPostural
+                  key={imagenParaMedir}
+                  imagen={imagenParaMedir}
+                  plano={slotMedicion >= 2 ? 'sagital' : 'frontal'}
+                  onMediciones={setMedicionesAngulares}
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-6">

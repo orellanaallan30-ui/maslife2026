@@ -10,10 +10,12 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest run",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "prebuild": "node scripts/preparar-biomecanica.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@mediapipe/tasks-vision": "^1.0.1",
     "@supabase/supabase-js": "^2.98.0",
     "framer-motion": "^12.40.0",
     "qrcode": "^1.5.4",

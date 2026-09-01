@@ -18,3 +18,7 @@ design/*.html
 # ambos se regeneran desde design/*.dc.html
 landing-agenda-life.zip
 design/actual/
+
+# Recursos de la detección de puntos anatómicos: ~18 MB que se preparan
+# en cada compilación (maslife2026/scripts/preparar-biomecanica.mjs).
+maslife2026/public/mediapipe/
