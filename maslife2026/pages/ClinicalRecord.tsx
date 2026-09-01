@@ -8,7 +8,7 @@ import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } fro
 import { toast } from '../lib/toast';
 import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF } from '../pdfExport';
 import MedicionPostural from '../components/MedicionPostural';
-import type { Medicion } from '../lib/biomecanica';
+import { indiceToracico, type Medicion } from '../lib/biomecanica';
 import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
 import { auditService } from '../auditService';
@@ -427,6 +427,12 @@ const ClinicalRecord: React.FC = () => {
   const [slotMedicion, setSlotMedicion] = useState(0);
   const [medicionesAngulares, setMedicionesAngulares] = useState<Medicion[]>(
     (savedSpec.medicionesAngulares as Medicion[]) || []
+  );
+  // Diámetros del tórax, cada uno normalizado por la longitud del tronco de SU
+  // propia fotografía. Así se pueden dividir aunque vengan de fotos distintas:
+  // la escala desconocida de cada una se cancela.
+  const [diamTorax, setDiamTorax] = useState<{ transverso?: number; ap?: number }>(
+    (savedSpec.diamTorax as { transverso?: number; ap?: number }) || {}
   );
   // Solo se mide sobre fotos: los fotogramas de vídeo llegan en base64 y el
   // detector los acepta igual, pero se prioriza el hueco elegido si tiene algo.
@@ -1352,6 +1358,7 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
         analysisResult,
         // Ángulos medidos sobre las fotos: son datos, no interpretación.
         medicionesAngulares,
+        diamTorax,
         // Antecedentes mórbidos/quirúrgicos (antes solo vivían en la sesión de edición)
         morbidos,
         quirurgicos,
@@ -1975,7 +1982,40 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
                   imagen={imagenParaMedir}
                   plano={slotMedicion >= 2 ? 'sagital' : 'frontal'}
                   onMediciones={setMedicionesAngulares}
+                  onDiametroTorax={(cual, razon) => {
+                    setDiamTorax(prev => ({ ...prev, [cual]: razon }));
+                    setIsDirtyTrue();
+                    toast.success(`Diámetro ${cual} guardado.`);
+                  }}
                 />
+
+                {/* Índice torácico: solo aparece cuando hay los dos diámetros,
+                    porque con uno solo no se puede calcular nada. */}
+                {(diamTorax.transverso || diamTorax.ap) && (() => {
+                  const est = diamTorax.transverso && diamTorax.ap
+                    ? indiceToracico(diamTorax.ap, diamTorax.transverso) : null;
+                  return (
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <h4 className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Índice torácico</h4>
+                        <button type="button" onClick={() => { setDiamTorax({}); setIsDirtyTrue(); }}
+                          className="text-[10px] font-black uppercase tracking-wider text-slate-400 hover:text-rose-500">Borrar</button>
+                      </div>
+                      {est ? (
+                        <>
+                          <p className="text-2xl font-black text-slate-900">{est.indice}
+                            <span className="text-sm font-bold text-slate-500 ml-2">{est.etiqueta}</span>
+                          </p>
+                          <p className="text-[11px] text-slate-500 leading-relaxed mt-1">{est.nota}</p>
+                        </>
+                      ) : (
+                        <p className="text-xs font-bold text-amber-700">
+                          Falta el diámetro {diamTorax.ap ? 'transverso, en la foto frontal' : 'anteroposterior, en la foto lateral'}.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
