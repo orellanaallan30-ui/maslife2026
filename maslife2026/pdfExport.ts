@@ -1083,10 +1083,19 @@ export async function exportPatientFichaToPDF(
 
 // ── INFORME IA A PDF ───────────────────────────────────────────────────────────
 
+/**
+ * Informe en PDF con membrete y firma electrónica del profesional.
+ *
+ * `asistidoPorIA` NO es decorativo: este informe se estampa con la firma de un
+ * profesional colegiado, y cuando el texto lo redactó un modelo de lenguaje el
+ * documento tiene que decirlo. Sin esa nota, el PDF resultante es indistinguible
+ * de uno redactado y validado por el propio profesional.
+ */
 export async function exportReportToPDF(
   content: string,
   patient: Patient,
-  professional: ProfessionalProfile
+  professional: ProfessionalProfile,
+  opts?: { asistidoPorIA?: boolean }
 ): Promise<void> {
   await ensureJsPDF();
 
@@ -1163,6 +1172,28 @@ export async function exportReportToPDF(
   }
 
   y += 8;
+
+  // La nota va ANTES de la firma y en la misma página: quien lea el documento
+  // tiene que encontrarse el aviso junto al nombre que lo respalda, no perdido
+  // en otra hoja.
+  if (opts?.asistidoPorIA) {
+    const AVISO = 'Informe redactado con asistencia de inteligencia artificial a partir de imágenes clínicas, y revisado por el profesional que lo firma. Las descripciones de las imágenes son observaciones cualitativas, no mediciones instrumentales: no sustituyen la exploración presencial ni los exámenes complementarios.';
+    const lineas = doc.splitTextToSize(AVISO, COL - 8);
+    const altoAviso = lineas.length * 3.8 + 8;
+    if (y + altoAviso + 42 > 268) { doc.addPage(); y = MARGIN; }
+    doc.setDrawColor(245, 158, 11);
+    doc.setFillColor(255, 251, 235);
+    doc.rect(MARGIN, y, COL, altoAviso, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(146, 64, 14);
+    doc.text('ELABORADO CON ASISTENCIA DE IA', MARGIN + 4, y + 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text(lineas, MARGIN + 4, y + 9.5);
+    y += altoAviso + 5;
+  }
+
   if (y + 42 > 268) { doc.addPage(); y = MARGIN; }
   drawAutoSignature(doc, professional, MARGIN, COL, y);
 

@@ -421,7 +421,7 @@ const ClinicalRecord: React.FC = () => {
   const [files, setFiles] = useState<ClinicalFile[]>(safePatient.attachments || []);
 
   const [analysisType, setAnalysisType] = useState<'Postural' | 'Marcha' | 'Musculoesquelético'>('Postural');
-  const [analysisResult, setAnalysisResult] = useState('');
+  const [analysisResult, setAnalysisResult] = useState<string>((savedSpec.analysisResult as string) || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // El saludo era condicional a VITE_AI_ENABLED, una variable que no gobernaba
@@ -766,8 +766,27 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
     toast.success('Informe guardado como documento en la ficha');
   };
 
+  // Descargar un informe redactado por la IA estampa la firma electrónica del
+  // profesional. Antes ocurría con un clic, sin revisión ni aviso, y el PDF
+  // resultante era indistinguible de uno redactado y validado por él. La
+  // confirmación no es burocracia: es el momento en que alguien colegiado asume
+  // el contenido.
+  const descargarInformeIA = (texto: string) => {
+    if (!loggedPro || !texto?.trim()) return;
+    const ok = window.confirm(
+      'Este informe fue redactado por la IA a partir de las imágenes.\n\n' +
+      'El PDF se descargará con TU firma electrónica y con una nota indicando que se elaboró con asistencia de IA.\n\n' +
+      '¿Confirmas que lo revisaste y asumes su contenido?'
+    );
+    if (!ok) return;
+    exportReportToPDF(texto, { ...safePatient, ...personalData } as Patient, loggedPro, { asistidoPorIA: true });
+  };
+
   const runAdvancedAnalysis = async () => {
-    if (analysisImages.length === 0) {
+    // Se cuentan las imágenes REALES: si solo se carga el tercer hueco, el array
+    // queda disperso y `.length` valía 3 aunque solo hubiera una foto.
+    const imagenesReales = analysisImages.filter(Boolean);
+    if (imagenesReales.length === 0) {
       alert('Por favor carga al menos una imagen (Vista Anterior, Posterior o Lateral).');
       return;
     }
@@ -785,44 +804,74 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
         .map(([k, v]) => `${k}: ${v}°`)
         .join(', ');
 
-      const prompt = `Analiza las ${analysisImages.length} fotografías clínicas del/de la paciente (identidad omitida por privacidad).
+      // Cada tipo de análisis mira cosas distintas. Antes los tres compartían
+      // instrucciones puramente posturales: elegir "Marcha" y subir un vídeo
+      // caminando producía igualmente un informe de postura estática.
+      const GUIA_POR_TIPO: Record<typeof analysisType, string> = {
+        Postural: `Se trata de fotografías estáticas en bipedestación. Evalúa según la vista:
+— PLANO ANTERIOR: nivelación de hombros y pelvis, alineación de rodillas, postura global
+— PLANO POSTERIOR: asimetría escapular, curvas del raquis, alineación axial
+— PLANO LATERAL: hiperlordosis/cifosis, posición de la cabeza, proyección abdominal`,
+        Marcha: `Las imágenes son FOTOGRAMAS extraídos de un vídeo de marcha, tomados a
+intervalos regulares de la grabación. NO son vistas posturales estáticas y NO están
+sincronizados con el ciclo de marcha: cada fotograma cae en una fase desconocida.
+
+Describe únicamente lo que se observa en cada fotograma (posición de segmentos,
+apoyo aparente, actitud del tronco y de los brazos) y evita afirmar parámetros que
+requieren secuencia temporal —cadencia, longitud de paso, tiempos de apoyo y
+balanceo, simetría temporal—: con fotogramas sueltos no se pueden determinar.
+Dilo explícitamente si el profesional necesitaría esos datos.`,
+        Musculoesquelético: `Evalúa la región corporal que se muestra: actitud antiálgica,
+asimetrías de volumen o contorno, alineación de los segmentos implicados y signos
+visibles de inflamación o atrofia. No infieras hallazgos de estructuras que no se ven.`,
+      };
+
+      const prompt = `Analiza las ${imagenesReales.length} imágenes clínicas del/de la paciente (identidad omitida por privacidad).
 
 Tipo de análisis solicitado: ${analysisType}
 ${kiAnthro.weight ? `Peso: ${kiAnthro.weight} kg` : ''}${kiAnthro.height ? `, Talla: ${kiAnthro.height} cm` : ''}${kiImc ? `, IMC: ${kiImc}` : ''}
-${posturalCtx ? `Hallazgos posturales registrados: ${posturalCtx}` : ''}
-${romCtx ? `ROM registrado: ${romCtx}` : ''}
+${posturalCtx ? `Hallazgos posturales registrados por el profesional: ${posturalCtx}` : ''}
+${romCtx ? `ROM medido por el profesional: ${romCtx}` : ''}
 
-Evalúa en cada fotografía:
-— PLANO ANTERIOR: nivelación de hombros y pelvis, alineación de rodillas, postura global
-— PLANO POSTERIOR: asimetría escapular, escoliosis, alineación axial
-— PLANO LATERAL: hiperlordosis/cifosis, posición de cabeza, proyección abdominal
+${GUIA_POR_TIPO[analysisType]}
 
 Entrega el informe con estas secciones:
-1. HALLAZGOS OBSERVADOS POR VISTA
+1. HALLAZGOS OBSERVADOS POR IMAGEN
 2. IMPRESIÓN BIOMECÁNICA GLOBAL
-3. DIAGNÓSTICO POSTURAL KINESIOLÓGICO (con código CIE-10 sugerido)
+3. HIPÓTESIS DIAGNÓSTICA A CONFIRMAR POR EL PROFESIONAL (puedes proponer un código CIE-10 orientativo)
 4. OBJETIVOS DE TRATAMIENTO PRIORIZADOS (máx. 5)
 5. PLAN KINESIOLÓGICO SUGERIDO
 
 AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EXACTO
-(estimaciones cuantitativas a partir de lo observado; 4-8 métricas y 3-5 simetrías):
+(4-8 hallazgos y 3-5 simetrías):
 \`\`\`json
 {
-  "metricas": [{ "nombre": "Inclinación pélvica", "valor": 2, "unidad": "cm",
-    "rango_normal": [0, 1], "umbral_riesgo": 4,
+  "metricas": [{ "nombre": "Inclinación pélvica", "hallazgo": "hemipelvis derecha aparentemente descendida",
     "severidad": "normal|atencion|riesgo", "zona": "pelvis",
-    "comentario": "breve explicación clínica" }],
+    "comentario": "breve explicación clínica y qué haría falta para confirmarlo" }],
   "simetrias": [{ "zona": "Hombros", "izquierda": "hallazgo lado izq",
-    "derecha": "hallazgo lado der", "diferencia": "1 cm", "severidad": "atencion" }],
+    "derecha": "hallazgo lado der", "diferencia": "descripción cualitativa de la diferencia",
+    "severidad": "atencion" }],
   "impresion_global": "…", "diagnostico": "…", "cie10": "…",
   "objetivos": ["…"], "plan": ["…"]
 }
 \`\`\``;
 
       const result = await askClaudeWithImages(
-        analysisImages,
+        imagenesReales,
         prompt,
-        "Eres un kinesiólogo clínico experto en análisis postural y biomecánico. Analiza las fotografías proporcionadas y genera un informe técnico profesional en español. Describe lo que observas visualmente en cada imagen con precisión clínica. Las métricas del bloque JSON son estimaciones visuales cuantificadas: sé consistente entre el texto y el JSON.",
+        // El esquema anterior pedía "valor": 2, "unidad": "cm" con rango normal y
+        // umbral de riesgo. Una inclinación pélvica en centímetros a partir de una
+        // foto sin calibración, sin escala de referencia y sin marcadores no se
+        // puede medir: el modelo devolvía un número verosímil que la interfaz
+        // presentaba con medidor y umbral, como si hubiera un instrumento detrás.
+        // Ahora se piden hallazgos descritos y una severidad, que es lo que un ojo
+        // clínico sí puede aportar sobre una imagen.
+        `Eres un kinesiólogo clínico experto en análisis postural y biomecánico. Analiza las imágenes proporcionadas y redacta un informe técnico en español para que lo revise un profesional colegiado.
+
+REGLA INNEGOCIABLE: no inventes mediciones. No des cifras en centímetros, grados ni porcentajes deducidas de una imagen: no hay calibración, escala de referencia ni marcadores anatómicos que las respalden. Describe lo que se ve en términos cualitativos ("hombro derecho aparentemente descendido respecto al izquierdo") y, cuando una magnitud sea clínicamente relevante, di con qué instrumento habría que medirla.
+Los únicos números que puedes citar son los que el profesional ya midió y aparecen en el contexto.
+Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, dilo en vez de suponerlo.`,
         4096
       );
 
@@ -831,16 +880,34 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
       if (jsonMatch) {
         try {
           const parsed = JSON.parse(jsonMatch[1]) as BiomechReportData;
-          if (Array.isArray(parsed.metricas)) {
-            setBiomechReport({ ...parsed, generado: new Date().toISOString(), tipo: analysisType });
+          // Antes bastaba con que `metricas` fuese un array y se hacía un cast sin
+          // comprobar nada más: un campo con el tipo equivocado llegaba al informe
+          // y se renderizaba como basura. Se filtra lo que no encaja.
+          const metricas = (Array.isArray(parsed.metricas) ? parsed.metricas : [])
+            .filter(m => m && typeof m.nombre === 'string');
+          if (metricas.length) {
+            setBiomechReport({
+              ...parsed,
+              metricas,
+              simetrias: Array.isArray(parsed.simetrias) ? parsed.simetrias : [],
+              generado: new Date().toISOString(),
+              tipo: analysisType,
+            });
           }
-        } catch { /* JSON malformado: el informe de texto sigue siendo útil */ }
+        } catch (e) {
+          // El catch estaba vacío: si el modelo devolvía JSON malformado, el botón
+          // "Informe visual" seguía deshabilitado sin que nadie supiera por qué.
+          console.error('[biomecánica] el informe estructurado no se pudo interpretar:', e);
+          toast.error('El informe visual no se pudo generar; el informe escrito sí está disponible.');
+        }
       }
       const narrative = (result || '').replace(/```json[\s\S]*?```/, '').trim();
       setAnalysisResult(narrative || 'El análisis no pudo ser completado.');
-    } catch (error) {
-      console.error(error);
-      setAnalysisResult('Error al procesar el análisis. Verifica que ANTHROPIC_API_KEY esté configurada en Vercel.');
+    } catch (error: any) {
+      // El mensaje anterior culpaba siempre a ANTHROPIC_API_KEY y mandaba a
+      // revisar variables de entorno que estaban bien. Se muestra el motivo real.
+      console.error('[biomecánica]', error);
+      setAnalysisResult(`No se pudo completar el análisis.\n\nMotivo: ${error?.message || 'error desconocido'}\n\nRevisa que las imágenes se hayan cargado correctamente y vuelve a intentarlo.`);
     } finally {
       setIsAnalyzing(false);
     }
@@ -1232,8 +1299,12 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
         // Definiciones personalizadas de ROM y tests escogidos por el profesional
         romDefs,
         testDefs,
-        // Informe biomecánico visual (IA)
+        // Informe biomecánico visual (IA) y el texto que lo justifica. Antes
+        // solo se guardaba el JSON: el informe escrito vivía en memoria y
+        // desaparecía al recargar la ficha, así que quedaba un diagnóstico
+        // estructurado sin el razonamiento que lo sostenía.
         biomechReport,
+        analysisResult,
         // Antecedentes mórbidos/quirúrgicos (antes solo vivían en la sesión de edición)
         morbidos,
         quirurgicos,
@@ -1527,7 +1598,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                 <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">
                   {kiEvalTab === 'initial' ? 'Evaluación Kinesiológica — EV1 Inicial' : 'Evaluación Kinesiológica — EV2 Final'}
                 </h2>
-                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Análisis postural · ROM · Tests especiales · Visión IA real</p>
+                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Análisis postural · ROM · Tests especiales · Lectura de imágenes con IA</p>
               </div>
             </div>
 
@@ -1802,7 +1873,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
               <div>
                 <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico con IA</h2>
-                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Claude Vision — procesa las fotografías reales del paciente</p>
+                <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">La IA describe las imágenes; no toma mediciones sobre ellas</p>
               </div>
               <div className="flex bg-slate-50/80 shadow-inner border border-slate-200 p-2 rounded-2xl no-print">
                 {(['Postural', 'Marcha', 'Musculoesquelético'] as const).map(t => (
@@ -1871,7 +1942,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Informe IA Estructurado</h4>
                   {analysisResult && (
                     <button
-                      onClick={() => loggedPro && exportReportToPDF(analysisResult, { ...safePatient, ...personalData } as Patient, loggedPro)}
+                      onClick={() => descargarInformeIA(analysisResult)}
                       className="text-xs font-black text-primary hover:underline no-print"
                     >DESCARGAR INFORME</button>
                   )}
@@ -1956,11 +2027,18 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                       const v2 = k ? kiData.final.anthro[k]   : isImc ? calcKiImc(kiData.final.anthro)   : calcKiDiscrep(kiData.final.anthro);
                       const delta = v1 && v2 ? (Number(v2) - Number(v1)).toFixed(1) : '';
                       const deltaNum = Number(delta);
+                      // El color se pintaba en verde para CUALQUIER aumento. En peso,
+                      // IMC y discrepancia de MMII subir no es mejorar, así que esos
+                      // tres se muestran en neutro: la interpretación depende del
+                      // objetivo del paciente y no la decide una tabla.
+                      const sinDireccion = isImc || isDiscrep || label.includes('Peso');
+                      const colorDelta = !delta || sinDireccion ? 'text-slate-600'
+                        : deltaNum > 0 ? 'text-emerald-600' : deltaNum < 0 ? 'text-rose-500' : 'text-slate-500';
                       return (
                         <tr key={label} className="hover:bg-slate-50/50">
                           <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
                           <td className="px-4 py-3 text-center font-bold text-primary">{v1 || '—'}</td>
-                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-500' : deltaNum > 0 ? 'text-emerald-600' : deltaNum < 0 ? 'text-rose-500' : 'text-slate-500'}`}>
+                          <td className={`px-4 py-3 text-center font-black ${colorDelta}`}>
                             {delta ? (deltaNum > 0 ? '+' : '') + delta : '—'}
                           </td>
                           <td className="px-4 py-3 text-center font-bold text-emerald-600">{v2 || '—'}</td>
@@ -2021,31 +2099,34 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {([
-                      ['Cuello Flex.','CueFlex'],['Cuello Ext.','CueExt'],
-                      ['Cuello Rot.D','CueRotD'],['Cuello Rot.I','CueRotI'],
-                      ['Hombro Flex.','HomFlex'],['Hombro Abd.','HomAbd'],
-                      ['Col. Flex.','ColFlex'],['Col. Ext.','ColExt'],
-                      ['Cadera Flex.','CadFlex'],['Cadera Ext.','CadExt'],
-                      ['Rodilla Flex.','RodFlex'],['Rodilla Ext.','RodExt'],
-                      ['Tobillo Flex.','TobFlex'],['Tobillo Ext.','TobExt'],
-                    ] as [string,string][]).filter(([,k]) => kiData.initial.rom[k] || kiData.final.rom[k]).map(([label, key]) => {
+                    {/* Se recorre romDefs, no una lista fija. Con la lista fija, un
+                        movimiento añadido por el profesional se rellenaba en EV1 y
+                        EV2 y no aparecía aquí; y si renombraba uno estándar, la
+                        tabla seguía mostrando la etiqueta antigua. */}
+                    {romDefs.map(d => [d.label || d.id, d.id] as [string, string])
+                      .filter(([,k]) => kiData.initial.rom[k] || kiData.final.rom[k]).map(([label, key]) => {
                       const r1 = kiData.initial.rom[key];
                       const r2 = kiData.final.rom[key];
                       const delta = r1 && r2 ? (Number(r2) - Number(r1)).toFixed(0) : '';
                       const dn = Number(delta);
+                      // En casi todos los movimientos ganar grados es mejorar, pero
+                      // cuando el valor normal es 0 —extensión de rodilla— cada grado
+                      // de más es un déficit. Ahí el color se invierte.
+                      const normalCero = parseFloat(romDefs.find(d => d.id === key)?.normal || '') === 0;
+                      const mejora = normalCero ? dn < 0 : dn > 0;
+                      const empeora = normalCero ? dn > 0 : dn < 0;
                       return (
                         <tr key={label} className="hover:bg-slate-50/50">
                           <td className="px-4 py-3 font-bold text-slate-600">{label}</td>
                           <td className="px-4 py-3 text-center font-bold text-primary">{r1 || '—'}</td>
-                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-500' : dn > 0 ? 'text-emerald-600' : dn < 0 ? 'text-rose-500' : 'text-slate-500'}`}>
+                          <td className={`px-4 py-3 text-center font-black ${!delta ? 'text-slate-500' : mejora ? 'text-emerald-600' : empeora ? 'text-rose-500' : 'text-slate-500'}`}>
                             {delta ? (dn > 0 ? '+' : '') + delta : '—'}
                           </td>
                           <td className="px-4 py-3 text-center font-bold text-emerald-600">{r2 || '—'}</td>
                         </tr>
                       );
                     })}
-                    {!(['CueFlex','CueExt','CueRotD','CueRotI','HomFlex','HomAbd','ColFlex','ColExt','CadFlex','CadExt','RodFlex','RodExt','TobFlex','TobExt'].some(k => kiData.initial.rom[k] || kiData.final.rom[k])) && (
+                    {!romDefs.some(d => kiData.initial.rom[d.id] || kiData.final.rom[d.id]) && (
                       <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500 italic">Sin datos de ROM registrados en ninguna evaluación</td></tr>
                     )}
                   </tbody>
@@ -2057,7 +2138,10 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
             <div>
               <h3 className="text-[11px] font-black text-slate-600 uppercase tracking-widest border-l-4 border-slate-400 pl-3 mb-4">Tests Especiales</h3>
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                {(['Lasègue','Bragard','FABER','Thomas','Ober','Neer','Hawkins','Romberg','Trendelenburg','Apley'] as string[]).map(test => {
+                {/* Igual que en ROM: los tests que el profesional escogió del
+                    catálogo (Lachman, McMurray, Slump…) o añadió a mano no salían
+                    en la comparación por estar la lista escrita a mano. */}
+                {testDefs.map(test => {
                   const t1 = kiData.initial.tests[test];
                   const t2 = kiData.final.tests[test];
                   const chip = (val: string | undefined) => {
@@ -2787,7 +2871,7 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
                   <span className="material-icons-round text-base">save_alt</span> GUARDAR EN FICHA
                 </button>
                 <button
-                  onClick={() => loggedPro && exportReportToPDF(reportContent, { ...safePatient, ...personalData } as Patient, loggedPro)}
+                  onClick={() => descargarInformeIA(reportContent)}
                   className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl"
                 >
                   <span className="material-icons-round text-base">picture_as_pdf</span> DESCARGAR PDF
