@@ -1922,9 +1922,30 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
                 <h2 className="text-xs font-black uppercase tracking-[0.06em] text-slate-700 border-l-4 border-primary pl-4">Análisis Biomecánico</h2>
                 <p className="text-xs font-bold text-primary uppercase mt-2 tracking-widest pl-5">Medición de ángulos sobre la foto · Lectura con IA</p>
               </div>
-              <div className="flex bg-slate-50/80 shadow-inner border border-slate-200 p-2 rounded-2xl no-print">
-                {(['Postural', 'Marcha', 'Musculoesquelético'] as const).map(t => (
-                  <button key={t} onClick={() => setAnalysisType(t)} className={`px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-[0.04em] transition-all ${analysisType === t ? 'bg-white shadow-sm border border-slate-100 text-primary scale-105' : 'text-slate-500 hover:text-slate-600'}`}>{t}</button>
+              {/* En móvil los tres tipos no cabían en una fila: "Musculoesquelético"
+                  se salía del contenedor y el tercero quedaba cortado, así que no
+                  se veía que hubiera tres opciones. Ahora el grupo ocupa todo el
+                  ancho, se reparte en tres partes iguales y la etiqueta larga se
+                  abrevia solo en pantalla pequeña. */}
+              <div className="w-full lg:w-auto grid grid-cols-3 lg:flex bg-slate-50/80 shadow-inner border border-slate-200 p-1.5 lg:p-2 rounded-2xl no-print">
+                {([
+                  ['Postural', 'Postural'],
+                  ['Marcha', 'Marcha'],
+                  ['Musculoesquelético', 'Músculo-esq.'],
+                ] as const).map(([t, corto]) => (
+                  <button
+                    key={t}
+                    onClick={() => setAnalysisType(t)}
+                    aria-pressed={analysisType === t}
+                    className={`px-2 py-2.5 lg:px-6 lg:py-3 rounded-xl text-[10px] lg:text-[11px] font-black uppercase tracking-tight lg:tracking-[0.04em] transition-colors ${
+                      analysisType === t
+                        ? 'bg-white shadow-sm border border-slate-100 text-primary'
+                        : 'text-slate-500 hover:text-slate-600'
+                    }`}
+                  >
+                    <span className="lg:hidden">{corto}</span>
+                    <span className="hidden lg:inline">{t}</span>
+                  </button>
                 ))}
               </div>
             </div>
