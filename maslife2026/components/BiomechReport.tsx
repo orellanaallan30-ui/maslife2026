@@ -3,13 +3,18 @@ import React, { useState } from 'react';
 // ── Tipos del informe estructurado que entrega la IA ──────────────────────────
 export interface BiomechMetric {
   nombre: string;
-  valor: number;
-  unidad: string;              // 'cm' | '°' | '%'
-  rango_normal: [number, number];
-  umbral_riesgo: number;
+  /** Lo observado, en palabras. Sustituye a valor/unidad/rango/umbral. */
+  hallazgo?: string;
   severidad: 'normal' | 'atencion' | 'riesgo';
   zona?: string;
   comentario?: string;
+  // Campos del esquema anterior. Se conservan OPCIONALES solo para no romper los
+  // informes ya guardados en specialty_data de pacientes existentes; no se piden
+  // al modelo ni se muestran como medición.
+  valor?: number;
+  unidad?: string;
+  rango_normal?: [number, number];
+  umbral_riesgo?: number;
 }
 export interface BiomechSimetria {
   zona: string;
@@ -58,31 +63,15 @@ const SEV_LABEL = { normal: 'Normal', atencion: 'Atención', riesgo: 'Riesgo' } 
 
 const TABS = ['POSTURA', 'SIMETRÍAS', 'ROM', 'ANTROPOMETRÍA', 'CONCLUSIÓN'] as const;
 
-// Medidor horizontal normal→atención→riesgo con marcador (estilo OUTBODY)
-const Gauge: React.FC<{ m: BiomechMetric }> = ({ m }) => {
-  const lo = m.rango_normal?.[0] ?? 0;
-  const hiNormal = m.rango_normal?.[1] ?? 1;
-  const risk = m.umbral_riesgo > hiNormal ? m.umbral_riesgo : hiNormal * 2 || 4;
-  const max = risk * 1.25;
-  const pct = (v: number) => Math.min(100, Math.max(0, ((v - lo) / (max - lo)) * 100));
-  return (
-    <div className="mt-3">
-      <div className="relative h-2 rounded-full overflow-hidden" style={{
-        background: `linear-gradient(90deg, #34d399 0%, #34d399 ${pct(hiNormal)}%, #fbbf24 ${pct(hiNormal)}%, #fbbf24 ${pct(risk)}%, #fb7185 ${pct(risk)}%, #fb7185 100%)`,
-        opacity: 0.85,
-      }}>
-        <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white border-2 border-slate-900 shadow"
-          style={{ left: `calc(${pct(m.valor)}% - 6px)` }} />
-      </div>
-      <div className="flex justify-between text-[11px] font-bold text-slate-500 mt-1">
-        <span>Normal</span>
-        <span>{hiNormal}{m.unidad}</span>
-        <span>{risk}{m.unidad}</span>
-        <span>Riesgo</span>
-      </div>
-    </div>
-  );
-};
+// Aquí había un medidor con escala normal→atención→riesgo y un marcador situado
+// en el valor numérico devuelto por el modelo. Ese número no procedía de ninguna
+// medición: la IA lo estimaba mirando una foto sin calibración, sin escala de
+// referencia y sin marcadores anatómicos. Presentarlo con umbrales y unidades
+// hacía creer que había un instrumento detrás.
+//
+// Los medidores se mantienen donde los números son reales —la pestaña de ROM,
+// que se alimenta de lo que el profesional midió con goniómetro—, y aquí se
+// muestra lo observado con su nivel de alerta.
 
 const BiomechReport: React.FC<Props> = ({ report, images, patientName, rom, romDefs, anthro, imc, discrep, onClose }) => {
   const [tab, setTab] = useState<typeof TABS[number]>('POSTURA');
@@ -168,9 +157,14 @@ const BiomechReport: React.FC<Props> = ({ report, images, patientName, rom, romD
                     backgroundImage: 'linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px)',
                     backgroundSize: '10% 10%',
                   }} />
-                  <div className="absolute inset-y-0 left-1/2 w-px bg-red-500/70 pointer-events-none" />
-                  <div className="absolute inset-x-0 top-1/2 h-px bg-red-500/70 pointer-events-none" />
+                  {/* Aquí había una cruz roja fija al 50% del contenedor que
+                      parecía una plomada. No se alineaba con el paciente ni con
+                      ningún punto anatómico: caía donde cayera el encuadre. Un eje
+                      que aparenta medir y no mide es peor que no tener ninguno. */}
                 </div>
+                <p className="text-[11px] text-slate-500 mt-2 text-center">
+                  La cuadrícula es una ayuda visual sin calibrar: no permite medir distancias ni ángulos.
+                </p>
                 {validImages.length > 1 && (
                   <div className="flex gap-2 mt-3 biomech-no-print">
                     {validImages.map((_, i) => (
@@ -191,17 +185,20 @@ const BiomechReport: React.FC<Props> = ({ report, images, patientName, rom, romD
                       <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">{m.zona || 'Postura'}</p>
                       <h4 className="text-sm font-black text-white mt-0.5">{m.nombre}</h4>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-3xl font-black" style={{ color: SEV_COLOR[m.severidad] || '#fff' }}>{m.valor}</span>
-                      <span className="text-sm font-bold text-slate-400 ml-0.5">{m.unidad}</span>
-                    </div>
+                    <span className="shrink-0 text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+                      style={{ color: SEV_COLOR[m.severidad], background: `${SEV_COLOR[m.severidad]}18` }}>
+                      {SEV_LABEL[m.severidad] || m.severidad}
+                    </span>
                   </div>
-                  <Gauge m={m} />
-                  {m.comentario && <p className="text-xs text-slate-400 leading-relaxed mt-3">{m.comentario}</p>}
-                  <span className="inline-block mt-3 text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded-full"
-                    style={{ color: SEV_COLOR[m.severidad], background: `${SEV_COLOR[m.severidad]}18` }}>
-                    {SEV_LABEL[m.severidad] || m.severidad}
-                  </span>
+                  {/* El hallazgo descrito ocupa el lugar de la cifra inventada. Los
+                      informes guardados con el esquema antiguo traen `valor`; se
+                      muestra como estimación visual, nunca como medición. */}
+                  {(m.hallazgo || m.valor !== undefined) && (
+                    <p className="text-sm font-bold text-white leading-snug mt-3">
+                      {m.hallazgo || `Estimación visual: ${m.valor}${m.unidad || ''}`}
+                    </p>
+                  )}
+                  {m.comentario && <p className="text-xs text-slate-400 leading-relaxed mt-2">{m.comentario}</p>}
                 </div>
               ))}
               {(report.metricas || []).length === 0 && (

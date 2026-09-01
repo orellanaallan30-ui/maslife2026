@@ -53,7 +53,11 @@ export async function askClaudeWithImages(
   systemPrompt?: string,
   maxTokens?: number
 ): Promise<string> {
-  const imageBlocks = images.map(img => {
+  // Los huecos se descartan ANTES de mapear. Cargar una foto solo en el tercer
+  // hueco dejaba un array disperso; `.map` conserva los huecos, el spread los
+  // vuelve `undefined` y JSON.stringify los serializa como `null`, con lo que la
+  // API respondía 400 y el error se atribuía a una clave mal configurada.
+  const imageBlocks = images.filter(img => typeof img === 'string' && img.length > 0).map(img => {
     if (img.startsWith('http')) {
       return { type: 'image', source: { type: 'url', url: img } };
     }
