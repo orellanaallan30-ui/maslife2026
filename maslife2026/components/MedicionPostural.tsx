@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { detectarPuntos } from '../lib/detectorPose';
 import {
   medicionesFrontales, medicionesSagitales, evaluarCalidad, anguloEn,
+  longitudTronco, razonNormalizada, interpretarCharpy,
   type Medicion, type Punto, type AvisoCalidad,
 } from '../lib/biomecanica';
 
@@ -22,12 +23,14 @@ interface Props {
   plano: 'frontal' | 'sagital';
   /** Se llama al medir para que la ficha lo guarde. */
   onMediciones?: (m: Medicion[]) => void;
+  /** Diámetro torácico capturado, ya normalizado por la longitud del tronco. */
+  onDiametroTorax?: (cual: 'transverso' | 'ap', razon: number) => void;
 }
 
 const COLOR_SEV = { normal: '#10b981', atencion: '#f59e0b', riesgo: '#f43f5e' } as const;
 const ETIQUETA_SEV = { normal: 'Normal', atencion: 'Atención', riesgo: 'Revisar' } as const;
 
-const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones }) => {
+const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiametroTorax }) => {
   const [estado, setEstado] = useState<'inicial' | 'midiendo' | 'listo' | 'error'>('inicial');
   const [error, setError] = useState('');
   const [mediciones, setMediciones] = useState<Medicion[]>([]);
@@ -37,7 +40,11 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones }) => {
 
   // Goniómetro manual: tres clics sobre la foto.
   const [modoGoniometro, setModoGoniometro] = useState(false);
+  const [modoManual, setModoManual] = useState<'angulo' | 'distancia'>('angulo');
   const [puntosManuales, setPuntosManuales] = useState<Punto[]>([]);
+  // Referencia de la propia foto para poder dar distancias como razón: sola, una
+  // distancia en píxeles no significa nada.
+  const [tronco, setTronco] = useState<number | null>(null);
 
   const lienzo = useRef<HTMLCanvasElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -54,6 +61,7 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones }) => {
       }
       const cal = evaluarCalidad(r.puntos, plano);
       setCalidad(cal);
+      setTronco(longitudTronco(r.puntos));
       setDimensiones({ ancho: r.ancho, alto: r.alto });
 
       // Con la captura inválida no se muestran cifras. Una medición precisa
@@ -153,11 +161,13 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones }) => {
         ctx.arc(p.x, p.y, radio, 0, Math.PI * 2);
         ctx.fill();
       });
-      if (puntosManuales.length === 3) {
-        const ang = anguloEn(puntosManuales[0], puntosManuales[1], puntosManuales[2]);
-        const texto = `${Math.round(ang * 10) / 10}°`;
+      if (puntosManuales.length === (modoManual === 'angulo' ? 3 : 2)) {
+        const razon = tronco ? razonNormalizada(puntosManuales[0], puntosManuales[1], tronco) : null;
+        const texto = modoManual === 'angulo'
+          ? `${Math.round(anguloEn(puntosManuales[0], puntosManuales[1], puntosManuales[2]) * 10) / 10}°`
+          : razon !== null ? `${razon.toFixed(2)} × tronco` : 'sin referencia';
         ctx.font = `bold ${Math.round(26 * escala)}px system-ui, sans-serif`;
-        const v = puntosManuales[1];
+        const v = puntosManuales[modoManual === 'angulo' ? 1 : 0];
         const ancho = ctx.measureText(texto).width;
         ctx.fillStyle = '#0f172a';
         ctx.fillRect(v.x + 12 * escala, v.y - 20 * escala, ancho + 16 * escala, 30 * escala);
@@ -165,7 +175,7 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones }) => {
         ctx.fillText(texto, v.x + 20 * escala, v.y + 2 * escala);
       }
     }
-  }, [mediciones, seleccionada, dimensiones, puntosManuales, modoGoniometro]);
+  }, [mediciones, seleccionada, dimensiones, puntosManuales, modoGoniometro, modoManual, tronco]);
 
   const clicEnImagen = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!modoGoniometro || !dimensiones) return;
@@ -174,12 +184,17 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones }) => {
     // De coordenadas de pantalla a coordenadas de la imagen original.
     const x = ((e.clientX - caja.left) / caja.width) * dimensiones.ancho;
     const y = ((e.clientY - caja.top) / caja.height) * dimensiones.alto;
-    setPuntosManuales(prev => (prev.length >= 3 ? [{ x, y }] : [...prev, { x, y }]));
+    const tope = modoManual === 'angulo' ? 3 : 2;
+    setPuntosManuales(prev => (prev.length >= tope ? [{ x, y }] : [...prev, { x, y }]));
   };
 
-  const anguloManual = puntosManuales.length === 3
+  const anguloManual = modoManual === 'angulo' && puntosManuales.length === 3
     ? Math.round(anguloEn(puntosManuales[0], puntosManuales[1], puntosManuales[2]) * 10) / 10
     : null;
+  const razonManual = modoManual === 'distancia' && puntosManuales.length === 2 && tronco
+    ? razonNormalizada(puntosManuales[0], puntosManuales[1], tronco)
+    : null;
+  const charpy = anguloManual !== null ? interpretarCharpy(anguloManual) : null;
 
   return (
     <div className="space-y-4">
@@ -217,16 +232,57 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones }) => {
       </div>
 
       {modoGoniometro && (
-        <div className="rounded-2xl bg-sky-50 border border-sky-200 px-4 py-3">
+        <div className="rounded-2xl bg-sky-50 border border-sky-200 px-4 py-3 space-y-2">
+          <div className="flex gap-1.5">
+            {(['angulo', 'distancia'] as const).map(m => (
+              <button key={m} type="button"
+                onClick={() => { setModoManual(m); setPuntosManuales([]); }}
+                className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${
+                  modoManual === m ? 'bg-sky-600 text-white' : 'bg-white text-sky-700 border border-sky-200'
+                }`}>{m === 'angulo' ? 'Ángulo (3 puntos)' : 'Distancia (2 puntos)'}</button>
+            ))}
+          </div>
+
           <p className="text-xs font-bold text-sky-900">
-            {puntosManuales.length === 0 && 'Marca el primer extremo del ángulo.'}
-            {puntosManuales.length === 1 && 'Marca el vértice del ángulo.'}
-            {puntosManuales.length === 2 && 'Marca el segundo extremo.'}
-            {anguloManual !== null && `Ángulo medido: ${anguloManual}°`}
+            {modoManual === 'angulo' ? (<>
+              {puntosManuales.length === 0 && 'Marca el primer extremo del ángulo.'}
+              {puntosManuales.length === 1 && 'Marca el vértice del ángulo.'}
+              {puntosManuales.length === 2 && 'Marca el segundo extremo.'}
+              {anguloManual !== null && `Ángulo medido: ${anguloManual}°`}
+            </>) : (<>
+              {puntosManuales.length < 2 && 'Marca los dos extremos de la distancia.'}
+              {razonManual !== null && `Distancia: ${razonManual.toFixed(2)} veces la longitud del tronco`}
+              {puntosManuales.length === 2 && razonManual === null && 'Ejecuta primero "Medir ángulos": hace falta el tronco como referencia.'}
+            </>)}
           </p>
-          <p className="text-[11px] text-sky-700 mt-1">
-            Sirve sobre cualquier fotografía —test de Adams, un pie, un detalle— porque los puntos los pones tú.
-            Es un ángulo en el plano de la imagen: si el paciente está girado respecto a la cámara, no equivale al ángulo anatómico.
+
+          {/* El ángulo de Charpy es la aplicación directa del goniómetro al tórax:
+              se marcan los dos rebordes costales y el xifoides. */}
+          {charpy && anguloManual !== null && anguloManual > 30 && anguloManual < 160 && (
+            <p className="text-[11px] text-sky-800">
+              Si acabas de medir el ángulo infraesternal (de Charpy): {charpy.etiqueta.toLowerCase()}. Referencia habitual 70°-90°.
+            </p>
+          )}
+
+          {razonManual !== null && onDiametroTorax && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-[11px] font-bold text-sky-800 w-full">Guardar este diámetro para el índice torácico:</span>
+              <button type="button" onClick={() => onDiametroTorax('transverso', razonManual)}
+                className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white text-sky-700 border border-sky-300">
+                Transverso (foto frontal)
+              </button>
+              <button type="button" onClick={() => onDiametroTorax('ap', razonManual)}
+                className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white text-sky-700 border border-sky-300">
+                Anteroposterior (foto lateral)
+              </button>
+            </div>
+          )}
+
+          <p className="text-[11px] text-sky-700">
+            Sirve sobre cualquier fotografía —test de Adams, un pie, una huella plantar— porque los puntos los pones tú.
+            Las distancias van como razón respecto al tronco del propio paciente, nunca en centímetros: sin un objeto de
+            referencia en la escena no hay escala. Y son medidas en el plano de la imagen: si el paciente está girado, no
+            equivalen a la medida anatómica.
           </p>
         </div>
       )}

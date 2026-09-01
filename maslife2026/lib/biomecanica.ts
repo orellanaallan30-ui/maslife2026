@@ -95,6 +95,90 @@ export function asimetriaRelativa(izq: Punto, der: Punto, referencia: number): n
   return ((der.y - izq.y) / referencia) * 100;
 }
 
+// ── Distancias relativas y tipo de tórax ────────────────────────────────────
+//
+// Una distancia en píxeles no dice nada por sí sola. Pero el COCIENTE entre dos
+// distancias medidas en la MISMA fotografía sí: la escala desconocida aparece
+// arriba y abajo y se cancela.
+//
+// De ahí sale el índice torácico. El diámetro anteroposterior solo se ve de
+// perfil y el transverso solo de frente, así que están en fotos distintas y no
+// se pueden dividir directamente. La salida es normalizar cada uno por la
+// longitud del tronco medida en su propia foto: es la misma distancia anatómica
+// en ambas, así que al dividir las dos razones se cancela y queda AP/transverso.
+
+/** Longitud del tronco: punto medio de hombros a punto medio de caderas. */
+export function longitudTronco(pts: Punto[]): number | null {
+  const hIzq = pts[PUNTO.hombroIzq], hDer = pts[PUNTO.hombroDer];
+  const cIzq = pts[PUNTO.caderaIzq], cDer = pts[PUNTO.caderaDer];
+  if (!hIzq || !hDer || !cIzq || !cDer) return null;
+  const d = distancia(medio(hIzq, hDer), medio(cIzq, cDer));
+  return d > 0 ? d : null;
+}
+
+/** Distancia entre dos puntos como razón de una referencia de la misma foto. */
+export function razonNormalizada(a: Punto, b: Punto, referencia: number | null): number | null {
+  if (!referencia) return null;
+  return distancia(a, b) / referencia;
+}
+
+export type TipoTorax = 'normal' | 'tonel' | 'plano' | 'indeterminado';
+
+export interface EstimacionTorax {
+  indice: number;
+  tipo: TipoTorax;
+  etiqueta: string;
+  severidad: Severidad;
+  nota: string;
+}
+
+/**
+ * Índice torácico estimado = diámetro anteroposterior / diámetro transverso.
+ *
+ * @param apRelativo   AP dividido por la longitud del tronco, en la foto lateral
+ * @param transRelativo transverso dividido por la longitud del tronco, en la frontal
+ *
+ * Referencia clínica: en torno a 0,70-0,75 en el adulto normal; próximo a 1
+ * sugiere tórax en tonel. Esos valores provienen de medición con compás sobre el
+ * paciente, no de fotografías, así que esto es una ESTIMACIÓN orientativa.
+ */
+export function indiceToracico(apRelativo: number, transRelativo: number): EstimacionTorax | null {
+  if (!transRelativo || apRelativo <= 0) return null;
+  const indice = Math.round((apRelativo / transRelativo) * 100) / 100;
+
+  let tipo: TipoTorax = 'indeterminado';
+  let etiqueta = 'Fuera de los rangos habituales';
+  let sev: Severidad = 'atencion';
+
+  if (indice >= 0.9) {
+    tipo = 'tonel'; etiqueta = 'Compatible con tórax en tonel'; sev = 'riesgo';
+  } else if (indice >= 0.8) {
+    tipo = 'indeterminado'; etiqueta = 'Diámetro anteroposterior aumentado'; sev = 'atencion';
+  } else if (indice >= 0.62) {
+    tipo = 'normal'; etiqueta = 'Proporción dentro de lo esperable'; sev = 'normal';
+  } else if (indice >= 0.5) {
+    tipo = 'plano'; etiqueta = 'Tórax aplanado en sentido anteroposterior'; sev = 'atencion';
+  } else {
+    tipo = 'plano'; etiqueta = 'Aplanamiento anteroposterior marcado'; sev = 'riesgo';
+  }
+
+  return {
+    indice, tipo, etiqueta, severidad: sev,
+    nota: 'Estimación fotográfica. El índice de referencia se mide con compás sobre el paciente; el pectus excavatum y el carinatum se valoran por inspección y no por esta proporción.',
+  };
+}
+
+/**
+ * Ángulo de Charpy (infraesternal), entre los rebordes costales bajo el
+ * apéndice xifoides. Es un ángulo, así que se mide bien sobre una foto frontal
+ * marcando los tres puntos a mano. Referencia habitual: 70°-90°.
+ */
+export function interpretarCharpy(angulo: number): { etiqueta: string; severidad: Severidad } {
+  if (angulo < 70) return { etiqueta: 'Ángulo cerrado: hábito longilíneo o tórax estrecho', severidad: 'atencion' };
+  if (angulo > 90) return { etiqueta: 'Ángulo abierto: hábito brevilíneo o tórax insuflado', severidad: 'atencion' };
+  return { etiqueta: 'Ángulo dentro del rango habitual', severidad: 'normal' };
+}
+
 // ── Umbrales ────────────────────────────────────────────────────────────────
 // No son puntos de corte diagnósticos: son el umbral a partir del cual conviene
 // que el profesional lo mire. La decisión clínica es suya.

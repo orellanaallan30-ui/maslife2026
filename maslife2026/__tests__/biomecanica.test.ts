@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   PUNTO, anguloEn, inclinacionHorizontal, desviacionVertical, asimetriaRelativa,
   medicionesFrontales, medicionesSagitales, analizarSentadilla, evaluarCalidad,
-  severidad, UMBRALES, type Punto,
+  severidad, UMBRALES, indiceToracico, interpretarCharpy, razonNormalizada,
+  longitudTronco, type Punto,
 } from '../lib/biomecanica';
 
 // Tests de las mediciones angulares sobre fotografías.
@@ -252,6 +253,69 @@ describe('calidad de la captura', () => {
     const r = evaluarCalidad(p, 'frontal');
     expect(r.nivel).toBe('aviso');
     expect(r.mensajes.join(' ')).toMatch(/girado/);
+  });
+});
+
+describe('índice torácico', () => {
+  it('cancela la escala: la misma persona fotografiada más cerca da el mismo índice', () => {
+    // Es la afirmación que sostiene todo el método. El diámetro anteroposterior
+    // solo se ve de perfil y el transverso de frente, así que están en fotos
+    // distintas y con escalas distintas. Normalizando cada uno por la longitud
+    // del tronco de SU propia foto, la escala desaparece al dividir.
+    const cerca = { ap: 180, tronco: 250 };        // foto lateral, sujeto cerca
+    const lejos = { trans: 120, tronco: 167 };     // foto frontal, sujeto lejos
+    const i1 = indiceToracico(cerca.ap / cerca.tronco, lejos.trans / lejos.tronco)!;
+
+    // Ahora la MISMA persona con ambas fotos al doble de tamaño.
+    const i2 = indiceToracico((cerca.ap * 2) / (cerca.tronco * 2), (lejos.trans * 3) / (lejos.tronco * 3))!;
+    expect(i2.indice).toBe(i1.indice);
+  });
+
+  it('reconoce una proporción normal', () => {
+    const r = indiceToracico(0.70, 1.0)!;
+    expect(r.tipo).toBe('normal');
+    expect(r.severidad).toBe('normal');
+  });
+
+  it('marca el tórax en tonel cuando el AP se acerca al transverso', () => {
+    const r = indiceToracico(0.95, 1.0)!;
+    expect(r.tipo).toBe('tonel');
+    expect(r.severidad).toBe('riesgo');
+    expect(r.etiqueta).toMatch(/tonel/i);
+  });
+
+  it('marca el aplanamiento anteroposterior', () => {
+    expect(indiceToracico(0.55, 1.0)!.tipo).toBe('plano');
+  });
+
+  it('advierte de que es una estimación fotográfica, no una medición con compás', () => {
+    const r = indiceToracico(0.7, 1.0)!;
+    expect(r.nota).toMatch(/compás/i);
+    // Y que esta proporción no sirve para excavatum ni carinatum.
+    expect(r.nota).toMatch(/excavatum|carinatum/i);
+  });
+
+  it('devuelve null si falta el diámetro transverso, en vez de dividir por cero', () => {
+    expect(indiceToracico(0.7, 0)).toBeNull();
+  });
+
+  it('normaliza una distancia contra una referencia de la misma foto', () => {
+    expect(razonNormalizada({ x: 0, y: 0 }, { x: 30, y: 40 }, 100)).toBeCloseTo(0.5, 5);
+    expect(razonNormalizada({ x: 0, y: 0 }, { x: 3, y: 4 }, null)).toBeNull();
+  });
+
+  it('mide la longitud del tronco entre los puntos medios de hombros y caderas', () => {
+    expect(longitudTronco(cuerpoNeutro())).toBeCloseTo(200, 1);
+    expect(longitudTronco([])).toBeNull();
+  });
+});
+
+describe('ángulo de Charpy', () => {
+  it('clasifica cerrado, normal y abierto', () => {
+    expect(interpretarCharpy(60).severidad).toBe('atencion');
+    expect(interpretarCharpy(60).etiqueta).toMatch(/longilíneo|estrecho/i);
+    expect(interpretarCharpy(80).severidad).toBe('normal');
+    expect(interpretarCharpy(100).etiqueta).toMatch(/brevilíneo|insuflado/i);
   });
 });
 
