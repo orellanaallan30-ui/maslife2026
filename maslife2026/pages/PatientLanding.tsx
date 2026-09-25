@@ -231,7 +231,7 @@ const PatientLanding: React.FC = () => {
                </button>
              </div>
              
-             <form onSubmit={handleWhatsApp} className="p-8 sm:p-10 flex flex-col gap-6 overflow-y-auto custom-scrollbar max-h-[70vh]">
+             <form onSubmit={handleWhatsApp} className="p-8 sm:p-10 flex flex-col gap-6 overflow-y-auto custom-scrollbar max-h-[70dvh]">
                <div className="space-y-2">
                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Completo</label>
                  <input required value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all" placeholder="Ej: Juan Pérez" />

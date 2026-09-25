@@ -230,7 +230,7 @@ const ProfessionalDashboard: React.FC = () => {
       {/* Bienvenida — solo primer ingreso */}
       {showWelcome && (
         <div className="absolute inset-0 z-[210] bg-[#0B1736]/70 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-md rounded-3xl p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white w-full max-w-md rounded-3xl p-7 shadow-2xl max-h-[90dvh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{background:'#00B3A415'}}>
                 <span className="material-icons-round" style={{color:'#00B3A4'}}>waving_hand</span>

@@ -711,7 +711,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
 
       {showPicker && (
         <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 no-print" onClick={() => setShowPicker(false)}>
-          <div className="bg-white w-full max-w-2xl max-h-[85vh] rounded-blob-lg shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="bg-white w-full max-w-2xl max-h-[85dvh] rounded-blob-lg shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="p-5 border-b border-slate-100 flex items-center justify-between gap-3">
               <h3 className="font-black text-slate-800">Buscar Ejercicio</h3>
               <button onClick={() => setShowPicker(false)} aria-label="Cerrar" className="text-slate-400 hover:text-rose-500">
