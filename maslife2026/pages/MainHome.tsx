@@ -143,7 +143,7 @@ const MainHome: React.FC = () => {
 
     // Manifesto word-by-word scroll reveal
     if (manifestoRef.current) {
-      gsap.to(manifestoRef.current.querySelectorAll('.word-reveal'), {
+      gsap.fromTo(manifestoRef.current.querySelectorAll('.word-reveal'), { opacity: 0.15 }, {
         opacity: 1,
         stagger: 0.035,
         scrollTrigger: {
@@ -391,7 +391,7 @@ const MainHome: React.FC = () => {
   }, []);
 
   return (
-    <div id="main-home-scroll" className="landing-page w-full h-full overflow-y-auto font-outfit scroll-smooth relative" style={{ background: '#ffffff', color: '#0f172a' }}>
+    <div id="main-home-scroll" className="landing-page w-full h-full overflow-y-auto font-sans scroll-smooth relative" style={{ background: '#ffffff', color: '#0f172a' }}>
 
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav
@@ -511,7 +511,7 @@ const MainHome: React.FC = () => {
             {/* Columna izquierda — texto */}
             <div className="max-w-xl lg:max-w-2xl relative z-10">
               {/* ── RESPONSIVE: badge — base=mobile  lg:=desktop ── */}
-              <span className="inline-block text-[.6rem] lg:text-xs font-outfit font-bold uppercase tracking-[.5px] mb-7 px-3 py-1 rounded-full text-white"
+              <span className="inline-block text-[.6rem] lg:text-xs font-sans font-bold uppercase tracking-[.5px] mb-7 px-3 py-1 rounded-full text-white"
                     style={{ background: '#007a73' }}>
                 Profesionales de salud cerca de ti
               </span>
@@ -521,16 +521,13 @@ const MainHome: React.FC = () => {
                 {/* ── RESPONSIVE: título — mobile escala agresivo con vw angosto, desktop empieza desde 4rem ── */}
                 <div className="font-display text-[clamp(2.9rem,10vw,5.5rem)] lg:text-[clamp(4rem,6vw,7.5rem)] leading-[.96] tracking-tight" style={{ color: '#0f172a' }}>
                   {[
-                    { text: 'Tu salud,', italic: false },
-                    { text: 'en buenas', italic: false },
-                    { text: 'manos.', italic: true },
+                    { text: 'Tu salud,' },
+                    { text: 'en buenas' },
+                    { text: 'manos.' },
                   ].map((line, li) => (
                     <div key={li} className="overflow-hidden">
                       <span className="hero-word inline-block">
-                        {line.italic
-                          ? <><em style={{ color: '#007a73', fontStyle: 'italic' }}>manos.</em></>
-                          : line.text
-                        }
+                        {line.text}
                       </span>
                     </div>
                   ))}
@@ -538,7 +535,7 @@ const MainHome: React.FC = () => {
               </div>
 
               {/* ── RESPONSIVE: subtítulo — base=mobile sm:intermedio lg:desktop ── */}
-              <p className="font-outfit font-light text-base sm:text-lg lg:text-xl max-w-lg leading-relaxed mb-10" style={{ color: '#475569' }}>
+              <p className="font-sans font-light text-base sm:text-lg lg:text-xl max-w-lg leading-relaxed mb-10" style={{ color: '#475569' }}>
                 Kinesiología, psicología, nutrición y más — con profesionales verificados en{' '}
                 <strong className="font-semibold" style={{ color: '#0f172a' }}>Ovalle, Coquimbo y La Serena</strong>.
               </p>
@@ -547,14 +544,14 @@ const MainHome: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   onClick={() => navigate('/patient/results')}
-                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-outfit font-semibold transition-all duration-300 hover:-translate-y-1"
+                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-sans font-semibold transition-all duration-300 hover:-translate-y-1"
                   style={{ background: '#007a73', color: '#fff', boxShadow: '0 1px 2px rgba(15,23,42,.08)' }}>
                   Buscar especialista
                   <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">search</span>
                 </button>
                 <button
                   onClick={() => setIsGeneralFormOpen(true)}
-                  className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-outfit font-semibold border transition-all duration-300 hover:-translate-y-1"
+                  className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-sans font-semibold border transition-all duration-300 hover:-translate-y-1"
                   style={{
                     background: 'rgba(0,168,158,.07)',
                     color: '#007a73',
@@ -612,8 +609,8 @@ const MainHome: React.FC = () => {
             { num: '3', label: 'Ciudades + Online' },
           ].map((stat, i) => (
             <div key={i} data-reveal={`stat-${i}`} className={`text-center ${rv(`stat-${i}`)}`} style={{ transitionDelay: `${i * 100}ms` }}>
-              <p className="font-display font-light text-2xl lg:text-4xl tracking-tight text-white">{stat.num}</p>
-              <p className="font-outfit text-[.72rem] uppercase tracking-[0.04em] mt-1" style={{ color: 'rgba(201,236,232,.85)' }}>{stat.label}</p>
+              <p className="font-display font-normal text-2xl lg:text-4xl tracking-tight text-white">{stat.num}</p>
+              <p className="font-sans text-[.72rem] uppercase tracking-[0.04em] mt-1" style={{ color: 'rgba(201,236,232,.85)' }}>{stat.label}</p>
             </div>
           ))}
         </div>
@@ -637,7 +634,7 @@ const MainHome: React.FC = () => {
             {/* Texto manifesto */}
             <div
               ref={manifestoRef}
-              className="font-display font-light leading-[1.3]"
+              className="font-display font-normal leading-[1.3]"
               style={{ fontSize: 'clamp(1.65rem,4.2vw,3.2rem)', letterSpacing: '-.4px', color: '#0f172a' }}
             >
               {"Agenda Maslife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
@@ -653,11 +650,11 @@ const MainHome: React.FC = () => {
       <section id="como-funciona" className="px-[6vw] py-[7vh] lg:py-[11vh]" style={{ background: '#ffffff' }}>
         <div className="max-w-7xl mx-auto">
           <div className="max-w-xl mb-[6vh]">
-            <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Proceso simple</p>
-            <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#0f172a' }}>
-              Menos administración.<br /><em style={{ color: '#00a89e', fontStyle: 'italic' }}>Más presencia.</em>
+            <p className="font-sans text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#007a73' }}>Proceso simple</p>
+            <h2 className="font-display font-normal leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#0f172a' }}>
+              Menos administración.<br />Más presencia.
             </h2>
-            <p className="font-outfit font-light text-base mt-5 leading-relaxed" style={{ color: '#475569' }}>
+            <p className="font-sans font-light text-base mt-5 leading-relaxed" style={{ color: '#475569' }}>
               Domicilio · Online · Presencial — en Ovalle, Coquimbo y La Serena.
             </p>
           </div>
@@ -682,9 +679,9 @@ const MainHome: React.FC = () => {
                   style={{ background: '#e3f3f1' }}>
                   <span className="material-icons-round text-xl" style={{ color: '#007a73' }}>{step.icon}</span>
                 </div>
-                <p className="font-outfit text-[.78rem] tracking-[0.04em] uppercase mb-4 font-bold" style={{ color: '#00a89e' }}>{step.step}</p>
-                <h4 className="font-display font-light text-xl mb-3 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h4>
-                <p className="font-outfit font-light text-[.93rem] leading-[1.65]" style={{ color: '#475569' }}>{step.desc}</p>
+                <p className="font-sans text-[.78rem] tracking-[0.04em] uppercase mb-4 font-bold" style={{ color: '#007a73' }}>{step.step}</p>
+                <h4 className="font-display font-normal text-xl mb-3 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h4>
+                <p className="font-sans font-light text-[.93rem] leading-[1.65]" style={{ color: '#475569' }}>{step.desc}</p>
               </div>
             ))}
           </div>
@@ -716,7 +713,7 @@ const MainHome: React.FC = () => {
                 ))}
               </div>
               <button onClick={() => navigate('/charlas')}
-                className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-800 font-black text-sm transition-colors underline underline-offset-2">
+                className="inline-flex items-center gap-2 text-[#007a73] hover:text-[#0f3d3a] font-black text-sm transition-colors underline underline-offset-2">
                 <span className="material-icons-round text-base">arrow_forward</span>
                 Ver todas las charlas disponibles
               </button>
@@ -736,7 +733,7 @@ const MainHome: React.FC = () => {
                 ) : (
                   <div className="flex flex-col gap-4">
                     <div>
-                      <p className="text-xs font-black text-teal-600 uppercase tracking-widest mb-1">Únete a la comunidad</p>
+                      <p className="text-xs font-black text-[#007a73] uppercase tracking-widest mb-1">Únete a la comunidad</p>
                       <h3 className="text-xl font-black text-slate-900 leading-snug">Recibe notificaciones de próximas charlas</h3>
                     </div>
 
@@ -768,7 +765,7 @@ const MainHome: React.FC = () => {
                           </div>
                         )}
                         <button type="submit" disabled={charlaSubmitting}
-                          className="w-full py-3.5 bg-teal-500 text-white rounded-2xl font-black text-sm hover:bg-teal-600 active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
+                          className="w-full py-3.5 bg-[#007a73] text-white rounded-2xl font-black text-sm hover:bg-[#0f3d3a] active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2">
                           {charlaSubmitting ? (
                             <><span className="material-icons-round text-base animate-spin">sync</span>Enviando...</>
                           ) : (
@@ -780,13 +777,13 @@ const MainHome: React.FC = () => {
 
                     {!charlaFormOpen && (
                       <button onClick={() => setCharlaFormOpen(true)}
-                        className="w-full py-3.5 bg-teal-500 text-white rounded-2xl font-black text-sm hover:bg-teal-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25">
+                        className="w-full py-3.5 bg-[#007a73] text-white rounded-2xl font-black text-sm hover:bg-[#0f3d3a] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                         <span className="material-icons-round text-base">notifications</span>
                         Quiero enterarme
                       </button>
                     )}
 
-                    <p className="text-[11px] text-slate-400 text-center">Sin spam · Solo charlas de salud · Puedes darte de baja cuando quieras</p>
+                    <p className="text-[11px] text-slate-500 text-center">Sin spam · Solo charlas de salud · Puedes darte de baja cuando quieras</p>
                   </div>
                 )}
               </div>
@@ -803,9 +800,9 @@ const MainHome: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-4">
             <div>
-              <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-3" style={{ color: '#00a89e' }}>Nuestro equipo</p>
-              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Selecciona un área y agenda</h2>
-              <p className="font-outfit text-sm font-light mt-1" style={{ color: '#475569' }}>con un profesional directamente</p>
+              <p className="font-sans text-[.78rem] uppercase tracking-[0.05em] mb-3" style={{ color: '#007a73' }}>Nuestro equipo</p>
+              <h2 className="font-display font-normal leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Selecciona un área y agenda</h2>
+              <p className="font-sans text-sm font-light mt-1" style={{ color: '#475569' }}>con un profesional directamente</p>
             </div>
             <div className="flex rounded-full p-1 border" style={{ background: 'rgba(255,255,255,.5)', borderColor: 'rgba(15,23,42,.12)' }}>
               <button
@@ -833,9 +830,9 @@ const MainHome: React.FC = () => {
                   <img src={card.img} alt={card.alt || card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4 sm:p-5">
-                  <h4 className="font-display font-light text-sm sm:text-base mb-1 leading-snug" style={{ color: '#0f172a' }}>{card.name}</h4>
-                  <p className="font-outfit text-xs sm:text-sm font-light leading-relaxed mb-3 line-clamp-2" style={{ color: '#475569' }}>{card.desc}</p>
-                  <button className="flex items-center gap-1.5 text-xs font-medium transition-all group-hover:gap-2.5" style={{ color: '#00a89e' }}>
+                  <h4 className="font-display font-normal text-sm sm:text-base mb-1 leading-snug" style={{ color: '#0f172a' }}>{card.name}</h4>
+                  <p className="font-sans text-xs sm:text-sm font-light leading-relaxed mb-3 line-clamp-2" style={{ color: '#475569' }}>{card.desc}</p>
+                  <button className="flex items-center gap-1.5 text-xs font-medium transition-all group-hover:gap-2.5" style={{ color: '#007a73' }}>
                     {card.cta}
                     <span className="material-icons-round text-sm">arrow_forward</span>
                   </button>
@@ -852,11 +849,11 @@ const MainHome: React.FC = () => {
         <section id="kine-plans" className="px-[6vw] py-14 lg:py-28" style={{ background: '#f4f8f7', animation: 'fadeIn .5s ease-out' }}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-14">
-              <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Atención a domicilio</p>
-              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.4rem)', letterSpacing: '-1px', color: '#0f172a' }}>
+              <p className="font-sans text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#007a73' }}>Atención a domicilio</p>
+              <h2 className="font-display font-normal leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.4rem)', letterSpacing: '-1px', color: '#0f172a' }}>
                 Planes Kinesiológicos a Domicilio
               </h2>
-              <p className="font-outfit font-light text-base sm:text-lg max-w-2xl mx-auto mt-4" style={{ color: '#475569' }}>Rehabilitación kinesiológica profesional en casa, reembolsable por seguros e Isapre.</p>
+              <p className="font-sans font-light text-base sm:text-lg max-w-2xl mx-auto mt-4" style={{ color: '#475569' }}>Rehabilitación kinesiológica profesional en casa, reembolsable por seguros e Isapre.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
@@ -879,13 +876,13 @@ const MainHome: React.FC = () => {
                       </div>
                     )}
                     <div className="mb-8">
-                      <h3 className="font-display font-light text-xl mb-3" style={{ color: '#0f172a' }}>{plan.name}</h3>
-                      <p className="font-outfit text-sm font-light" style={{ color: '#475569' }}>{plan.desc}</p>
+                      <h3 className="font-display font-normal text-xl mb-3" style={{ color: '#0f172a' }}>{plan.name}</h3>
+                      <p className="font-sans text-sm font-light" style={{ color: '#475569' }}>{plan.desc}</p>
                     </div>
 
                     <ul className="space-y-3 mb-8 flex-1">
                       {plan.features.map((feat, idx) => (
-                        <li key={idx} className="flex items-center gap-3 font-outfit text-sm" style={{ color: '#475569' }}>
+                        <li key={idx} className="flex items-center gap-3 font-sans text-sm" style={{ color: '#475569' }}>
                           <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,168,158,.15)', color: '#007a73' }}>
                             <span className="material-icons-round text-xs">check</span>
                           </div>
@@ -920,8 +917,8 @@ const MainHome: React.FC = () => {
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div>
-              <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Testimonios reales</p>
-              <h2 className="font-display font-light leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Lo que dicen nuestros pacientes</h2>
+              <p className="font-sans text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#007a73' }}>Testimonios reales</p>
+              <h2 className="font-display font-normal leading-[1.05]" style={{ fontSize: 'clamp(1.8rem,4vw,3rem)', letterSpacing: '-1px', color: '#0f172a' }}>Lo que dicen nuestros pacientes</h2>
             </div>
             <button
               onClick={() => setShowVideoTestimonio(true)}
@@ -931,8 +928,8 @@ const MainHome: React.FC = () => {
                 <span className="material-icons-round text-white text-3xl">play_arrow</span>
               </span>
               <span>
-                <span className="block font-outfit text-sm font-semibold" style={{ color: '#0f172a' }}>Testimonio en video</span>
-                <span className="block font-outfit text-xs" style={{ color: '#475569' }}>Paciente real · ver en Instagram</span>
+                <span className="block font-sans text-sm font-semibold" style={{ color: '#0f172a' }}>Testimonio en video</span>
+                <span className="block font-sans text-xs" style={{ color: '#475569' }}>Paciente real · ver en Instagram</span>
               </span>
             </button>
           </div>
@@ -948,19 +945,19 @@ const MainHome: React.FC = () => {
                   <div key={pageIdx} className="w-full flex-shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-5 px-1">
                     {testimonials.slice(pageIdx * testimonialsPerView, pageIdx * testimonialsPerView + testimonialsPerView).map((t, i) => (
                       <div key={i} className="bg-white rounded-2xl p-6 sm:p-7" style={{ border: '1px solid rgba(15,23,42,.09)' }}>
-                        <div className="flex gap-0.5 mb-4" style={{ color: '#00a89e' }}>
+                        <div className="flex gap-0.5 mb-4" style={{ color: '#007a73' }}>
                           {Array.from({ length: t.stars }).map((_, s) => (
                             <span key={s} className="material-icons-round text-sm">star</span>
                           ))}
                         </div>
-                        <p className="font-outfit font-light text-sm leading-relaxed mb-5 italic line-clamp-4" style={{ color: '#475569' }}>"{t.text}"</p>
+                        <p className="font-sans font-light text-sm leading-relaxed mb-5 italic line-clamp-4" style={{ color: '#475569' }}>"{t.text}"</p>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,168,158,.15)' }}>
-                            <span className="font-bold text-xs" style={{ color: '#007a73' }}>{t.name.charAt(0)}</span>
+                            <span className="font-bold text-xs" style={{ color: '#0f3d3a' }}>{t.name.charAt(0)}</span>
                           </div>
                           <div>
-                            <p className="font-outfit text-sm font-semibold" style={{ color: '#0f172a' }}>{t.name}</p>
-                            <p className="font-outfit text-[11px] font-medium uppercase tracking-wider" style={{ color: '#00a89e' }}>{t.role}</p>
+                            <p className="font-sans text-sm font-semibold" style={{ color: '#0f172a' }}>{t.name}</p>
+                            <p className="font-sans text-[11px] font-medium uppercase tracking-wider" style={{ color: '#007a73' }}>{t.role}</p>
                           </div>
                         </div>
                       </div>
@@ -1006,24 +1003,24 @@ const MainHome: React.FC = () => {
       <section className="px-[6vw] py-16 lg:py-24 relative overflow-hidden"
                style={{ background: '#0f3d3a' }}>
         <div className="max-w-3xl mx-auto text-center relative z-10">
-          <p className="font-outfit text-[.78rem] uppercase tracking-[0.05em] mb-6" style={{ color: 'rgba(201,236,232,.85)' }}>Comienza hoy</p>
-          <h2 className="font-display font-light leading-[1.0] mb-6" style={{ fontSize: 'clamp(2.2rem,6vw,4.5rem)', color: '#ffffff', letterSpacing: '-1.5px' }}>
-            ¿Listo para<br /><em style={{ color: '#c9ece8', fontStyle: 'italic' }}>sentirte mejor?</em>
+          <p className="font-sans text-[.78rem] uppercase tracking-[0.05em] mb-6" style={{ color: 'rgba(201,236,232,.85)' }}>Comienza hoy</p>
+          <h2 className="font-display font-normal leading-[1.0] mb-6" style={{ fontSize: 'clamp(2.2rem,6vw,4.5rem)', color: '#ffffff', letterSpacing: '-1.5px' }}>
+            ¿Listo para<br />sentirte mejor?
           </h2>
-          <p className="font-outfit font-light text-base sm:text-lg max-w-xl mx-auto mb-10" style={{ color: 'rgba(255,255,255,.75)' }}>
+          <p className="font-sans font-light text-base sm:text-lg max-w-xl mx-auto mb-10" style={{ color: 'rgba(255,255,255,.75)' }}>
             Profesionales verificados listos para atenderte. Agenda tu primera consulta hoy.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button
               onClick={() => setIsGeneralFormOpen(true)}
-              className="px-8 py-4 rounded-full font-outfit font-semibold text-sm transition-all hover:-translate-y-1"
+              className="px-8 py-4 rounded-full font-sans font-semibold text-sm transition-all hover:-translate-y-1"
               style={{ background: '#ffffff', color: '#007a73' }}
             >
               Agendar Atención
             </button>
             <button
               onClick={() => navigate('/patient/results')}
-              className="px-8 py-4 rounded-full font-outfit font-semibold text-sm border transition-all hover:-translate-y-1"
+              className="px-8 py-4 rounded-full font-sans font-semibold text-sm border transition-all hover:-translate-y-1"
               style={{ background: 'rgba(255,255,255,.12)', color: '#ffffff', borderColor: 'rgba(255,255,255,.4)' }}
             >
               Explorar Especialistas
@@ -1042,21 +1039,21 @@ const MainHome: React.FC = () => {
               <div className="flex items-center">
                 <img src={logoClinica} alt="Clínica Mas Life" className="h-14 w-auto object-contain" style={{ filter: 'brightness(0) invert(1)', opacity: .85 }} onError={(e) => { (e.target as HTMLImageElement).style.display='none'; }} />
               </div>
-              <p className="font-outfit font-light text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,.55)' }}>
+              <p className="font-sans font-light text-sm leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,.55)' }}>
                 Rediseñando la experiencia de salud a través de la calidez clínica y el compromiso humano.
               </p>
             </div>
 
             {/* Servicios */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Servicios</h4>
+              <h4 className="font-sans text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Servicios</h4>
               <ul className="space-y-3">
                 {[
                   { label: 'Consulta Guiada', action: () => setIsGeneralFormOpen(true) },
                   { label: 'Especialistas', action: () => navigate('/patient/results') },
                   { label: 'Planes', action: handleShowPlans },
                 ].map(({ label, action }) => (
-                  <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
+                  <li key={label} className="font-sans text-sm font-light cursor-pointer transition-colors"
                       style={{ color: 'rgba(255,255,255,.55)' }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ffffff'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,.55)'}
@@ -1067,13 +1064,13 @@ const MainHome: React.FC = () => {
 
             {/* Compañía */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Compañía</h4>
+              <h4 className="font-sans text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Compañía</h4>
               <ul className="space-y-3">
                 {[
                   { label: 'Método Life', action: () => {} },
                   { label: 'Nosotros', action: () => setIsContactFormOpen(true) },
                 ].map(({ label, action }) => (
-                  <li key={label} className="font-outfit text-sm font-light cursor-pointer transition-colors"
+                  <li key={label} className="font-sans text-sm font-light cursor-pointer transition-colors"
                       style={{ color: 'rgba(255,255,255,.55)' }}
                       onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ffffff'}
                       onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,.55)'}
@@ -1081,7 +1078,7 @@ const MainHome: React.FC = () => {
                 ))}
               </ul>
               <button onClick={() => navigate('/pro/login')}
-                className="mt-4 font-outfit text-sm font-semibold px-4 py-2 rounded-full border transition-all"
+                className="mt-4 font-sans text-sm font-semibold px-4 py-2 rounded-full border transition-all"
                 style={{ borderColor: '#00a89e', color: '#00a89e' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#00a89e'; (e.currentTarget as HTMLElement).style.color = '#fff'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#00a89e'; }}>
@@ -1091,11 +1088,11 @@ const MainHome: React.FC = () => {
 
             {/* Legal */}
             <div>
-              <h4 className="font-outfit text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Legal</h4>
+              <h4 className="font-sans text-[.72rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#00a89e' }}>Legal</h4>
               <ul className="space-y-3">
                 {[{ label: 'Privacidad', href: '/privacidad' }, { label: 'Términos', href: '/terminos' }].map(({ label, href }) => (
                   <li key={label}>
-                    <a href={href} className="font-outfit text-sm font-light cursor-pointer transition-colors"
+                    <a href={href} className="font-sans text-sm font-light cursor-pointer transition-colors"
                        style={{ color: 'rgba(255,255,255,.55)', textDecoration: 'none' }}
                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#ffffff'}
                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,.55)'}>{label}</a>
@@ -1106,7 +1103,7 @@ const MainHome: React.FC = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,.1)' }}>
-            <p className="font-outfit text-xs" style={{ color: 'rgba(255,255,255,.35)' }}>© 2026 Clínica Mas Life · Ovalle, Coquimbo y La Serena, Chile</p>
+            <p className="font-sans text-xs" style={{ color: 'rgba(255,255,255,.6)' }}>© 2026 Clínica Mas Life · Ovalle, Coquimbo y La Serena, Chile</p>
             <div className="flex gap-3">
               <a href="https://wa.me/56965329974" target="_blank" rel="noreferrer"
                  className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
@@ -1158,10 +1155,10 @@ const MainHome: React.FC = () => {
                   <span className="material-icons-round text-xl" style={{ color: '#007a73' }}>calendar_month</span>
                 </div>
                 <div>
-                  <h3 className="font-display font-light text-xl sm:text-2xl" style={{ color: '#0f172a' }}>
+                  <h3 className="font-display font-normal text-xl sm:text-2xl" style={{ color: '#0f172a' }}>
                     {showPlanForm.isOpen ? `Solicitud ${showPlanForm.planName}` : 'Agendar Atención'}
                   </h3>
-                  <p className="font-outfit text-xs" style={{ color: '#475569' }}>Completa tus datos para continuar</p>
+                  <p className="font-sans text-xs" style={{ color: '#475569' }}>Completa tus datos para continuar</p>
                 </div>
               </div>
               <button
@@ -1178,20 +1175,20 @@ const MainHome: React.FC = () => {
             <form onSubmit={(e) => handleFormSubmit(e, showPlanForm.isOpen ? showPlanForm.planName : 'Consulta General')} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#00a89e' }}>Nombre</label>
+                  <label className="font-sans text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#007a73' }}>Nombre</label>
                   <input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f8f7', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="Juan Pérez" />
                 </div>
                 <div>
-                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#00a89e' }}>WhatsApp</label>
+                  <label className="font-sans text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#007a73' }}>WhatsApp</label>
                   <input required value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f8f7', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="+56 9..." />
                 </div>
               </div>
               <div>
-                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#00a89e' }}>Email</label>
+                <label className="font-sans text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#007a73' }}>Email</label>
                 <input required type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f8f7', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="correo@ejemplo.com" />
               </div>
               <div>
-                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#00a89e' }}>Condición o Motivo</label>
+                <label className="font-sans text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#007a73' }}>Condición o Motivo</label>
                 <textarea required value={formData.condition} onChange={e => setFormData({ ...formData, condition: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border h-28 resize-none" style={{ background: '#f4f8f7', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="Describe brevemente tu situación..." />
               </div>
               <button type="submit" className="w-full py-4 rounded-2xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"
@@ -1209,7 +1206,7 @@ const MainHome: React.FC = () => {
         <div className="fixed inset-0 bg-slate-950/80 z-[300] flex items-center justify-center p-4 overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) setShowVideoTestimonio(false); }}>
           <div className="bg-white w-full max-w-[400px] rounded-2xl overflow-hidden my-auto">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-              <p className="font-outfit text-sm font-semibold" style={{ color: '#0f172a' }}>Testimonio de un paciente</p>
+              <p className="font-sans text-sm font-semibold" style={{ color: '#0f172a' }}>Testimonio de un paciente</p>
               <button onClick={() => setShowVideoTestimonio(false)} aria-label="Cerrar" className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-100">
                 <span className="material-icons-round text-slate-500">close</span>
               </button>
@@ -1223,7 +1220,7 @@ const MainHome: React.FC = () => {
               allowFullScreen
             />
             <a href="https://www.instagram.com/reel/DQC7GVYkWuM/" target="_blank" rel="noopener noreferrer"
-               className="block text-center py-3 font-outfit text-xs font-semibold border-t border-slate-100" style={{ color: '#007a73' }}>
+               className="block text-center py-3 font-sans text-xs font-semibold border-t border-slate-100" style={{ color: '#007a73' }}>
               Ver en Instagram
             </a>
           </div>
@@ -1239,8 +1236,8 @@ const MainHome: React.FC = () => {
                   <span className="material-icons-round text-xl" style={{ color: '#007a73' }}>mark_email_unread</span>
                 </div>
                 <div>
-                  <h3 className="font-display font-light text-xl sm:text-2xl" style={{ color: '#0f172a' }}>Contáctenos</h3>
-                  <p className="font-outfit text-xs" style={{ color: '#475569' }}>Te llamamos a la brevedad</p>
+                  <h3 className="font-display font-normal text-xl sm:text-2xl" style={{ color: '#0f172a' }}>Contáctenos</h3>
+                  <p className="font-sans text-xs" style={{ color: '#475569' }}>Te llamamos a la brevedad</p>
                 </div>
               </div>
               <button
@@ -1257,20 +1254,20 @@ const MainHome: React.FC = () => {
             <form onSubmit={handleContactSubmit} className="space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#00a89e' }}>Nombre</label>
+                  <label className="font-sans text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#007a73' }}>Nombre</label>
                   <input required value={contactData.name} onChange={e => setContactData({ ...contactData, name: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f8f7', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="María González" />
                 </div>
                 <div>
-                  <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#00a89e' }}>WhatsApp / Teléfono</label>
+                  <label className="font-sans text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#007a73' }}>WhatsApp / Teléfono</label>
                   <input required value={contactData.phone} onChange={e => setContactData({ ...contactData, phone: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f8f7', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="+56 9..." />
                 </div>
               </div>
               <div>
-                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#00a89e' }}>Email</label>
+                <label className="font-sans text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#007a73' }}>Email</label>
                 <input required type="email" value={contactData.email} onChange={e => setContactData({ ...contactData, email: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border" style={{ background: '#f4f8f7', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="correo@ejemplo.com" />
               </div>
               <div>
-                <label className="font-outfit text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#00a89e' }}>¿En qué te podemos ayudar?</label>
+                <label className="font-sans text-xs font-medium uppercase tracking-wider block mb-1.5 ml-1" style={{ color: '#007a73' }}>¿En qué te podemos ayudar?</label>
                 <textarea required value={contactData.message} onChange={e => setContactData({ ...contactData, message: e.target.value })} className="w-full rounded-xl py-3 px-4 text-sm outline-none border h-28 resize-none" style={{ background: '#f4f8f7', borderColor: 'rgba(15,23,42,.12)', color: '#0f172a' }} placeholder="Cuéntanos tu caso o consulta..." />
               </div>
               <button type="submit" className="w-full py-4 rounded-2xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:opacity-90"

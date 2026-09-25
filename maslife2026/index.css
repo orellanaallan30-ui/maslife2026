@@ -95,4 +95,5 @@ body.cursor-hover .cursor-ring { width: 60px; height: 60px; }
 @media (max-width: 768px) { .cursor-dot, .cursor-ring { display: none; } }
 
 /* Manifesto word initial state */
-.word-reveal { opacity: 0.08; display: inline; }
+/* Visible por defecto: el atenuado lo aplica GSAP solo si cargó desde el CDN. */
+.word-reveal { opacity: 1; display: inline; }

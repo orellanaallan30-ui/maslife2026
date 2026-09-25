@@ -34,7 +34,6 @@ export default {
       },
       fontFamily: {
         sans: ['Manrope', 'sans-serif'],
-        outfit: ['Outfit', 'sans-serif'],
         display: ['Fraunces', 'Georgia', 'serif'],
       },
       // Escala de espaciado entre letras, reducida respecto al default de
