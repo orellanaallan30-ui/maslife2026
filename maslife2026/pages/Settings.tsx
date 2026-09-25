@@ -539,6 +539,24 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Tipo de atención */}
+                  <div className="border-t-2 border-slate-100 pt-5">
+                    <h3 className="text-base font-black text-black flex items-center gap-3 mb-3">
+                      <span className="material-icons-round text-primary">room_preferences</span>
+                      Tipo de Atención
+                    </h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[{k:'online',l:'Online',i:'videocam'},{k:'inPerson',l:'Presencial',i:'location_on'},{k:'home',l:'Domicilio',i:'home'}].map(m => (
+                        <button key={m.k} type="button" onClick={() => toggleModality(m.k as keyof typeof localProfile.modalities)}
+                          className={`py-3 px-2 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 transition-all
+                            ${localProfile.modalities?.[m.k as keyof typeof localProfile.modalities] ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300'}`}>
+                          <span className="material-icons-round text-xl">{m.i}</span>
+                          <span className="text-[11px] font-black uppercase tracking-widest text-center leading-tight">{m.l}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Redes sociales */}
                   <div className="border-t-2 border-slate-100 pt-5">
                     <h3 className="text-base font-black text-black flex items-center gap-3 mb-3">
