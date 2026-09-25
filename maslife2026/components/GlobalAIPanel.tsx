@@ -526,7 +526,7 @@ REGLAS:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 sm:inset-auto sm:top-[72px] sm:right-4 sm:w-[420px] sm:h-[calc(100vh-88px)] sm:max-h-[800px] bg-white shadow-2xl z-[100] flex flex-col sm:rounded-3xl border border-slate-200/60 animate-in slide-in-from-right-10 duration-500 overflow-hidden no-print">
+    <div className="fixed inset-0 sm:inset-auto sm:top-[72px] sm:right-4 sm:w-[420px] sm:h-[calc(100dvh-88px)] sm:max-h-[800px] bg-white shadow-2xl z-[100] flex flex-col sm:rounded-3xl border border-slate-200/60 animate-in slide-in-from-right-10 duration-500 overflow-hidden no-print">
       {/* Header */}
       <div className="bg-gradient-to-r from-violet-700 to-blue-600 px-6 py-5 text-white flex justify-between items-center shrink-0 shadow-lg">
         <div className="flex items-center gap-3">

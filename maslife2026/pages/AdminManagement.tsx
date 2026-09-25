@@ -1296,7 +1296,7 @@ const AdminManagement: React.FC = () => {
       {blastModal && (
         <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6">
           <div className="absolute inset-0 bg-black/60" onClick={() => !blastSending && setBlastModal(null)} />
-          <div className="relative bg-white border border-slate-200 w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
+          <div className="relative bg-white border border-slate-200 w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
             <div className="flex items-start justify-between mb-5 gap-3">
               <div>
                 <p className="text-[11px] font-black text-violet-600 uppercase tracking-widest mb-1 flex items-center gap-1.5">
@@ -1386,7 +1386,7 @@ const AdminManagement: React.FC = () => {
       {showCharlaForm && (
         <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowCharlaForm(false)} />
-          <div className="relative bg-white border border-slate-200 w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
+          <div className="relative bg-white border border-slate-200 w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-slate-900 font-black text-lg">{editingCharla ? 'Editar charla' : 'Nueva charla'}</h3>
               <button onClick={() => setShowCharlaForm(false)} className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors">
@@ -1444,7 +1444,7 @@ const AdminManagement: React.FC = () => {
       {selectedCharlaRegs && (
         <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6">
           <div className="absolute inset-0 bg-black/60" onClick={() => setSelectedCharlaRegs(null)} />
-          <div className="relative bg-white border border-slate-200 w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
+          <div className="relative bg-white border border-slate-200 w-full max-w-2xl max-h-[92dvh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10 p-6">
             <div className="flex items-start justify-between mb-4 gap-3">
               <div>
                 <p className="text-[11px] font-black text-teal-500 uppercase tracking-widest mb-1">Inscritos</p>

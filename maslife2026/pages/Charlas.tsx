@@ -235,7 +235,7 @@ const Charlas: React.FC = () => {
         <div className="fixed inset-0 z-[200] flex items-end lg:items-center justify-center p-0 lg:p-6"
           onClick={e => { if (e.target === e.currentTarget) closeModal(); }}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal} />
-          <div className="relative bg-white w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10">
+          <div className="relative bg-white w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-3xl lg:rounded-3xl shadow-2xl z-10">
 
             {/* Header modal */}
             <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-start justify-between gap-3 rounded-t-3xl lg:rounded-t-3xl">

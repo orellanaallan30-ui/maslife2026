@@ -2915,7 +2915,7 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
       </main>
 
       {showAiPanel && (
-        <div className="fixed top-[100px] right-8 w-[450px] h-[calc(100vh-150px)] max-h-[800px] bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] z-[100] flex flex-col rounded-blob-xl border border-slate-200/60 animate-in slide-in-from-right-10 duration-500 overflow-hidden no-print">
+        <div className="fixed inset-0 lg:inset-auto lg:top-[100px] lg:right-8 lg:w-[450px] lg:h-[calc(100dvh-150px)] lg:max-h-[800px] bg-white shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] z-[100] flex flex-col lg:rounded-blob-xl border border-slate-200/60 animate-in slide-in-from-right-10 duration-500 overflow-hidden no-print">
           <div className="bg-slate-900 px-8 py-8 text-white flex justify-between items-center shrink-0">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
@@ -2996,7 +2996,7 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
       {/* Modal del Informe Formal */}
       {isReportModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6 no-print">
-          <div className="bg-white w-full max-w-4xl h-[85vh] rounded-blob-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="bg-white w-full max-w-4xl h-[85dvh] rounded-blob-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
               <div>
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Informe Clínico Inteligente</h3>
@@ -3057,8 +3057,8 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
 
       {/* Modal de Orden Profesional */}
       {showOrdenModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-2xl rounded-blob-lg shadow-2xl p-10 space-y-6 animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6 overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl rounded-blob-lg shadow-2xl p-10 space-y-6 animate-in zoom-in-95 duration-300 my-auto">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-xl font-black text-slate-900 tracking-tight">
