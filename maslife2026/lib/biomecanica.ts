@@ -28,6 +28,7 @@ export interface Punto {
 /** Índices de los 33 puntos de MediaPipe Pose. Izquierda/derecha son del paciente. */
 export const PUNTO = {
   nariz: 0,
+  ojoIzq: 2, ojoDer: 5,
   orejaIzq: 7, orejaDer: 8,
   hombroIzq: 11, hombroDer: 12,
   codoIzq: 13, codoDer: 14,
@@ -284,6 +285,13 @@ export function evaluarCalidad(pts: Punto[], plano: 'frontal' | 'sagital'): Avis
     }
   }
 
+  // Cuerpo completo: sin ojos y talones visibles no se puede estimar la escala
+  // por estatura (y en la práctica la foto está cortada o demasiado cerca).
+  if (!cuerpoCompleto(pts)) {
+    mensajes.push('Cuerpo incompleto: no se ven bien la cabeza o los pies. Toma la foto de cuerpo entero, de la cabeza a los pies, para poder estimar distancias en cm.');
+    if (nivel === 'ok') nivel = 'aviso';
+  }
+
   if (plano === 'frontal') {
     const anchoHombros = Math.abs(pts[PUNTO.hombroDer]?.x - pts[PUNTO.hombroIzq]?.x);
     const anchoCaderas = Math.abs(pts[PUNTO.caderaDer]?.x - pts[PUNTO.caderaIzq]?.x);
@@ -515,4 +523,87 @@ function descenso(inclinacion: number, izq: Punto, der: Punto, que: string): str
   // es izquierda depende de si la foto es anterior o posterior.
   const ladoImagen = (der.y > izq.y) === (der.x > izq.x) ? 'derecho' : 'izquierdo';
   return `El ${que} del lado ${ladoImagen} de la imagen aparece descendido ${Math.abs(round1(inclinacion))}°`;
+}
+
+// ── Escala por estatura ─────────────────────────────────────────────────────
+//
+// Con la talla del paciente se puede pasar de píxeles a centímetros: la altura
+// de los ojos es ≈ 93,6 % de la estatura (proporciones antropométricas de
+// Drillis y Contini). La distancia talón-ojos en la foto da así la estatura en
+// píxeles. Solo vale con el cuerpo completo, de pie y con la cámara a la altura
+// de la cadera; por eso las cifras se muestran como aproximadas.
+
+const ALTURA_OJOS = 0.936;
+const VIS_MIN = 0.6;
+
+const visible = (p?: Punto) => !!p && (p.visibilidad ?? 1) >= VIS_MIN;
+
+export function cuerpoCompleto(pts: Punto[]): boolean {
+  const ojos = [pts[PUNTO.ojoIzq], pts[PUNTO.ojoDer]].some(visible);
+  const talones = [pts[PUNTO.talonIzq], pts[PUNTO.talonDer], pts[PUNTO.tobilloIzq], pts[PUNTO.tobilloDer]].some(visible);
+  return ojos && talones;
+}
+
+/** Centímetros por píxel, o null si falta la talla o el cuerpo no está completo. */
+export function escalaPorEstatura(pts: Punto[], estaturaCm: number | null | undefined): number | null {
+  if (!estaturaCm || estaturaCm < 50 || estaturaCm > 250) return null;
+  const ojos = [pts[PUNTO.ojoIzq], pts[PUNTO.ojoDer]].filter(visible) as Punto[];
+  const pies = [pts[PUNTO.talonIzq], pts[PUNTO.talonDer]].filter(visible) as Punto[];
+  const piesAlt = pies.length ? pies : ([pts[PUNTO.tobilloIzq], pts[PUNTO.tobilloDer]].filter(visible) as Punto[]);
+  if (!ojos.length || !piesAlt.length) return null;
+  const yOjos = ojos.reduce((a, p) => a + p.y, 0) / ojos.length;
+  const yPies = piesAlt.reduce((a, p) => a + p.y, 0) / piesAlt.length;
+  const altoOjosPx = yPies - yOjos;
+  if (altoOjosPx < 100) return null; // persona demasiado pequeña en la imagen
+  return (estaturaCm * ALTURA_OJOS) / altoOjosPx;
+}
+
+export interface DistanciaCm {
+  id: string;
+  etiqueta: string;
+  /** Redondeado a 0,5 cm. */
+  cm: number;
+  severidad: Severidad;
+  lectura: string;
+}
+
+const medioCm = (v: number) => Math.round(v * 2) / 2;
+
+/** Distancias clínicas en cm (aproximadas) a partir de la escala por estatura. */
+export function distanciasCm(pts: Punto[], plano: 'frontal' | 'sagital', cmPorPx: number | null): DistanciaCm[] {
+  if (!cmPorPx) return [];
+  const d: DistanciaCm[] = [];
+  if (plano === 'frontal') {
+    const hI = pts[PUNTO.hombroIzq], hD = pts[PUNTO.hombroDer], cI = pts[PUNTO.caderaIzq], cD = pts[PUNTO.caderaDer];
+    if (visible(hI) && visible(hD)) {
+      const cm = medioCm(Math.abs(hI.y - hD.y) * cmPorPx);
+      d.push({ id: 'desnivelHombrosCm', etiqueta: 'Desnivel de hombros', cm,
+        severidad: cm >= 2 ? 'riesgo' : cm >= 1 ? 'atencion' : 'normal',
+        lectura: cm < 0.5 ? 'Hombros a la misma altura' : `Hombro ${hI.y > hD.y ? 'izquierdo' : 'derecho'} más bajo` });
+    }
+    if (visible(cI) && visible(cD)) {
+      const cm = medioCm(Math.abs(cI.y - cD.y) * cmPorPx);
+      d.push({ id: 'desnivelPelvicoCm', etiqueta: 'Desnivel pélvico', cm,
+        severidad: cm >= 1.5 ? 'riesgo' : cm >= 1 ? 'atencion' : 'normal',
+        lectura: cm < 0.5 ? 'Pelvis nivelada' : `Hemipelvis ${cI.y > cD.y ? 'izquierda' : 'derecha'} más baja` });
+    }
+    if (visible(hI) && visible(hD) && visible(cI) && visible(cD)) {
+      const dx = medio(hI, hD).x - medio(cI, cD).x;
+      const cm = medioCm(Math.abs(dx) * cmPorPx);
+      d.push({ id: 'desplazamientoTroncoCm', etiqueta: 'Desplazamiento lateral del tronco', cm,
+        severidad: cm >= 3 ? 'riesgo' : cm >= 1.5 ? 'atencion' : 'normal',
+        lectura: cm < 0.5 ? 'Tronco centrado sobre la pelvis' : `Tronco desplazado hacia la ${dx > 0 ? 'derecha' : 'izquierda'} de la imagen` });
+    }
+  } else {
+    const lado = ladoMasVisible(pts);
+    const oreja = pts[lado === 'Izq' ? PUNTO.orejaIzq : PUNTO.orejaDer];
+    const hombro = pts[lado === 'Izq' ? PUNTO.hombroIzq : PUNTO.hombroDer];
+    if (visible(oreja) && visible(hombro)) {
+      const cm = medioCm(Math.abs(oreja.x - hombro.x) * cmPorPx);
+      d.push({ id: 'cabezaAdelantadaCm', etiqueta: 'Adelantamiento de la cabeza', cm,
+        severidad: cm >= 5 ? 'riesgo' : cm >= 3 ? 'atencion' : 'normal',
+        lectura: 'Distancia horizontal oreja-hombro' });
+    }
+  }
+  return d;
 }

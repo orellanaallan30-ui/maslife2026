@@ -6,9 +6,11 @@ import { Vitals, Patient, Appointment, ClinicalTemplate, SessionLog, CustomField
 import { useClinic } from '../ClinicContext';
 import { calcAllMetrics, ACTIVITY_FACTORS, type ActivityLevel, type Gender } from '../lib/nutritionCalculations';
 import { toast } from '../lib/toast';
-import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF } from '../pdfExport';
+import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF, exportInformePosturalPDF, precargarJsPDF } from '../pdfExport';
+import { extraerFotogramas } from '../lib/videoFotogramas';
+import { extraerJSON, normalizarInforme, informeATexto, limpiarInformeAntiguo, ETIQUETA_SEVERIDAD } from '../lib/informePostural';
 import MedicionPostural from '../components/MedicionPostural';
-import { indiceToracico, type Medicion } from '../lib/biomecanica';
+import { indiceToracico, type Medicion, type DistanciaCm } from '../lib/biomecanica';
 import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
 import { auditService } from '../auditService';
@@ -439,6 +441,16 @@ const ClinicalRecord: React.FC = () => {
   const imagenParaMedir = analysisImages[slotMedicion] || analysisImages.find(Boolean) || '';
   const [analysisResult, setAnalysisResult] = useState<string>((savedSpec.analysisResult as string) || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  // Distancias en cm estimadas por talla (MedicionPostural). Son medidas, igual que los ángulos.
+  const [distanciasMedidas, setDistanciasMedidas] = useState<DistanciaCm[]>(
+    (savedSpec.distanciasMedidas as DistanciaCm[]) || []
+  );
+  const [descargandoInforme, setDescargandoInforme] = useState(false);
+  const [guiaCapturaAbierta, setGuiaCapturaAbierta] = useState<boolean | null>(null);
+  // La guía de captura se muestra abierta mientras no haya imágenes.
+  const guiaAbierta = guiaCapturaAbierta ?? !analysisImages.some(Boolean);
+  // jsPDF se carga una vez al abrir la ficha: así el PDF sale al instante.
+  useEffect(() => { precargarJsPDF(); }, []);
 
   // El saludo era condicional a VITE_AI_ENABLED, una variable que no gobernaba
   // nada: handleAiAnalysis llama a /api/clinical-agent sin consultarla y no estaba
@@ -787,15 +799,38 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
   // resultante era indistinguible de uno redactado y validado por él. La
   // confirmación no es burocracia: es el momento en que alguien colegiado asume
   // el contenido.
-  const descargarInformeIA = (texto: string) => {
-    if (!loggedPro || !texto?.trim()) return;
-    const ok = window.confirm(
-      'Este informe fue redactado por la IA a partir de las imágenes.\n\n' +
-      'El PDF se descargará con TU firma electrónica y con una nota indicando que se elaboró con asistencia de IA.\n\n' +
-      '¿Confirmas que lo revisaste y asumes su contenido?'
-    );
-    if (!ok) return;
-    exportReportToPDF(texto, { ...safePatient, ...personalData } as Patient, loggedPro, { asistidoPorIA: true });
+  const descargarInformeIA = async (texto: string, postural = false) => {
+    if (!loggedPro || descargandoInforme) return;
+    const paciente = { ...safePatient, ...personalData } as Patient;
+    setDescargandoInforme(true);
+    try {
+      // Informe estructurado (esquema nuevo): PDF ordenado por secciones y colores.
+      if (postural && biomechReport?.resumen) {
+        await exportInformePosturalPDF({
+          tipo: biomechReport.tipo,
+          resumen: biomechReport.resumen || biomechReport.impresion_global,
+          hallazgos: biomechReport.metricas.map(m => ({ zona: m.zona, titulo: m.nombre, detalle: m.hallazgo, severidad: m.severidad })),
+          medidas: [
+            ...medicionesAngulares.map(m => ({ etiqueta: m.etiqueta, valor: `${String(m.valor).replace('.', ',')}${m.unidad}`, severidad: m.severidad, lectura: m.lectura })),
+            ...distanciasMedidas.map(d => ({ etiqueta: d.etiqueta, valor: `≈ ${String(d.cm).replace('.', ',')} cm`, severidad: d.severidad, lectura: d.lectura })),
+          ],
+          recomendaciones: biomechReport.recomendaciones,
+          derivacion: biomechReport.derivacion,
+          limitaciones: biomechReport.limitaciones,
+        }, paciente, loggedPro);
+      } else if (texto?.trim()) {
+        // Informes antiguos: se limpian los símbolos de markdown antes de exportar.
+        const limpio = limpiarInformeAntiguo(texto)
+          .map(b => b.tipo === 'lista' ? b.items.map(x => `- ${x}`).join('\n') : b.tipo === 'titulo' ? `\n${b.texto.toUpperCase()}` : b.texto)
+          .join('\n');
+        await exportReportToPDF(limpio, paciente, loggedPro, { asistidoPorIA: true });
+      }
+    } catch (e: any) {
+      console.error('[informe PDF]', e?.message || e);
+      toast.error('No se pudo generar el PDF. Revisa tu conexión e intenta de nuevo.');
+    } finally {
+      setDescargandoInforme(false);
+    }
   };
 
   const runAdvancedAnalysis = async () => {
@@ -824,9 +859,10 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
       // se le pedía al modelo que estimara cifras que no podía obtener; ahora
       // recibe medidas reales y su trabajo es interpretarlas, que es lo que un
       // modelo de lenguaje sí sabe hacer.
-      const angulosCtx = medicionesAngulares.length
-        ? medicionesAngulares.map(m => `${m.etiqueta}: ${m.valor}${m.unidad} (${m.severidad})`).join('; ')
-        : '';
+      const angulosCtx = [
+        ...medicionesAngulares.map(m => `${m.etiqueta}: ${m.valor}${m.unidad} (${m.severidad})`),
+        ...distanciasMedidas.map(d => `${d.etiqueta}: ≈${d.cm} cm estimados por talla (${d.severidad})`),
+      ].join('; ');
 
       // Cada tipo de análisis mira cosas distintas. Antes los tres compartían
       // instrucciones puramente posturales: elegir "Marcha" y subir un vídeo
@@ -856,31 +892,26 @@ Tipo de análisis solicitado: ${analysisType}
 ${kiAnthro.weight ? `Peso: ${kiAnthro.weight} kg` : ''}${kiAnthro.height ? `, Talla: ${kiAnthro.height} cm` : ''}${kiImc ? `, IMC: ${kiImc}` : ''}
 ${posturalCtx ? `Hallazgos posturales registrados por el profesional: ${posturalCtx}` : ''}
 ${romCtx ? `ROM medido por el profesional: ${romCtx}` : ''}
-${angulosCtx ? `ÁNGULOS MEDIDOS SOBRE LA FOTOGRAFÍA (detección de puntos anatómicos, no estimación): ${angulosCtx}` : ''}
+${angulosCtx ? `MEDIDAS SOBRE LA FOTOGRAFÍA (ángulos por detección de puntos anatómicos; cm estimados con la talla del paciente): ${angulosCtx}` : ''}
 
 ${GUIA_POR_TIPO[analysisType]}
 
-Entrega el informe con estas secciones:
-1. HALLAZGOS OBSERVADOS POR IMAGEN
-2. IMPRESIÓN BIOMECÁNICA GLOBAL
-3. HIPÓTESIS DIAGNÓSTICA A CONFIRMAR POR EL PROFESIONAL (puedes proponer un código CIE-10 orientativo)
-4. OBJETIVOS DE TRATAMIENTO PRIORIZADOS (máx. 5)
-5. PLAN KINESIOLÓGICO SUGERIDO
-
-AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EXACTO
-(4-8 hallazgos y 3-5 simetrías):
-\`\`\`json
+Responde SOLO con un objeto JSON válido (sin texto antes ni después, sin markdown,
+sin asteriscos, sin almohadillas, sin emojis). Escribe en español claro, frases cortas,
+pensando en un profesional ocupado que lo lee en 30 segundos. Esquema EXACTO:
 {
-  "metricas": [{ "nombre": "Inclinación pélvica", "hallazgo": "hemipelvis derecha aparentemente descendida",
-    "severidad": "normal|atencion|riesgo", "zona": "pelvis",
-    "comentario": "breve explicación clínica y qué haría falta para confirmarlo" }],
-  "simetrias": [{ "zona": "Hombros", "izquierda": "hallazgo lado izq",
-    "derecha": "hallazgo lado der", "diferencia": "descripción cualitativa de la diferencia",
-    "severidad": "atencion" }],
-  "impresion_global": "…", "diagnostico": "…", "cie10": "…",
-  "objetivos": ["…"], "plan": ["…"]
+  "resumen": "3 a 4 frases en lenguaje claro: lo principal que se observa y qué importa",
+  "hallazgos": [{ "zona": "Cervical|Hombros|Tronco|Columna|Pelvis|Rodillas|Pies|Marcha",
+    "titulo": "máximo 6 palabras", "detalle": "máximo 20 palabras, qué se ve",
+    "severidad": "normal|atencion|riesgo", "confirmar": "máximo 12 palabras: con qué confirmarlo" }],
+  "simetrias": [{ "zona": "Hombros", "izquierda": "corto", "derecha": "corto", "diferencia": "corto", "severidad": "atencion" }],
+  "recomendaciones": ["máximo 5 viñetas de 12 palabras: ejercicios, controles o educación"],
+  "derivacion": "1 frase solo si corresponde derivar, si no, cadena vacía",
+  "limitaciones": "1 frase: qué impidió valorar algo (encuadre, ropa, ángulo de cámara)",
+  "diagnostico": "hipótesis kinesiológica a confirmar, 1 frase", "cie10": "código orientativo o vacío",
+  "objetivos": ["máximo 4, cortos"], "plan": ["máximo 5, cortos"]
 }
-\`\`\``;
+Entre 3 y 6 hallazgos, ordenados del más al menos relevante. No repitas lo mismo en varias secciones.`;
 
       const result = await askClaudeWithImages(
         imagenesReales,
@@ -896,38 +927,22 @@ AL FINAL del informe, agrega un bloque de código \`\`\`json con este esquema EX
 
 REGLA INNEGOCIABLE: no inventes mediciones. No des cifras en centímetros, grados ni porcentajes deducidas de una imagen: no hay calibración, escala de referencia ni marcadores anatómicos que las respalden. Describe lo que se ve en términos cualitativos ("hombro derecho aparentemente descendido respecto al izquierdo") y, cuando una magnitud sea clínicamente relevante, di con qué instrumento habría que medirla.
 Los únicos números que puedes citar son los medidos que aparecen en el contexto: el ROM del profesional y los ángulos calculados sobre la fotografía. Interprétalos, relaciónalos entre sí y explica qué sugieren; no los recalcules ni añadas otros.
-Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, dilo en vez de suponerlo.`,
-        4096
+Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, dilo en vez de suponerlo.
+Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON.`,
+        3000
       );
 
-      // Separar el bloque JSON estructurado (informe visual) del texto narrativo
-      const jsonMatch = (result || '').match(/```json\s*([\s\S]*?)```/);
-      if (jsonMatch) {
-        try {
-          const parsed = JSON.parse(jsonMatch[1]) as BiomechReportData;
-          // Antes bastaba con que `metricas` fuese un array y se hacía un cast sin
-          // comprobar nada más: un campo con el tipo equivocado llegaba al informe
-          // y se renderizaba como basura. Se filtra lo que no encaja.
-          const metricas = (Array.isArray(parsed.metricas) ? parsed.metricas : [])
-            .filter(m => m && typeof m.nombre === 'string');
-          if (metricas.length) {
-            setBiomechReport({
-              ...parsed,
-              metricas,
-              simetrias: Array.isArray(parsed.simetrias) ? parsed.simetrias : [],
-              generado: new Date().toISOString(),
-              tipo: analysisType,
-            });
-          }
-        } catch (e) {
-          // El catch estaba vacío: si el modelo devolvía JSON malformado, el botón
-          // "Informe visual" seguía deshabilitado sin que nadie supiera por qué.
-          console.error('[biomecánica] el informe estructurado no se pudo interpretar:', e);
-          toast.error('El informe visual no se pudo generar; el informe escrito sí está disponible.');
-        }
+      // La IA responde solo JSON: se valida, se recorta y se guarda un texto
+      // limpio (sin markdown) para compartir. Nunca se muestra JSON crudo.
+      const informe = normalizarInforme(extraerJSON(result || ''), analysisType);
+      if (!informe) {
+        console.error('[biomecánica] respuesta no interpretable:', (result || '').slice(0, 300));
+        toast.error('No se pudo ordenar el informe. Vuelve a ejecutar el análisis.');
+        return;
       }
-      const narrative = (result || '').replace(/```json[\s\S]*?```/, '').trim();
-      setAnalysisResult(narrative || 'El análisis no pudo ser completado.');
+      setBiomechReport(informe);
+      setAnalysisResult(informeATexto(informe));
+      setIsDirtyTrue();
     } catch (error: any) {
       // El mensaje anterior culpaba siempre a ANTHROPIC_API_KEY y mandaba a
       // revisar variables de entorno que estaban bien. Se muestra el motivo real.
@@ -939,6 +954,8 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
   };
 
   const uploadSlotRef = useRef<number>(-1); // -1 = append, 0-3 = slot específico
+  const videoGrabarRef = useRef<HTMLInputElement>(null);
+  const videoElegirRef = useRef<HTMLInputElement>(null);
 
   // Extrae N fotogramas de un video local vía <video>+<canvas>. La API de visión
   // analiza imágenes (no video): los fotogramas entran al mismo pipeline y sirven
@@ -952,55 +969,33 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
   // consulta; si caduca, se vuelve a abrir la ficha y se firma de nuevo.
   const TTL_FIRMA_SEG = 60 * 60 * 24 * 30;
 
-  const extractVideoFrames = (file: File, count = 4): Promise<string[]> =>
-    new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(file);
-      const video = document.createElement('video');
-      video.preload = 'auto';
-      video.muted = true;
-      video.playsInline = true;
-      const frames: string[] = [];
-      const positions = [0.15, 0.4, 0.65, 0.9].slice(0, count);
-      let i = 0;
-      const canvas = document.createElement('canvas');
-      const fail = (msg: string) => { URL.revokeObjectURL(url); reject(new Error(msg)); };
-      video.onerror = () => fail('No se pudo leer el video');
-      video.onloadedmetadata = () => {
-        if (!video.duration || !isFinite(video.duration)) return fail('Video sin duración');
-        const scale = Math.min(1, 900 / (video.videoWidth || 900));
-        canvas.width = Math.round((video.videoWidth || 900) * scale);
-        canvas.height = Math.round((video.videoHeight || 1200) * scale);
-        video.currentTime = positions[0] * video.duration;
-      };
-      video.onseeked = () => {
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return fail('Canvas no disponible');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        frames.push(canvas.toDataURL('image/jpeg', 0.8));
-        i++;
-        if (i < positions.length) video.currentTime = positions[i] * video.duration;
-        else { URL.revokeObjectURL(url); resolve(frames); }
-      };
-      video.src = url;
-    });
-
   const handlePosturalUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
 
     // ── VIDEO: se guarda en el registro clínico y se extraen fotogramas ──
-    if (file.type.startsWith('video/')) {
-      if (file.size > 60 * 1024 * 1024) { toast.error('El video supera los 60 MB. Graba un clip más corto.'); return; }
+    if (file.type.startsWith('video/') || /\.(mov|mp4|m4v|webm|3gp)$/i.test(file.name)) {
+      if (file.size > 200 * 1024 * 1024) { toast.error('El video supera los 200 MB. Graba un clip de 5 a 10 segundos.'); return; }
       toast.info('Procesando video: extrayendo fotogramas…');
+      let frames: string[];
+      try {
+        frames = await extraerFotogramas(file, 4);
+      } catch {
+        toast.error('Este video no se pudo leer. En iPhone/iPad: Ajustes › Cámara › Formatos › "Más compatible", o grábalo desde aquí con "Grabar".');
+        return;
+      }
       try {
         // El video original queda en el bucket privado como respaldo clínico
-        const vext = file.name.split('.').pop()?.toLowerCase() || 'mp4';
-        const vpath = `${loggedPro?.id || 'unknown'}/${Date.now()}-video.${vext}`;
-        supabase.storage.from('clinical-images').upload(vpath, file, { upsert: true })
-          .then(({ error: vErr }) => { if (vErr) console.error('[video upload]', vErr.message); });
-
-        const frames = await extractVideoFrames(file, 4);
+        // (solo si es liviano; de uno grande se guardan los fotogramas).
+        if (file.size <= 60 * 1024 * 1024) {
+          const vext = file.name.split('.').pop()?.toLowerCase() || 'mp4';
+          const vpath = `${loggedPro?.id || 'unknown'}/${Date.now()}-video.${vext}`;
+          supabase.storage.from('clinical-images').upload(vpath, file, { upsert: true })
+            .then(({ error: vErr }) => { if (vErr) console.error('[video upload]', vErr.message); });
+        } else {
+          toast.info('Video grande: se guardan solo los fotogramas, no el video completo.');
+        }
 
         // Los fotogramas se suben como archivos y en la ficha queda su URL.
         // Antes se guardaban como data URLs en base64 dentro de specialty_data:
@@ -1030,8 +1025,9 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
         });
         setIsDirtyTrue();
         toast.success(`Video procesado: ${urls.length} fotogramas listos para el análisis.`);
-      } catch {
-        toast.error('No se pudo procesar el video. Intenta con formato MP4.');
+      } catch (err: any) {
+        console.error('[video fotogramas]', err?.message || err);
+        toast.error('No se pudieron guardar los fotogramas. Revisa tu conexión e intenta de nuevo.');
       }
       return;
     }
@@ -1358,6 +1354,7 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
         analysisResult,
         // Ángulos medidos sobre las fotos: son datos, no interpretación.
         medicionesAngulares,
+        distanciasMedidas,
         diamTorax,
         // Antecedentes mórbidos/quirúrgicos (antes solo vivían en la sesión de edición)
         morbidos,
@@ -1982,6 +1979,9 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
                   imagen={imagenParaMedir}
                   plano={slotMedicion >= 2 ? 'sagital' : 'frontal'}
                   onMediciones={setMedicionesAngulares}
+                  estaturaCm={Number(kiAnthro.height) || null}
+                  onEstatura={cm => { setKiAnthro(p => ({ ...p, height: String(cm) })); setIsDirtyTrue(); }}
+                  onDistancias={setDistanciasMedidas}
                   onDiametroTorax={(cual, razon) => {
                     setDiamTorax(prev => ({ ...prev, [cual]: razon }));
                     setIsDirtyTrue();
@@ -2021,6 +2021,80 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
               <div className="space-y-6">
+                {/* Guía de captura: una foto bien tomada vale más que cualquier
+                    corrección posterior. Abierta mientras no hay imágenes. */}
+                <div className="rounded-2xl border border-teal-200 bg-teal-50/60 no-print">
+                  <button
+                    type="button"
+                    onClick={() => setGuiaCapturaAbierta(!guiaAbierta)}
+                    aria-expanded={guiaAbierta}
+                    className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+                  >
+                    <span className="flex items-center gap-2 text-xs font-black text-teal-800 uppercase tracking-widest">
+                      <span className="material-icons-round text-base">photo_camera</span>
+                      {analysisType === 'Marcha' ? 'Cómo grabar el video de marcha' : 'Cómo tomar las fotos'}
+                    </span>
+                    <span className="material-icons-round text-teal-700">{guiaAbierta ? 'expand_less' : 'expand_more'}</span>
+                  </button>
+                  {guiaAbierta && (
+                    <ul className="px-4 pb-4 space-y-1.5 text-xs text-teal-900 leading-relaxed">
+                      {(analysisType === 'Marcha' ? [
+                        'Graba de lado (vista lateral), 5 a 10 segundos, caminando en línea recta a ritmo normal.',
+                        'Cuerpo completo en todo momento: de la cabeza a los pies.',
+                        'Teléfono fijo (apoyado o en trípode), vertical y a la altura de la cadera, a 3-4 m.',
+                        'Ropa ajustada o short, pies descalzos o zapatillas, fondo liso y buena luz.',
+                        'Sin zoom. Si el video no carga: Ajustes › Cámara › Formatos › "Más compatible".',
+                      ] : [
+                        'Cuerpo completo de la cabeza a los pies: sin eso no se pueden estimar centímetros.',
+                        'Teléfono vertical y nivelado, a la altura de la cadera, a 2,5-3 m. Sin zoom.',
+                        'Ropa ajustada o traje de baño, pelo tomado, fondo liso y buena luz.',
+                        'De pie relajado, pies separados al ancho de caderas, brazos al costado, mirada al frente.',
+                        'Anterior y posterior: de frente a la cámara. Laterales: perfil completo, sin girar el tronco.',
+                      ]).map(t => (
+                        <li key={t} className="flex gap-2"><span className="material-icons-round text-sm text-teal-600 mt-px">check</span><span>{t}</span></li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {analysisType === 'Marcha' ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3 no-print">
+                      <button
+                        type="button"
+                        onClick={() => { uploadSlotRef.current = 0; videoGrabarRef.current?.click(); }}
+                        className="py-4 rounded-2xl bg-slate-900 text-white font-black text-[11px] uppercase tracking-widest flex flex-col items-center gap-1.5 active:scale-95 transition-all"
+                      >
+                        <span className="material-icons-round text-2xl">videocam</span>
+                        Grabar video
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { uploadSlotRef.current = 0; videoElegirRef.current?.click(); }}
+                        className="py-4 rounded-2xl bg-white border-2 border-slate-200 text-slate-700 font-black text-[11px] uppercase tracking-widest flex flex-col items-center gap-1.5 hover:border-primary active:scale-95 transition-all"
+                      >
+                        <span className="material-icons-round text-2xl">video_library</span>
+                        Elegir video
+                      </button>
+                    </div>
+                    {analysisImages.some(Boolean) ? (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Fotogramas del video</p>
+                          <button type="button" onClick={() => { setAnalysisImages([]); setIsDirtyTrue(); }}
+                            className="text-[11px] font-black uppercase tracking-wider text-slate-400 hover:text-rose-500 no-print">Quitar</button>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {analysisImages.slice(0, 4).map((src, k) => src ? (
+                            <img key={k} src={src} alt={`Fotograma ${k + 1}`} className="aspect-[3/4] w-full object-cover rounded-xl border border-slate-200" />
+                          ) : <div key={k} className="aspect-[3/4] rounded-xl bg-slate-100" />)}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 text-center">Se extraen 4 fotogramas del video para el análisis. El video queda guardado en la ficha.</p>
+                    )}
+                  </div>
+                ) : (<>
                 {/* Slots etiquetados.
                     En escritorio van en una sola fila: en 2×2 cada recuadro medía
                     ~260px y estiraba la sección entera a unos 800px de alto. En
@@ -2051,7 +2125,10 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
                     </div>
                   ))}
                 </div>
+                </>)}
                 <input type="file" ref={posturalInputRef} onChange={handlePosturalUpload} className="hidden" accept="image/*,video/mp4,video/quicktime,video/webm" />
+                <input type="file" ref={videoGrabarRef} onChange={handlePosturalUpload} className="hidden" accept="video/*" capture="environment" />
+                <input type="file" ref={videoElegirRef} onChange={handlePosturalUpload} className="hidden" accept="video/*" />
 
                 <button
                   onClick={runAdvancedAnalysis}
@@ -2073,26 +2150,121 @@ Ante una imagen de calidad insuficiente o un plano que no permite valorar algo, 
                 </button>
               </div>
 
-              <div className="bg-slate-50 rounded-xl lg:rounded-blob-lg p-4 lg:p-6 border border-slate-100 min-h-[180px] lg:min-h-[280px] flex flex-col shadow-inner relative">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">Informe IA Estructurado</h4>
-                  {analysisResult && (
+              <div className="bg-white rounded-xl lg:rounded-blob-lg p-4 lg:p-6 border border-slate-200 min-h-[180px] lg:min-h-[280px] flex flex-col relative">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                    {analysisType === 'Marcha' ? 'Informe de marcha' : 'Informe postural'}
+                  </h4>
+                  {(analysisResult || biomechReport) && !isAnalyzing && (
                     <button
-                      onClick={() => descargarInformeIA(analysisResult)}
-                      className="text-xs font-black text-primary hover:underline no-print"
-                    >DESCARGAR INFORME</button>
+                      onClick={() => descargarInformeIA(analysisResult, true)}
+                      disabled={descargandoInforme}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-[11px] font-black uppercase tracking-wider hover:opacity-90 disabled:opacity-60 no-print"
+                    >
+                      <span className={`material-icons-round text-sm ${descargandoInforme ? 'animate-spin' : ''}`}>{descargandoInforme ? 'sync' : 'picture_as_pdf'}</span>
+                      {descargandoInforme ? 'Generando…' : 'Descargar PDF'}
+                    </button>
                   )}
                 </div>
-                <div className="flex-1 text-sm font-medium text-slate-600 leading-relaxed whitespace-pre-wrap">
-                  {isAnalyzing ? (
-                    <div className="h-full flex flex-col items-center justify-center space-y-4 py-10">
-                      <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                      <p className="text-xs font-black text-primary uppercase tracking-[0.06em] animate-pulse">Procesando anatomía digital...</p>
+
+                {isAnalyzing ? (
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-4 py-10">
+                    <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                    <p className="text-xs font-black text-primary uppercase tracking-[0.06em] animate-pulse">Analizando imágenes…</p>
+                  </div>
+                ) : biomechReport?.resumen ? (
+                  <div className="space-y-5 text-sm">
+                    {/* Resumen destacado */}
+                    <div className="rounded-2xl bg-teal-50 border border-teal-100 p-4">
+                      <p className="text-[11px] font-black text-teal-700 uppercase tracking-widest mb-1.5">Resumen</p>
+                      <p className="text-slate-800 leading-relaxed">{biomechReport.resumen}</p>
                     </div>
-                  ) : (
-                    analysisResult || <div className="text-center py-10 text-slate-500 italic">Cargue fotografías posturales y ejecute el análisis para que la IA evalúe lo que ve en las imágenes reales.</div>
-                  )}
-                </div>
+
+                    {/* Lo medido, separado de lo interpretado */}
+                    {(medicionesAngulares.length > 0 || distanciasMedidas.length > 0) && (
+                      <div>
+                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Medido en la foto</p>
+                        <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100">
+                          {[
+                            ...medicionesAngulares.map(m => ({ k: m.id, e: m.etiqueta, v: `${String(m.valor).replace('.', ',')}${m.unidad}`, s: m.severidad })),
+                            ...distanciasMedidas.map(d => ({ k: d.id, e: d.etiqueta, v: `≈ ${String(d.cm).replace('.', ',')} cm`, s: d.severidad })),
+                          ].map(r => (
+                            <div key={r.k} className="flex items-center justify-between gap-3 px-3 py-2">
+                              <span className="text-slate-700 min-w-0">{r.e}</span>
+                              <span className="flex items-center gap-2 shrink-0">
+                                <span className="font-black text-slate-900">{r.v}</span>
+                                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                  r.s === 'riesgo' ? 'bg-rose-100 text-rose-700' : r.s === 'atencion' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                                }`}>{ETIQUETA_SEVERIDAD[r.s]}</span>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hallazgos */}
+                    {biomechReport.metricas.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Hallazgos</p>
+                        <div className="space-y-2">
+                          {biomechReport.metricas.map((m, k) => (
+                            <div key={k} className={`rounded-2xl border-l-4 bg-slate-50 px-3 py-2.5 ${
+                              m.severidad === 'riesgo' ? 'border-rose-400' : m.severidad === 'atencion' ? 'border-amber-400' : 'border-emerald-400'
+                            }`}>
+                              <div className="flex items-start justify-between gap-3">
+                                <p className="font-black text-slate-900 leading-snug">
+                                  {m.zona && <span className="text-slate-500 font-bold">{m.zona} · </span>}{m.nombre}
+                                </p>
+                                <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                                  m.severidad === 'riesgo' ? 'bg-rose-100 text-rose-700' : m.severidad === 'atencion' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
+                                }`}>{ETIQUETA_SEVERIDAD[m.severidad]}</span>
+                              </div>
+                              {m.hallazgo && <p className="text-slate-600 mt-0.5 leading-relaxed">{m.hallazgo}</p>}
+                              {m.comentario && <p className="text-[11px] text-slate-500 mt-1">Confirmar: {m.comentario}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {biomechReport.recomendaciones && biomechReport.recomendaciones.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Recomendaciones</p>
+                        <ul className="space-y-1.5">
+                          {biomechReport.recomendaciones.map((r, k) => (
+                            <li key={k} className="flex gap-2 text-slate-700"><span className="material-icons-round text-base text-primary">check_circle</span><span>{r}</span></li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {(biomechReport.derivacion || biomechReport.limitaciones) && (
+                      <div className="text-xs text-slate-500 space-y-1 border-t border-slate-100 pt-3">
+                        {biomechReport.derivacion && <p><span className="font-black text-slate-600">Derivación:</span> {biomechReport.derivacion}</p>}
+                        {biomechReport.limitaciones && <p><span className="font-black text-slate-600">Limitaciones:</span> {biomechReport.limitaciones}</p>}
+                      </div>
+                    )}
+                    <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 no-print">
+                      Redactado con IA: revísalo antes de entregarlo. El PDF lleva tu firma y la nota de asistencia por IA.
+                    </p>
+                  </div>
+                ) : analysisResult ? (
+                  // Informes anteriores (texto con markdown): se muestran limpios.
+                  <div className="space-y-2 text-sm text-slate-700 leading-relaxed">
+                    {limpiarInformeAntiguo(analysisResult).map((b, k) =>
+                      b.tipo === 'titulo' ? <p key={k} className="font-black text-slate-900 pt-2">{b.texto}</p>
+                      : b.tipo === 'lista' ? <ul key={k} className="list-disc pl-5 space-y-1">{b.items.map((x, n) => <li key={n}>{x}</li>)}</ul>
+                      : <p key={k}>{b.texto}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-slate-500 italic text-sm">
+                    {analysisType === 'Marcha'
+                      ? 'Graba o elige un video de marcha y ejecuta el análisis.'
+                      : 'Carga las fotografías y ejecuta el análisis para obtener el informe.'}
+                  </div>
+                )}
               </div>
             </div>
           </section>
