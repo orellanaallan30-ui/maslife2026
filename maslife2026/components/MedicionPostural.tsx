@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { detectarPuntos } from '../lib/detectorPose';
+import { dibujarAnalisisPostural, componerImagenAnotada } from '../lib/dibujoPostural';
 import {
   medicionesFrontales, medicionesSagitales, evaluarCalidad, anguloEn,
   longitudTronco, razonNormalizada, interpretarCharpy, escalaPorEstatura, distanciasCm,
-  type Medicion, type Punto, type AvisoCalidad, type DistanciaCm,
+  distribucionCarga, plomada, espejarLados,
+  type Medicion, type Punto, type AvisoCalidad, type DistanciaCm, type DistribucionCarga,
 } from '../lib/biomecanica';
 
 // Medición angular sobre una fotografía clínica.
@@ -31,12 +33,19 @@ interface Props {
   onEstatura?: (cm: number) => void;
   /** Distancias en cm calculadas con la escala por talla. */
   onDistancias?: (d: DistanciaCm[]) => void;
+  /** Reparto de carga izquierda/derecha estimado (solo plano frontal). */
+  onCarga?: (c: DistribucionCarga | null) => void;
+  /** Foto con el dibujo clínico, en JPEG, para el PDF. */
+  onImagenAnotada?: (dataUrl: string | null) => void;
+  /** Foto de espalda: se corrigen los lados que MediaPipe asume de frente. */
+  posterior?: boolean;
 }
 
 const COLOR_SEV = { normal: '#10b981', atencion: '#f59e0b', riesgo: '#f43f5e' } as const;
 const ETIQUETA_SEV = { normal: 'Normal', atencion: 'Atención', riesgo: 'Revisar' } as const;
 
-const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiametroTorax, estaturaCm, onEstatura, onDistancias }) => {
+const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiametroTorax, estaturaCm, onEstatura, onDistancias, onCarga, onImagenAnotada, posterior }) => {
+  const [vista, setVista] = useState<'clinica' | 'mediciones'>('clinica');
   const [puntos, setPuntos] = useState<Punto[] | null>(null);
   const [tallaEscrita, setTallaEscrita] = useState('');
   const [estado, setEstado] = useState<'inicial' | 'midiendo' | 'listo' | 'error'>('inicial');
@@ -61,7 +70,8 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
     setEstado('midiendo');
     setError('');
     try {
-      const r = await detectarPuntos(imagen);
+      const r0 = await detectarPuntos(imagen);
+      const r = r0 && posterior ? { ...r0, puntos: espejarLados(r0.puntos) } : r0;
       if (!r) {
         setEstado('error');
         setError('No se detectó una persona completa en la imagen. Comprueba que se vea el cuerpo entero, con ropa ajustada y buena iluminación.');
@@ -84,12 +94,21 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
       const ms = plano === 'frontal' ? medicionesFrontales(r.puntos) : medicionesSagitales(r.puntos);
       setMediciones(ms);
       onMediciones?.(ms);
+      onCarga?.(plano === 'frontal' ? distribucionCarga(r.puntos) : null);
       setEstado('listo');
+      // Imagen anotada para el PDF (se carga con CORS para poder exportarla).
+      if (onImagenAnotada) {
+        const im = new Image();
+        im.crossOrigin = 'anonymous';
+        im.onload = () => onImagenAnotada(componerImagenAnotada(im, r.puntos, plano));
+        im.onerror = () => onImagenAnotada(null);
+        im.src = imagen;
+      }
     } catch (e: any) {
       setEstado('error');
       setError(e?.message || 'No se pudo ejecutar la medición.');
     }
-  }, [imagen, plano, onMediciones]);
+  }, [imagen, plano, onMediciones, posterior]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Dibuja sobre la imagen a tamaño real; el CSS la escala al ancho disponible,
   // así que la geometría no depende de cómo se vea en pantalla.
@@ -101,6 +120,12 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
     const ctx = c.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, c.width, c.height);
+
+    // Vista clínica: cuadrícula, esqueleto, plomada, centro de masa y carga.
+    if (vista === 'clinica' && puntos && !modoGoniometro && !puntosManuales.length) {
+      dibujarAnalisisPostural(ctx, puntos, { ancho: dimensiones.ancho, alto: dimensiones.alto, plano });
+      return;
+    }
 
     const escala = Math.max(dimensiones.ancho, dimensiones.alto) / 700;
     const grosor = Math.max(2, 3 * escala);
@@ -184,7 +209,7 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
         ctx.fillText(texto, v.x + 20 * escala, v.y + 2 * escala);
       }
     }
-  }, [mediciones, seleccionada, dimensiones, puntosManuales, modoGoniometro, modoManual, tronco]);
+  }, [mediciones, seleccionada, dimensiones, puntosManuales, modoGoniometro, modoManual, tronco, vista, puntos, plano]);
 
   const clicEnImagen = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!modoGoniometro || !dimensiones) return;
@@ -245,7 +270,53 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
             Borrar puntos
           </button>
         )}
+        {puntos && (
+          <div className="flex rounded-2xl border border-slate-300 overflow-hidden ml-auto">
+            {(['clinica', 'mediciones'] as const).map(v => (
+              <button key={v} type="button" onClick={() => { setVista(v); setSeleccionada(null); }}
+                aria-pressed={vista === v}
+                className={`px-3 py-2.5 font-black text-[11px] uppercase tracking-widest ${vista === v ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'}`}>
+                {v === 'clinica' ? 'Vista clínica' : 'Mediciones'}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Carga y plomada: resumen de la vista clínica */}
+      {puntos && (() => {
+        const carga = plano === 'frontal' ? distribucionCarga(puntos) : null;
+        const pl = plomada(puntos, plano);
+        const cmPx = escalaPorEstatura(puntos, estaturaCm);
+        const fmt = (px: number) => cmPx ? `${px >= 0 ? '+' : '−'}${String(Math.round(Math.abs(px) * cmPx * 2) / 2).replace('.', ',')} cm` : `${Math.round(px)} px`;
+        if (!carga && !pl) return null;
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {carga && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2">Distribución de carga</p>
+                <div className="flex h-8 rounded-xl overflow-hidden text-xs font-black text-white">
+                  <div className="flex items-center justify-center bg-sky-500" style={{ width: `${carga.izq}%` }}>Izq {carga.izq}%</div>
+                  <div className="flex items-center justify-center bg-indigo-500" style={{ width: `${carga.der}%` }}>Der {carga.der}%</div>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2">Estimación por imagen a partir del centro de masa; no reemplaza una plataforma de presión.</p>
+              </div>
+            )}
+            {pl && pl.desviaciones.length > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                <p className="text-[11px] font-black text-slate-600 uppercase tracking-widest mb-2">
+                  Plomada {plano === 'sagital' ? '(+ = por delante)' : '(desvío lateral)'}
+                </p>
+                <div className="space-y-1">
+                  {pl.desviaciones.map(d => (
+                    <div key={d.id} className="flex justify-between text-xs"><span className="text-slate-600">{d.etiqueta}</span><span className="font-black text-slate-900">{fmt(d.px)}</span></div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {modoGoniometro && (
         <div className="rounded-2xl bg-sky-50 border border-sky-200 px-4 py-3 space-y-2">
@@ -324,7 +395,7 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
               <button
                 key={m.id}
                 type="button"
-                onClick={() => setSeleccionada(s => (s === m.id ? null : m.id))}
+                onClick={() => { setVista('mediciones'); setSeleccionada(s => (s === m.id ? null : m.id)); }}
                 className={`text-left rounded-2xl border p-4 transition-all ${
                   seleccionada === m.id ? 'border-slate-900 bg-slate-50' : 'border-slate-200 bg-white hover:border-slate-300'
                 }`}

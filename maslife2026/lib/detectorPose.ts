@@ -99,3 +99,44 @@ export function liberarDetector(): void {
   detector = null;
   cargando = null;
 }
+
+// ── Modo video (biofeedback en vivo) ────────────────────────────────────────
+// Un segundo detector en modo VIDEO: aprovecha la continuidad entre cuadros y es
+// más estable que detectar cada cuadro por separado. Mismos recursos locales.
+
+let cargandoVideo: Promise<any> | null = null;
+let detectorVideo: any = null;
+
+export async function prepararDetectorVideo(): Promise<void> {
+  if (detectorVideo) return;
+  if (!cargandoVideo) {
+    cargandoVideo = (async () => {
+      const { FilesetResolver, PoseLandmarker } = await import('@mediapipe/tasks-vision');
+      const fileset = await FilesetResolver.forVisionTasks(BASE);
+      detectorVideo = await PoseLandmarker.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: `${BASE}/pose_landmarker_lite.task` },
+        runningMode: 'VIDEO',
+        numPoses: 1,
+        minPoseDetectionConfidence: 0.5,
+        minPosePresenceConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+    })().catch(e => { cargandoVideo = null; throw e; });
+  }
+  await cargandoVideo;
+}
+
+/** Puntos del cuadro actual del video, en píxeles del video. null si no hay persona. */
+export function detectarEnVideo(video: HTMLVideoElement, tiempoMs: number): Punto[] | null {
+  if (!detectorVideo || !video.videoWidth) return null;
+  const res = detectorVideo.detectForVideo(video, tiempoMs);
+  const lm = res?.landmarks?.[0];
+  if (!lm?.length) return null;
+  return lm.map((l: any) => ({ x: l.x * video.videoWidth, y: l.y * video.videoHeight, visibilidad: l.visibility ?? l.presence ?? 1 }));
+}
+
+export function liberarDetectorVideo(): void {
+  try { detectorVideo?.close?.(); } catch { /* ya cerrado */ }
+  detectorVideo = null;
+  cargandoVideo = null;
+}

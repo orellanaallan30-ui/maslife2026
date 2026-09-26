@@ -81,6 +81,8 @@ export function normalizarInforme(o: Record<string, unknown> | null, tipo?: stri
     recomendaciones: lista(o.recomendaciones, 5),
     derivacion: txt(o.derivacion, 240) || undefined,
     limitaciones: txt(o.limitaciones, 240) || undefined,
+    relacion_clinica: txt(o.relacion_clinica, 600) || undefined,
+    precauciones: lista(o.precauciones, 3, 160),
     diagnostico: txt(o.diagnostico, 240) || undefined,
     cie10: txt(o.cie10, 20) || undefined,
     objetivos: lista(o.objetivos, 5),
@@ -101,6 +103,11 @@ export function informeATexto(r: BiomechReportData): string {
     for (const m of r.metricas) {
       b.push(`- ${m.zona ? m.zona + ': ' : ''}${m.nombre} (${ETIQUETA_SEVERIDAD[m.severidad]})${m.hallazgo ? '. ' + m.hallazgo : ''}`);
     }
+  }
+  if (r.relacion_clinica) b.push('', 'RELACIÓN CON LA FICHA', r.relacion_clinica);
+  if (r.precauciones?.length) {
+    b.push('', 'PRECAUCIONES');
+    for (const x of r.precauciones) b.push(`- ${x}`);
   }
   if (r.recomendaciones?.length) {
     b.push('', 'RECOMENDACIONES');
