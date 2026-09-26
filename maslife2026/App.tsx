@@ -157,15 +157,27 @@ const ProLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showAI, setShowAI] = useState(false);
+  const [aiMinimized, setAiMinimized] = useState(false);
+  // El botón IA abre el asistente; si está minimizado lo restaura en vez de cerrarlo.
+  const toggleAI = () => {
+    if (showAI && aiMinimized) { setAiMinimized(false); return; }
+    setAiMinimized(false);
+    setShowAI(p => !p);
+  };
   return (
     <div className="flex flex-1 min-h-0 overflow-hidden bg-white">
-      <Sidebar onLogout={() => logout(navigate, 'PROFESSIONAL')} onToggleAI={() => setShowAI(p => !p)} />
+      <Sidebar onLogout={() => logout(navigate, 'PROFESSIONAL')} onToggleAI={toggleAI} />
       <div className="flex-1 min-h-0 flex overflow-hidden">
         <div key={location.pathname} className="flex-1 min-h-0 flex flex-col overflow-y-auto scroll-aislado fade-in">
           <Outlet />
         </div>
       </div>
-      <GlobalAIPanel isOpen={showAI} onClose={() => setShowAI(false)} />
+      <GlobalAIPanel
+        isOpen={showAI}
+        onClose={() => { setShowAI(false); setAiMinimized(false); }}
+        minimized={aiMinimized}
+        onMinimizedChange={setAiMinimized}
+      />
     </div>
   );
 };
