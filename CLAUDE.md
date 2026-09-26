@@ -224,6 +224,20 @@ git push -u origin main-local:main
 
 ---
 
+## Organización por áreas (una sesión por tema)
+
+Cada tema va en su propia sesión, etiquetada, para no mezclar contexto:
+
+| Área | Etiqueta de sesión | Agente (`.claude/agents/`) | Para qué |
+|---|---|---|---|
+| Plataforma | `plataforma` | `maslife-dev` | Código, bugs, funciones, despliegues |
+| Marketing | `marketing` | `meta-ads` | Campañas de Meta Ads, métricas, ROAS de WhatsApp |
+| Postulaciones | `postulaciones` | `postulaciones` | Concursos, fondos, pitch |
+
+Todas las sesiones llevan además la etiqueta `maslife`. Las piezas gráficas de anuncios las diseña el usuario; Claude las sube y configura.
+
+---
+
 ## Skill disponibles
 
 | Skill | Uso |
