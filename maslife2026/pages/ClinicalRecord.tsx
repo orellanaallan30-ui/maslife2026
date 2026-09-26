@@ -10,7 +10,8 @@ import { exportPatientFichaToPDF, exportReportToPDF, exportOrdenPDF, exportInfor
 import { extraerFotogramas } from '../lib/videoFotogramas';
 import { extraerJSON, normalizarInforme, informeATexto, limpiarInformeAntiguo, ETIQUETA_SEVERIDAD } from '../lib/informePostural';
 import MedicionPostural from '../components/MedicionPostural';
-import { indiceToracico, type Medicion, type DistanciaCm } from '../lib/biomecanica';
+import BiofeedbackPostural from '../components/BiofeedbackPostural';
+import { indiceToracico, type Medicion, type DistanciaCm, type DistribucionCarga } from '../lib/biomecanica';
 import { downloadFhirBundle } from '../lib/fhirExport';
 import { supabase } from '../supabaseService';
 import { auditService } from '../auditService';
@@ -446,6 +447,10 @@ const ClinicalRecord: React.FC = () => {
     (savedSpec.distanciasMedidas as DistanciaCm[]) || []
   );
   const [descargandoInforme, setDescargandoInforme] = useState(false);
+  // Carga izquierda/derecha estimada y foto anotada (vista clínica) para el PDF.
+  const [cargaMedida, setCargaMedida] = useState<DistribucionCarga | null>((savedSpec.cargaMedida as DistribucionCarga) || null);
+  const [imagenAnotada, setImagenAnotada] = useState<string | null>(null);
+  const [biofeedbackAbierto, setBiofeedbackAbierto] = useState(false);
   const [guiaCapturaAbierta, setGuiaCapturaAbierta] = useState<boolean | null>(null);
   // La guía de captura se muestra abierta mientras no haya imágenes.
   const guiaAbierta = guiaCapturaAbierta ?? !analysisImages.some(Boolean);
@@ -813,7 +818,11 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
           medidas: [
             ...medicionesAngulares.map(m => ({ etiqueta: m.etiqueta, valor: `${String(m.valor).replace('.', ',')}${m.unidad}`, severidad: m.severidad, lectura: m.lectura })),
             ...distanciasMedidas.map(d => ({ etiqueta: d.etiqueta, valor: `≈ ${String(d.cm).replace('.', ',')} cm`, severidad: d.severidad, lectura: d.lectura })),
+            ...(cargaMedida ? [{ etiqueta: 'Distribución de carga (Izq / Der)', valor: `${cargaMedida.izq}% / ${cargaMedida.der}%`, severidad: cargaMedida.severidad }] : []),
           ],
+          imagen: imagenAnotada || undefined,
+          relacionClinica: biomechReport.relacion_clinica,
+          precauciones: biomechReport.precauciones,
           recomendaciones: biomechReport.recomendaciones,
           derivacion: biomechReport.derivacion,
           limitaciones: biomechReport.limitaciones,
@@ -862,6 +871,7 @@ ${actionPrompt ? `\nTAREA ESPECÍFICA:\n${actionPrompt}` : ''}`;
       const angulosCtx = [
         ...medicionesAngulares.map(m => `${m.etiqueta}: ${m.valor}${m.unidad} (${m.severidad})`),
         ...distanciasMedidas.map(d => `${d.etiqueta}: ≈${d.cm} cm estimados por talla (${d.severidad})`),
+        ...(cargaMedida ? [`Distribución de carga estimada por centro de masa: izquierda ${cargaMedida.izq}%, derecha ${cargaMedida.der}% (${cargaMedida.severidad})`] : []),
       ].join('; ');
 
       // Cada tipo de análisis mira cosas distintas. Antes los tres compartían
@@ -886,6 +896,21 @@ asimetrías de volumen o contorno, alineación de los segmentos implicados y sig
 visibles de inflamación o atrofia. No infieras hallazgos de estructuras que no se ven.`,
       };
 
+      // Contexto de la ficha, sin identidad (Ley 21.719): diagnóstico, motivo,
+      // S/O de la nota, anamnesis, antecedentes marcados y exámenes adjuntos.
+      const antecedentesMarcados = [
+        ...morbidos.filter(a => a.checked).map(a => a.label),
+        ...quirurgicos.filter(a => a.checked).map(a => `cirugía: ${a.label}`),
+      ];
+      const contextoClinico = [
+        personalData.diagnoses?.trim() && `Diagnóstico principal: ${personalData.diagnoses.trim()}`,
+        soap.subjective?.trim() && `Motivo / subjetivo: ${soap.subjective.trim().slice(0, 500)}`,
+        soap.objective?.trim() && `Objetivo: ${soap.objective.trim().slice(0, 400)}`,
+        anamnesis?.trim() && `Anamnesis: ${anamnesis.trim().slice(0, 600)}`,
+        antecedentesMarcados.length > 0 && `Antecedentes: ${antecedentesMarcados.join(', ')}`,
+        files.length > 0 && `Exámenes/documentos adjuntos (solo el nombre, no ves su contenido): ${files.map(f => f.name).slice(0, 10).join(', ')}`,
+      ].filter(Boolean).join('\n');
+
       const prompt = `Analiza las ${imagenesReales.length} imágenes clínicas del/de la paciente (identidad omitida por privacidad).
 
 Tipo de análisis solicitado: ${analysisType}
@@ -894,6 +919,7 @@ ${posturalCtx ? `Hallazgos posturales registrados por el profesional: ${postural
 ${romCtx ? `ROM medido por el profesional: ${romCtx}` : ''}
 ${angulosCtx ? `MEDIDAS SOBRE LA FOTOGRAFÍA (ángulos por detección de puntos anatómicos; cm estimados con la talla del paciente): ${angulosCtx}` : ''}
 
+${contextoClinico ? `CONTEXTO CLÍNICO DE LA FICHA (úsalo para relacionar los hallazgos; no inventes nada que no esté aquí):\n${contextoClinico}\n` : 'La ficha no tiene diagnóstico ni antecedentes registrados.\n'}
 ${GUIA_POR_TIPO[analysisType]}
 
 Responde SOLO con un objeto JSON válido (sin texto antes ni después, sin markdown,
@@ -908,6 +934,8 @@ pensando en un profesional ocupado que lo lee en 30 segundos. Esquema EXACTO:
   "recomendaciones": ["máximo 5 viñetas de 12 palabras: ejercicios, controles o educación"],
   "derivacion": "1 frase solo si corresponde derivar, si no, cadena vacía",
   "limitaciones": "1 frase: qué impidió valorar algo (encuadre, ropa, ángulo de cámara)",
+  "relacion_clinica": "2 a 3 frases: cómo se relacionan los hallazgos con el diagnóstico, el motivo de consulta y los antecedentes de la ficha; si no se relacionan o falta información, dilo",
+  "precauciones": ["máximo 3, cortas, derivadas de antecedentes o cirugías registradas; lista vacía si no hay"],
   "diagnostico": "hipótesis kinesiológica a confirmar, 1 frase", "cie10": "código orientativo o vacío",
   "objetivos": ["máximo 4, cortos"], "plan": ["máximo 5, cortos"]
 }
@@ -1032,6 +1060,12 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
       return;
     }
 
+    await subirFotoClinica(file, uploadSlotRef.current);
+  };
+
+  // Sube una foto clínica al bucket privado y la deja en el hueco indicado
+  // (-1 = al final). La usan la carga de archivos y el biofeedback en vivo.
+  const subirFotoClinica = async (file: File, slot: number): Promise<boolean> => {
     const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
     // Bucket PRIVADO (Ley 21.719): fotos clínicas de pacientes nunca en bucket público.
     // RLS de storage acota la carpeta al profesional dueño; se accede con URL firmada.
@@ -1041,23 +1075,23 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
       .upload(path, file, { upsert: true });
     if (error || !uploaded) {
       toast.error('No se pudo subir la imagen. Intenta de nuevo.');
-      return;
+      return false;
     }
     const { data: signed, error: signErr } = await supabase.storage
       .from('clinical-images')
       .createSignedUrl(uploaded.path, TTL_FIRMA_SEG);
     if (signErr || !signed?.signedUrl) {
       toast.error('No se pudo generar el acceso a la imagen. Intenta de nuevo.');
-      return;
+      return false;
     }
     const imageUrl = signed.signedUrl;
-    const slot = uploadSlotRef.current;
     setAnalysisImages(prev => {
       const next = [...prev];
       if (slot >= 0) { next[slot] = imageUrl; return next; }
       return [...next, imageUrl].slice(0, 4);
     });
     setIsDirtyTrue();
+    return true;
   };
 
   const removeAnalysisImage = (index: number) => {
@@ -1355,6 +1389,7 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
         // Ángulos medidos sobre las fotos: son datos, no interpretación.
         medicionesAngulares,
         distanciasMedidas,
+        cargaMedida,
         diamTorax,
         // Antecedentes mórbidos/quirúrgicos (antes solo vivían en la sesión de edición)
         morbidos,
@@ -1978,10 +2013,13 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
                   key={imagenParaMedir}
                   imagen={imagenParaMedir}
                   plano={slotMedicion >= 2 ? 'sagital' : 'frontal'}
+                  posterior={slotMedicion === 1}
                   onMediciones={setMedicionesAngulares}
                   estaturaCm={Number(kiAnthro.height) || null}
                   onEstatura={cm => { setKiAnthro(p => ({ ...p, height: String(cm) })); setIsDirtyTrue(); }}
                   onDistancias={setDistanciasMedidas}
+                  onCarga={setCargaMedida}
+                  onImagenAnotada={setImagenAnotada}
                   onDiametroTorax={(cual, razon) => {
                     setDiamTorax(prev => ({ ...prev, [cual]: razon }));
                     setIsDirtyTrue();
@@ -2095,6 +2133,14 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
                     )}
                   </div>
                 ) : (<>
+                <button
+                  type="button"
+                  onClick={() => setBiofeedbackAbierto(true)}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-500 text-white font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-md active:scale-[0.99] transition-all no-print"
+                >
+                  <span className="material-icons-round">accessibility_new</span>
+                  Cámara en vivo · Biofeedback postural
+                </button>
                 {/* Slots etiquetados.
                     En escritorio van en una sola fila: en 2×2 cada recuadro medía
                     ~260px y estiraba la sección entera a unos 800px de alto. En
@@ -2180,14 +2226,32 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
                       <p className="text-slate-800 leading-relaxed">{biomechReport.resumen}</p>
                     </div>
 
+                    {biomechReport.relacion_clinica && (
+                      <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
+                        <p className="text-[11px] font-black text-indigo-700 uppercase tracking-widest mb-1.5">Relación con la ficha</p>
+                        <p className="text-slate-800 leading-relaxed">{biomechReport.relacion_clinica}</p>
+                      </div>
+                    )}
+                    {biomechReport.precauciones && biomechReport.precauciones.length > 0 && (
+                      <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4">
+                        <p className="text-[11px] font-black text-amber-800 uppercase tracking-widest mb-1.5">Precauciones</p>
+                        <ul className="space-y-1">
+                          {biomechReport.precauciones.map((x, k) => (
+                            <li key={k} className="flex gap-2 text-amber-900"><span className="material-icons-round text-base">warning_amber</span><span>{x}</span></li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {/* Lo medido, separado de lo interpretado */}
-                    {(medicionesAngulares.length > 0 || distanciasMedidas.length > 0) && (
+                    {(medicionesAngulares.length > 0 || distanciasMedidas.length > 0 || cargaMedida) && (
                       <div>
                         <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">Medido en la foto</p>
                         <div className="divide-y divide-slate-100 rounded-2xl border border-slate-100">
                           {[
                             ...medicionesAngulares.map(m => ({ k: m.id, e: m.etiqueta, v: `${String(m.valor).replace('.', ',')}${m.unidad}`, s: m.severidad })),
                             ...distanciasMedidas.map(d => ({ k: d.id, e: d.etiqueta, v: `≈ ${String(d.cm).replace('.', ',')} cm`, s: d.severidad })),
+                            ...(cargaMedida ? [{ k: 'carga', e: 'Distribución de carga (Izq / Der)', v: `${cargaMedida.izq}% / ${cargaMedida.der}%`, s: cargaMedida.severidad }] : []),
                           ].map(r => (
                             <div key={r.k} className="flex items-center justify-between gap-3 px-3 py-2">
                               <span className="text-slate-700 min-w-0">{r.e}</span>
@@ -3297,6 +3361,17 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
       </div>
 
       {/* Informe biomecánico visual (pantalla completa, estilo kiosco) */}
+      {biofeedbackAbierto && (
+        <BiofeedbackPostural
+          ocupadas={[0, 1, 2, 3].map(i => !!analysisImages[i])}
+          onCapturar={async (archivo, slot) => {
+            const ok = await subirFotoClinica(archivo, slot);
+            if (!ok) throw new Error('no se pudo subir');
+            toast.success('Foto guardada en la ficha.');
+          }}
+          onClose={() => setBiofeedbackAbierto(false)}
+        />
+      )}
       {showBiomechReport && biomechReport && (
         <BiomechReport
           report={biomechReport}

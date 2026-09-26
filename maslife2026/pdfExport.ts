@@ -1217,6 +1217,10 @@ export interface InformePosturalPDF {
   recomendaciones?: string[];
   derivacion?: string;
   limitaciones?: string;
+  /** Foto con el dibujo clínico (JPEG data URL). */
+  imagen?: string;
+  relacionClinica?: string;
+  precauciones?: string[];
 }
 
 const SEV_PDF = {
@@ -1260,6 +1264,26 @@ export async function exportInformePosturalPDF(
   doc.text(idLinea, MARGIN, y + 5);
   y += 12;
 
+  // Foto con el análisis visual (cuadrícula, esqueleto, plomada, carga)
+  if (inf.imagen) {
+    const dim = await new Promise<{ w: number; h: number } | null>(res => {
+      const im = new Image();
+      im.onload = () => res({ w: im.naturalWidth, h: im.naturalHeight });
+      im.onerror = () => res(null);
+      im.src = inf.imagen!;
+    });
+    if (dim && dim.w && dim.h) {
+      const altoMax = 105, anchoMax = COL;
+      let h = altoMax, w = (dim.w / dim.h) * h;
+      if (w > anchoMax) { w = anchoMax; h = (dim.h / dim.w) * w; }
+      salto(h + 6);
+      try {
+        doc.addImage(inf.imagen, 'JPEG', MARGIN + (COL - w) / 2, y, w, h);
+        y += h + 6;
+      } catch { /* imagen no válida: se omite */ }
+    }
+  }
+
   // Resumen destacado
   if (inf.resumen) {
     const lineas = doc.splitTextToSize(inf.resumen, COL - 10);
@@ -1284,6 +1308,34 @@ export async function exportInformePosturalPDF(
     doc.setTextColor(c.text[0], c.text[1], c.text[2]);
     doc.text(c.label, xDer - w + 2.5, yLinea);
   };
+
+  // Relación con la ficha clínica
+  if (inf.relacionClinica) {
+    const lineas = doc.splitTextToSize(inf.relacionClinica, COL - 10);
+    const alto = lineas.length * 4.8 + 12;
+    salto(alto);
+    doc.setFillColor(238, 242, 255); doc.setDrawColor(199, 210, 254);
+    doc.rect(MARGIN, y, COL, alto, 'FD');
+    doc.setFillColor(99, 102, 241); doc.rect(MARGIN, y, 1.6, alto, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(67, 56, 202);
+    doc.text('RELACIÓN CON LA FICHA', MARGIN + 5, y + 6, { charSpace: 0.4 } as any);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(30, 41, 59);
+    doc.text(lineas, MARGIN + 5, y + 12);
+    y += alto + 4;
+  }
+  if (inf.precauciones?.length) {
+    const txt = inf.precauciones.map(p => `- ${p}`).join('\n');
+    const lineas = doc.splitTextToSize(txt, COL - 10);
+    const alto = lineas.length * 4.6 + 11;
+    salto(alto);
+    doc.setFillColor(255, 251, 235); doc.setDrawColor(253, 230, 138);
+    doc.rect(MARGIN, y, COL, alto, 'FD');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(146, 64, 14);
+    doc.text('PRECAUCIONES', MARGIN + 5, y + 6, { charSpace: 0.4 } as any);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(120, 53, 15);
+    doc.text(lineas, MARGIN + 5, y + 11.5);
+    y += alto + 6;
+  }
 
   // Medidas objetivas
   if (inf.medidas.length) {

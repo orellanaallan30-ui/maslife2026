@@ -607,3 +607,124 @@ export function distanciasCm(pts: Punto[], plano: 'frontal' | 'sagital', cmPorPx
   }
   return d;
 }
+
+// ── Centro de masa, carga y plomada ─────────────────────────────────────────
+//
+// Modelo segmentario de Dempster (fracción de masa y posición del centro de
+// cada segmento desde su extremo proximal). En 2D y sobre la imagen: sirve para
+// ver hacia dónde se desplaza el cuerpo, no reemplaza una plataforma de presión.
+
+const SEGMENTOS: Array<{ masa: number; prox: [number, number]; dist: [number, number]; razon: number }> = [
+  { masa: 0.497, prox: [PUNTO.hombroIzq, PUNTO.hombroDer], dist: [PUNTO.caderaIzq, PUNTO.caderaDer], razon: 0.5 }, // tronco
+  { masa: 0.028, prox: [PUNTO.hombroIzq, PUNTO.hombroIzq], dist: [PUNTO.codoIzq, PUNTO.codoIzq], razon: 0.436 },
+  { masa: 0.028, prox: [PUNTO.hombroDer, PUNTO.hombroDer], dist: [PUNTO.codoDer, PUNTO.codoDer], razon: 0.436 },
+  { masa: 0.022, prox: [PUNTO.codoIzq, PUNTO.codoIzq], dist: [PUNTO.munecaIzq, PUNTO.munecaIzq], razon: 0.682 },
+  { masa: 0.022, prox: [PUNTO.codoDer, PUNTO.codoDer], dist: [PUNTO.munecaDer, PUNTO.munecaDer], razon: 0.682 },
+  { masa: 0.100, prox: [PUNTO.caderaIzq, PUNTO.caderaIzq], dist: [PUNTO.rodillaIzq, PUNTO.rodillaIzq], razon: 0.433 },
+  { masa: 0.100, prox: [PUNTO.caderaDer, PUNTO.caderaDer], dist: [PUNTO.rodillaDer, PUNTO.rodillaDer], razon: 0.433 },
+  { masa: 0.061, prox: [PUNTO.rodillaIzq, PUNTO.rodillaIzq], dist: [PUNTO.tobilloIzq, PUNTO.tobilloIzq], razon: 0.606 },
+  { masa: 0.061, prox: [PUNTO.rodillaDer, PUNTO.rodillaDer], dist: [PUNTO.tobilloDer, PUNTO.tobilloDer], razon: 0.606 },
+];
+const MASA_CABEZA = 0.081;
+
+const medioDe = (pts: Punto[], [a, b]: [number, number]): Punto | null => {
+  const pa = pts[a], pb = pts[b];
+  if (!visible(pa) || !visible(pb)) return null;
+  return medio(pa, pb);
+};
+
+/** Centro de masa estimado en coordenadas de imagen, o null si faltan tronco o piernas. */
+export function centroDeMasa(pts: Punto[]): Punto | null {
+  let sx = 0, sy = 0, sm = 0;
+  for (const s of SEGMENTOS) {
+    const p = medioDe(pts, s.prox), d = medioDe(pts, s.dist);
+    if (!p || !d) {
+      // El tronco y las piernas son imprescindibles; los brazos pueden faltar.
+      if (s.masa >= 0.06) return null;
+      continue;
+    }
+    sx += s.masa * (p.x + (d.x - p.x) * s.razon);
+    sy += s.masa * (p.y + (d.y - p.y) * s.razon);
+    sm += s.masa;
+  }
+  const orejas = [pts[PUNTO.orejaIzq], pts[PUNTO.orejaDer]].filter(visible) as Punto[];
+  const cabeza = orejas.length ? { x: orejas.reduce((a, o) => a + o.x, 0) / orejas.length, y: orejas.reduce((a, o) => a + o.y, 0) / orejas.length }
+    : visible(pts[PUNTO.nariz]) ? pts[PUNTO.nariz] : null;
+  if (cabeza) { sx += MASA_CABEZA * cabeza.x; sy += MASA_CABEZA * cabeza.y; sm += MASA_CABEZA; }
+  return sm > 0 ? { x: sx / sm, y: sy / sm } : null;
+}
+
+export interface DistribucionCarga { izq: number; der: number; severidad: Severidad }
+
+/**
+ * Plano frontal: reparto del peso entre pies según dónde cae el centro de masa
+ * entre los tobillos. Izquierda/derecha son del paciente (así etiqueta MediaPipe),
+ * por eso vale igual de frente o de espaldas.
+ */
+export function distribucionCarga(pts: Punto[]): DistribucionCarga | null {
+  const cm = centroDeMasa(pts);
+  const tI = pts[PUNTO.tobilloIzq], tD = pts[PUNTO.tobilloDer];
+  if (!cm || !visible(tI) || !visible(tD) || Math.abs(tD.x - tI.x) < 10) return null;
+  const t = Math.min(1, Math.max(0, (cm.x - tI.x) / (tD.x - tI.x)));
+  const der = Math.round(t * 100);
+  const izq = 100 - der;
+  const dif = Math.abs(der - izq);
+  return { izq, der, severidad: dif >= 20 ? 'riesgo' : dif >= 10 ? 'atencion' : 'normal' };
+}
+
+export interface Plomada {
+  /** x de la línea de plomada en la imagen. */
+  x: number;
+  /** Desviación horizontal de cada punto respecto a la plomada. En sagital, positivo = hacia adelante. */
+  desviaciones: Array<{ id: string; etiqueta: string; punto: Punto; px: number }>;
+}
+
+export function plomada(pts: Punto[], plano: 'frontal' | 'sagital'): Plomada | null {
+  if (plano === 'frontal') {
+    const base = medioDe(pts, [PUNTO.tobilloIzq, PUNTO.tobilloDer]);
+    if (!base) return null;
+    const des: Plomada['desviaciones'] = [];
+    for (const [id, etiqueta, par] of [
+      ['cabeza', 'Cabeza', [PUNTO.orejaIzq, PUNTO.orejaDer]],
+      ['hombros', 'Hombros', [PUNTO.hombroIzq, PUNTO.hombroDer]],
+      ['pelvis', 'Pelvis', [PUNTO.caderaIzq, PUNTO.caderaDer]],
+      ['rodillas', 'Rodillas', [PUNTO.rodillaIzq, PUNTO.rodillaDer]],
+    ] as const) {
+      const p = medioDe(pts, par as unknown as [number, number]);
+      if (p) des.push({ id, etiqueta, punto: p, px: p.x - base.x });
+    }
+    return { x: base.x, desviaciones: des };
+  }
+  const lado = ladoMasVisible(pts);
+  const I = (i: number, d: number) => pts[lado === 'Izq' ? i : d];
+  const tobillo = I(PUNTO.tobilloIzq, PUNTO.tobilloDer);
+  const oreja = I(PUNTO.orejaIzq, PUNTO.orejaDer);
+  const nariz = pts[PUNTO.nariz];
+  if (!visible(tobillo)) return null;
+  // Hacia dónde mira: la nariz queda por delante de la oreja.
+  const frente = visible(nariz) && visible(oreja) ? Math.sign(nariz.x - oreja.x) || 1 : 1;
+  const des: Plomada['desviaciones'] = [];
+  for (const [id, etiqueta, p] of [
+    ['oreja', 'Oreja', oreja],
+    ['hombro', 'Hombro', I(PUNTO.hombroIzq, PUNTO.hombroDer)],
+    ['cadera', 'Cadera', I(PUNTO.caderaIzq, PUNTO.caderaDer)],
+    ['rodilla', 'Rodilla', I(PUNTO.rodillaIzq, PUNTO.rodillaDer)],
+  ] as const) {
+    if (visible(p)) des.push({ id, etiqueta, punto: p, px: (p.x - tobillo.x) * frente });
+  }
+  return { x: tobillo.x, desviaciones: des };
+}
+
+// MediaPipe asume que la persona mira a la cámara: en una foto de ESPALDA
+// etiqueta como "izquierdo" el lado derecho real. Para la vista posterior se
+// intercambian los pares izquierda/derecha antes de medir y rotular.
+const PARES_LADO: Array<[number, number]> = [
+  [1, 4], [2, 5], [3, 6], [7, 8], [9, 10], [11, 12], [13, 14], [15, 16],
+  [17, 18], [19, 20], [21, 22], [23, 24], [25, 26], [27, 28], [29, 30], [31, 32],
+];
+
+export function espejarLados(pts: Punto[]): Punto[] {
+  const r = [...pts];
+  for (const [a, b] of PARES_LADO) { r[a] = pts[b]; r[b] = pts[a]; }
+  return r;
+}

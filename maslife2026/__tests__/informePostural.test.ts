@@ -9,6 +9,8 @@ const respuesta = {
   ],
   recomendaciones: ['Ejercicios de control cervical', '# Fortalecer escapulares'],
   limitaciones: 'Foto sin pies visibles.',
+  relacion_clinica: 'El **desnivel pélvico** es coherente con la lumbalgia derecha referida.',
+  precauciones: ['Artrodesis lumbar previa: evitar flexión cargada', 'x', 'y', 'z'],
 };
 
 describe('informe postural', () => {
@@ -28,6 +30,8 @@ describe('informe postural', () => {
     expect(r.metricas[0]).toMatchObject({ nombre: 'Cabeza adelantada', zona: 'Cervical', severidad: 'atencion' });
     expect(r.metricas[1].severidad).toBe('atencion'); // "rara" no es válida
     expect(r.recomendaciones).toEqual(['Ejercicios de control cervical', 'Fortalecer escapulares']);
+    expect(r.relacion_clinica).toBe('El desnivel pélvico es coherente con la lumbalgia derecha referida.');
+    expect(r.precauciones).toHaveLength(3);
   });
 
   it('rechaza un informe vacío', () => {
@@ -39,6 +43,8 @@ describe('informe postural', () => {
     const t = informeATexto(normalizarInforme(extraerJSON(JSON.stringify(respuesta)), 'Postural')!);
     expect(t).toMatch(/^INFORME POSTURAL/);
     expect(t).toContain('RESUMEN');
+    expect(t).toContain('RELACIÓN CON LA FICHA');
+    expect(t).toContain('PRECAUCIONES');
     expect(t).not.toMatch(/\*\*|#|\{/);
   });
 

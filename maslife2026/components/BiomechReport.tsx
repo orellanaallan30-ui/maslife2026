@@ -32,6 +32,9 @@ export interface BiomechReportData {
   recomendaciones?: string[];
   derivacion?: string;
   limitaciones?: string;
+  /** Cómo se relacionan los hallazgos con el diagnóstico, motivo y antecedentes de la ficha. */
+  relacion_clinica?: string;
+  precauciones?: string[];
   diagnostico?: string;
   cie10?: string;
   objetivos?: string[];
