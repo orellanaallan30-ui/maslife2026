@@ -5,6 +5,54 @@ import { useClinic } from '../ClinicContext';
 import { saveProfessional, getProfessionalBySlugOrId } from '../supabaseService';
 import { resizeImageDataUrl } from '../lib/imageResize';
 import { supabase } from '../supabaseClient';
+import { modalidadesDelPro, modalidadesDeServicio, infoModalidad, ClaveModalidad } from '../../api/_lib/modalidades';
+
+// Dónde se atiende un servicio. undefined = todas las modalidades del profesional
+// (así, si después activa otra, el servicio la incluye sin editarlo).
+const SelectorModalidadesServicio: React.FC<{
+  pro: ProfessionalProfile['modalities'];
+  value: Service['modalities'];
+  onChange: (v: Service['modalities']) => void;
+}> = ({ pro, value, onChange }) => {
+  const delPro = modalidadesDelPro(pro);
+  const marcadas = modalidadesDeServicio(pro, value);
+  const toggle = (c: ClaveModalidad) => {
+    const next = marcadas.includes(c) ? marcadas.filter(x => x !== c) : delPro.filter(x => x === c || marcadas.includes(x));
+    if (next.length === 0) return; // al menos una
+    onChange(next.length === delPro.length ? undefined : next);
+  };
+  return (
+    <div className="space-y-2">
+      <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">¿Dónde se atiende este servicio?</label>
+      <div className="flex flex-wrap gap-2">
+        {delPro.map(c => {
+          const m = infoModalidad(c);
+          const on = marcadas.includes(c);
+          return (
+            <button
+              key={c}
+              type="button"
+              onClick={() => toggle(c)}
+              aria-pressed={on}
+              disabled={delPro.length === 1}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border-2 text-xs font-black transition-all disabled:cursor-default ${
+                on ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-200 bg-slate-50 text-slate-400 hover:border-slate-300'
+              }`}
+            >
+              <span className="material-icons-round text-base">{on ? 'check_circle' : m.icono}</span>
+              {m.etiqueta}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-slate-500 ml-1">
+        {delPro.length === 1
+          ? 'Activa más modalidades en "Tipo de Atención" para elegirlas por servicio.'
+          : 'El paciente solo podrá reservar este servicio en las modalidades marcadas.'}
+      </p>
+    </div>
+  );
+};
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -268,11 +316,12 @@ const Settings: React.FC = () => {
       price: Number(newService.price) || 0,
       duration: Number(newService.duration) || 45,
       description: newService.description || '',
-      image: newService.image || ''
+      image: newService.image || '',
+      ...(newService.modalities?.length ? { modalities: newService.modalities } : {}),
     };
     handleUpdate({ services: [...localProfile.services, service] });
     setShowServiceModal(false);
-    setNewService({ name: '', price: 0, duration: 45, description: '', image: '' });
+    setNewService({ name: '', price: 0, duration: 45, description: '', image: '', modalities: undefined });
   };
 
   const removeService = (id: string) => {
@@ -287,7 +336,11 @@ const Settings: React.FC = () => {
   const handleSaveEditService = () => {
     if (!editingService) return;
     handleUpdate({
-      services: localProfile.services.map(s => s.id === editingService.id ? editingService : s)
+      services: localProfile.services.map(s => {
+        if (s.id !== editingService.id) return s;
+        const { modalities, ...resto } = editingService;
+        return modalities?.length ? { ...resto, modalities } : resto;
+      })
     });
     setShowEditServiceModal(false);
     setEditingService(null);
@@ -924,6 +977,14 @@ const Settings: React.FC = () => {
                         </div>
                         <h4 className="text-xl font-black text-black">{service.name}</h4>
                         <p className="text-sm text-slate-500 font-medium line-clamp-2">{service.description}</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {modalidadesDeServicio(localProfile.modalities, service.modalities).map(c => (
+                            <span key={c} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-bold text-slate-600">
+                              <span className="material-icons-round" style={{ fontSize: '13px' }}>{infoModalidad(c).icono}</span>
+                              {infoModalidad(c).etiqueta}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                       <div className="relative mt-4 flex items-end justify-between border-t border-slate-100 pt-4">
                         <div className="space-y-1">
@@ -1174,7 +1235,7 @@ const Settings: React.FC = () => {
           )}
           {showServiceModal && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-              <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200">
+              <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl max-h-[90dvh] overflow-y-auto border-2 border-slate-200">
                 <div className="p-6 space-y-5">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-black text-black tracking-tight">Nuevo Servicio</h3>
@@ -1210,6 +1271,12 @@ const Settings: React.FC = () => {
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Descripción</label>
                       <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[100px]" value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} placeholder="Describe brevemente de qué trata este servicio..." />
                     </div>
+
+                    <SelectorModalidadesServicio
+                      pro={localProfile.modalities}
+                      value={newService.modalities}
+                      onChange={v => setNewService({ ...newService, modalities: v })}
+                    />
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Imagen del Servicio (opcional)</label>
@@ -1478,7 +1545,7 @@ const Settings: React.FC = () => {
           {/* Modal Editar Servicio */}
           {showEditServiceModal && editingService && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-              <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden border-2 border-slate-200">
+              <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl max-h-[90dvh] overflow-y-auto border-2 border-slate-200">
                 <div className="p-6 space-y-5">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-black text-black tracking-tight">Editar Servicio</h3>
@@ -1514,6 +1581,12 @@ const Settings: React.FC = () => {
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Descripción</label>
                       <textarea className="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 px-4 font-black text-base text-black focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all min-h-[90px]" value={editingService.description} onChange={e => setEditingService({ ...editingService, description: e.target.value })} />
                     </div>
+
+                    <SelectorModalidadesServicio
+                      pro={localProfile.modalities}
+                      value={editingService.modalities}
+                      onChange={v => setEditingService({ ...editingService, modalities: v })}
+                    />
 
                     <div className="space-y-2">
                       <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1">Imagen del Servicio (opcional)</label>

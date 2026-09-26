@@ -8,6 +8,8 @@ export interface Service {
   duration: number; // en minutos
   description: string;
   image?: string;
+  /** Dónde se ofrece. Sin valor o vacío = todas las modalidades del profesional (api/_lib/modalidades). */
+  modalities?: Array<'inPerson' | 'home' | 'online'>;
 }
 
 export interface Transaction {

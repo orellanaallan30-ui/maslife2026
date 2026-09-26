@@ -6,6 +6,7 @@ import { useClinic } from '../ClinicContext';
 import { getProfessionalBySlugOrId, getProfessionalReviews, getProfessionalRating } from '../supabaseService';
 import { trackViewProfile, trackStartBooking, trackBookingConfirmed } from '../analytics';
 import { usePageMeta, useJsonLd } from '../lib/seo';
+import { modalidadesDeServicio, infoModalidad } from '../../api/_lib/modalidades';
 
 // Clave de localStorage donde se guarda la reserva mientras el paciente paga en
 // la página de MercadoPago (Checkout Pro). Se lee al volver por back_urls.
@@ -61,6 +62,14 @@ const PatientProfile: React.FC = () => {
   const [servicioDetalle, setServicioDetalle] = useState<Service | null>(null);
   const [verFoto, setVerFoto] = useState(false);
   const [bioCompleta, setBioCompleta] = useState(false);
+  // Elegir un servicio fija la modalidad en la primera permitida para ese servicio
+  // (antes partía siempre en 'inPerson', aunque el profesional no atendiera presencial).
+  const elegirServicio = (s: Service) => {
+    setSelectedService(s);
+    setSelectedSlot(null);
+    setSelectedModality(modalidadesDeServicio(fetchedDoctor?.modalities, s.modalities)[0]);
+    setStep(2);
+  };
   useEffect(() => {
     if (!servicioDetalle && !verFoto) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setServicioDetalle(null); setVerFoto(false); } };
@@ -1079,6 +1088,14 @@ const PatientProfile: React.FC = () => {
                         {s.description?.trim() && (
                           <p className="text-xs text-slate-500 font-bold line-clamp-3">{s.description}</p>
                         )}
+                        <span className="flex flex-wrap gap-1.5 mt-3">
+                          {modalidadesDeServicio(doctor.modalities, s.modalities).map(c => (
+                            <span key={c} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-[11px] font-bold text-slate-600">
+                              <span className="material-icons-round" style={{ fontSize: '13px' }}>{infoModalidad(c).icono}</span>
+                              {infoModalidad(c).etiqueta}
+                            </span>
+                          ))}
+                        </span>
                         <span className="inline-flex items-center gap-0.5 mt-2 text-xs font-black text-primary hover:underline">
                           Ver detalle
                           <span className="material-icons-round" style={{ fontSize: '14px' }}>chevron_right</span>
@@ -1091,7 +1108,7 @@ const PatientProfile: React.FC = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => { setSelectedService(s); setSelectedSlot(null); setStep(2); }}
+                          onClick={() => elegirServicio(s)}
                           className="shrink-0 px-4 py-2.5 bg-primary text-white text-xs font-black rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
                         >
                           Reservar
@@ -1147,21 +1164,11 @@ const PatientProfile: React.FC = () => {
                           <span className="material-icons-round" style={{ fontSize: '14px' }}>schedule</span>
                           {servicioDetalle.duration} minutos
                         </span>
-                        {doctor.modalities?.inPerson && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black">
-                            <span className="material-icons-round" style={{ fontSize: '14px' }}>medical_information</span>Presencial
+                        {modalidadesDeServicio(doctor.modalities, servicioDetalle.modalities).map(c => (
+                          <span key={c} className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black">
+                            <span className="material-icons-round" style={{ fontSize: '14px' }}>{infoModalidad(c).icono}</span>{infoModalidad(c).etiqueta}
                           </span>
-                        )}
-                        {doctor.modalities?.home && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black">
-                            <span className="material-icons-round" style={{ fontSize: '14px' }}>home_work</span>Domicilio
-                          </span>
-                        )}
-                        {doctor.modalities?.online && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black">
-                            <span className="material-icons-round" style={{ fontSize: '14px' }}>videocam</span>Online
-                          </span>
-                        )}
+                        ))}
                       </div>
 
                       <div>
@@ -1177,7 +1184,7 @@ const PatientProfile: React.FC = () => {
                     <div className="p-4 border-t border-slate-100 shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
                       <button
                         type="button"
-                        onClick={() => { const s = servicioDetalle; setServicioDetalle(null); setSelectedService(s); setSelectedSlot(null); setStep(2); }}
+                        onClick={() => { const s = servicioDetalle; setServicioDetalle(null); elegirServicio(s); }}
                         className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-md hover:opacity-90 active:scale-[0.99] transition-all text-sm"
                       >
                         Reservar este servicio
@@ -1254,24 +1261,12 @@ const PatientProfile: React.FC = () => {
                 <div className="mb-8">
                   <label className="text-xs font-black text-slate-800 uppercase tracking-widest ml-1 mb-3 block">Modalidad de Atención</label>
                   <div className="flex gap-4">
-                    {doctor.modalities?.inPerson && (
-                       <button onClick={() => setSelectedModality('inPerson')} className={`flex-1 py-4 border-2 rounded-2xl font-black text-sm transition-all flex flex-col items-center gap-2 ${selectedModality === 'inPerson' ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-500 hover:border-primary/50'}`}>
-                         <span className="material-icons-round">medical_information</span>
-                         Presencial
+                    {modalidadesDeServicio(doctor.modalities, selectedService?.modalities).map(c => (
+                       <button key={c} type="button" onClick={() => setSelectedModality(c)} aria-pressed={selectedModality === c} className={`flex-1 py-4 border-2 rounded-2xl font-black text-sm transition-all flex flex-col items-center gap-2 ${selectedModality === c ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-500 hover:border-primary/50'}`}>
+                         <span className="material-icons-round">{infoModalidad(c).icono}</span>
+                         {infoModalidad(c).etiqueta}
                        </button>
-                    )}
-                    {doctor.modalities?.home && (
-                       <button onClick={() => setSelectedModality('home')} className={`flex-1 py-4 border-2 rounded-2xl font-black text-sm transition-all flex flex-col items-center gap-2 ${selectedModality === 'home' ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-500 hover:border-primary/50'}`}>
-                         <span className="material-icons-round">home_work</span>
-                         Domicilio
-                       </button>
-                    )}
-                    {doctor.modalities?.online && (
-                       <button onClick={() => setSelectedModality('online')} className={`flex-1 py-4 border-2 rounded-2xl font-black text-sm transition-all flex flex-col items-center gap-2 ${selectedModality === 'online' ? 'bg-primary border-primary text-white shadow-xl shadow-primary/20' : 'bg-white border-slate-100 text-slate-500 hover:border-primary/50'}`}>
-                         <span className="material-icons-round">videocam</span>
-                         Online
-                       </button>
-                    )}
+                    ))}
                   </div>
                   
                   {/* Mensajes condicionales */}

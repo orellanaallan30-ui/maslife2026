@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { toMinutes, rangesOverlap } from './overlap';
 import { reconcilePendingWithMP } from './mpReconcile';
+import { MODALIDADES, claveDeTipo, modalidadesDeServicio } from './modalidades';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -84,7 +85,7 @@ export async function validateBooking(input: Partial<BookingInput>): Promise<Val
 
   const { data: pro } = await supabase
     .from('professionals')
-    .select('id, name, specialty, email, services, is_public, is_approved, payment_enabled, booking_fee, charge_full_service, subscription_exempt, paused_at, subscription_status, trial_end_date')
+    .select('id, name, specialty, email, services, modalities, is_public, is_approved, payment_enabled, booking_fee, charge_full_service, subscription_exempt, paused_at, subscription_status, trial_end_date')
     .eq('id', professionalId)
     .single();
 
@@ -117,10 +118,19 @@ export async function validateBooking(input: Partial<BookingInput>): Promise<Val
     }
   }
 
-  const services = (pro.services as Array<{ name: string; price: number; duration: number }>) || [];
+  const services = (pro.services as Array<{ name: string; price: number; duration: number; modalities?: string[] }>) || [];
   const service = services.find(s => s.name === serviceName);
   if (!service) {
     return { ok: false, error: 'Servicio no encontrado para este profesional', code: 400 };
+  }
+
+  // Modalidad: debe ser una conocida y estar permitida para este servicio.
+  const tipo = input?.modality || 'Presencial';
+  if (!MODALIDADES.some(m => m.tipo === tipo)) {
+    return { ok: false, error: 'Modalidad de atención no válida', code: 400 };
+  }
+  if (!modalidadesDeServicio(pro.modalities, service.modalities).includes(claveDeTipo(tipo))) {
+    return { ok: false, error: `Este servicio no se atiende en modalidad ${tipo}. Elige otra modalidad.`, code: 400 };
   }
 
   const amountDue = !pro.payment_enabled
