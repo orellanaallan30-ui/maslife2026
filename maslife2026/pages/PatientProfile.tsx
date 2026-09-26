@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Appointment, Service, Review } from '../types';
 import { useClinic } from '../ClinicContext';
@@ -56,6 +57,16 @@ const PatientProfile: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState(0);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  // Paso 1: detalle de un servicio, foto ampliada y bio completa del profesional
+  const [servicioDetalle, setServicioDetalle] = useState<Service | null>(null);
+  const [verFoto, setVerFoto] = useState(false);
+  const [bioCompleta, setBioCompleta] = useState(false);
+  useEffect(() => {
+    if (!servicioDetalle && !verFoto) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { setServicioDetalle(null); setVerFoto(false); } };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [servicioDetalle, verFoto]);
   const [selectedModality, setSelectedModality] = useState<'online' | 'inPerson' | 'home'>('inPerson');
   const [patientData, setPatientData] = useState({
     name: '', rut: '', reason: '', phone: '', email: '', city: '', address: '', houseNumber: ''
@@ -798,13 +809,32 @@ const PatientProfile: React.FC = () => {
               <div className="animate-in fade-in duration-300 space-y-5">
 
               {/* Tarjeta del profesional */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex items-center gap-4">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+              <div className="flex items-center gap-4">
                 <div className="relative shrink-0">
-                  <img
-                    className="w-16 h-16 rounded-xl object-cover border-2 border-white shadow"
-                    src={doctor.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=0d9488&color=fff&size=200`}
-                    alt={doctor.name}
-                  />
+                  {doctor.avatar ? (
+                    <button
+                      type="button"
+                      onClick={() => setVerFoto(true)}
+                      className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary group"
+                      aria-label={`Ver foto de ${doctor.name}`}
+                    >
+                      <img
+                        className="w-20 h-20 lg:w-24 lg:h-24 rounded-2xl object-cover border-2 border-white shadow group-hover:opacity-90 transition-opacity"
+                        src={doctor.avatar}
+                        alt={doctor.name}
+                      />
+                      <span className="absolute bottom-1 left-1 bg-black/55 text-white rounded-md p-0.5 flex" aria-hidden="true">
+                        <span className="material-icons-round" style={{ fontSize: '12px' }}>zoom_in</span>
+                      </span>
+                    </button>
+                  ) : (
+                    <img
+                      className="w-20 h-20 lg:w-24 lg:h-24 rounded-2xl object-cover border-2 border-white shadow"
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=0d9488&color=fff&size=200`}
+                      alt={doctor.name}
+                    />
+                  )}
                   {doctor.isVerified && (
                     <div className="absolute -bottom-1 -right-1 bg-emerald-500 border-2 border-white rounded-lg p-0.5 flex items-center justify-center">
                       <span className="material-icons-round text-white" style={{ fontSize: '10px' }}>verified</span>
@@ -852,6 +882,44 @@ const PatientProfile: React.FC = () => {
                   )}
                 </div>
               </div>
+              {doctor.bio?.trim() && (
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  <p className={`text-sm text-slate-600 leading-relaxed whitespace-pre-line ${bioCompleta ? '' : 'line-clamp-3'}`}>{doctor.bio.trim()}</p>
+                  {doctor.bio.trim().length > 160 && (
+                    <button type="button" onClick={() => setBioCompleta(v => !v)} className="mt-1 text-xs font-black text-primary hover:underline">
+                      {bioCompleta ? 'Ver menos' : 'Leer más'}
+                    </button>
+                  )}
+                </div>
+              )}
+              </div>
+
+              {/* Foto ampliada del profesional */}
+              {verFoto && doctor.avatar && createPortal(
+                <div
+                  className="fixed inset-0 z-[120] bg-black/80 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                  onClick={() => setVerFoto(false)}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={`Foto de ${doctor.name}`}
+                >
+                  <div className="relative max-w-md w-full" onClick={e => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      onClick={() => setVerFoto(false)}
+                      className="absolute -top-12 right-0 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center"
+                      aria-label="Cerrar foto"
+                    >
+                      <span className="material-icons-round">close</span>
+                    </button>
+                    <img src={doctor.avatar} alt={doctor.name} className="w-full max-h-[75dvh] object-contain rounded-2xl bg-white" />
+                    <div className="mt-3 text-center text-white">
+                      <p className="font-black">{doctor.name}</p>
+                      <p className="text-xs font-semibold text-white/80">{doctor.specialty}{doctor.city ? ` · ${doctor.city}` : ''}</p>
+                    </div>
+                  </div>
+                </div>
+              , document.body)}
 
               {doctor.reviewsEnabled && (
                 <div className="px-1 pb-4">
@@ -887,7 +955,7 @@ const PatientProfile: React.FC = () => {
                     </div>
                   ))}
 
-                  {showReviewForm && (
+                  {showReviewForm && createPortal(
                     <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center" onClick={e => { if (e.target === e.currentTarget) setShowReviewForm(false); }}>
                       <div className="bg-white w-full max-w-lg rounded-t-3xl p-6 space-y-4 shadow-2xl">
                         <div className="flex items-center justify-between mb-2">
@@ -991,24 +1059,45 @@ const PatientProfile: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  )}
+                  , document.body)}
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {Array.isArray(doctor.services) && doctor.services.length > 0 ? doctor.services.map((s) => (
-                    <button
+                    <div
                       key={s.id}
-                      onClick={() => { setSelectedService(s); setSelectedSlot(null); setStep(2); }}
-                      className={`p-6 rounded-blob-md border-2 text-left transition-all hover:border-primary hover:shadow-lg group ${selectedService?.id === s.id ? 'border-primary bg-primary/5 shadow-lg' : 'border-slate-100 bg-white'}`}
+                      className={`p-6 rounded-blob-md border-2 text-left transition-all hover:border-primary hover:shadow-lg group flex flex-col ${selectedService?.id === s.id ? 'border-primary bg-primary/5 shadow-lg' : 'border-slate-100 bg-white'}`}
                     >
-                      <h4 className="font-black text-slate-900 mb-2 group-hover:text-primary transition-colors">{s.name}</h4>
-                      <p className="text-xs text-slate-500 font-bold mb-6 line-clamp-3">{s.description}</p>
-                      <div className="flex justify-between items-end mt-auto">
-                        <span className="text-xl font-black text-primary">${s.price.toLocaleString('es-CL')}</span>
-                        <span className="text-[11px] font-black text-slate-400 bg-slate-100 px-3 py-1 rounded-lg uppercase tracking-widest">{s.duration} MIN</span>
+                      <button
+                        type="button"
+                        onClick={() => setServicioDetalle(s)}
+                        className="text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+                        aria-label={`Ver detalle de ${s.name}`}
+                      >
+                        <h4 className="font-black text-slate-900 mb-2 group-hover:text-primary transition-colors">{s.name}</h4>
+                        {s.description?.trim() && (
+                          <p className="text-xs text-slate-500 font-bold line-clamp-3">{s.description}</p>
+                        )}
+                        <span className="inline-flex items-center gap-0.5 mt-2 text-xs font-black text-primary hover:underline">
+                          Ver detalle
+                          <span className="material-icons-round" style={{ fontSize: '14px' }}>chevron_right</span>
+                        </span>
+                      </button>
+                      <div className="flex justify-between items-center mt-5 pt-4 border-t border-slate-100 gap-3">
+                        <div className="flex items-baseline gap-2 min-w-0">
+                          <span className="text-xl font-black text-primary">${s.price.toLocaleString('es-CL')}</span>
+                          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{s.duration} min</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedService(s); setSelectedSlot(null); setStep(2); }}
+                          className="shrink-0 px-4 py-2.5 bg-primary text-white text-xs font-black rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                        >
+                          Reservar
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   )) : (
                     <div className="col-span-2 text-center p-12 bg-white rounded-3xl border-2 border-slate-100">
                        <span className="material-icons-round text-4xl text-slate-300 mb-3 block">event_busy</span>
@@ -1016,6 +1105,87 @@ const PatientProfile: React.FC = () => {
                     </div>
                   )}
               </div>
+
+              {/* Detalle completo de un servicio */}
+              {servicioDetalle && createPortal(
+                <div
+                  className="fixed inset-0 z-[120] bg-black/50 flex items-end lg:items-center justify-center animate-in fade-in duration-200"
+                  onClick={() => setServicioDetalle(null)}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="detalle-servicio-titulo"
+                >
+                  <div
+                    className="bg-white w-full max-w-lg rounded-t-3xl lg:rounded-3xl shadow-2xl max-h-[90dvh] flex flex-col"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="flex items-start justify-between gap-3 p-6 pb-4 border-b border-slate-100 shrink-0">
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{doctor.name}</p>
+                        <h3 id="detalle-servicio-titulo" className="text-lg font-black text-slate-900 leading-tight mt-0.5">{servicioDetalle.name}</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setServicioDetalle(null)}
+                        className="w-9 h-9 shrink-0 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                        aria-label="Cerrar detalle"
+                      >
+                        <span className="material-icons-round text-xl">close</span>
+                      </button>
+                    </div>
+
+                    <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-5">
+                      {servicioDetalle.image && (
+                        <img src={servicioDetalle.image} alt={servicioDetalle.name} className="w-full max-h-56 object-cover rounded-2xl" />
+                      )}
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-xl text-sm font-black">
+                          ${servicioDetalle.price.toLocaleString('es-CL')}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black">
+                          <span className="material-icons-round" style={{ fontSize: '14px' }}>schedule</span>
+                          {servicioDetalle.duration} minutos
+                        </span>
+                        {doctor.modalities?.inPerson && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black">
+                            <span className="material-icons-round" style={{ fontSize: '14px' }}>medical_information</span>Presencial
+                          </span>
+                        )}
+                        {doctor.modalities?.home && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black">
+                            <span className="material-icons-round" style={{ fontSize: '14px' }}>home_work</span>Domicilio
+                          </span>
+                        )}
+                        {doctor.modalities?.online && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black">
+                            <span className="material-icons-round" style={{ fontSize: '14px' }}>videocam</span>Online
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">Qué incluye</p>
+                        {servicioDetalle.description?.trim() ? (
+                          <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{servicioDetalle.description.trim()}</p>
+                        ) : (
+                          <p className="text-sm text-slate-500">El profesional no agregó una descripción para este servicio. Puedes consultarle al reservar.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-4 border-t border-slate-100 shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+                      <button
+                        type="button"
+                        onClick={() => { const s = servicioDetalle; setServicioDetalle(null); setSelectedService(s); setSelectedSlot(null); setStep(2); }}
+                        className="w-full py-4 bg-primary text-white font-black rounded-2xl shadow-md hover:opacity-90 active:scale-[0.99] transition-all text-sm"
+                      >
+                        Reservar este servicio
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              , document.body)}
               </div>
             )}
 
