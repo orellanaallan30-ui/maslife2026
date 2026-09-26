@@ -27,6 +27,11 @@ export interface BiomechReportData {
   metricas: BiomechMetric[];
   simetrias: BiomechSimetria[];
   impresion_global?: string;
+  /** Esquema nuevo (informe corto): resumen en lenguaje claro, recomendaciones y notas. */
+  resumen?: string;
+  recomendaciones?: string[];
+  derivacion?: string;
+  limitaciones?: string;
   diagnostico?: string;
   cie10?: string;
   objetivos?: string[];

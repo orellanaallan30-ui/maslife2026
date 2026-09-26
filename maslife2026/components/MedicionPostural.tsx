@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { detectarPuntos } from '../lib/detectorPose';
 import {
   medicionesFrontales, medicionesSagitales, evaluarCalidad, anguloEn,
-  longitudTronco, razonNormalizada, interpretarCharpy,
-  type Medicion, type Punto, type AvisoCalidad,
+  longitudTronco, razonNormalizada, interpretarCharpy, escalaPorEstatura, distanciasCm,
+  type Medicion, type Punto, type AvisoCalidad, type DistanciaCm,
 } from '../lib/biomecanica';
 
 // Medición angular sobre una fotografía clínica.
@@ -25,12 +25,20 @@ interface Props {
   onMediciones?: (m: Medicion[]) => void;
   /** Diámetro torácico capturado, ya normalizado por la longitud del tronco. */
   onDiametroTorax?: (cual: 'transverso' | 'ap', razon: number) => void;
+  /** Talla del paciente en cm: con ella las distancias salen en cm (aproximados). */
+  estaturaCm?: number | null;
+  /** Guarda la talla escrita aquí en la ficha. */
+  onEstatura?: (cm: number) => void;
+  /** Distancias en cm calculadas con la escala por talla. */
+  onDistancias?: (d: DistanciaCm[]) => void;
 }
 
 const COLOR_SEV = { normal: '#10b981', atencion: '#f59e0b', riesgo: '#f43f5e' } as const;
 const ETIQUETA_SEV = { normal: 'Normal', atencion: 'Atención', riesgo: 'Revisar' } as const;
 
-const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiametroTorax }) => {
+const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiametroTorax, estaturaCm, onEstatura, onDistancias }) => {
+  const [puntos, setPuntos] = useState<Punto[] | null>(null);
+  const [tallaEscrita, setTallaEscrita] = useState('');
   const [estado, setEstado] = useState<'inicial' | 'midiendo' | 'listo' | 'error'>('inicial');
   const [error, setError] = useState('');
   const [mediciones, setMediciones] = useState<Medicion[]>([]);
@@ -61,6 +69,7 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
       }
       const cal = evaluarCalidad(r.puntos, plano);
       setCalidad(cal);
+      setPuntos(cal.nivel === 'invalido' ? null : r.puntos);
       setTronco(longitudTronco(r.puntos));
       setDimensiones({ ancho: r.ancho, alto: r.alto });
 
@@ -187,6 +196,13 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
     const tope = modoManual === 'angulo' ? 3 : 2;
     setPuntosManuales(prev => (prev.length >= tope ? [{ x, y }] : [...prev, { x, y }]));
   };
+
+  // Distancias en cm: solo con talla, foto válida y cuerpo completo.
+  const distancias = React.useMemo(
+    () => (puntos ? distanciasCm(puntos, plano, escalaPorEstatura(puntos, estaturaCm)) : []),
+    [puntos, plano, estaturaCm],
+  );
+  useEffect(() => { if (puntos) onDistancias?.(distancias); }, [distancias]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const anguloManual = modoManual === 'angulo' && puntosManuales.length === 3
     ? Math.round(anguloEn(puntosManuales[0], puntosManuales[1], puntosManuales[2]) * 10) / 10
@@ -332,6 +348,53 @@ const MedicionPostural: React.FC<Props> = ({ imagen, plano, onMediciones, onDiam
             referencia en la escena no hay escala, por eso los desniveles se expresan como porcentaje del ancho de hombros.
             Los umbrales orientan la revisión y no constituyen diagnóstico.
           </p>
+
+          {/* Distancias en cm por escala de talla */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h4 className="text-[11px] font-black text-slate-600 uppercase tracking-widest">Distancias estimadas (cm)</h4>
+              {estaturaCm ? <span className="text-[11px] font-bold text-slate-500">Talla {estaturaCm} cm</span> : null}
+            </div>
+            {!estaturaCm ? (
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="flex-1 min-w-[140px]">
+                  <span className="text-[11px] font-bold text-slate-600 block mb-1">Talla del paciente (cm)</span>
+                  <input
+                    type="number" inputMode="numeric" min={50} max={250} value={tallaEscrita}
+                    onChange={e => setTallaEscrita(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-base font-bold"
+                    placeholder="Ej: 165"
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={!(Number(tallaEscrita) >= 50 && Number(tallaEscrita) <= 250)}
+                  onClick={() => onEstatura?.(Number(tallaEscrita))}
+                  className="px-4 py-2.5 bg-slate-900 text-white rounded-xl font-black text-[11px] uppercase tracking-widest disabled:opacity-40"
+                >Usar talla</button>
+                <p className="w-full text-[11px] text-slate-500">Con la talla, la foto se calibra y los desniveles se muestran en centímetros aproximados.</p>
+              </div>
+            ) : distancias.length ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                {distancias.map(d => (
+                  <div key={d.id} className="flex items-center justify-between gap-3 rounded-xl border border-slate-100 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-slate-700">{d.etiqueta}</p>
+                      <p className="text-[11px] text-slate-500">{d.lectura}</p>
+                    </div>
+                    <p className="text-lg font-black shrink-0" style={{ color: COLOR_SEV[d.severidad] }}>≈ {String(d.cm).replace('.', ',')} cm</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs font-bold text-amber-700">
+                No se puede calibrar esta foto: se necesita el cuerpo completo, de la cabeza a los pies. Revisa la guía de captura.
+              </p>
+            )}
+            {estaturaCm && distancias.length > 0 && (
+              <p className="text-[11px] text-slate-500">Estimado con la talla y la altura de los ojos en la foto. Margen aproximado ±1 cm; exige cámara a la altura de la cadera y sin zoom.</p>
+            )}
+          </div>
         </>
       )}
     </div>

@@ -4,6 +4,7 @@
 
 import { SOAPEntry, BolsetaGlosa } from './types_clinical';
 import { ProfessionalProfile, Patient, Vitals, SessionLog, RoutineItem } from './types';
+import { entregarPDF } from './lib/entregarPDF';
 
 declare const window: Window & {
   jspdf?: { jsPDF: new (opts: object) => jsPDFInstance };
@@ -23,8 +24,8 @@ interface jsPDFInstance {
   splitTextToSize(text: string, maxWidth: number): string[];
   getTextWidth(text: string): number;
   save(filename: string): string;
-  output(type: string): string;
   output(type: 'blob'): Blob;
+  output(type: string): string;
   getNumberOfPages(): number;
   setPage(page: number): void;
   addPage(): void;
@@ -290,6 +291,9 @@ export async function exportSOAPtoPDF(
 }
 
 // ── HELPERS COMPARTIDOS ────────────────────────────────────────────────────────
+
+/** Carga jsPDF por adelantado (p. ej. al abrir la ficha) para que el PDF salga al instante. */
+export function precargarJsPDF(): void { ensureJsPDF().catch(() => {}); }
 
 async function ensureJsPDF(): Promise<void> {
   if (!window.jspdf) {
@@ -1077,8 +1081,8 @@ export async function exportPatientFichaToPDF(
 
   drawFooters(doc, W, professional);
 
-  const safeName = patient.name.replace(/\s+/g, '_');
-  doc.save(`Ficha_${safeName}_${dateStr.replace(/\//g, '-')}.pdf`);
+  const safeName = (patient.name || 'paciente').replace(/\s+/g, '_');
+  entregarPDF(doc.output('blob'), `Ficha_${safeName}_${dateStr.replace(/\//g, '-')}.pdf`);
 }
 
 // ── INFORME IA A PDF ───────────────────────────────────────────────────────────
@@ -1199,8 +1203,174 @@ export async function exportReportToPDF(
 
   drawFooters(doc, W, professional);
 
-  const safeName = patient.name.replace(/\s+/g, '_');
-  doc.save(`Informe_${safeName}_${dateStr.replace(/\//g, '-')}.pdf`);
+  const safeName = (patient.name || 'paciente').replace(/\s+/g, '_');
+  entregarPDF(doc.output('blob'), `Informe_${safeName}_${dateStr.replace(/\//g, '-')}.pdf`);
+}
+
+// ── INFORME POSTURAL / MARCHA (estructurado) ───────────────────────────────────
+
+export interface InformePosturalPDF {
+  tipo?: string;
+  resumen?: string;
+  hallazgos: Array<{ zona?: string; titulo: string; detalle?: string; severidad: 'normal' | 'atencion' | 'riesgo' }>;
+  medidas: Array<{ etiqueta: string; valor: string; severidad: 'normal' | 'atencion' | 'riesgo'; lectura?: string }>;
+  recomendaciones?: string[];
+  derivacion?: string;
+  limitaciones?: string;
+}
+
+const SEV_PDF = {
+  normal:   { label: 'NORMAL',   fill: [220, 252, 231] as const, text: [21, 128, 61] as const },
+  atencion: { label: 'ATENCIÓN', fill: [254, 243, 199] as const, text: [180, 83, 9] as const },
+  riesgo:   { label: 'REVISAR',  fill: [255, 228, 230] as const, text: [190, 18, 60] as const },
+};
+
+/**
+ * Informe corto y ordenado: resumen destacado, medidas objetivas, hallazgos
+ * con color de severidad y recomendaciones. Sustituye al volcado de texto.
+ */
+export async function exportInformePosturalPDF(
+  inf: InformePosturalPDF,
+  patient: Patient,
+  professional: ProfessionalProfile,
+): Promise<void> {
+  await ensureJsPDF();
+  const { jsPDF } = window.jspdf!;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const MARGIN = 18;
+  const COL = W - MARGIN * 2;
+  const dateStr = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  let y = 36;
+  const salto = (alto: number) => { if (y + alto > 272) { doc.addPage(); y = MARGIN + 2; } };
+
+  drawMembrete(doc, W, MARGIN, dateStr);
+  const titulo = inf.tipo === 'Marcha' ? 'INFORME DE MARCHA' : inf.tipo === 'Musculoesquelético' ? 'INFORME MUSCULOESQUELÉTICO' : 'INFORME POSTURAL';
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(15, 23, 42);
+  doc.text(titulo, MARGIN, y, { charSpace: 0.3 } as any);
+  y += 5.5;
+  doc.setDrawColor(0, 168, 158); doc.setLineWidth(0.5); doc.line(MARGIN, y, W - MARGIN, y);
+  y += 6;
+
+  // Paciente en una línea
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(15, 23, 42);
+  doc.text(patient.name || 'Paciente', MARGIN, y);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+  const idLinea = [patient.rut && `RUT ${patient.rut}`, patient.age ? `${patient.age} años` : '', `Evaluación ${dateStr}`, `${professional.name}`].filter(Boolean).join('   ·   ');
+  doc.text(idLinea, MARGIN, y + 5);
+  y += 12;
+
+  // Resumen destacado
+  if (inf.resumen) {
+    const lineas = doc.splitTextToSize(inf.resumen, COL - 10);
+    const alto = lineas.length * 5 + 12;
+    salto(alto);
+    doc.setFillColor(240, 253, 250); doc.setDrawColor(153, 246, 228);
+    doc.rect(MARGIN, y, COL, alto, 'FD');
+    doc.setFillColor(0, 168, 158); doc.rect(MARGIN, y, 1.6, alto, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(15, 94, 89);
+    doc.text('RESUMEN', MARGIN + 5, y + 6, { charSpace: 0.4 } as any);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30, 41, 59);
+    doc.text(lineas, MARGIN + 5, y + 12);
+    y += alto + 6;
+  }
+
+  const chip = (sev: 'normal' | 'atencion' | 'riesgo', xDer: number, yLinea: number) => {
+    const c = SEV_PDF[sev] || SEV_PDF.atencion;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5);
+    const w = doc.getTextWidth(c.label) + 5;
+    doc.setFillColor(c.fill[0], c.fill[1], c.fill[2]);
+    doc.rect(xDer - w, yLinea - 3.6, w, 5, 'F');
+    doc.setTextColor(c.text[0], c.text[1], c.text[2]);
+    doc.text(c.label, xDer - w + 2.5, yLinea);
+  };
+
+  // Medidas objetivas
+  if (inf.medidas.length) {
+    salto(20);
+    y = drawSectionHeader(doc, 'Medido en la fotografía', MARGIN, y, COL);
+    for (const m of inf.medidas) {
+      salto(8);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(51, 65, 85);
+      doc.text(m.etiqueta, MARGIN + 2, y + 3);
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(15, 23, 42);
+      // Helvetica estándar no trae '≈': se usa '~'.
+      doc.text(m.valor.replace(/≈\s*/g, '~'), MARGIN + COL * 0.58, y + 3);
+      chip(m.severidad, W - MARGIN - 1, y + 3);
+      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.2);
+      doc.line(MARGIN, y + 6, W - MARGIN, y + 6);
+      y += 8;
+    }
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(7); doc.setTextColor(100, 116, 139);
+    doc.text('Ángulos medidos sobre puntos anatómicos detectados en la foto. Los cm son aproximados (escala por talla).', MARGIN + 2, y + 2);
+    y += 8;
+  }
+
+  // Hallazgos
+  if (inf.hallazgos.length) {
+    salto(20);
+    y = drawSectionHeader(doc, 'Hallazgos', MARGIN, y, COL);
+    for (const h of inf.hallazgos) {
+      const det = h.detalle ? doc.splitTextToSize(h.detalle, COL - 34) : [];
+      const alto = 6 + det.length * 4.4 + 3;
+      salto(alto);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(15, 23, 42);
+      doc.text(`${h.zona ? h.zona + ' · ' : ''}${h.titulo}`, MARGIN + 2, y + 4);
+      chip(h.severidad, W - MARGIN - 1, y + 4);
+      if (det.length) {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(71, 85, 105);
+        doc.text(det, MARGIN + 2, y + 9);
+      }
+      y += alto;
+      doc.setDrawColor(226, 232, 240); doc.setLineWidth(0.2); doc.line(MARGIN, y - 1, W - MARGIN, y - 1);
+      y += 2;
+    }
+    y += 3;
+  }
+
+  // Recomendaciones
+  if (inf.recomendaciones?.length) {
+    salto(18);
+    y = drawSectionHeader(doc, 'Recomendaciones', MARGIN, y, COL);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(51, 65, 85);
+    for (const r of inf.recomendaciones) {
+      const ls = doc.splitTextToSize(r, COL - 8);
+      salto(ls.length * 4.8 + 2);
+      doc.setFillColor(0, 168, 158); doc.rect(MARGIN + 2, y + 0.8, 1.6, 1.6, 'F');
+      doc.text(ls, MARGIN + 6, y + 2.5);
+      y += ls.length * 4.8 + 1.5;
+    }
+    y += 4;
+  }
+
+  const nota = (titulo: string, texto?: string) => {
+    if (!texto) return;
+    const ls = doc.splitTextToSize(texto, COL - 4);
+    salto(ls.length * 4 + 8);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(71, 85, 105);
+    doc.text(titulo.toUpperCase(), MARGIN + 2, y + 3, { charSpace: 0.3 } as any);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(71, 85, 105);
+    doc.text(ls, MARGIN + 2, y + 7.5);
+    y += ls.length * 4 + 9;
+  };
+  nota('Derivación', inf.derivacion);
+  nota('Limitaciones del análisis', inf.limitaciones);
+
+  // Aviso IA + firma
+  const AVISO = 'Informe elaborado con asistencia de inteligencia artificial y revisado por el profesional que lo firma. No sustituye la exploración presencial ni los exámenes complementarios.';
+  const la = doc.splitTextToSize(AVISO, COL - 8);
+  const altoAviso = la.length * 3.8 + 6;
+  if (y + altoAviso + 46 > 272) { doc.addPage(); y = MARGIN; }
+  doc.setDrawColor(245, 158, 11); doc.setFillColor(255, 251, 235);
+  doc.rect(MARGIN, y, COL, altoAviso, 'FD');
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(146, 64, 14);
+  doc.text(la, MARGIN + 4, y + 5);
+  y += altoAviso + 5;
+  drawAutoSignature(doc, professional, MARGIN, COL, y);
+  drawFooters(doc, W, professional);
+
+  const safeName = (patient.name || 'paciente').replace(/\s+/g, '_');
+  entregarPDF(doc.output('blob'), `${titulo.replace(/ /g, '_')}_${safeName}_${dateStr.replace(/\//g, '-')}.pdf`);
 }
 
 // ── ORDEN PROFESIONAL ─────────────────────────────────────────────────────────
@@ -1300,8 +1470,8 @@ export async function exportOrdenPDF(
 
   drawFooters(doc, W, professional);
 
-  const safeName = patient.name.replace(/\s+/g, '_');
-  doc.save(`Orden_${safeName}_${dateStr.replace(/\//g, '-')}.pdf`);
+  const safeName = (patient.name || 'paciente').replace(/\s+/g, '_');
+  entregarPDF(doc.output('blob'), `Orden_${safeName}_${dateStr.replace(/\//g, '-')}.pdf`);
 }
 
 // ── Rutina de ejercicios (kinesiología) ──────────────────────────────────────
@@ -1450,8 +1620,8 @@ export async function exportRoutinePDF(
 ): Promise<void> {
   const doc = await buildRoutineDoc(patient, professional, routineTitle, items);
   const dateStr = new Date().toLocaleDateString('es-CL').replace(/\//g, '-');
-  const safeName = patient.name.replace(/\s+/g, '_');
-  doc.save(`Rutina_${safeName}_${dateStr}.pdf`);
+  const safeName = (patient.name || 'paciente').replace(/\s+/g, '_');
+  entregarPDF(doc.output('blob'), `Rutina_${safeName}_${dateStr}.pdf`);
 }
 
 // Devuelve el PDF como base64 puro (sin el prefijo data:...;base64,) para
@@ -1521,7 +1691,7 @@ export async function exportRoutinePDFPublic(
   }));
   const doc = await buildRoutineDoc(patientStub, proStub, data.title, routineItems);
   const dateStr = new Date().toLocaleDateString('es-CL').replace(/\//g, '-');
-  doc.save(`Rutina_${(data.patientName || 'paciente').replace(/\s+/g, '_')}_${dateStr}.pdf`);
+  entregarPDF(doc.output('blob'), `Rutina_${(data.patientName || 'paciente').replace(/\s+/g, '_')}_${dateStr}.pdf`);
 }
 
 // ── Plan alimentario (nutrición) ─────────────────────────────────────────────
@@ -1658,7 +1828,7 @@ async function buildMealPlanDoc(docId: string, data: MealPlanPDFData): Promise<j
 export async function exportMealPlanPDFPublic(planId: string, data: MealPlanPDFData): Promise<void> {
   const doc = await buildMealPlanDoc(planId, data);
   const dateStr = new Date().toLocaleDateString('es-CL').replace(/\//g, '-');
-  doc.save(`Plan_Alimentario_${(data.patientName || 'paciente').replace(/\s+/g, '_')}_${dateStr}.pdf`);
+  entregarPDF(doc.output('blob'), `Plan_Alimentario_${(data.patientName || 'paciente').replace(/\s+/g, '_')}_${dateStr}.pdf`);
 }
 
 // Base64 puro (sin prefijo data:) para adjuntar en el correo vía api/notify.ts.
