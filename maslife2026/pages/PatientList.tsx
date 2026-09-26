@@ -52,22 +52,46 @@ const PatientList: React.FC = () => {
     return matchesSearch;
   });
 
+  // Validación propia (form noValidate): la burbuja nativa del navegador y los
+  // alert() no se ven en navegadores internos (p. ej. la app de Google en iPad),
+  // y el botón parecía no hacer nada.
+  const [formErrors, setFormErrors] = useState<{ name?: string; rut?: string; email?: string }>({});
+  const [duplicado, setDuplicado] = useState<Patient | null>(null);
+  const normalizarRut = (r: string) => r.replace(/[.\-\s]/g, '').toLowerCase();
+
+  const cerrarModalNuevo = () => {
+    setIsModalOpen(false);
+    setFormErrors({});
+    setDuplicado(null);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPatient.name || !newPatient.rut) return;
+    const name = (newPatient.name || '').trim();
+    const rut = (newPatient.rut || '').trim();
+    const email = (newPatient.email || '').trim();
+    const phone = (newPatient.phone || '').trim();
 
-    // Prevención de RUT duplicado (CENS RCE)
-    const normalizedRut = newPatient.rut.trim().replace(/\s/g, '').toLowerCase();
-    const duplicate = patients.find(
-      p => !p.deletedAt && p.rut.trim().replace(/\s/g, '').toLowerCase() === normalizedRut
-    );
-    if (duplicate) {
-      alert(`Ya existe un paciente con RUT ${newPatient.rut}: ${duplicate.name}`);
+    const errores: typeof formErrors = {};
+    if (!name) errores.name = 'Escribe el nombre del paciente.';
+    if (!rut) errores.rut = 'Escribe el RUT o documento de identidad.';
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errores.email = 'El correo no es válido (ej: nombre@gmail.com). Corrígelo o déjalo vacío.';
+    setFormErrors(errores);
+    const primero = (['name', 'rut', 'email'] as const).find(k => errores[k]);
+    if (primero) {
+      setDuplicado(null);
+      document.getElementById(`nuevo-paciente-${primero}`)?.focus();
       return;
     }
 
+    // RUT duplicado entre MIS pacientes (sin contar eliminados), ignorando puntos y guion.
+    const dup = proPatients.find(p => !p.deletedAt && normalizarRut(p.rut || '') === normalizarRut(rut));
+    if (dup) { setDuplicado(dup); return; }
+    setDuplicado(null);
+
     const patientToAdd: Patient = {
       ...newPatient,
+      name, rut, email, phone,
       // patients.id es UUID en la BD: un id aleatorio base36 la rechaza (22P02) y
       // el paciente quedaría solo en local. Usar UUID válido.
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 9),
@@ -83,7 +107,8 @@ const PatientList: React.FC = () => {
     } as Patient;
 
     addPatient(patientToAdd);
-    setIsModalOpen(false);
+    addNotification(`✅ Ficha de ${name} creada.`, 'appointment');
+    cerrarModalNuevo();
     setNewPatient({ name: '', rut: '', email: '', phone: '', prevision: 'Fonasa', status: 'Evaluación' });
   };
 
@@ -575,16 +600,26 @@ const PatientList: React.FC = () => {
                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Nuevo Paciente</h3>
                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mt-1">Sincronización de Base de Datos</p>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl flex items-center justify-center transition-all active:scale-95">
+                <button type="button" onClick={cerrarModalNuevo} aria-label="Cerrar" className="w-12 h-12 bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl flex items-center justify-center transition-all active:scale-95">
                   <span className="material-icons-round">close</span>
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} noValidate className="space-y-6">
+                {duplicado && (
+                  <div role="alert" className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-sm text-amber-900 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <span className="flex-1">Ya existe una ficha con este RUT: <strong>{duplicado.name}</strong>.</span>
+                    <button type="button" onClick={() => { const id = duplicado.id; cerrarModalNuevo(); navigate(`/pro/record/${id}`); }} className="shrink-0 px-4 py-2 bg-amber-600 text-white rounded-xl text-xs font-black hover:bg-amber-700 transition-all">
+                      Abrir ficha
+                    </button>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-6">
                   <div className="col-span-2">
                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Nombre Completo</label>
                     <input
+                      id="nuevo-paciente-name"
+                      aria-invalid={!!formErrors.name}
                       required
                       type="text"
                       value={newPatient.name}
@@ -592,10 +627,13 @@ const PatientList: React.FC = () => {
                       className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-slate-800 focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                       placeholder="Ej: Juan Pérez Galdames"
                     />
+                    {formErrors.name && <p className="text-xs font-bold text-rose-600 mt-1.5 ml-1">{formErrors.name}</p>}
                   </div>
                   <div>
                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">RUT / ID</label>
                     <input
+                      id="nuevo-paciente-rut"
+                      aria-invalid={!!formErrors.rut}
                       required
                       type="text"
                       value={newPatient.rut}
@@ -603,6 +641,7 @@ const PatientList: React.FC = () => {
                       className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-slate-800 focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                       placeholder="12.345.678-9"
                     />
+                    {formErrors.rut && <p className="text-xs font-bold text-rose-600 mt-1.5 ml-1">{formErrors.rut}</p>}
                   </div>
                   <div>
                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Previsión</label>
@@ -619,12 +658,19 @@ const PatientList: React.FC = () => {
                   <div>
                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Correo Electrónico</label>
                     <input
+                      id="nuevo-paciente-email"
+                      aria-invalid={!!formErrors.email}
                       type="email"
+                      inputMode="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
                       value={newPatient.email}
                       onChange={e => setNewPatient({ ...newPatient, email: e.target.value })}
                       className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-slate-800 focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                       placeholder="juan@email.com"
                     />
+                    {formErrors.email && <p className="text-xs font-bold text-rose-600 mt-1.5 ml-1">{formErrors.email}</p>}
                   </div>
                   <div>
                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">Teléfono</label>
@@ -639,7 +685,7 @@ const PatientList: React.FC = () => {
                 </div>
 
                 <div className="pt-6 flex flex-col sm:flex-row gap-4">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="w-full sm:w-auto px-8 py-5 bg-slate-100 text-slate-500 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all hidden sm:block">Cancelar</button>
+                  <button type="button" onClick={cerrarModalNuevo} className="w-full sm:w-auto px-8 py-5 bg-slate-100 text-slate-500 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-200 active:scale-95 transition-all hidden sm:block">Cancelar</button>
                   <button type="submit" className="w-full sm:flex-1 py-5 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-[0.05em] shadow-cta border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all">Crear Paciente Central</button>
                 </div>
               </form>
