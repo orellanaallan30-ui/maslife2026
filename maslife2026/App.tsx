@@ -4,6 +4,7 @@ import {
   useNavigate, useLocation, Outlet
 } from 'react-router-dom';
 import MainHome              from './pages/MainHome';
+import { ETIQUETAS_LANDING, esRutaLanding } from './lib/paginasLanding';
 import ProLanding            from './pages/ProLanding';
 import PatientResults        from './pages/PatientResults';
 import PatientProfile        from './pages/PatientProfile';
@@ -200,14 +201,14 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
   }, [notifications.length]);
 
   const publicPaths = ['/pro/login','/pro/register','/pro/recover','/pro/reset-password','/verify/','/consent/','/admin/login', '/patient', '/rutina/', '/plan/'];
-  const isFullPublic = location.pathname === '/' || publicPaths.some(p => location.pathname.startsWith(p));
+  const isFullPublic = esRutaLanding(location.pathname) || publicPaths.some(p => location.pathname.startsWith(p));
   const isAuthPage   = publicPaths.some(p => location.pathname.startsWith(p));
   const showProActions = view === 'PROFESSIONAL' && !isAuthPage && !!loggedPro;
   const unread = notifications.filter(n => !n.read).length;
   const isRodrigo = loggedPro?.id === 'pro-rodrigo';
 
   // Ocultar navbar completamente en landing (MainHome tiene su propia)
-  if (location.pathname === '/') return null;
+  if (esRutaLanding(location.pathname)) return null;
 
   const isPublicView = isFullPublic;
 
@@ -555,6 +556,11 @@ const AppContent: React.FC = () => {
         <Routes>
           {/* Públicas */}
           <Route path="/"                    element={<MainHome />} />
+          {Object.entries(ETIQUETAS_LANDING).map(([slug, etiqueta]) => (
+            <React.Fragment key={slug}>
+              <Route path={`/${slug}`} element={<MainHome etiqueta={etiqueta} />} />
+            </React.Fragment>
+          ))}
           <Route path="/patient/results"     element={<PatientResults />} />
           <Route path="/patient/profile/:id" element={<PatientProfile />} />
           <Route path="/p/:id"               element={<PatientProfile />} />

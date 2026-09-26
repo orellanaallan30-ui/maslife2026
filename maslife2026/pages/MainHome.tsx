@@ -28,7 +28,7 @@ const CARD_POSITIONS = [
   'top-4 left-[295px] lg:left-[355px] z-0',
 ];
 
-const MainHome: React.FC = () => {
+const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showKinePlans, setShowKinePlans] = useState(false);
@@ -513,7 +513,7 @@ const MainHome: React.FC = () => {
               {/* ── RESPONSIVE: badge — base=mobile  lg:=desktop ── */}
               <span className="inline-block text-[.6rem] lg:text-xs font-sans font-bold uppercase tracking-[.5px] mb-7 px-3 py-1 rounded-full text-white"
                     style={{ background: '#007a73' }}>
-                Profesionales de salud cerca de ti
+                {etiqueta ?? 'Profesionales de salud cerca de ti'}
               </span>
 
               {/* Título Fraunces */}

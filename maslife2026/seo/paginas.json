@@ -1,0 +1,1992 @@
+[
+  {
+    "slug": "escoliosis-tratamiento-la-serena",
+    "etiqueta": "Escoliosis: Tratamiento en La Serena",
+    "title": "Escoliosis: Tratamiento en La Serena | Kinesiología | Clínica Mas Life",
+    "description": "Tratamiento de escoliosis en La Serena sin cirugía. Ejercicios de Schroth, ortesis y kinesiología especializada. Evaluación postural online.",
+    "keywords": "escoliosis La Serena, tratamiento escoliosis La Serena, kinesiólogo escoliosis La Serena, ejercicios Schroth La Serena, escoliosis niños La Serena, corrección columna La Serena",
+    "ogTitle": "Escoliosis: Tratamiento en La Serena | Clínica Mas Life",
+    "ogDescription": "Tratamiento de escoliosis en La Serena sin cirugía. Ejercicios de Schroth, ortesis y kinesiología especializada.",
+    "geoPlacename": "La Serena, Región de Coquimbo",
+    "geoPosition": "-29.9027;-71.2519",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/escoliosis-tratamiento-la-serena#webpage",
+          "name": "Tratamiento de Escoliosis en La Serena",
+          "url": "https://clinicamaslife.cl/escoliosis-tratamiento-la-serena",
+          "description": "Guía sobre el tratamiento kinesiológico de la escoliosis en La Serena. Tipos, ejercicios de Schroth, ortesis y cuándo se opera.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Escoliosis",
+            "code": {
+              "@type": "MedicalCode",
+              "code": "M41",
+              "codingSystem": "ICD-10"
+            }
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología La Serena",
+              "item": "https://clinicamaslife.cl/kinesiologia-la serena"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Escoliosis La Serena",
+              "item": "https://clinicamaslife.cl/escoliosis-tratamiento-la-serena"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "escoliosis-tratamiento-ovalle",
+    "etiqueta": "Escoliosis: Tratamiento en Ovalle",
+    "title": "Escoliosis: Tratamiento en Ovalle | Kinesiología | Clínica Mas Life",
+    "description": "Tratamiento de escoliosis en Ovalle sin cirugía. Ejercicios de Schroth, ortesis y kinesiología especializada. Evaluación postural online.",
+    "keywords": "escoliosis Ovalle, tratamiento escoliosis Ovalle, kinesiólogo escoliosis Ovalle, ejercicios Schroth Ovalle, escoliosis niños Ovalle, corrección columna Ovalle",
+    "ogTitle": "Escoliosis: Tratamiento en Ovalle | Clínica Mas Life",
+    "ogDescription": "Tratamiento de escoliosis en Ovalle sin cirugía. Ejercicios de Schroth, ortesis y kinesiología especializada.",
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": "-30.6003;-71.1998",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/escoliosis-tratamiento-ovalle#webpage",
+          "name": "Tratamiento de Escoliosis en Ovalle",
+          "url": "https://clinicamaslife.cl/escoliosis-tratamiento-ovalle",
+          "description": "Guía sobre el tratamiento kinesiológico de la escoliosis en Ovalle. Tipos, ejercicios de Schroth, ortesis y cuándo se opera.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Escoliosis",
+            "code": {
+              "@type": "MedicalCode",
+              "code": "M41",
+              "codingSystem": "ICD-10"
+            }
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Ovalle",
+              "item": "https://clinicamaslife.cl/kinesiologia-ovalle"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Escoliosis Ovalle",
+              "item": "https://clinicamaslife.cl/escoliosis-tratamiento-ovalle"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "fonoaudiologo-coquimbo",
+    "etiqueta": "Fonoaudiólogo en Coquimbo",
+    "title": "Fonoaudiólogo en Coquimbo | Lenguaje y Voz | Clínica Mas Life",
+    "description": "Fonoaudiólogos en Coquimbo. Trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia online.",
+    "keywords": "fonoaudiólogo Coquimbo, fonoaudiología Coquimbo, fonoaudiólogo en Coquimbo, terapia lenguaje Coquimbo, trastorno habla Coquimbo, fonoaudiólogo niños Coquimbo, disfagia Coquimbo, tartamudez Coquimbo",
+    "ogTitle": "Fonoaudiólogo en Coquimbo | Clínica Mas Life",
+    "ogDescription": "Fonoaudiólogos en Coquimbo. Trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia online.",
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3395",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/fonoaudiologo-coquimbo#business",
+          "name": "Clínica Mas Life — Fonoaudiólogo Coquimbo",
+          "url": "https://clinicamaslife.cl/fonoaudiologo-coquimbo",
+          "description": "Fonoaudiólogos certificados en Coquimbo para trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia presencial y online.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Coquimbo",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9533,
+            "longitude": -71.3395
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Coquimbo"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Fonoaudiólogo Coquimbo",
+              "item": "https://clinicamaslife.cl/fonoaudiologo-coquimbo"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "fonoaudiologo-la-serena",
+    "etiqueta": "Fonoaudiólogo en La Serena",
+    "title": "Fonoaudiólogo en La Serena | Lenguaje y Voz | Clínica Mas Life",
+    "description": "Fonoaudiólogos en La Serena. Trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia online.",
+    "keywords": "fonoaudiólogo La Serena, fonoaudiología La Serena, fonoaudiólogo en La Serena, terapia lenguaje La Serena, trastorno habla La Serena, fonoaudiólogo niños La Serena, disfagia La Serena, tartamudez La Serena",
+    "ogTitle": "Fonoaudiólogo en La Serena | Clínica Mas Life",
+    "ogDescription": "Fonoaudiólogos en La Serena. Trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia online.",
+    "geoPlacename": "La Serena, Región de Coquimbo",
+    "geoPosition": "-29.9027;-71.2519",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/fonoaudiologo-la-serena#business",
+          "name": "Clínica Mas Life — Fonoaudiólogo La Serena",
+          "url": "https://clinicamaslife.cl/fonoaudiologo-la-serena",
+          "description": "Fonoaudiólogos certificados en La Serena para trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia presencial y online.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "La Serena",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9027,
+            "longitude": -71.2519
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "La Serena"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Fonoaudiólogo La Serena",
+              "item": "https://clinicamaslife.cl/fonoaudiologo-la-serena"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "fonoaudiologo-ovalle",
+    "etiqueta": "Fonoaudiólogo en Ovalle",
+    "title": "Fonoaudiólogo en Ovalle | Lenguaje y Voz | Clínica Mas Life",
+    "description": "Fonoaudiólogos en Ovalle. Trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia online.",
+    "keywords": "fonoaudiólogo Ovalle, fonoaudiología Ovalle, fonoaudiólogo en Ovalle, terapia lenguaje Ovalle, trastorno habla Ovalle, fonoaudiólogo niños Ovalle, disfagia Ovalle, tartamudez Ovalle",
+    "ogTitle": "Fonoaudiólogo en Ovalle | Clínica Mas Life",
+    "ogDescription": "Fonoaudiólogos en Ovalle. Trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia online.",
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": "-30.6003;-71.1998",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/fonoaudiologo-ovalle#business",
+          "name": "Clínica Mas Life — Fonoaudiólogo Ovalle",
+          "url": "https://clinicamaslife.cl/fonoaudiologo-ovalle",
+          "description": "Fonoaudiólogos certificados en Ovalle para trastornos del habla, lenguaje, voz y deglución en niños y adultos. Evaluación y terapia presencial y online.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ovalle",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -30.6003,
+            "longitude": -71.1998
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Ovalle"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Fonoaudiólogo Ovalle",
+              "item": "https://clinicamaslife.cl/fonoaudiologo-ovalle"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologia-coquimbo",
+    "etiqueta": "Kinesiólogo en Coquimbo",
+    "title": "Kinesiólogo en Coquimbo | Rehabilitación y Quiropraxia | Clínica Mas Life",
+    "description": "Kinesiólogos y quiroprácticos en Coquimbo. Rehabilitación, dolor lumbar, lesiones deportivas, atención presencial y a domicilio en Coquimbo. Agenda online ahora.",
+    "keywords": "kinesiólogo Coquimbo, kinesiología Coquimbo, fisioterapia Coquimbo, quiropráctico Coquimbo, kinesiólogo domicilio Coquimbo, rehabilitación Coquimbo",
+    "ogTitle": "Kinesiólogo en Coquimbo | Clínica Mas Life",
+    "ogDescription": null,
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3436",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "name": "Clínica Mas Life — Coquimbo",
+          "url": "https://clinicamaslife.cl/kinesiologia-coquimbo",
+          "description": "Kinesiólogos, quiroprácticos y especialistas en salud en Coquimbo. Rehabilitación, dolor de espalda, lesiones deportivas. Presencial y a domicilio.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Coquimbo",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9533,
+            "longitude": -71.3436
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Coquimbo"
+          },
+          "priceRange": "$$"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologia-domicilio-coquimbo",
+    "etiqueta": "Kinesiología a Domicilio en Coquimbo",
+    "title": "Kinesiología a Domicilio en Coquimbo | Kinesiólogo en Casa | Clínica Mas Life",
+    "description": "Kinesiólogo a domicilio en Coquimbo. El profesional va a tu casa. Ideal para adultos mayores y post-operados. Agenda online.",
+    "keywords": "kinesiología domicilio Coquimbo, kinesiólogo a domicilio Coquimbo, kinesiólogo en casa Coquimbo, rehabilitación domicilio Coquimbo, kinesiólogo adulto mayor Coquimbo",
+    "ogTitle": "Kinesiología a Domicilio en Coquimbo | Clínica Mas Life",
+    "ogDescription": "Kinesiólogo a domicilio en Coquimbo. El profesional va a tu casa. Ideal para adultos mayores y post-operados.",
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3395",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/kinesiologia-domicilio-coquimbo#business",
+          "name": "Clínica Mas Life — Kinesiología a Domicilio Coquimbo",
+          "url": "https://clinicamaslife.cl/kinesiologia-domicilio-coquimbo",
+          "description": "Kinesiólogo a domicilio en Coquimbo. El profesional va a tu casa para rehabilitación, ideal para adultos mayores, post-operados y personas con movilidad reducida en Coquimbo.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Coquimbo",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9533,
+            "longitude": -71.3395
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Coquimbo"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Domicilio Coquimbo",
+              "item": "https://clinicamaslife.cl/kinesiologia-domicilio-coquimbo"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologia-domicilio-la-serena",
+    "etiqueta": "Kinesiología a Domicilio en La Serena",
+    "title": "Kinesiología a Domicilio en La Serena | Kinesiólogo en Casa | Clínica Mas Life",
+    "description": "Kinesiólogo a domicilio en La Serena. El profesional va a tu casa. Ideal para adultos mayores y post-operados. Agenda online.",
+    "keywords": "kinesiología domicilio La Serena, kinesiólogo a domicilio La Serena, kinesiólogo en casa La Serena, rehabilitación domicilio La Serena, kinesiólogo adulto mayor La Serena",
+    "ogTitle": "Kinesiología a Domicilio en La Serena | Clínica Mas Life",
+    "ogDescription": "Kinesiólogo a domicilio en La Serena. El profesional va a tu casa. Ideal para adultos mayores y post-operados.",
+    "geoPlacename": "La Serena, Región de Coquimbo",
+    "geoPosition": "-29.9069;-71.2528",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/kinesiologia-domicilio-la-serena#business",
+          "name": "Clínica Mas Life — Kinesiología a Domicilio La Serena",
+          "url": "https://clinicamaslife.cl/kinesiologia-domicilio-la-serena",
+          "description": "Kinesiólogo a domicilio en La Serena. El profesional va a tu casa para rehabilitación, ideal para adultos mayores, post-operados y personas con movilidad reducida.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "La Serena",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9069,
+            "longitude": -71.2528
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "La Serena"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Domicilio La Serena",
+              "item": "https://clinicamaslife.cl/kinesiologia-domicilio-la-serena"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologia-domicilio-ovalle",
+    "etiqueta": "Kinesiología a Domicilio en Ovalle",
+    "title": "Kinesiología a Domicilio en Ovalle | El Kinesiólogo va a tu Casa | Clínica Mas Life",
+    "description": "Kinesiología a domicilio en Ovalle. Kinesiólogos que van a tu casa para rehabilitación, dolor lumbar, post-operatorio y más. Agenda online en segundos. Clínica Mas Life Ovalle.",
+    "keywords": "kinesiología a domicilio Ovalle, kinesiólogo domicilio Ovalle, kinesiólogo a domicilio Ovalle, rehabilitación domicilio Ovalle, kinesiólogo en casa Ovalle",
+    "ogTitle": "Kinesiología a Domicilio en Ovalle | Clínica Mas Life",
+    "ogDescription": null,
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": null,
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Service",
+          "name": "Kinesiología a Domicilio en Ovalle",
+          "provider": {
+            "@type": "MedicalClinic",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl"
+          },
+          "serviceType": "Kinesiología y Rehabilitación a domicilio",
+          "description": "Servicio de kinesiología a domicilio en Ovalle. Kinesiólogos certificados que se desplazan a tu hogar para rehabilitación física, tratamiento de dolor y recuperación post-operatoria.",
+          "areaServed": {
+            "@type": "City",
+            "name": "Ovalle"
+          },
+          "url": "https://clinicamaslife.cl/kinesiologia-domicilio-ovalle",
+          "availableChannel": {
+            "@type": "ServiceChannel",
+            "serviceUrl": "https://clinicamaslife.cl/",
+            "availableLanguage": "Spanish"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologia-la-serena",
+    "etiqueta": "Kinesiólogo en La Serena",
+    "title": "Kinesiólogo en La Serena | Rehabilitación y Terapia | Clínica Mas Life",
+    "description": "Kinesiólogos en La Serena. Rehabilitación, dolor lumbar, lesiones deportivas, atención presencial y a domicilio en La Serena. Agenda online en segundos. Clínica Mas Life.",
+    "keywords": "kinesiólogo La Serena, kinesiología La Serena, fisioterapia La Serena, kinesiólogo a domicilio La Serena, rehabilitación La Serena, dolor lumbar La Serena",
+    "ogTitle": "Kinesiólogo en La Serena | Clínica Mas Life",
+    "ogDescription": null,
+    "geoPlacename": "La Serena, Región de Coquimbo",
+    "geoPosition": "-29.9027;-71.2519",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "name": "Clínica Mas Life — La Serena",
+          "url": "https://clinicamaslife.cl/kinesiologia-la-serena",
+          "description": "Kinesiólogos, nutricionistas y psicólogos en La Serena. Rehabilitación física, dolor lumbar, lesiones deportivas. Presencial, online y a domicilio.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "La Serena",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9027,
+            "longitude": -71.2519
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "La Serena"
+          },
+          "priceRange": "$$"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologia-ovalle",
+    "etiqueta": "Kinesiólogo en Ovalle",
+    "title": "Kinesiólogo en Ovalle | Rehabilitación y Terapia | Clínica Mas Life",
+    "description": "Kinesiólogos certificados en Ovalle. Rehabilitación, dolor lumbar, lesiones deportivas, escoliosis, tendinitis. Atención presencial y a domicilio. Agenda tu hora online en segundos.",
+    "keywords": "kinesiólogo Ovalle, kinesiología Ovalle, kinesiólogo en Ovalle, rehabilitación Ovalle, fisioterapia Ovalle, kinesiólogo a domicilio Ovalle, dolor lumbar Ovalle, lesiones deportivas Ovalle",
+    "ogTitle": "Kinesiólogo en Ovalle | Clínica Mas Life",
+    "ogDescription": "Kinesiólogos certificados en Ovalle. Rehabilitación, dolor lumbar, lesiones deportivas. Presencial y a domicilio.",
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": "-30.6003;-71.1998",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/kinesiologia-ovalle#business",
+          "name": "Clínica Mas Life — Kinesiología Ovalle",
+          "url": "https://clinicamaslife.cl/kinesiologia-ovalle",
+          "description": "Kinesiólogos certificados en Ovalle. Rehabilitación física, dolor lumbar, tendinitis, lesiones deportivas, escoliosis y atención a domicilio en Ovalle, Región de Coquimbo.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ovalle",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -30.6003,
+            "longitude": -71.1998
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Ovalle"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP",
+          "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Kinesiología en Ovalle",
+            "itemListElement": [
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Rehabilitación musculoesquelética en Ovalle",
+                  "description": "Tratamiento de lesiones musculares, tendinitis, esguinces y contracturas en Ovalle."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Kinesiología a domicilio en Ovalle",
+                  "description": "Kinesiólogos que van a tu casa en Ovalle para rehabilitación sin trasladarte."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Tratamiento dolor lumbar Ovalle",
+                  "description": "Terapia kinesiológica para lumbalgia crónica y aguda en Ovalle."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Rehabilitación post-operatoria Ovalle",
+                  "description": "Recuperación tras cirugía de rodilla, cadera, hombro y columna en Ovalle."
+                }
+              }
+            ]
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Ovalle",
+              "item": "https://clinicamaslife.cl/kinesiologia-ovalle"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologo-coquimbo",
+    "etiqueta": "Kinesiólogo en Coquimbo",
+    "title": "Kinesiólogo en Coquimbo | Rehabilitación y Terapia | Clínica Mas Life",
+    "description": "Kinesiólogos en Coquimbo. Rehabilitación musculoesquelética, dolor crónico, lesiones deportivas y post-operatoria. Agenda online sin filas.",
+    "keywords": "kinesiólogo Coquimbo, kinesiología Coquimbo, kinesiólogo en Coquimbo, rehabilitación Coquimbo, fisioterapia Coquimbo, kinesiólogo a domicilio Coquimbo, dolor lumbar Coquimbo, lesiones deportivas Coquimbo",
+    "ogTitle": "Kinesiólogo en Coquimbo | Clínica Mas Life",
+    "ogDescription": "Kinesiólogos certificados en Coquimbo. Rehabilitación musculoesquelética, dolor crónico, lesiones deportivas. Sin filas, agenda online.",
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3395",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/kinesiologo-coquimbo#business",
+          "name": "Clínica Mas Life — Kinesiología Coquimbo",
+          "url": "https://clinicamaslife.cl/kinesiologo-coquimbo",
+          "description": "Kinesiólogos certificados en Coquimbo. Rehabilitación musculoesquelética, dolor crónico, lesiones deportivas y rehabilitación post-operatoria. Agenda online sin filas.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Coquimbo",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9533,
+            "longitude": -71.3395
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Coquimbo"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP",
+          "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Kinesiología en Coquimbo",
+            "itemListElement": [
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Rehabilitación musculoesquelética en Coquimbo",
+                  "description": "Tratamiento de lesiones musculares, tendinitis, esguinces y contracturas en Coquimbo."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Kinesiología a domicilio en Coquimbo",
+                  "description": "Kinesiólogos que van a tu casa en Coquimbo para rehabilitación sin trasladarte."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Tratamiento dolor crónico Coquimbo",
+                  "description": "Terapia kinesiológica para lumbalgia crónica, cervicalgia y fibromialgia en Coquimbo."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Rehabilitación post-operatoria Coquimbo",
+                  "description": "Recuperación tras cirugía de rodilla, cadera, hombro y columna en Coquimbo."
+                }
+              }
+            ]
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiólogo Coquimbo",
+              "item": "https://clinicamaslife.cl/kinesiologo-coquimbo"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologo-la-serena",
+    "etiqueta": "Kinesiólogo en La Serena",
+    "title": "Kinesiólogo en La Serena | Rehabilitación · Dolor · Deportes | Clínica Mas Life",
+    "description": "Kinesiólogos en La Serena certificados. Dolor lumbar, lesiones deportivas, tendinitis, escoliosis. Agenda online 24/7. Presencial y domicilio.",
+    "keywords": "kinesiólogo La Serena, kinesiología La Serena, kinesiólogo en La Serena, rehabilitación La Serena, fisioterapia La Serena, kinesiólogo a domicilio La Serena, dolor lumbar La Serena, lesiones deportivas La Serena",
+    "ogTitle": "Kinesiólogo en La Serena | Clínica Mas Life",
+    "ogDescription": "Kinesiólogos certificados en La Serena. Rehabilitación, dolor lumbar, lesiones deportivas. Presencial y a domicilio.",
+    "geoPlacename": "La Serena, Región de Coquimbo",
+    "geoPosition": "-29.9069;-71.2528",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/kinesiologo-la-serena#business",
+          "name": "Clínica Mas Life — Kinesiología La Serena",
+          "url": "https://clinicamaslife.cl/kinesiologo-la-serena",
+          "description": "Kinesiólogos certificados en La Serena. Rehabilitación física, dolor lumbar, tendinitis, lesiones deportivas, escoliosis y atención a domicilio en La Serena, Región de Coquimbo.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "La Serena",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9069,
+            "longitude": -71.2528
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "La Serena"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP",
+          "hasOfferCatalog": {
+            "@type": "OfferCatalog",
+            "name": "Kinesiología en La Serena",
+            "itemListElement": [
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Rehabilitación musculoesquelética en La Serena",
+                  "description": "Tratamiento de lesiones musculares, tendinitis, esguinces y contracturas en La Serena."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Kinesiología a domicilio en La Serena",
+                  "description": "Kinesiólogos que van a tu casa en La Serena para rehabilitación sin trasladarte."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Tratamiento dolor lumbar La Serena",
+                  "description": "Terapia kinesiológica para lumbalgia crónica y aguda en La Serena."
+                }
+              },
+              {
+                "@type": "Offer",
+                "itemOffered": {
+                  "@type": "MedicalTherapy",
+                  "name": "Rehabilitación post-operatoria La Serena",
+                  "description": "Recuperación tras cirugía de rodilla, cadera, hombro y columna en La Serena."
+                }
+              }
+            ]
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiólogo La Serena",
+              "item": "https://clinicamaslife.cl/kinesiologo-la-serena"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "kinesiologo-ovalle",
+    "etiqueta": "Kinesiólogo en Ovalle",
+    "title": "Kinesiólogo en Ovalle — Agenda Online | Clínica Mas Life",
+    "description": "Busca kinesiólogo en Ovalle y agenda en segundos. Rehabilitación, dolor de espalda, lesiones deportivas, atención a domicilio. Clínica Mas Life — la plataforma de salud de Ovalle.",
+    "keywords": "kinesiólogo en Ovalle, kinesiólogos Ovalle, kinesiólogo Ovalle precio, kinesiólogo domicilio Ovalle, encontrar kinesiólogo Ovalle",
+    "ogTitle": "Kinesiólogo en Ovalle | Clínica Mas Life",
+    "ogDescription": null,
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": null,
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "name": "Clínica Mas Life — Kinesiólogo Ovalle",
+          "url": "https://clinicamaslife.cl/kinesiologo-ovalle",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ovalle",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -30.6003,
+            "longitude": -71.1998
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Ovalle"
+          },
+          "priceRange": "$$"
+        }
+      ]
+    }
+  },
+  {
+    "slug": "lesiones-deportivas-coquimbo",
+    "etiqueta": "Lesiones Deportivas en Coquimbo",
+    "title": "Lesiones Deportivas en Coquimbo | Kinesiología y Rehabilitación | Clínica Mas Life",
+    "description": "Rehabilitación de lesiones deportivas en Coquimbo. Esguinces, desgarros, tendinitis, LCA, rotura de fibras. Vuelve a entrenar antes.",
+    "keywords": "lesiones deportivas Coquimbo, kinesiología deportiva Coquimbo, rehabilitación deportiva Coquimbo, esguince Coquimbo, desgarro muscular Coquimbo, tendinitis Coquimbo, LCA Coquimbo",
+    "ogTitle": "Lesiones Deportivas en Coquimbo | Clínica Mas Life",
+    "ogDescription": "Rehabilitación de lesiones deportivas en Coquimbo. Esguinces, desgarros, tendinitis, LCA. Vuelve a entrenar antes con kinesiología.",
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3395",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/lesiones-deportivas-coquimbo#webpage",
+          "name": "Rehabilitación de Lesiones Deportivas en Coquimbo",
+          "url": "https://clinicamaslife.cl/lesiones-deportivas-coquimbo",
+          "description": "Guía sobre rehabilitación kinesiológica de lesiones deportivas en Coquimbo. Esguinces, desgarros, tendinitis y LCA.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Lesiones Deportivas",
+            "relevantSpecialty": "Sports Medicine"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Coquimbo",
+              "item": "https://clinicamaslife.cl/kinesiologia-coquimbo"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Lesiones Deportivas Coquimbo",
+              "item": "https://clinicamaslife.cl/lesiones-deportivas-coquimbo"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "lesiones-deportivas-la-serena",
+    "etiqueta": "Lesiones Deportivas en La Serena",
+    "title": "Lesiones Deportivas en La Serena | Kinesiología y Rehabilitación | Clínica Mas Life",
+    "description": "Rehabilitación de lesiones deportivas en La Serena. Esguinces, desgarros, tendinitis, LCA, rotura de fibras. Vuelve a entrenar antes.",
+    "keywords": "lesiones deportivas La Serena, kinesiología deportiva La Serena, rehabilitación deportiva La Serena, esguince La Serena, desgarro muscular La Serena, tendinitis La Serena, LCA La Serena",
+    "ogTitle": "Lesiones Deportivas en La Serena | Clínica Mas Life",
+    "ogDescription": "Rehabilitación de lesiones deportivas en La Serena. Esguinces, desgarros, tendinitis, LCA. Vuelve a entrenar antes con kinesiología.",
+    "geoPlacename": "La Serena, Región de Coquimbo",
+    "geoPosition": "-29.9027;-71.2519",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/lesiones-deportivas-la-serena#webpage",
+          "name": "Rehabilitación de Lesiones Deportivas en La Serena",
+          "url": "https://clinicamaslife.cl/lesiones-deportivas-la-serena",
+          "description": "Guía sobre rehabilitación kinesiológica de lesiones deportivas en La Serena. Esguinces, desgarros, tendinitis y LCA.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Lesiones Deportivas",
+            "relevantSpecialty": "Sports Medicine"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología La Serena",
+              "item": "https://clinicamaslife.cl/kinesiologia-la serena"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Lesiones Deportivas La Serena",
+              "item": "https://clinicamaslife.cl/lesiones-deportivas-la-serena"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "lesiones-deportivas-ovalle",
+    "etiqueta": "Lesiones Deportivas en Ovalle",
+    "title": "Lesiones Deportivas en Ovalle | Kinesiología y Rehabilitación | Clínica Mas Life",
+    "description": "Rehabilitación de lesiones deportivas en Ovalle. Esguinces, desgarros, tendinitis, LCA, rotura de fibras. Vuelve a entrenar antes.",
+    "keywords": "lesiones deportivas Ovalle, kinesiología deportiva Ovalle, rehabilitación deportiva Ovalle, esguince Ovalle, desgarro muscular Ovalle, tendinitis Ovalle, LCA Ovalle",
+    "ogTitle": "Lesiones Deportivas en Ovalle | Clínica Mas Life",
+    "ogDescription": "Rehabilitación de lesiones deportivas en Ovalle. Esguinces, desgarros, tendinitis, LCA. Vuelve a entrenar antes con kinesiología.",
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": "-30.6003;-71.1998",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/lesiones-deportivas-ovalle#webpage",
+          "name": "Rehabilitación de Lesiones Deportivas en Ovalle",
+          "url": "https://clinicamaslife.cl/lesiones-deportivas-ovalle",
+          "description": "Guía sobre rehabilitación kinesiológica de lesiones deportivas en Ovalle. Esguinces, desgarros, tendinitis y LCA.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Lesiones Deportivas",
+            "relevantSpecialty": "Sports Medicine"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Ovalle",
+              "item": "https://clinicamaslife.cl/kinesiologia-ovalle"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Lesiones Deportivas Ovalle",
+              "item": "https://clinicamaslife.cl/lesiones-deportivas-ovalle"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "nutricionista-ovalle",
+    "etiqueta": "Nutricionista en Ovalle",
+    "title": "Nutricionista en Ovalle | Dietista Certificada | Clínica Mas Life",
+    "description": "Nutricionistas en Ovalle. Pérdida de peso, diabetes, hipertensión, alimentación deportiva. Consulta presencial y online. Agenda en segundos.",
+    "keywords": "nutricionista Ovalle, dietista Ovalle, nutricionista en Ovalle, consulta nutrición Ovalle, dietista certificada Ovalle, nutrición deportiva Ovalle, nutricionista diabetes Ovalle",
+    "ogTitle": "Nutricionista en Ovalle | Clínica Mas Life",
+    "ogDescription": "Nutricionistas certificadas en Ovalle. Pérdida de peso, diabetes, hipertensión, alimentación deportiva. Consulta presencial y online.",
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": "-30.6003;-71.1998",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/nutricionista-ovalle#business",
+          "name": "Clínica Mas Life — Nutricionista Ovalle",
+          "url": "https://clinicamaslife.cl/nutricionista-ovalle",
+          "description": "Nutricionistas certificadas en Ovalle. Consulta de nutrición para pérdida de peso, diabetes, hipertensión, alimentación deportiva y pediátrica. Presencial y online.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ovalle",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -30.6003,
+            "longitude": -71.1998
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Ovalle"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "20:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Nutricionista Ovalle",
+              "item": "https://clinicamaslife.cl/nutricionista-ovalle"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "psicologo-coquimbo",
+    "etiqueta": "Psicólogo en Coquimbo",
+    "title": "Psicólogo en Coquimbo | Salud Mental | Clínica Mas Life",
+    "description": "Psicólogos en Coquimbo. Ansiedad, depresión, terapia de pareja, adolescentes. Sesiones presenciales y online. Agenda sin esperas.",
+    "keywords": "psicólogo Coquimbo, psicología Coquimbo, psicólogo en Coquimbo, salud mental Coquimbo, terapia ansiedad Coquimbo, psicólogo depresión Coquimbo, terapia de pareja Coquimbo, psicólogo online Coquimbo",
+    "ogTitle": "Psicólogo en Coquimbo | Clínica Mas Life",
+    "ogDescription": "Psicólogos certificados en Coquimbo. Ansiedad, depresión, terapia de pareja, adolescentes. Sesiones presenciales y online.",
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3395",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/psicologo-coquimbo#business",
+          "name": "Clínica Mas Life — Psicólogo Coquimbo",
+          "url": "https://clinicamaslife.cl/psicologo-coquimbo",
+          "description": "Psicólogos certificados en Coquimbo para ansiedad, depresión, terapia de pareja, psicología infantil y adolescente. Sesiones presenciales y online.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Coquimbo",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9533,
+            "longitude": -71.3395
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Coquimbo"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "21:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Psicólogo Coquimbo",
+              "item": "https://clinicamaslife.cl/psicologo-coquimbo"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "psicologo-ovalle",
+    "etiqueta": "Psicólogo en Ovalle",
+    "title": "Psicólogo en Ovalle | Salud Mental | Clínica Mas Life",
+    "description": "Psicólogos en Ovalle. Ansiedad, depresión, terapia de pareja, adolescentes. Sesiones presenciales y online. Agenda sin esperas.",
+    "keywords": "psicólogo Ovalle, psicología Ovalle, psicólogo en Ovalle, salud mental Ovalle, terapia ansiedad Ovalle, psicólogo depresión Ovalle, terapia de pareja Ovalle, psicólogo online Ovalle",
+    "ogTitle": "Psicólogo en Ovalle | Clínica Mas Life",
+    "ogDescription": "Psicólogos certificados en Ovalle. Ansiedad, depresión, terapia de pareja, adolescentes. Sesiones presenciales y online.",
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": "-30.6003;-71.1998",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/psicologo-ovalle#business",
+          "name": "Clínica Mas Life — Psicólogo Ovalle",
+          "url": "https://clinicamaslife.cl/psicologo-ovalle",
+          "description": "Psicólogos certificados en Ovalle para ansiedad, depresión, terapia de pareja, psicología infantil y adolescente. Sesiones presenciales y online.",
+          "priceRange": "$$",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ovalle",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -30.6003,
+            "longitude": -71.1998
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Ovalle"
+          },
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday"
+              ],
+              "opens": "08:00",
+              "closes": "21:00"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": "Saturday",
+              "opens": "09:00",
+              "closes": "14:00"
+            }
+          ],
+          "paymentAccepted": "Efectivo, Tarjeta de crédito, Tarjeta de débito, Isapre, Transferencia",
+          "currenciesAccepted": "CLP"
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Psicólogo Ovalle",
+              "item": "https://clinicamaslife.cl/psicologo-ovalle"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "rehabilitacion-post-operatoria-coquimbo",
+    "etiqueta": "Rehabilitación Post-Operatoria en Coquimbo",
+    "title": "Rehabilitación Post-Operatoria en Coquimbo | Kinesiología | Clínica Mas Life",
+    "description": "Rehabilitación kinesiológica tras cirugía en Coquimbo. Rodilla, cadera, hombro y columna. Protocolos seguros y personalizados. Agenda online.",
+    "keywords": "rehabilitación post-operatoria Coquimbo, kinesiología post cirugía Coquimbo, rehabilitación prótesis rodilla Coquimbo, rehabilitación LCA Coquimbo, fisioterapia post-op Coquimbo",
+    "ogTitle": "Rehabilitación Post-Operatoria en Coquimbo | Clínica Mas Life",
+    "ogDescription": "Rehabilitación kinesiológica tras cirugía en Coquimbo. Rodilla, cadera, hombro y columna. Protocolos seguros y personalizados.",
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3395",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-coquimbo#webpage",
+          "name": "Rehabilitación Post-Operatoria en Coquimbo",
+          "url": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-coquimbo",
+          "description": "Guía sobre rehabilitación kinesiológica post-cirugía en Coquimbo. Fases, protocolos y cuándo comenzar la rehabilitación tras cirugía de rodilla, cadera, hombro o columna.",
+          "about": {
+            "@type": "MedicalProcedure",
+            "name": "Rehabilitación Post-Operatoria",
+            "procedureType": "PhysicalTherapy"
+          },
+          "audience": {
+            "@type": "Patient"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Coquimbo",
+              "item": "https://clinicamaslife.cl/kinesiologia-coquimbo"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Rehabilitación Post-Operatoria Coquimbo",
+              "item": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-coquimbo"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "rehabilitacion-post-operatoria-la-serena",
+    "etiqueta": "Rehabilitación Post-Operatoria en La Serena",
+    "title": "Rehabilitación Post-Operatoria en La Serena | Kinesiología | Clínica Mas Life",
+    "description": "Rehabilitación kinesiológica tras cirugía en La Serena. Rodilla, cadera, hombro y columna. Protocolos seguros y personalizados. Agenda online.",
+    "keywords": "rehabilitación post-operatoria La Serena, kinesiología post cirugía La Serena, rehabilitación prótesis rodilla La Serena, rehabilitación LCA La Serena, fisioterapia post-op La Serena",
+    "ogTitle": "Rehabilitación Post-Operatoria en La Serena | Clínica Mas Life",
+    "ogDescription": "Rehabilitación kinesiológica tras cirugía en La Serena. Rodilla, cadera, hombro y columna. Protocolos seguros y personalizados.",
+    "geoPlacename": "La Serena, Región de Coquimbo",
+    "geoPosition": "-29.9027;-71.2519",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-la-serena#webpage",
+          "name": "Rehabilitación Post-Operatoria en La Serena",
+          "url": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-la-serena",
+          "description": "Guía sobre rehabilitación kinesiológica post-cirugía en La Serena. Fases, protocolos y cuándo comenzar la rehabilitación tras cirugía de rodilla, cadera, hombro o columna.",
+          "about": {
+            "@type": "MedicalProcedure",
+            "name": "Rehabilitación Post-Operatoria",
+            "procedureType": "PhysicalTherapy"
+          },
+          "audience": {
+            "@type": "Patient"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología La Serena",
+              "item": "https://clinicamaslife.cl/kinesiologia-la serena"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Rehabilitación Post-Operatoria La Serena",
+              "item": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-la-serena"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "rehabilitacion-post-operatoria-ovalle",
+    "etiqueta": "Rehabilitación Post-Operatoria en Ovalle",
+    "title": "Rehabilitación Post-Operatoria en Ovalle | Kinesiología | Clínica Mas Life",
+    "description": "Rehabilitación kinesiológica tras cirugía en Ovalle. Rodilla, cadera, hombro y columna. Protocolos seguros y personalizados. Agenda online.",
+    "keywords": "rehabilitación post-operatoria Ovalle, kinesiología post cirugía Ovalle, rehabilitación prótesis rodilla Ovalle, rehabilitación LCA Ovalle, fisioterapia post-op Ovalle",
+    "ogTitle": "Rehabilitación Post-Operatoria en Ovalle | Clínica Mas Life",
+    "ogDescription": "Rehabilitación kinesiológica tras cirugía en Ovalle. Rodilla, cadera, hombro y columna. Protocolos seguros y personalizados.",
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": "-30.6003;-71.1998",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-ovalle#webpage",
+          "name": "Rehabilitación Post-Operatoria en Ovalle",
+          "url": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-ovalle",
+          "description": "Guía sobre rehabilitación kinesiológica post-cirugía en Ovalle. Fases, protocolos y cuándo comenzar la rehabilitación tras cirugía de rodilla, cadera, hombro o columna.",
+          "about": {
+            "@type": "MedicalProcedure",
+            "name": "Rehabilitación Post-Operatoria",
+            "procedureType": "PhysicalTherapy"
+          },
+          "audience": {
+            "@type": "Patient"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Ovalle",
+              "item": "https://clinicamaslife.cl/kinesiologia-ovalle"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Rehabilitación Post-Operatoria Ovalle",
+              "item": "https://clinicamaslife.cl/rehabilitacion-post-operatoria-ovalle"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "tendinitis-tratamiento-coquimbo",
+    "etiqueta": "Tendinitis: Tratamiento en Coquimbo",
+    "title": "Tendinitis: Tratamiento en Coquimbo | Kinesiología | Clínica Mas Life",
+    "description": "Tratamiento de tendinitis en Coquimbo. Hombro, rodilla, tobillo (Aquiles), codo (epicondilitis). Alivio del dolor sin cirugía.",
+    "keywords": "tendinitis Coquimbo, tratamiento tendinitis Coquimbo, kinesiólogo tendinitis Coquimbo, epicondilitis Coquimbo, tendinitis Aquiles Coquimbo, manguito rotador Coquimbo",
+    "ogTitle": "Tendinitis: Tratamiento en Coquimbo | Clínica Mas Life",
+    "ogDescription": "Tratamiento de tendinitis en Coquimbo. Hombro, rodilla, tobillo (Aquiles), codo. Alivio del dolor sin cirugía con kinesiología.",
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3395",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/tendinitis-tratamiento-coquimbo#webpage",
+          "name": "Tratamiento de Tendinitis en Coquimbo",
+          "url": "https://clinicamaslife.cl/tendinitis-tratamiento-coquimbo",
+          "description": "Guía sobre el tratamiento kinesiológico de la tendinitis en Coquimbo. Tipos, técnicas y cuándo se opera un tendón.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Tendinitis",
+            "alternateName": "Tendinopatía",
+            "code": {
+              "@type": "MedicalCode",
+              "code": "M77",
+              "codingSystem": "ICD-10"
+            }
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiólogo Coquimbo",
+              "item": "https://clinicamaslife.cl/kinesiologo-coquimbo"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Tendinitis Coquimbo",
+              "item": "https://clinicamaslife.cl/tendinitis-tratamiento-coquimbo"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "tratamiento-dolor-lumbar-coquimbo",
+    "etiqueta": "Tratamiento Dolor Lumbar en Coquimbo",
+    "title": "Tratamiento Dolor Lumbar en Coquimbo | Kinesiología | Clínica Mas Life",
+    "description": "Guía completa sobre el tratamiento del dolor lumbar en Coquimbo. Causas, síntomas, ejercicios y cuándo ver a un kinesiólogo. Agenda online.",
+    "keywords": "dolor lumbar Coquimbo, lumbalgia Coquimbo, tratamiento dolor espalda Coquimbo, kinesiólogo lumbar Coquimbo, hernia disco Coquimbo, ejercicios lumbar Coquimbo",
+    "ogTitle": "Tratamiento Dolor Lumbar en Coquimbo | Clínica Mas Life",
+    "ogDescription": "Guía completa sobre el tratamiento del dolor lumbar en Coquimbo. Causas, síntomas, ejercicios y cuándo ver a un kinesiólogo.",
+    "geoPlacename": "Coquimbo, Región de Coquimbo",
+    "geoPosition": "-29.9533;-71.3395",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-coquimbo#webpage",
+          "name": "Tratamiento del Dolor Lumbar en Coquimbo",
+          "url": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-coquimbo",
+          "description": "Guía completa sobre el tratamiento kinesiológico del dolor lumbar en Coquimbo. Causas, diagnóstico, tratamientos y ejercicios elaborada por kinesiólogos.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Dolor Lumbar",
+            "alternateName": [
+              "Lumbalgia",
+              "Low Back Pain",
+              "LBP"
+            ],
+            "code": {
+              "@type": "MedicalCode",
+              "code": "M54.5",
+              "codingSystem": "ICD-10"
+            },
+            "associatedAnatomy": {
+              "@type": "AnatomicalStructure",
+              "name": "Columna lumbar"
+            }
+          },
+          "audience": {
+            "@type": "Patient"
+          },
+          "reviewedBy": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-coquimbo#business",
+          "name": "Clínica Mas Life — Tratamiento Dolor Lumbar Coquimbo",
+          "url": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-coquimbo",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Coquimbo",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9533,
+            "longitude": -71.3395
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Coquimbo"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Coquimbo",
+              "item": "https://clinicamaslife.cl/kinesiologia-coquimbo"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Tratamiento Dolor Lumbar Coquimbo",
+              "item": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-coquimbo"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "tratamiento-dolor-lumbar-la-serena",
+    "etiqueta": "Tratamiento Dolor Lumbar en La Serena",
+    "title": "Tratamiento Dolor Lumbar en La Serena | Kinesiología | Clínica Mas Life",
+    "description": "Guía completa sobre el tratamiento del dolor lumbar en La Serena. Causas, síntomas, ejercicios y cuándo ver a un kinesiólogo. Agenda online.",
+    "keywords": "dolor lumbar La Serena, lumbalgia La Serena, tratamiento dolor espalda La Serena, kinesiólogo lumbar La Serena, hernia disco La Serena, ejercicios lumbar La Serena",
+    "ogTitle": "Tratamiento Dolor Lumbar en La Serena | Clínica Mas Life",
+    "ogDescription": "Guía completa sobre el tratamiento del dolor lumbar en La Serena. Causas, síntomas, ejercicios y cuándo ver a un kinesiólogo.",
+    "geoPlacename": "La Serena, Región de Coquimbo",
+    "geoPosition": "-29.9027;-71.2519",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-la-serena#webpage",
+          "name": "Tratamiento del Dolor Lumbar en La Serena",
+          "url": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-la-serena",
+          "description": "Guía completa sobre el tratamiento kinesiológico del dolor lumbar en La Serena. Causas, diagnóstico, tratamientos y ejercicios elaborada por kinesiólogos.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Dolor Lumbar",
+            "alternateName": [
+              "Lumbalgia",
+              "Low Back Pain",
+              "LBP"
+            ],
+            "code": {
+              "@type": "MedicalCode",
+              "code": "M54.5",
+              "codingSystem": "ICD-10"
+            },
+            "associatedAnatomy": {
+              "@type": "AnatomicalStructure",
+              "name": "Columna lumbar"
+            }
+          },
+          "audience": {
+            "@type": "Patient"
+          },
+          "reviewedBy": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-la-serena#business",
+          "name": "Clínica Mas Life — Tratamiento Dolor Lumbar La Serena",
+          "url": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-la-serena",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "La Serena",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -29.9027,
+            "longitude": -71.2519
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "La Serena"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología La Serena",
+              "item": "https://clinicamaslife.cl/kinesiologia-la serena"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Tratamiento Dolor Lumbar La Serena",
+              "item": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-la-serena"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "slug": "tratamiento-dolor-lumbar-ovalle",
+    "etiqueta": "Tratamiento Dolor Lumbar en Ovalle",
+    "title": "Tratamiento Dolor Lumbar en Ovalle | Kinesiología | Clínica Mas Life",
+    "description": "Guía completa sobre el tratamiento del dolor lumbar en Ovalle. Causas, síntomas, ejercicios y cuándo ver a un kinesiólogo. Agenda online.",
+    "keywords": "dolor lumbar Ovalle, lumbalgia Ovalle, tratamiento dolor espalda Ovalle, kinesiólogo lumbar Ovalle, hernia disco Ovalle, ejercicios lumbar Ovalle",
+    "ogTitle": "Tratamiento Dolor Lumbar en Ovalle | Clínica Mas Life",
+    "ogDescription": "Guía completa sobre el tratamiento del dolor lumbar en Ovalle. Causas, síntomas, ejercicios y cuándo ver a un kinesiólogo.",
+    "geoPlacename": "Ovalle, Región de Coquimbo",
+    "geoPosition": "-30.6003;-71.1998",
+    "jsonld": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "MedicalWebPage",
+          "@id": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-ovalle#webpage",
+          "name": "Tratamiento del Dolor Lumbar en Ovalle",
+          "url": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-ovalle",
+          "description": "Guía completa sobre el tratamiento kinesiológico del dolor lumbar en Ovalle. Causas, diagnóstico, tratamientos y ejercicios elaborada por kinesiólogos.",
+          "about": {
+            "@type": "MedicalCondition",
+            "name": "Dolor Lumbar",
+            "alternateName": [
+              "Lumbalgia",
+              "Low Back Pain",
+              "LBP"
+            ],
+            "code": {
+              "@type": "MedicalCode",
+              "code": "M54.5",
+              "codingSystem": "ICD-10"
+            },
+            "associatedAnatomy": {
+              "@type": "AnatomicalStructure",
+              "name": "Columna lumbar"
+            }
+          },
+          "audience": {
+            "@type": "Patient"
+          },
+          "reviewedBy": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Clínica Mas Life",
+            "url": "https://clinicamaslife.cl/"
+          }
+        },
+        {
+          "@type": [
+            "LocalBusiness",
+            "MedicalClinic"
+          ],
+          "@id": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-ovalle#business",
+          "name": "Clínica Mas Life — Tratamiento Dolor Lumbar Ovalle",
+          "url": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-ovalle",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Ovalle",
+            "addressRegion": "Región de Coquimbo",
+            "addressCountry": "CL"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": -30.6003,
+            "longitude": -71.1998
+          },
+          "areaServed": {
+            "@type": "City",
+            "name": "Ovalle"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://clinicamaslife.cl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Kinesiología Ovalle",
+              "item": "https://clinicamaslife.cl/kinesiologia-ovalle"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Tratamiento Dolor Lumbar Ovalle",
+              "item": "https://clinicamaslife.cl/tratamiento-dolor-lumbar-ovalle"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
