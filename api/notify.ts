@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { htmlAtexto } from './_lib/emailText';
+import { normalizarTelefonoCL, telefonoLegible, rutLegible, linkWhatsApp, fechaLarga as fechaCita, fechaCorta, estadoPago, detectarReagendamiento, type EstadoPago, type Historial } from './_lib/correoCita';
 
 function verifyAdminJwt(token: string, secret: string): boolean {
   try {
@@ -424,22 +425,128 @@ function tableRow(label: string, value: string) {
   return `<tr><td style="${ROW_LABEL}">${label}</td><td style="${ROW_VALUE}">${escapeHtml(value)}</td></tr>`;
 }
 
-function professionalNewBookingHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; time: string; type: string }) {
+export interface DatosCitaPro {
+  professionalName: string;
+  patientName: string;
+  patientRut?: string | null;
+  patientPhone?: string | null;
+  patientEmail?: string | null;
+  serviceName?: string;
+  date: string;
+  time: string;
+  duration?: number | null;
+  type?: string;
+  price?: number | null;
+  notes?: string | null;
+  pago: EstadoPago;
+  historial?: Historial | null;
+  /** Fecha/hora anterior cuando el profesional reagendó la cita. */
+  reagendadaDesde?: { date: string; time: string } | null;
+}
+
+const clp = (n: number) => `$${Math.round(n).toLocaleString('es-CL')}`;
+
+function chip(texto: string, fondo: string, tinta: string) {
+  return `<span style="display:inline-block;margin:3px 3px;padding:5px 12px;border-radius:999px;background-color:${fondo};color:${tinta};font-family:${FONT_SANS};font-size:12px;line-height:16px;font-weight:800;">${escapeHtml(texto)}</span>`;
+}
+
+function botonCorreo(texto: string, href: string, fondo: string, tinta = '#ffffff') {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="display:inline-table;margin:4px;"><tr>
+    <td bgcolor="${fondo}" style="background-color:${fondo};border-radius:10px;">
+      <a href="${escapeHtml(href)}" target="_blank" style="display:inline-block;padding:10px 16px;font-family:${FONT_SANS};font-size:13px;line-height:18px;font-weight:800;color:${tinta};text-decoration:none;border-radius:10px;">${escapeHtml(texto)}</a>
+    </td></tr></table>`;
+}
+
+export function professionalNewBookingHtml(p: DatosCitaPro) {
+  const hora = soloHoraMinuto(p.time);
+  const chips: string[] = [];
+  if (p.reagendadaDesde) chips.push(chip('Reagendada', '#ede9fe', '#5b21b6'));
+  if (p.pago.tipo === 'pagado') chips.push(chip(`Pagado ${p.pago.monto ? clp(p.pago.monto) : ''}${p.pago.via ? ' · ' + p.pago.via : ''}`.trim(), '#dcfce7', '#166534'));
+  else if (p.pago.tipo === 'pendiente') chips.push(chip('Pago pendiente', '#fef3c7', '#92400e'));
+  else if (p.pago.tipo === 'en-consulta') chips.push(chip('Paga en la consulta', '#f1f5f9', '#334155'));
+  else chips.push(chip('Pago: revisar en la agenda', '#f1f5f9', '#334155'));
+  const h = p.historial;
+  if (!p.reagendadaDesde && h?.tipo === 'reagendamiento') chips.push(chip('Posible reagendamiento', '#ede9fe', '#5b21b6'));
+  if (h?.tipo === 'primera') chips.push(chip('Primera cita', '#e0f2fe', '#075985'));
+  else if (h && 'previas' in h && h.previas > 0) chips.push(chip(`Paciente recurrente · ${h.previas} ${h.previas === 1 ? 'cita previa' : 'citas previas'}`, '#e0f2fe', '#075985'));
+
+  const aviso = p.reagendadaDesde
+    ? `<div style="background-color:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:12px 14px;margin:0 0 16px;font-family:${FONT_SANS};font-size:14px;color:#4c1d95;text-align:center;">
+         Antes: <span style="text-decoration:line-through;">${escapeHtml(fechaCita(p.reagendadaDesde.date))} ${escapeHtml(soloHoraMinuto(p.reagendadaDesde.time))}</span>
+         &nbsp;→&nbsp; <strong>Ahora: ${escapeHtml(fechaCita(p.date))} ${escapeHtml(hora)}</strong></div>`
+    : h?.tipo === 'reagendamiento'
+      ? `<div style="background-color:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:12px 14px;margin:0 0 16px;font-family:${FONT_SANS};font-size:13px;color:#4c1d95;text-align:center;">
+           Este paciente ${h.anterior.estado === 'cancelada' ? 'canceló hace poco' : 'ya tiene'} una hora el <strong>${escapeHtml(fechaCita(h.anterior.date))} ${escapeHtml(soloHoraMinuto(h.anterior.time))}</strong>${h.anterior.estado === 'activa' ? ' que sigue activa: revisa si quiere cambiarla' : ''}.</div>`
+      : '';
+
+  const tel = normalizarTelefonoCL(p.patientPhone);
+  const email = p.patientEmail && EMAIL_RE.test(String(p.patientEmail)) ? String(p.patientEmail) : '';
+  const saludoWa = `Hola ${String(p.patientName || '').split(' ')[0]}, te escribo de ${p.professionalName || 'Clínica Mas Life'} por tu cita del ${fechaCita(p.date)} a las ${hora}.`;
+  const botones = [
+    tel ? botonCorreo('WhatsApp', linkWhatsApp(tel, saludoWa), '#16a34a') : '',
+    tel ? botonCorreo('Llamar', `tel:+${tel}`, '#0f172a') : '',
+    email ? botonCorreo('Correo', `mailto:${email}`, '#475569') : '',
+  ].join('');
+
+  const fila = (label: string, valor: string) => valor ? tableRow(label, valor) : '';
+  const notas = (p.notes || '').trim().slice(0, 300);
+
   return emailShell({
-    kicker: 'Nueva cita',
-    title: 'Nueva cita agendada',
+    kicker: p.reagendadaDesde ? 'Cita reagendada' : 'Nueva cita',
+    title: p.reagendadaDesde ? 'Cita reagendada' : 'Nueva cita agendada',
     bodyHtml: `
-      <p style="color:#334155;font-size:15px;margin:0 0 8px;">Hola <strong>${escapeHtml(p.professionalName || 'Profesional')}</strong>,</p>
-      <p style="color:#64748b;font-size:14px;margin:0 0 4px;">Tienes una nueva cita agendada:</p>
-      <div style="${INFO_BOX}">
+      <div style="text-align:center;margin:0 0 18px;">${chips.join('')}</div>
+      ${aviso}
+      <div style="background-color:${SURFACE_TEAL};border:1px solid #ccfbf1;border-radius:14px;padding:18px 16px;margin:0 0 18px;text-align:center;font-family:${FONT_SANS};">
+        <div style="font-size:13px;line-height:18px;color:${BRAND_TEAL_INK};font-weight:800;text-transform:uppercase;letter-spacing:1.5px;">${escapeHtml(fechaCita(p.date))}</div>
+        <div style="font-size:34px;line-height:40px;color:${INK};font-weight:800;margin:4px 0 2px;">${escapeHtml(hora)}</div>
+        <div style="font-size:13px;line-height:18px;color:${INK_MUTED};">${escapeHtml(p.serviceName || 'Consulta')} · ${escapeHtml(p.type || 'Presencial')}${p.duration ? ` · ${escapeHtml(String(p.duration))} min` : ''}</div>
+      </div>
+
+      <div style="border:1px solid ${BORDER};border-radius:14px;padding:16px;margin:0 0 16px;font-family:${FONT_SANS};">
+        <div style="font-size:11px;line-height:16px;color:${INK_MUTED};font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;">Paciente</div>
+        <div style="font-size:18px;line-height:24px;color:${INK};font-weight:800;margin:0 0 6px;">${escapeHtml(p.patientName)}</div>
         <table style="width:100%;border-collapse:collapse;">
-          ${tableRow('Paciente', p.patientName)}
-          ${tableRow('Servicio', p.serviceName || 'General')}
-          ${tableRow('Fecha', p.date)}
-          ${tableRow('Hora', soloHoraMinuto(p.time))}
+          ${fila('RUT', p.patientRut ? rutLegible(p.patientRut) : '')}
+          ${tableRow('Teléfono', tel ? telefonoLegible(tel) : 'No informado')}
+          ${tableRow('Correo', email || 'No informado')}
+        </table>
+        ${botones ? `<div style="text-align:center;margin-top:10px;">${botones}</div>` : ''}
+      </div>
+
+      <div style="border:1px solid ${BORDER};border-radius:14px;padding:16px;margin:0 0 20px;font-family:${FONT_SANS};">
+        <div style="font-size:11px;line-height:16px;color:${INK_MUTED};font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 6px;">Cita</div>
+        <table style="width:100%;border-collapse:collapse;">
+          ${tableRow('Servicio', p.serviceName || 'Consulta')}
+          ${p.price ? tableRow('Valor', clp(Number(p.price))) : ''}
           ${tableRow('Modalidad', p.type || 'Presencial')}
         </table>
-      </div>`,
+        ${notas ? `<div style="margin-top:10px;padding:10px 12px;background-color:${SURFACE_SOFT};border-radius:10px;font-size:13px;line-height:19px;color:${INK_BODY};"><strong>Motivo / nota:</strong> ${escapeHtml(notas)}</div>` : ''}
+      </div>
+
+      <div style="text-align:center;">${botonCorreo('Ver en mi agenda', 'https://clinicamaslife.cl/pro/agenda', BRAND_TEAL_DEEP)}</div>`,
+  });
+}
+
+function patientRescheduleHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; type: string; previousDate: string; previousTime: string }) {
+  return emailShell({
+    kicker: 'Cita reagendada',
+    title: 'Tu cita fue reagendada',
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 8px;">Hola <strong>${escapeHtml(p.patientName)}</strong>,</p>
+      <p style="color:#64748b;font-size:14px;margin:0 0 12px;">${escapeHtml(p.doctorName)} cambió la hora de tu cita. Estos son los nuevos datos:</p>
+      <div style="background-color:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:13px;color:#4c1d95;text-align:center;">
+        Antes: <span style="text-decoration:line-through;">${escapeHtml(fechaCita(p.previousDate))} ${escapeHtml(soloHoraMinuto(p.previousTime))}</span></div>
+      <div style="${INFO_BOX}">
+        <table style="width:100%;border-collapse:collapse;">
+          ${tableRow('Profesional', p.doctorName)}
+          ${tableRow('Servicio', p.serviceName || 'Consulta')}
+          ${tableRow('Nueva fecha', fechaCita(p.date))}
+          ${tableRow('Nueva hora', soloHoraMinuto(p.time))}
+          ${tableRow('Modalidad', p.type || 'Presencial')}
+        </table>
+      </div>
+      <p style="color:#64748b;font-size:13px;margin:0;">Adjuntamos la invitación de calendario actualizada. Si la nueva hora no te acomoda, comunícate con el profesional.</p>`,
   });
 }
 
@@ -1096,7 +1203,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_API_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
 
-  const { to: toRaw, professionalId, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price, duration } = req.body;
+  const { to: toRaw, professionalId, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price, duration, appointmentId, kind, previousDate, previousTime } = req.body;
 
   // El perfil público ya no expone el email del profesional (Ley 21.719):
   // el cliente envía professionalId y el email se resuelve aquí con service role.
@@ -1109,6 +1216,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!to || !patientName) return res.status(400).json({ error: 'Faltan campos requeridos' });
+
+  // Datos confiables de la cita: contacto, pago e historial se leen de la BD.
+  // /api/notify es público, así que el estado de pago nunca se toma del cuerpo.
+  let cita: Record<string, any> | null = null;
+  let cobraOnline = false;
+  let historial: Historial | null = null;
+  if (typeof appointmentId === 'string' && PRO_UUID_RE.test(appointmentId)) {
+    const { data: apt } = await supabase.from('appointments')
+      .select('id, professional_id, patient_name, service_name, patient_phone, patient_email, patient_rut, payment_status, payment_amount, price, booking_source, notes, type, duration, date, time')
+      .eq('id', appointmentId).maybeSingle();
+    if (apt) {
+      const { data: proRow } = await supabase.from('professionals')
+        .select('email, payment_enabled').eq('id', apt.professional_id).maybeSingle();
+      // La cita debe ser del profesional al que va el correo.
+      if (proRow && (apt.professional_id === professionalId || String(proRow.email || '').toLowerCase() === to.toLowerCase())) {
+        cita = apt;
+        cobraOnline = !!proRow.payment_enabled;
+        try {
+          const filtros: string[] = [];
+          const rut = String(apt.patient_rut || '').replace(/[^0-9kK]/g, '').toLowerCase();
+          if (rut.length >= 7) filtros.push(`patient_rut.eq.${rut}`);
+          const correo = String(apt.patient_email || '').trim().toLowerCase();
+          if (EMAIL_RE.test(correo)) filtros.push(`patient_email.ilike.${correo.replace(/[,()]/g, '')}`);
+          const telDigitos = String(apt.patient_phone || '').replace(/\D/g, '').slice(-8);
+          if (telDigitos.length === 8) filtros.push(`patient_phone.ilike.%${telDigitos}`);
+          if (filtros.length) {
+            const { data: otras } = await supabase.from('appointments')
+              .select('id, date, time, status, created_at')
+              .eq('professional_id', apt.professional_id)
+              .neq('id', apt.id)
+              .or(filtros.join(','))
+              .limit(50);
+            const hoy = new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 10); // hora de Chile aprox.
+            historial = detectarReagendamiento((otras || []) as any, hoy);
+          } else {
+            historial = null;
+          }
+        } catch (e: any) {
+          console.error('[notify] historial', e?.message);
+        }
+      }
+    }
+  }
+  const pago = estadoPago(cita as any, cobraOnline);
+  const reagendada = kind === 'reagendada' && typeof previousDate === 'string' && typeof previousTime === 'string'
+    ? { date: previousDate.slice(0, 10), time: previousTime.slice(0, 5) } : null;
 
   if (!EMAIL_RE.test(to)) return res.status(400).json({ error: 'Email de destinatario inválido' });
   if (patientEmail && !EMAIL_RE.test(patientEmail)) return res.status(400).json({ error: 'Email de paciente inválido' });
@@ -1149,9 +1302,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         paymentReceiptHtml({ patientName, doctorName: professionalName, serviceName, date, time, transactionRef, price })
       ));
     } else {
+      const etiqueta = reagendada ? '[Reagendada] ' : pago.tipo === 'pagado' ? '[Pagada] ' : '';
       sends.push(sendEmail(RESEND_API_KEY, FROM, to,
-        `Nueva cita agendada – ${subjName}`,
-        professionalNewBookingHtml({ professionalName, patientName, serviceName, date, time, type }),
+        `${etiqueta}${reagendada ? 'Cita reagendada' : 'Nueva cita'} · ${subjName} · ${fechaCorta(date)} ${soloHoraMinuto(time)}`,
+        professionalNewBookingHtml({
+          professionalName, patientName,
+          patientRut: cita?.patient_rut,
+          patientPhone: cita?.patient_phone ?? null,
+          patientEmail: cita?.patient_email ?? patientEmail ?? null,
+          serviceName: serviceName || cita?.service_name,
+          date, time,
+          duration: cita?.duration ?? duration ?? null,
+          type: cita?.type || type,
+          price: cita?.price ?? price ?? null,
+          notes: cita?.notes ?? null,
+          pago,
+          historial,
+          reagendadaDesde: reagendada,
+        }),
         canInvite ? buildInvite(professionalName || 'Profesional', to) : undefined
       ));
     }
@@ -1163,11 +1331,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           paymentReceiptHtml({ patientName, doctorName: professionalName, serviceName, date, time, transactionRef, price })
         ));
       } else {
-        sends.push(sendEmail(RESEND_API_KEY, FROM, patientEmail,
-          `Tu cita ha sido confirmada – ${subjService}`,
-          patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type, price }),
-          canInvite ? buildInvite(patientName, patientEmail) : undefined
-        ));
+        sends.push(reagendada
+          ? sendEmail(RESEND_API_KEY, FROM, patientEmail,
+              `Tu cita fue reagendada – ${subjService}`,
+              patientRescheduleHtml({ patientName, doctorName: professionalName, serviceName, date, time, type, previousDate: reagendada.date, previousTime: reagendada.time }),
+              canInvite ? buildInvite(patientName, patientEmail) : undefined)
+          : sendEmail(RESEND_API_KEY, FROM, patientEmail,
+              `Tu cita ha sido confirmada – ${subjService}`,
+              patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type,
+                // "Pagado" solo si la BD lo confirma; sin appointmentId se mantiene el comportamiento anterior.
+                price: cita ? (pago.tipo === 'pagado' ? pago.monto : undefined) : price }),
+              canInvite ? buildInvite(patientName, patientEmail) : undefined));
       }
     }
 
