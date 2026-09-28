@@ -354,7 +354,7 @@ const PatientProfile: React.FC = () => {
           fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...(pending.notify || {}), paymentId, needsManualEntry: !confirmed }),
+            body: JSON.stringify({ ...(pending.notify || {}), paymentId, needsManualEntry: !confirmed, appointmentId: pending.appointmentId }),
           }).catch(() => {});
         }
         if (confirmed) trackBookingConfirmed(pending.notify?.price);
@@ -461,7 +461,8 @@ const PatientProfile: React.FC = () => {
             type: newApp.type,
             duration: selectedService!.duration,
             patientEmail: patientData.email || undefined,
-            price: selectedService!.price
+            price: selectedService!.price,
+            appointmentId: bookData.appointmentId,
           })
         }).catch(() => {});
       }

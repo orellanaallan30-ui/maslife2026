@@ -398,7 +398,10 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               type: app.type,
               patientEmail: app.patientEmail,
               price: app.price,
-              duration: app.duration
+              duration: app.duration,
+              // El servidor lee contacto, pago e historial desde la cita guardada.
+              appointmentId: saveOk ? app.id : undefined,
+              professionalId: app.professionalId,
             })
           }).catch(() => {});
         } catch { /* silencioso */ }
@@ -427,12 +430,41 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   };
 
   const updateAppointment = (updated: Appointment) => {
+    const anterior = appointments.find(a => a.id === updated.id);
     setAppointments(prev => prev.map(a => a.id === updated.id ? updated : a));
     addNotification(`Cita actualizada: ${updated.patientName} (${updated.date} ${updated.time})`, 'appointment');
-    saveAppointment(updated).catch(err => {
-      console.error('[updateAppointment] No se pudo guardar en Supabase:', err?.message || err);
-      notifyWriteError(err, `⚠️ Los cambios de la cita de ${updated.patientName} NO se guardaron. Intenta de nuevo.`);
-    });
+    saveAppointment(updated)
+      .then(() => {
+        // Reagendamiento: cambió fecha u hora de una cita real → aviso al
+        // profesional y al paciente (si tiene correo). Es un aviso: si falla,
+        // la cita igual quedó guardada.
+        const cambioHora = anterior && (anterior.date !== updated.date || anterior.time !== updated.time);
+        if (!cambioHora || updated.status === 'Bloqueado' || updated.status === 'Cancelado' || !loggedPro?.email) return;
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            kind: 'reagendada',
+            to: loggedPro.email,
+            professionalId: updated.professionalId || loggedPro.id,
+            appointmentId: updated.id,
+            professionalName: updated.doctorName || loggedPro.name,
+            patientName: updated.patientName,
+            serviceName: updated.serviceName,
+            date: updated.date,
+            time: updated.time,
+            type: updated.type,
+            duration: updated.duration,
+            patientEmail: updated.patientEmail || undefined,
+            previousDate: anterior!.date,
+            previousTime: anterior!.time,
+          }),
+        }).catch(e => console.error('[updateAppointment] aviso de reagendamiento', e?.message || e));
+      })
+      .catch(err => {
+        console.error('[updateAppointment] No se pudo guardar en Supabase:', err?.message || err);
+        notifyWriteError(err, `⚠️ Los cambios de la cita de ${updated.patientName} NO se guardaron. Intenta de nuevo.`);
+      });
   };
 
   const deleteAppointment = (id: string) => {
