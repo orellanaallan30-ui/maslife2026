@@ -599,6 +599,15 @@ function paymentReceiptHtml(p: { patientName: string; doctorName: string; servic
   });
 }
 
+async function enviarConReintento(fn: () => Promise<any>, etiqueta: string) {
+  try { return await fn(); }
+  catch (e: any) {
+    console.error(`[notify] envío a ${etiqueta} falló, reintentando:`, e?.message);
+    await new Promise(r => setTimeout(r, 800));
+    return await fn();
+  }
+}
+
 async function sendEmail(
   apiKey: string, from: string, to: string, subject: string, html: string,
   icsContent?: string,
@@ -1203,7 +1212,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   if (!RESEND_API_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
 
-  const { to: toRaw, professionalId, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price, duration, appointmentId, kind, previousDate, previousTime } = req.body;
+  const { to: toRaw, professionalId, professionalName, patientName, serviceName, date, time, type, patientEmail, isReceipt, transactionRef, price, duration, appointmentId, kind, previousDate, previousTime, onlyPatient } = req.body;
 
   // El perfil público ya no expone el email del profesional (Ley 21.719):
   // el cliente envía professionalId y el email se resuelve aquí con service role.
@@ -1224,7 +1233,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   let historial: Historial | null = null;
   if (typeof appointmentId === 'string' && PRO_UUID_RE.test(appointmentId)) {
     const { data: apt } = await supabase.from('appointments')
-      .select('id, professional_id, patient_name, service_name, patient_phone, patient_email, patient_rut, payment_status, payment_amount, price, booking_source, notes, type, duration, date, time')
+      .select('id, professional_id, patient_name, service_name, patient_phone, patient_email, patient_rut, payment_status, payment_amount, price, booking_source, notes, type, duration, date, time, patient_email_sent_at')
       .eq('id', appointmentId).maybeSingle();
     if (apt) {
       const { data: proRow } = await supabase.from('professionals')
@@ -1291,62 +1300,100 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   try {
-    const sends: Promise<any>[] = [];
-
     const subjName = cleanLine(patientName);
     const subjService = cleanLine(serviceName);
 
-    if (isReceipt) {
-      sends.push(sendEmail(RESEND_API_KEY, FROM, to,
-        `Pago confirmado – ${subjName}`,
-        paymentReceiptHtml({ patientName, doctorName: professionalName, serviceName, date, time, transactionRef, price })
-      ));
-    } else {
-      const etiqueta = reagendada ? '[Reagendada] ' : pago.tipo === 'pagado' ? '[Pagada] ' : '';
-      sends.push(sendEmail(RESEND_API_KEY, FROM, to,
-        `${etiqueta}${reagendada ? 'Cita reagendada' : 'Nueva cita'} · ${subjName} · ${fechaCorta(date)} ${soloHoraMinuto(time)}`,
-        professionalNewBookingHtml({
-          professionalName, patientName,
-          patientRut: cita?.patient_rut,
-          patientPhone: cita?.patient_phone ?? null,
-          patientEmail: cita?.patient_email ?? patientEmail ?? null,
-          serviceName: serviceName || cita?.service_name,
-          date, time,
-          duration: cita?.duration ?? duration ?? null,
-          type: cita?.type || type,
-          price: cita?.price ?? price ?? null,
-          notes: cita?.notes ?? null,
-          pago,
-          historial,
-          reagendadaDesde: reagendada,
-        }),
-        canInvite ? buildInvite(professionalName || 'Profesional', to) : undefined
-      ));
+    // Destinatario de la paciente: el del cuerpo o, si no vino, el guardado en la
+    // cita. Antes solo se miraba el cuerpo y un correo perdido en el navegador
+    // dejaba a la paciente sin comprobante mientras el profesional sí lo recibía.
+    const emailCita = cita?.patient_email && EMAIL_RE.test(String(cita.patient_email)) ? String(cita.patient_email) : '';
+    const destPaciente: string = onlyPatient ? emailCita : (patientEmail || emailCita);
+
+    // Reenvío solo a la paciente (red de seguridad): únicamente para una cita
+    // pagada cuyo correo aún no salió, y se reclama de forma atómica.
+    if (onlyPatient) {
+      if (!cita || !destPaciente || cita.payment_status !== 'Pagado') {
+        return res.status(400).json({ error: 'Reenvío no aplicable' });
+      }
+      const { data: claim } = await supabase.from('appointments')
+        .update({ patient_email_sent_at: new Date().toISOString() })
+        .eq('id', cita.id).is('patient_email_sent_at', null)
+        .select('id').maybeSingle();
+      if (!claim) return res.status(200).json({ success: true, pro: 'omitido', patient: 'ya-enviado' });
     }
 
-    if (patientEmail) {
-      if (isReceipt) {
-        sends.push(sendEmail(RESEND_API_KEY, FROM, patientEmail,
+    const enviarProfesional = (): Promise<any> => isReceipt
+      ? sendEmail(RESEND_API_KEY, FROM, to,
+          `Pago confirmado – ${subjName}`,
+          paymentReceiptHtml({ patientName, doctorName: professionalName, serviceName, date, time, transactionRef, price }))
+      : sendEmail(RESEND_API_KEY, FROM, to,
+          `${reagendada ? '[Reagendada] ' : pago.tipo === 'pagado' ? '[Pagada] ' : ''}${reagendada ? 'Cita reagendada' : 'Nueva cita'} · ${subjName} · ${fechaCorta(date)} ${soloHoraMinuto(time)}`,
+          professionalNewBookingHtml({
+            professionalName, patientName,
+            patientRut: cita?.patient_rut,
+            patientPhone: cita?.patient_phone ?? null,
+            patientEmail: cita?.patient_email ?? patientEmail ?? null,
+            serviceName: serviceName || cita?.service_name,
+            date, time,
+            duration: cita?.duration ?? duration ?? null,
+            type: cita?.type || type,
+            price: cita?.price ?? price ?? null,
+            notes: cita?.notes ?? null,
+            pago,
+            historial,
+            reagendadaDesde: reagendada,
+          }),
+          canInvite ? buildInvite(professionalName || 'Profesional', to) : undefined);
+
+    const enviarPaciente = (dest: string): Promise<any> => isReceipt
+      ? sendEmail(RESEND_API_KEY, FROM, dest,
           `Comprobante de pago – ${subjService}`,
-          paymentReceiptHtml({ patientName, doctorName: professionalName, serviceName, date, time, transactionRef, price })
-        ));
-      } else {
-        sends.push(reagendada
-          ? sendEmail(RESEND_API_KEY, FROM, patientEmail,
-              `Tu cita fue reagendada – ${subjService}`,
-              patientRescheduleHtml({ patientName, doctorName: professionalName, serviceName, date, time, type, previousDate: reagendada.date, previousTime: reagendada.time }),
-              canInvite ? buildInvite(patientName, patientEmail) : undefined)
-          : sendEmail(RESEND_API_KEY, FROM, patientEmail,
-              `Tu cita ha sido confirmada – ${subjService}`,
-              patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type,
-                // "Pagado" solo si la BD lo confirma; sin appointmentId se mantiene el comportamiento anterior.
-                price: cita ? (pago.tipo === 'pagado' ? pago.monto : undefined) : price }),
-              canInvite ? buildInvite(patientName, patientEmail) : undefined));
+          paymentReceiptHtml({ patientName, doctorName: professionalName, serviceName, date, time, transactionRef, price }))
+      : reagendada
+        ? sendEmail(RESEND_API_KEY, FROM, dest,
+            `Tu cita fue reagendada – ${subjService}`,
+            patientRescheduleHtml({ patientName, doctorName: professionalName, serviceName, date, time, type, previousDate: reagendada.date, previousTime: reagendada.time }),
+            canInvite ? buildInvite(patientName, dest) : undefined)
+        : sendEmail(RESEND_API_KEY, FROM, dest,
+            `Tu cita ha sido confirmada – ${subjService}`,
+            patientConfirmationHtml({ patientName, doctorName: professionalName, serviceName, date, time, type,
+              // "Pagado" solo si la BD lo confirma; sin appointmentId se mantiene el comportamiento anterior.
+              price: cita ? (pago.tipo === 'pagado' ? pago.monto : undefined) : price }),
+            canInvite ? buildInvite(patientName, dest) : undefined);
+
+    // Un envío por destinatario, en serie y con un reintento: el correo del
+    // profesional no debe tapar un fallo del de la paciente (ni al revés).
+    const ids: string[] = [];
+    let proEstado: 'ok' | 'error' | 'omitido' = 'omitido';
+    if (!onlyPatient) {
+      try { const r = await enviarConReintento(enviarProfesional, 'profesional'); ids.push(r?.id); proEstado = 'ok'; }
+      catch (e: any) { proEstado = 'error'; console.error('[notify] correo al profesional NO salió:', e?.message); }
+    }
+
+    let pacienteEstado: 'ok' | 'error' | 'sin-correo' = 'sin-correo';
+    if (destPaciente) {
+      try {
+        const r = await enviarConReintento(() => enviarPaciente(destPaciente), 'paciente');
+        ids.push(r?.id); pacienteEstado = 'ok';
+        if (cita?.id && !onlyPatient) {
+          const { error: markErr } = await supabase.from('appointments')
+            .update({ patient_email_sent_at: new Date().toISOString() }).eq('id', cita.id);
+          if (markErr) console.error('[notify] no se pudo marcar patient_email_sent_at:', markErr.message);
+        }
+      } catch (e: any) {
+        pacienteEstado = 'error';
+        console.error('[notify] correo a la PACIENTE NO salió:', e?.message);
+        // Libera el reclamo del reenvío para que la red de seguridad reintente.
+        if (onlyPatient && cita?.id) {
+          await supabase.from('appointments').update({ patient_email_sent_at: null }).eq('id', cita.id);
+        }
       }
     }
 
-    const results = await Promise.all(sends);
-    return res.status(200).json({ success: true, ids: results.map(r => r.id) });
+    if (proEstado === 'error' && pacienteEstado !== 'ok') {
+      return res.status(500).json({ error: 'No se pudo enviar ningún correo', pro: proEstado, patient: pacienteEstado });
+    }
+    return res.status(200).json({ success: true, pro: proEstado, patient: pacienteEstado, ids });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

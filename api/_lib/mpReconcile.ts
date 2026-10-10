@@ -65,7 +65,12 @@ export async function sendBookingEmailsIfUnclaimed(apt: Record<string, any>): Pr
         duration: apt.duration,
         price: apt.payment_amount,
         isReceipt: true,
+        // Con el id, notify lee el correo real de la BD y marca patient_email_sent_at.
+        professionalId: apt.professional_id,
+        appointmentId: apt.id,
       }),
+    }).then(async r => {
+      if (!r.ok) console.error('[mpReconcile] notify respondió', r.status, await r.text().catch(() => ''));
     }).catch(e => console.error('[mpReconcile] notify falló:', e));
   } catch (e) {
     console.error('[mpReconcile] sendBookingEmailsIfUnclaimed error:', e);
@@ -275,6 +280,65 @@ export async function reconcilePendingWithMP(professionalId: string): Promise<nu
     return confirmadas;
   } catch (e) {
     console.error('[mpReconcile] reconcilePendingWithMP error:', e);
+    return 0;
+  }
+}
+
+
+/**
+ * Red de seguridad: reenvía solo a la paciente el comprobante de reservas web
+ * pagadas cuyo correo nunca salió (patient_email_sent_at nulo). Espera 10 min
+ * para no pisar el envío normal y mira solo las últimas 48 h.
+ */
+export async function resendMissingPatientEmails(professionalId: string): Promise<number> {
+  try {
+    const ahora = Date.now();
+    const { data: rows, error } = await supabase
+      .from('appointments')
+      .select('id, patient_name, doctor_name, service_name, date, time, type, duration, payment_amount')
+      .eq('professional_id', professionalId)
+      .eq('payment_status', 'Pagado')
+      .eq('booking_source', 'web')
+      .not('patient_email', 'is', null)
+      .neq('patient_email', '')
+      .is('patient_email_sent_at', null)
+      .gte('paid_at', new Date(ahora - 48 * 3600 * 1000).toISOString())
+      .lte('paid_at', new Date(ahora - 10 * 60 * 1000).toISOString())
+      .limit(10);
+    if (error) { console.error('[mpReconcile] resendMissingPatientEmails:', error.message); return 0; }
+
+    const base = (process.env.PUBLIC_BASE_URL || 'https://clinicamaslife.cl').replace(/\/$/, '');
+    let enviados = 0;
+    for (const apt of rows || []) {
+      try {
+        const r = await fetch(`${base}/api/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            professionalId,
+            appointmentId: apt.id,
+            onlyPatient: true,
+            isReceipt: true,
+            professionalName: apt.doctor_name,
+            patientName: apt.patient_name,
+            serviceName: apt.service_name,
+            date: apt.date,
+            time: apt.time,
+            type: apt.type,
+            duration: apt.duration,
+            price: apt.payment_amount,
+          }),
+        });
+        const j: any = await r.json().catch(() => ({}));
+        if (j?.patient === 'ok') enviados++;
+        else console.error('[mpReconcile] reenvío a paciente sin éxito', apt.id, r.status, j?.patient);
+      } catch (e: any) {
+        console.error('[mpReconcile] reenvío a paciente falló', apt.id, e?.message);
+      }
+    }
+    return enviados;
+  } catch (e: any) {
+    console.error('[mpReconcile] resendMissingPatientEmails error:', e?.message);
     return 0;
   }
 }

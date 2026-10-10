@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, confirmBookingPaid, claimNotify, releaseStaleHolds, BookingInput, UUID_RE } from './_lib/booking';
 import { syncAppointmentToGoogle } from './_lib/googleCalendar';
-import { reconcilePendingWithMP, notificarCitaEnPanel } from './_lib/mpReconcile';
+import { reconcilePendingWithMP, notificarCitaEnPanel, resendMissingPatientEmails } from './_lib/mpReconcile';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -69,7 +69,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const proId = String(body.professionalId || '');
     if (!UUID_RE.test(proId)) return res.status(400).json({ error: 'professional_id inválido' });
     const confirmadas = await reconcilePendingWithMP(proId);
-    return res.status(200).json({ ok: true, confirmadas });
+    const correosReenviados = await resendMissingPatientEmails(proId);
+    return res.status(200).json({ ok: true, confirmadas, correosReenviados });
   }
 
   // ── Confirmar pago verificándolo contra MercadoPago ──
