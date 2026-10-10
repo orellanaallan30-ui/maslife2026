@@ -8,6 +8,23 @@ import { trackViewProfile, trackStartBooking, trackBookingConfirmed } from '../a
 import { usePageMeta, useJsonLd } from '../lib/seo';
 import { modalidadesDeServicio, infoModalidad } from '../../api/_lib/modalidades';
 
+// Los correos los envía el servidor (con reintento y respaldo por paciente). Aquí
+// solo se deja constancia si algo falla; la agenda del profesional reenvía luego.
+async function postNotify(payload: Record<string, unknown>): Promise<void> {
+  try {
+    const r = await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j?.patient === 'error') console.error('[notify] correos no enviados', r.status, j);
+  } catch (e) {
+    console.error('[notify] error de red', e);
+  }
+}
+
+
 // Clave de localStorage donde se guarda la reserva mientras el paciente paga en
 // la página de MercadoPago (Checkout Pro). Se lee al volver por back_urls.
 const PENDING_BOOKING_KEY = 'maslife_pending_booking';
@@ -351,11 +368,7 @@ const PatientProfile: React.FC = () => {
         // servidor por professionalId; el .ics va adjunto). El webhook concilia y
         // notifica si la confirmación del cliente falló (respaldo idempotente).
         if (pending.notify && shouldNotify) {
-          fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...(pending.notify || {}), paymentId, needsManualEntry: !confirmed, appointmentId: pending.appointmentId }),
-          }).catch(() => {});
+          postNotify({ ...(pending.notify || {}), paymentId, needsManualEntry: !confirmed, appointmentId: pending.appointmentId });
         }
         if (confirmed) trackBookingConfirmed(pending.notify?.price);
         // Si había un pago que no se pudo confirmar en el retorno, marcar pendiente
@@ -448,10 +461,7 @@ const PatientProfile: React.FC = () => {
       // Siempre enviar confirmación al profesional (y al paciente si dio email).
       // El email del pro no se expone al cliente: notify lo resuelve por professionalId.
       {
-        fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        postNotify({
             professionalId: doctor.id,
             professionalName: doctor.name,
             patientName: patientData.name,
@@ -463,8 +473,7 @@ const PatientProfile: React.FC = () => {
             patientEmail: patientData.email || undefined,
             price: selectedService!.price,
             appointmentId: bookData.appointmentId,
-          })
-        }).catch(() => {});
+          });
       }
 
       trackBookingConfirmed(selectedService?.price);
