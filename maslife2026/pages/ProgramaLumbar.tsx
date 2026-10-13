@@ -24,7 +24,7 @@ const INCLUYE = [
 const VISTA_PREVIA = [
   { src: '/programa-lumbar/preview-1.jpg', alt: 'Portada del programa de ejercicios para el dolor lumbar' },
   { src: '/programa-lumbar/preview-2.jpg', alt: 'Página que explica por qué duele la espalda y por qué no siempre hay un daño' },
-  { src: '/programa-lumbar/preview-3.jpg', alt: 'Página de mitos y realidades sobre el dolor lumbar' },
+  { src: '/programa-lumbar/preview-3.jpg', alt: 'Página sobre el círculo del dolor y lo que dicen las resonancias magnéticas' },
   { src: '/programa-lumbar/preview-4.jpg', alt: 'Página de señales de alarma y semáforo del dolor' },
 ];
 const NO_PARA = [
