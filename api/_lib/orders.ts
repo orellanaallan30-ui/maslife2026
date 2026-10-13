@@ -44,8 +44,21 @@ export interface OrderRow {
 type Result<T = Record<string, unknown>> = { ok: true; data: T } | { ok: false; code: number; error: string };
 
 /** Crea el pedido (pendiente) y la preferencia de MercadoPago con el token de la plataforma. */
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'] as const;
+
+/** Deja solo las 4 UTM esperadas, como texto corto y sin caracteres raros. */
+export function cleanUtms(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const k of UTM_KEYS) {
+    const v = (raw as Record<string, unknown>)[k];
+    if (typeof v === 'string' && /^[\w\-.~%+ ]{1,100}$/.test(v)) out[k] = v;
+  }
+  return out;
+}
+
 export async function createOrder(input: {
-  slug?: unknown; name?: unknown; email?: unknown; acceptedTerms?: unknown;
+  slug?: unknown; name?: unknown; email?: unknown; acceptedTerms?: unknown; utm?: unknown;
 }): Promise<Result<{ init_point: string; orderId: string }>> {
   const token = platformToken();
   if (!token) return { ok: false, code: 503, error: 'MP_NOT_CONFIGURED' };
@@ -66,6 +79,7 @@ export async function createOrder(input: {
       product_slug: product.slug, buyer_name: name, buyer_email: email,
       amount: product.price, currency: 'CLP', status: 'pendiente',
       accepted_terms_at: new Date().toISOString(),
+      ...cleanUtms(input.utm),
     })
     .select('id')
     .single();
