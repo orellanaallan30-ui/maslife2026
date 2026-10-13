@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 const TermsOfService: React.FC = () => {
   const navigate = useNavigate();
-  const updated = '8 de junio de 2026';
+  const updated = '14 de octubre de 2026';
 
   return (
     <div className="min-h-full bg-white font-sans text-slate-800">
@@ -150,6 +150,18 @@ const TermsOfService: React.FC = () => {
             Clínica Mas Life se reserva el derecho de modificar o cancelar el programa de referidos
             con aviso previo de 15 días.
           </p>
+        </Section>
+        <Section title="12. Productos Digitales">
+          <p>
+            Clínica Mas Life puede vender productos digitales descargables (por ejemplo, programas de ejercicios en formato PDF).
+            Al comprarlos aceptas lo siguiente:
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-slate-700 mt-2">
+            <li>El producto se entrega por correo electrónico, mediante un enlace de descarga personal que vence a los 7 días y permite un máximo de 5 descargas.</li>
+            <li>La licencia es de <strong>uso personal</strong>: no puedes revender, redistribuir ni publicar el archivo.</li>
+            <li>El contenido es <strong>educativo</strong> y no reemplaza la evaluación, el diagnóstico ni el tratamiento de un profesional de la salud. No garantiza resultados. Si presentas dolor intenso, hormigueo, pérdida de fuerza u otros síntomas de alarma, suspende los ejercicios y consulta a un profesional.</li>
+            <li>Los pagos se procesan a través de MercadoPago. Si tienes un problema con tu compra o con la descarga, escríbenos a <a href="mailto:maslife@clinicamaslife.cl" className="underline">maslife@clinicamaslife.cl</a>.</li>
+          </ul>
         </Section>
       </main>
 

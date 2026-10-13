@@ -2,6 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { htmlAtexto } from './_lib/emailText';
+import { getProduct } from './_lib/products';
+import { tokenMatches, TOKEN_RE, UUID_RE as ORDER_UUID_RE } from './_lib/orders';
 import { normalizarTelefonoCL, telefonoLegible, rutLegible, linkWhatsApp, fechaLarga as fechaCita, fechaCorta, estadoPago, detectarReagendamiento, type EstadoPago, type Historial } from './_lib/correoCita';
 
 function verifyAdminJwt(token: string, secret: string): boolean {
@@ -685,6 +687,23 @@ function mealPlanHtml(p: { professionalName: string; patientName: string; planTi
   });
 }
 
+export function ebookDeliveryHtml(p: { buyerName: string; productName: string; downloadLink: string; days: number; maxDownloads: number }): string {
+  const nombre = escapeHtml(String(p.buyerName || '').split(' ')[0] || 'Hola');
+  return emailShell({
+    kicker: 'Tu compra',
+    title: '¡Gracias por tu compra!',
+    subtitle: p.productName,
+    preheader: 'Tu programa está listo para descargar.',
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 16px;">Hola <strong>${nombre}</strong>,</p>
+      <p style="color:#475569;font-size:15px;margin:0 0 24px;line-height:1.6;">Tu pago fue aprobado. Aquí está tu programa, listo para descargar:</p>
+      <div style="text-align:center;margin:0 0 24px;">${ctaButton(p.downloadLink, 'Descargar mi programa')}</div>
+      <p style="color:#64748b;font-size:13px;margin:0 0 12px;line-height:1.6;">El enlace es personal, vence en ${p.days} días y permite hasta ${p.maxDownloads} descargas. Guarda el PDF en tu teléfono o computador apenas lo descargues.</p>
+      <p style="color:#64748b;font-size:13px;margin:0 0 12px;line-height:1.6;"><strong>Importante:</strong> este programa no reemplaza una evaluación profesional. Si tienes dolor intenso, hormigueo, pérdida de fuerza o un dolor que no mejora, consulta con un kinesiólogo o médico antes de ejercitarte.</p>
+      <p style="color:#94a3b8;font-size:12px;margin:16px 0 0;line-height:1.6;">Si tienes algún problema con la descarga, responde este correo o escribe a maslife@clinicamaslife.cl.</p>`,
+  });
+}
+
 function ratingRequestHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; reviewLink: string }): string {
   const dateFormatted = p.date ? new Date(p.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
   return emailShell({
@@ -932,6 +951,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // ── Solicitud de calificación post-atención ────────────────────────────────
+  // ── Entrega del programa digital comprado ──
+  // Solo se acepta (orderId, token). El destinatario y el producto salen SIEMPRE de
+  // la base de datos del pedido pagado: nada del cuerpo decide a quién se escribe ni
+  // qué enlace lleva, así que esto no puede usarse como relay de correo abierto.
+  if (req.body?.action === 'ebook-delivery') {
+    const { orderId, token } = req.body || {};
+    if (!ORDER_UUID_RE.test(String(orderId || '')) || typeof token !== 'string' || !TOKEN_RE.test(token)) {
+      return res.status(400).json({ error: 'Solicitud inválida' });
+    }
+    const { data: order } = await supabase
+      .from('orders')
+      .select('buyer_name, buyer_email, product_slug, status, download_token_hash, expires_at, max_downloads')
+      .eq('id', orderId).maybeSingle();
+    if (!order || order.status !== 'pagado' || !tokenMatches(order.download_token_hash, token)) {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+    const product = getProduct(order.product_slug);
+    if (!product || !EMAIL_RE.test(String(order.buyer_email))) return res.status(404).json({ error: 'Pedido incompleto' });
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
+    const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+    const dias = Math.max(1, Math.round((new Date(order.expires_at || Date.now()).getTime() - Date.now()) / 86400000));
+    try {
+      await enviarConReintento(() => sendEmail(
+        RESEND_KEY, FROM, String(order.buyer_email),
+        cleanLine(`Tu programa: ${product.name}`),
+        ebookDeliveryHtml({
+          buyerName: String(order.buyer_name), productName: product.name,
+          downloadLink: `https://clinicamaslife.cl/descarga/${token}`,
+          days: dias, maxDownloads: Number(order.max_downloads) || 5,
+        }),
+      ), 'comprador del programa');
+      return res.status(200).json({ ok: true });
+    } catch (e: any) {
+      console.error('[notify] ebook-delivery NO salió:', e?.message);
+      return res.status(502).json({ error: 'No se pudo enviar el correo' });
+    }
+  }
+
   if (req.body?.action === 'rating-request') {
     const { patientEmail, patientName, professionalName, professionalId, proSlug, serviceName, date } = req.body || {};
 

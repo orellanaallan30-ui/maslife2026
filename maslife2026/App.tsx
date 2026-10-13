@@ -20,6 +20,9 @@ import Settings              from './pages/Settings';
 import ProfessionalAgenda    from './pages/ProfessionalAgenda';
 import ReferralProgram       from './pages/ReferralProgram';
 import Charlas               from './pages/Charlas';
+import ProgramaLumbar        from './pages/ProgramaLumbar';
+import ProgramaGracias       from './pages/ProgramaGracias';
+import Descarga              from './pages/Descarga';
 import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
 import { ConsentAcceptPage } from './pages/ConsentAcceptPage';
@@ -581,6 +584,9 @@ const AppContent: React.FC = () => {
           <Route path="/registro"            element={<RegistroRedirect />} />
           <Route path="/unete"               element={<ProLanding />} />
           <Route path="/charlas"             element={<Charlas />} />
+          <Route path="/programas/lumbar"    element={<ProgramaLumbar />} />
+          <Route path="/programas/gracias"   element={<ProgramaGracias />} />
+          <Route path="/descarga/:token"     element={<Descarga />} />
           <Route path="/privacidad"          element={<PrivacyPolicy />} />
           <Route path="/terminos"            element={<TermsOfService />} />
           <Route path="/mi-ficha/:token"    element={<PatientPortal />} />

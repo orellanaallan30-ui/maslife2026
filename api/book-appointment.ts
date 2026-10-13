@@ -4,6 +4,7 @@ import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, confirmBookingPaid, claimNotify, releaseStaleHolds, BookingInput, UUID_RE } from './_lib/booking';
 import { syncAppointmentToGoogle } from './_lib/googleCalendar';
 import { reconcilePendingWithMP, notificarCitaEnPanel, resendMissingPatientEmails } from './_lib/mpReconcile';
+import { confirmAndDeliver, orderStatus, consumeDownload } from './_lib/orders';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -60,6 +61,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const body = req.body || {};
+
+  // ── Programa digital: estado del pedido, confirmación al volver de MercadoPago y descarga ──
+  if (body.action === 'order-status' || body.action === 'order-confirm' || body.action === 'download') {
+    const r = body.action === 'download'
+      ? await consumeDownload(String(body.token || ''))
+      : body.action === 'order-confirm'
+        ? await confirmAndDeliver(String(body.orderId || ''), body.paymentId ? String(body.paymentId) : undefined)
+        : await orderStatus(String(body.orderId || ''));
+    return r.ok ? res.status(200).json(r.data) : res.status(r.code).json({ error: r.error });
+  }
 
   // ── Conciliar pagos pendientes contra MercadoPago ──
   // Lo llama el panel del profesional al abrir la agenda. Sirve de red de
