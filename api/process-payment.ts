@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, releaseBooking, releaseStaleHolds, BookingInput } from './_lib/booking';
+import { createOrder } from './_lib/orders';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -35,6 +36,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const PLATFORM_TOKEN = (process.env.MERCADOPAGO_ACCESS_TOKEN || '').trim();
   if (!PLATFORM_TOKEN) return res.status(503).json({ error: 'MP_NOT_CONFIGURED' });
+
+  // Venta de productos digitales propios: se cobra con el token de la plataforma y
+  // el precio sale del catálogo del servidor (api/_lib/products.ts).
+  if (req.body?.action === 'create-order') {
+    const r = await createOrder(req.body);
+    return r.ok ? res.status(200).json(r.data) : res.status(r.code).json({ error: r.error });
+  }
 
   const { payer, returnUrl, booking } = req.body || {};
 

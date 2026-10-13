@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { confirmPaidAppointment } from './_lib/mpReconcile';
+import { confirmPaidOrder, deliverOrder, ORDER_REF_PREFIX } from './_lib/orders';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -245,7 +246,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Respaldo para cuando el paciente paga pero nunca vuelve del checkout.
         const ref = payment.external_reference as string | undefined;
         const REF_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (payment.status === 'approved' && ref && REF_UUID.test(ref)) {
+        if (typeof ref === 'string' && ref.startsWith(ORDER_REF_PREFIX)) {
+          // Producto digital propio (programa en PDF): confirma el pago y entrega el enlace.
+          const orderId = ref.slice(ORDER_REF_PREFIX.length);
+          const estado = await confirmPaidOrder(orderId, payment);
+          const entrega = estado === 'rechazado' ? 'no aplica' : await deliverOrder(orderId);
+          await logWebhookEvent({
+            event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true,
+            mp_status: payment.status ? String(payment.status) : undefined,
+            outcome: estado === 'rechazado' ? 'ignored_status' : 'matched_updated',
+            detail: `pedido ${orderId}: ${estado}, entrega ${entrega}`,
+          });
+        } else if (payment.status === 'approved' && ref && REF_UUID.test(ref)) {
           const amount = Math.round(Number(payment.transaction_amount) || 0);
           // Misma rutina que usa la conciliación activa (_lib/mpReconcile): marca
           // la cita, registra el ingreso y envía los correos. Compartirla evita
