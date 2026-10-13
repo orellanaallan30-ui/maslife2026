@@ -40,6 +40,31 @@ beforeEach(() => {
   mockFetch();
 });
 
+describe('UTM de atribución', () => {
+  it('guarda solo las 4 UTM esperadas, limpias y de largo acotado', async () => {
+    await orders.createOrder({ ...buenaCompra, utm: {
+      utm_source: 'meta', utm_medium: 'paid_social', utm_campaign: 'programa-lumbar-coquimbo-oct26',
+      utm_content: 'carrusel-mitos', utm_term: 'no-se-guarda', otra: 'x',
+    } });
+    expect(db.tables.orders[0]).toMatchObject({ utm_source: 'meta', utm_medium: 'paid_social', utm_content: 'carrusel-mitos' });
+    expect(db.tables.orders[0]).not.toHaveProperty('utm_term');
+    expect(db.tables.orders[0]).not.toHaveProperty('otra');
+  });
+
+  it('descarta valores con caracteres raros, demasiado largos o que no son texto', () => {
+    expect(orders.cleanUtms({ utm_source: '<script>', utm_medium: 'a'.repeat(101), utm_campaign: 123, utm_content: 'ok-1' }))
+      .toEqual({ utm_content: 'ok-1' });
+    expect(orders.cleanUtms(null)).toEqual({});
+    expect(orders.cleanUtms('texto')).toEqual({});
+  });
+
+  it('un pedido sin UTM se crea igual', async () => {
+    const r = await orders.createOrder(buenaCompra);
+    expect(r.ok).toBe(true);
+    expect(db.tables.orders[0].utm_source).toBeUndefined();
+  });
+});
+
 describe('createOrder', () => {
   it('cobra el precio del catálogo del servidor y deja el pedido pendiente', async () => {
     const r = await orders.createOrder({ ...buenaCompra, price: 1, amount: 1 } as any);

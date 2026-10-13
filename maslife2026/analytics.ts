@@ -104,6 +104,35 @@ export const trackStartBooking = (value?: number) =>
 export const trackBookingConfirmed = (value?: number) =>
   track('Purchase', 'booking_confirmed', value ? { value, currency: 'CLP' } : {});
 
+// ── Programa digital (PDF): eventos propios para no mezclarlos con las reservas ──
+// Llevan content_ids del producto para poder filtrarlos en Meta. La compra usa el id
+// del pedido como eventID: si el comprador recarga la página, Meta no la cuenta dos veces.
+const PROGRAMA_ID = 'programa-lumbar-4-semanas';
+
+export const trackProgramView = () =>
+  track('ViewContent', 'view_program', { content_type: 'product', content_ids: [PROGRAMA_ID], content_name: 'Programa lumbar 4 semanas' });
+
+export const trackProgramCheckout = (value: number) =>
+  track('InitiateCheckout', 'begin_checkout_program', { content_type: 'product', content_ids: [PROGRAMA_ID], value, currency: 'CLP' });
+
+export function trackProgramPurchase(orderId: string, value: number): void {
+  try {
+    const params = { content_type: 'product', content_ids: [PROGRAMA_ID], value, currency: 'CLP' };
+    if (window.fbq) window.fbq('track', 'Purchase', params, { eventID: orderId });
+    if (window.gtag) window.gtag('event', 'purchase_program', { ...utms, ...params, transaction_id: orderId });
+  } catch { /* solo medición */ }
+}
+
+/** UTM guardadas del anuncio (solo las 4 que se atribuyen a un pedido). */
+export function getUtms(): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']) {
+    const v = utms[k];
+    if (typeof v === 'string' && v) out[k] = v;
+  }
+  return out;
+}
+
 export const trackProRegistration = () =>
   track('CompleteRegistration', 'pro_signup', {});
 

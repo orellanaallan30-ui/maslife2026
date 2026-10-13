@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '../lib/seo';
+import { trackProgramView, trackProgramCheckout, getUtms } from '../analytics';
 
 // Página de venta del "Programa de ejercicios para el dolor lumbar · 4 semanas".
 // El precio mostrado es informativo: el cobro lo calcula el servidor desde su
@@ -20,6 +21,12 @@ const INCLUYE = [
   'Escala de dolor, semáforo y registro de síntomas para seguir tu avance',
   'Señales de alarma: cuándo dejar de ejercitar y consultar',
 ];
+const VISTA_PREVIA = [
+  { src: '/programa-lumbar/preview-1.jpg', alt: 'Portada del programa de ejercicios para el dolor lumbar' },
+  { src: '/programa-lumbar/preview-2.jpg', alt: 'Página que explica por qué duele la espalda y por qué no siempre hay un daño' },
+  { src: '/programa-lumbar/preview-3.jpg', alt: 'Página de mitos y realidades sobre el dolor lumbar' },
+  { src: '/programa-lumbar/preview-4.jpg', alt: 'Página de señales de alarma y semáforo del dolor' },
+];
 const NO_PARA = [
   'Si te operaron hace poco o tuviste un golpe o caída reciente',
   'Si el dolor baja por la pierna con hormigueo o pérdida de fuerza',
@@ -34,6 +41,8 @@ const ProgramaLumbar: React.FC = () => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => { trackProgramView(); }, []);
+
   usePageMeta({
     title: 'Programa de ejercicios para el dolor lumbar · 4 semanas | Clínica Mas Life',
     description: 'Programa de 4 semanas con ejercicios explicados paso a paso, escala de dolor y señales de alarma. Descarga inmediata por correo.',
@@ -45,11 +54,12 @@ const ProgramaLumbar: React.FC = () => {
     setError('');
     if (!acepta) { setError('Debes aceptar los términos para comprar.'); return; }
     setCargando(true);
+    trackProgramCheckout(PRECIO);
     try {
       const r = await fetch('/api/process-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create-order', slug: SLUG, name: nombre, email: correo, acceptedTerms: true }),
+        body: JSON.stringify({ action: 'create-order', slug: SLUG, name: nombre, email: correo, acceptedTerms: true, utm: getUtms() }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.init_point) { window.location.href = j.init_point; return; }
@@ -101,7 +111,7 @@ const ProgramaLumbar: React.FC = () => {
           </p>
         </div>
 
-        <form onSubmit={comprar} className="rounded-3xl border border-slate-200 p-6 shadow-lg shadow-slate-200/60 h-fit">
+        <form id="comprar" onSubmit={comprar} className="rounded-3xl border border-slate-200 p-6 shadow-lg shadow-slate-200/60 h-fit scroll-mt-4">
           <p className="text-sm font-bold text-slate-500">Precio</p>
           <p className="text-4xl font-extrabold" style={{ color: INK }}>{clp(PRECIO)}</p>
           <p className="text-sm text-slate-500">Pago único · descarga inmediata</p>
@@ -130,7 +140,19 @@ const ProgramaLumbar: React.FC = () => {
         </form>
       </section>
 
-      <section className="px-5 pb-16 mx-auto max-w-3xl">
+      <section className="px-5 pb-12 mx-auto max-w-5xl">
+        <h2 className="text-xl font-extrabold" style={{ color: INK }}>Mira cómo es por dentro</h2>
+        <p className="mt-1 text-slate-600">Algunas páginas del programa. Cada ejercicio incluye fotos y pasos explicados.</p>
+        <div className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {VISTA_PREVIA.map(v => (
+            <figure key={v.src} className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50">
+              <img src={v.src} alt={v.alt} loading="lazy" className="w-full h-auto block" />
+            </figure>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-5 pb-28 lg:pb-16 mx-auto max-w-3xl">
         <h2 className="text-xl font-extrabold" style={{ color: INK }}>Preguntas frecuentes</h2>
         <div className="mt-4 space-y-4 text-slate-700">
           <div><p className="font-bold">¿Cómo lo recibo?</p><p>Por correo, con un enlace de descarga personal. El enlace vence a los 7 días y permite hasta 5 descargas.</p></div>
@@ -138,6 +160,10 @@ const ProgramaLumbar: React.FC = () => {
           <div><p className="font-bold">¿Sirve si tengo un diagnóstico?</p><p>Consulta primero con tu kinesiólogo o médico. Este programa es general y no está adaptado a una condición en particular.</p></div>
         </div>
       </section>
+      <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
+        <div><p className="text-xs text-slate-500 leading-none">Pago único</p><p className="text-xl font-extrabold leading-tight" style={{ color: INK }}>{clp(PRECIO)}</p></div>
+        <a href="#comprar" className="rounded-xl px-6 py-3 font-extrabold text-white" style={{ background: TEAL }}>Quiero el programa</a>
+      </div>
     </div>
   );
 };

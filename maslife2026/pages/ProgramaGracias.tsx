@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { usePageMeta } from '../lib/seo';
+import { trackProgramPurchase } from '../analytics';
+
+const PRECIO = 9990;
+const EVALUACION_URL = '/p/rodrigo-orellana';
 
 // Página a la que vuelve MercadoPago. NO confía en los parámetros de la URL: le
 // pide al servidor que verifique el pago contra MercadoPago y entregue el correo.
@@ -27,7 +31,15 @@ const ProgramaGracias: React.FC = () => {
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) { setEstado('error'); return false; }
-      if (j.entregado) { setEstado('entregado'); return true; }
+      if (j.entregado) {
+        // Una sola vez por pedido y navegador; además Meta deduplica por eventID.
+        try {
+          const clave = `programa_purchase_${orderId}`;
+          if (!sessionStorage.getItem(clave)) { trackProgramPurchase(orderId, PRECIO); sessionStorage.setItem(clave, '1'); }
+        } catch { trackProgramPurchase(orderId, PRECIO); }
+        setEstado('entregado');
+        return true;
+      }
       setEstado('pendiente');
       return false;
     } catch (e) {
@@ -65,6 +77,11 @@ const ProgramaGracias: React.FC = () => {
           <p className="text-2xl font-extrabold text-slate-900">¡Gracias por tu compra!</p>
           <p className="mt-3 text-slate-600">Te enviamos el programa por correo. Revisa tu bandeja de entrada y también spam o promociones.</p>
           <p className="mt-3 text-sm text-slate-500">¿Algún problema? Escríbenos a maslife@clinicamaslife.cl</p>
+          <div className="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-5 text-left">
+            <p className="font-extrabold text-slate-900">¿Quieres que un kinesiólogo adapte el plan a ti?</p>
+            <p className="mt-1 text-sm text-slate-600">Agenda una evaluación en Clínica Mas Life.</p>
+            <Link to={EVALUACION_URL} className="mt-3 inline-block rounded-xl px-5 py-3 font-extrabold text-white" style={{ background: TEAL }}>Agendar evaluación</Link>
+          </div>
         </>)}
         {estado === 'error' && (<>
           <p className="text-2xl font-extrabold text-slate-900">No pudimos verificar tu compra</p>
