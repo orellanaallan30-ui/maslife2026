@@ -14,9 +14,10 @@ const FONT = { fontFamily: "'Manrope', system-ui, sans-serif" };
 const clp = (n: number) => `$${n.toLocaleString('es-CL')}`;
 
 const INCLUYE = [
-  'Un plan semana a semana, con progresión gradual',
+  'Una explicación clara de por qué duele la espalda y por qué no siempre hay un daño',
+  'Un plan de 4 semanas, con progresión gradual y 13 ejercicios con fotos',
   'Cada ejercicio explicado paso a paso',
-  'Escala de dolor y registro de síntomas para seguir tu avance',
+  'Escala de dolor, semáforo y registro de síntomas para seguir tu avance',
   'Señales de alarma: cuándo dejar de ejercitar y consultar',
 ];
 const NO_PARA = [
