@@ -247,3 +247,4 @@ Todas las sesiones llevan además la etiqueta `maslife`. Las piezas gráficas de
 | `/maslife-guard --pre-deploy` | Auditoría completa + build |
 | `/ui-review` | Auditoría UI/UX mobile + desktop |
 | `/ui-review --fix` | Auditoría UI + auto-corrección |
+| `/remotion-best-practices` y `remotion-*` | Videos y motion graphics con código (Remotion): crear, subtítulos, multimedia, render. Fuente: `remotion-dev/skills` v4.0.539. Licencia Remotion: gratis hasta 3 empleados; 4+ requiere licencia de empresa. Los proyectos de video van fuera de `maslife2026/` para no tocar el build. |
