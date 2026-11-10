@@ -373,6 +373,29 @@ async function syncToGoogleCalendar(action: 'upsert' | 'delete', appointment: Pa
   });
 }
 
+// ── Venta de anuncio → Meta (Conversions API) ────────────────
+// Informa a Meta el ingreso de un paciente que llegó por un anuncio. El servidor
+// verifica origen y consentimiento, cifra los datos (SHA-256) y evita duplicados.
+export interface AdSaleResult {
+  ok: boolean;
+  alreadySent?: boolean;
+  reason?: 'not_ad' | 'no_consent' | 'not_configured' | 'error';
+  message?: string;
+}
+
+export async function reportAdSale(transactionId: string): Promise<AdSaleResult> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return { ok: false, reason: 'error', message: 'Sesión no iniciada' };
+  const res = await fetch('/api/mp-payments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+    body: JSON.stringify({ action: 'meta-conversion', transactionId }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (res.ok && body?.ok) return { ok: true, alreadySent: !!body.alreadySent };
+  return { ok: false, reason: body?.reason || 'error', message: body?.error || `HTTP ${res.status}` };
+}
+
 // ── Transacciones ─────────────────────────────────────────────
 export async function getTransactions(proId: string): Promise<Transaction[]> {
   const { data, error } = await supabase.from('transactions').select('*').eq('professional_id', proId);
@@ -381,6 +404,7 @@ export async function getTransactions(proId: string): Promise<Transaction[]> {
     id: t.id as string, amount: t.amount as number,
     description: t.description as string, date: t.date as string, type: t.type as Transaction['type'],
     professionalId: (t.professional_id as string) || undefined,
+    patientId: (t.patient_id as string) || undefined,
   }));
 }
 
@@ -391,6 +415,7 @@ export async function saveTransaction(t: Transaction, proId: string): Promise<vo
       // date es DATE NOT NULL: si viniera vacío, usar hoy (evita fallo de guardado).
       date: t.date || new Date().toISOString().slice(0, 10),
       type: t.type, professional_id: proId,
+      patient_id: t.patientId || null,
     }));
     if (error) throw error;
   });
@@ -495,6 +520,8 @@ function mapDBtoPatient(p: Record<string, unknown>): Patient {
     specialtyData: (p.specialty_data as Record<string, unknown>) || undefined,
     deletedAt: (p.deleted_at as string) || undefined,
     updatedAt: (p.updated_at as string) || undefined,
+    leadSource: (p.lead_source as Patient['leadSource']) || undefined,
+    adConsent: (p.ad_consent as boolean) ?? false,
   };
 }
 
@@ -515,6 +542,8 @@ function mapPatientToDB(p: Patient): Record<string, unknown> {
     diagnoses: p.diagnoses || '',
     specialty_data: p.specialtyData || null,
     deleted_at: p.deletedAt || null,
+    lead_source: p.leadSource || null,
+    ad_consent: p.adConsent ?? false,
     // Registro de último cambio: se estampa en cada guardado (se muestra en la
     // ficha impresa como "Última modificación").
     updated_at: new Date().toISOString(),

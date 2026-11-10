@@ -19,7 +19,12 @@ export interface Transaction {
   description: string;
   type: 'Ingreso' | 'Gasto';
   professionalId?: string;
+  /** Paciente asociado al ingreso (opcional). Permite informar a Meta la venta de un anuncio. */
+  patientId?: string;
 }
+
+/** Cómo llegó el paciente a la consulta. 'meta_ads' = anuncio de Instagram/Facebook. */
+export type LeadSource = 'meta_ads' | 'instagram_organico' | 'recomendacion' | 'google' | 'otro';
 
 export type SubscriptionStatus = 'active' | 'paused' | 'trial';
 
@@ -178,6 +183,10 @@ export interface Patient {
   deletedAt?: string;
   /** Última modificación de la ficha (ISO). La escribe el cliente al guardar. */
   updatedAt?: string;
+  /** Cómo llegó el paciente (medición de campañas). */
+  leadSource?: LeadSource;
+  /** Autoriza usar su teléfono cifrado (hash) para medir publicidad en Meta. */
+  adConsent?: boolean;
 }
 
 export interface ClinicalTemplate {

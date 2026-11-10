@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Patient } from '../types';
 import { useClinic } from '../ClinicContext';
 import { softDeletePatient, restorePatient, deletePatient } from '../supabaseService';
+import { LEAD_SOURCES, AD_CONSENT_TEXT } from '../leadSources';
 
 type ViewMode = 'activos' | 'archivados' | 'fichas';
 
@@ -682,6 +683,31 @@ const PatientList: React.FC = () => {
                       placeholder="+56 9 ..."
                     />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block mb-1.5 ml-1">¿Cómo llegó?</label>
+                    <select
+                      value={newPatient.leadSource || ''}
+                      onChange={e => setNewPatient({ ...newPatient, leadSource: (e.target.value || undefined) as Patient['leadSource'] })}
+                      className="w-full bg-slate-50/50 border border-slate-200 rounded-2xl py-4 px-5 font-bold text-slate-800 focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                    >
+                      <option value="">Sin especificar</option>
+                      {LEAD_SOURCES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </div>
+                  {newPatient.leadSource === 'meta_ads' && (
+                    <label className="flex items-start gap-3 bg-slate-50/50 border border-slate-200 rounded-2xl p-4 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!newPatient.adConsent}
+                        onChange={e => setNewPatient({ ...newPatient, adConsent: e.target.checked })}
+                        className="mt-1 w-5 h-5 accent-primary"
+                      />
+                      <span className="text-xs font-bold text-slate-600 leading-snug">{AD_CONSENT_TEXT}</span>
+                    </label>
+                  )}
                 </div>
 
                 <div className="pt-6 flex flex-col sm:flex-row gap-4">
