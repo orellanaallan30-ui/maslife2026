@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
+import { buildPurchaseEvent, hasMatchKeys, sendMetaEvent, eventIdFor } from './_lib/metaCapi';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -9,9 +10,10 @@ const supabase = createClient(
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method === 'POST' && req.body?.action === 'meta-conversion') return metaConversion(req, res);
   if (req.method !== 'GET') return res.status(405).end();
   if (!checkIpRateLimit(req.headers, 60, 60 * 1000)) return res.status(429).json({ error: 'Demasiadas solicitudes.' });
 
@@ -99,4 +101,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('[MP payments]', err);
     return res.status(500).json({ error: 'Network error' });
   }
+}
+
+// ── Venta de anuncio → Meta Conversions API ─────────────────────
+// El profesional registra un ingreso asociado a un paciente que llegó por un anuncio
+// de Meta (lead_source='meta_ads') y que autorizó la medición (ad_consent). Se envía
+// un evento Purchase con datos cifrados y sin información clínica (ver _lib/metaCapi).
+async function metaConversion(req: VercelRequest, res: VercelResponse) {
+  if (!checkIpRateLimit(req.headers, 30, 60 * 1000)) return res.status(429).json({ ok: false, reason: 'error', error: 'Demasiadas solicitudes.' });
+  const user = await requireSupabaseAuth(req, res);
+  if (!user) return;
+
+  const transactionId = String(req.body?.transactionId || '');
+  if (!/^[0-9a-f-]{36}$/i.test(transactionId)) return res.status(400).json({ ok: false, reason: 'error', error: 'transactionId inválido' });
+
+  const token = process.env.META_CAPI_TOKEN;
+  const datasetId = process.env.META_DATASET_ID;
+  if (!token || !datasetId) return res.status(200).json({ ok: false, reason: 'not_configured', error: 'Falta META_CAPI_TOKEN o META_DATASET_ID' });
+
+  const eventId = eventIdFor(transactionId);
+  const { data: prev } = await supabase.from('ad_conversions').select('status').eq('event_id', eventId).maybeSingle();
+  if (prev?.status === 'sent') return res.status(200).json({ ok: true, alreadySent: true });
+
+  const { data: tx, error: txErr } = await supabase
+    .from('transactions').select('id, amount, date, type, professional_id, patient_id')
+    .eq('id', transactionId).maybeSingle();
+  if (txErr) return res.status(500).json({ ok: false, reason: 'error', error: 'No se pudo leer la transacción' });
+  if (!tx || tx.professional_id !== user.id) return res.status(404).json({ ok: false, reason: 'error', error: 'Transacción no encontrada' });
+  if (tx.type !== 'Ingreso' || !tx.patient_id) return res.status(200).json({ ok: false, reason: 'not_ad', error: 'El ingreso no tiene paciente asociado' });
+
+  const { data: pac, error: pacErr } = await supabase
+    .from('patients').select('id, name, phone, email, lead_source, ad_consent, professional_id')
+    .eq('id', tx.patient_id).maybeSingle();
+  if (pacErr) return res.status(500).json({ ok: false, reason: 'error', error: 'No se pudo leer el paciente' });
+  if (!pac || pac.professional_id !== user.id) return res.status(404).json({ ok: false, reason: 'error', error: 'Paciente no encontrado' });
+  if (pac.lead_source !== 'meta_ads') return res.status(200).json({ ok: false, reason: 'not_ad', error: 'El paciente no llegó por un anuncio' });
+  if (!pac.ad_consent) return res.status(200).json({ ok: false, reason: 'no_consent', error: 'El paciente no autorizó la medición' });
+
+  const ev = buildPurchaseEvent({
+    transactionId, patientId: pac.id, amount: Number(tx.amount) || 0, date: String(tx.date || ''),
+    phone: pac.phone, email: pac.email, fullName: pac.name,
+  });
+  if (!hasMatchKeys(ev)) return res.status(200).json({ ok: false, reason: 'error', error: 'El paciente no tiene teléfono ni correo válidos' });
+
+  let result: { ok: boolean; status: number; body: unknown };
+  try {
+    result = await sendMetaEvent(ev, { datasetId, token, testCode: process.env.META_CAPI_TEST_CODE || undefined });
+  } catch (err) {
+    console.error('[meta-conversion] red', (err as Error)?.message);
+    result = { ok: false, status: 0, body: { error: 'network' } };
+  }
+
+  const { error: logErr } = await supabase.from('ad_conversions').upsert({
+    professional_id: user.id, patient_id: pac.id, transaction_id: transactionId,
+    amount: ev.custom_data.value, event_id: eventId, event_time: new Date(ev.event_time * 1000).toISOString(),
+    status: result.ok ? 'sent' : 'error', meta_response: result.body as object,
+  }, { onConflict: 'event_id' });
+  if (logErr) console.error('[meta-conversion] registro', logErr.message);
+
+  if (!result.ok) {
+    const msg = (result.body as { error?: { message?: string } })?.error?.message || `Meta respondió ${result.status}`;
+    console.error('[meta-conversion] Meta', result.status, msg);
+    return res.status(502).json({ ok: false, reason: 'error', error: msg });
+  }
+  return res.status(200).json({ ok: true });
 }

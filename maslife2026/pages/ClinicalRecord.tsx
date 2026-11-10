@@ -22,6 +22,7 @@ import { PsychScales, PsychScaleResult } from '../components/PsychScales';
 import { TOAssessment, TOData } from '../components/TOAssessment';
 import { ConsentSendPanel } from '../components/ConsentFlow';
 import { InformedConsent } from '../types_clinical';
+import { LEAD_SOURCES, AD_CONSENT_TEXT } from '../leadSources';
 
 interface Message {
   role: 'user' | 'model';
@@ -215,7 +216,9 @@ const ClinicalRecord: React.FC = () => {
     address: safePatient.address || '',
     phone: safePatient.phone || '',
     email: safePatient.email || '',
-    emergencyContact: safePatient.emergencyContact || ''
+    emergencyContact: safePatient.emergencyContact || '',
+    leadSource: (safePatient.leadSource || '') as Patient['leadSource'] | '',
+    adConsent: !!safePatient.adConsent,
   });
 
   const [customFields, setCustomFields] = useState<CustomField[]>(safePatient.customFields || []);
@@ -1335,6 +1338,8 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
     phone: personalData.phone,
     email: personalData.email,
     emergencyContact: personalData.emergencyContact,
+    leadSource: personalData.leadSource || undefined,
+    adConsent: personalData.leadSource === 'meta_ads' ? personalData.adConsent : false,
     vitals,
     soap,
     goals,
@@ -1651,6 +1656,30 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
                   />
                 </div>
               ))}
+
+              <div className="space-y-2 no-print">
+                <label htmlFor="personal-leadSource" className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">¿Cómo llegó?</label>
+                <select
+                  id="personal-leadSource"
+                  value={personalData.leadSource || ''}
+                  onChange={e => { setPersonalData({ ...personalData, leadSource: e.target.value as Patient['leadSource'] | '' }); setIsDirtyTrue(); }}
+                  className="w-full bg-white shadow-input-inset border border-slate-300 rounded-2xl py-3 px-4 font-bold text-sm focus:ring-4 focus:ring-primary/10 transition-all text-slate-700"
+                >
+                  <option value="">Sin especificar</option>
+                  {LEAD_SOURCES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              {personalData.leadSource === 'meta_ads' && (
+                <label className="lg:col-span-2 flex items-start gap-3 bg-slate-50 border border-slate-300 rounded-2xl p-4 cursor-pointer no-print self-end">
+                  <input
+                    type="checkbox"
+                    checked={personalData.adConsent}
+                    onChange={e => { setPersonalData({ ...personalData, adConsent: e.target.checked }); setIsDirtyTrue(); }}
+                    className="mt-1 w-5 h-5 accent-primary"
+                  />
+                  <span className="text-xs font-bold text-slate-600 leading-snug">{AD_CONSENT_TEXT}</span>
+                </label>
+              )}
 
               <div className="lg:col-span-3 space-y-2">
                 <label htmlFor="dx-diagnoses" className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">Diagnóstico Principal</label>

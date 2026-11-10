@@ -39,7 +39,8 @@ interface ClinicContextType {
 
   // Transacciones
   manualTransactions: Transaction[];
-  addManualTransaction: (t: Transaction) => void;
+  /** Guarda el ingreso/gasto. Resuelve true si quedó en Supabase (necesario antes de informar a Meta). */
+  addManualTransaction: (t: Transaction) => Promise<boolean>;
   deleteManualTransaction: (id: string) => void;
 
   // Templates
@@ -575,13 +576,18 @@ export const ClinicProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }
   };
 
-  const addManualTransaction = (transaction: Transaction) => {
+  const addManualTransaction = async (transaction: Transaction): Promise<boolean> => {
     const withPro = loggedPro ? { ...transaction, professionalId: loggedPro.id } : transaction;
     setManualTransactions(prev => [...prev, withPro]);
-    if (loggedPro) saveTransaction(withPro, loggedPro.id).catch(err => {
-      console.error('[addManualTransaction] No se pudo guardar en Supabase:', err?.message || err);
+    if (!loggedPro) return false;
+    try {
+      await saveTransaction(withPro, loggedPro.id);
+      return true;
+    } catch (err) {
+      console.error('[addManualTransaction] No se pudo guardar en Supabase:', (err as Error)?.message || err);
       notifyWriteError(err, `⚠️ La transacción NO se guardó en el servidor. Intenta de nuevo.`, 'payment');
-    });
+      return false;
+    }
   };
 
   const deleteManualTransaction = (id: string) => {

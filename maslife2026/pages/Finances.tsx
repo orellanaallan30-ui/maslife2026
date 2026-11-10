@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Appointment, Transaction } from '../types';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useClinic } from '../ClinicContext';
-import { supabase } from '../supabaseService';
+import { supabase, reportAdSale } from '../supabaseService';
 
 interface MPPayment {
   id: number; status: string; amount: number; description: string;
@@ -18,7 +18,10 @@ interface MPSummary {
 
 const Finances: React.FC = () => {
   const navigate = useNavigate();
-  const { appointments: allAppointments, manualTransactions: allTransactions, deleteAppointment, addManualTransaction, deleteManualTransaction, logout, loggedPro } = useClinic();
+  const { appointments: allAppointments, manualTransactions: allTransactions, deleteAppointment, addManualTransaction, deleteManualTransaction, logout, loggedPro, patients: allPatients, addNotification } = useClinic();
+  const myPatients = allPatients
+    .filter(p => !p.deletedAt && (!p.professionalId || p.professionalId === loggedPro?.id))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
   // Solo mostrar datos financieros de este profesional
   const appointments = allAppointments.filter(a => !a.professionalId || a.professionalId === loggedPro?.id);
@@ -26,6 +29,26 @@ const Finances: React.FC = () => {
 
   // Persisten en Supabase con notificación si falla (nunca solo en este dispositivo)
   const onAddTransaction = (t: Transaction) => addManualTransaction(t);
+
+  // Si el ingreso es de un paciente que llegó por un anuncio de Meta, se informa la
+  // venta a Meta (Conversions API) para que el Administrador de anuncios vea la compra.
+  const informarVentaAnuncio = async (t: Transaction) => {
+    const pac = myPatients.find(p => p.id === t.patientId);
+    if (!pac || pac.leadSource !== 'meta_ads') return;
+    if (!pac.adConsent) {
+      addNotification(`${pac.name} llegó por un anuncio, pero no autorizó la medición: la venta no se informó a Meta.`, 'payment');
+      return;
+    }
+    try {
+      const r = await reportAdSale(t.id);
+      if (r.ok) addNotification(`Venta de ${pac.name} informada a Meta ✓`, 'payment');
+      else if (r.reason === 'not_configured') addNotification('⚠️ Falta configurar la conexión con Meta (token): la venta NO se informó.', 'payment');
+      else addNotification(`⚠️ La venta de ${pac.name} NO se informó a Meta: ${r.message || 'error'}`, 'payment');
+    } catch (err) {
+      console.error('[reportAdSale]', (err as Error)?.message || err);
+      addNotification(`⚠️ La venta de ${pac.name} NO se informó a Meta. Revisa la conexión.`, 'payment');
+    }
+  };
   const onDeleteTransaction = (id: string) => deleteManualTransaction(id);
   const onReset = async () => {
     // Reinicia SOLO los ingresos/gastos manuales digitados aquí. NUNCA toca las
@@ -70,7 +93,8 @@ const Finances: React.FC = () => {
     amount: '',
     description: '',
     date: new Date().toLocaleDateString('en-CA'), // Formato YYYY-MM-DD usando la zona horaria local
-    type: 'Ingreso' as 'Ingreso' | 'Gasto'
+    type: 'Ingreso' as 'Ingreso' | 'Gasto',
+    patientId: '',
   });
 
   // Cálculos consolidados
@@ -98,7 +122,7 @@ const Finances: React.FC = () => {
     { name: 'Actual', income: netBalance }
   ];
 
-  const handleAddManualEntry = (e: React.FormEvent) => {
+  const handleAddManualEntry = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newManual.amount || !newManual.description) return;
 
@@ -107,13 +131,17 @@ const Finances: React.FC = () => {
       amount: Number(newManual.amount),
       description: newManual.description,
       date: newManual.date,
-      type: newManual.type
+      type: newManual.type,
+      patientId: newManual.type === 'Ingreso' && newManual.patientId ? newManual.patientId : undefined,
     };
 
-    onAddTransaction(entry);
     setShowManualModal(false);
-    setNewManual({ amount: '', description: '', date: new Date().toLocaleDateString('en-CA'), type: 'Ingreso' });
+    setNewManual({ amount: '', description: '', date: new Date().toLocaleDateString('en-CA'), type: 'Ingreso', patientId: '' });
+    const saved = await onAddTransaction(entry);
+    if (saved && entry.patientId) await informarVentaAnuncio(entry);
   };
+
+  const pacienteElegido = myPatients.find(p => p.id === newManual.patientId);
 
   return (
     <div className="flex-1 flex flex-col min-h-0 w-full">
@@ -426,6 +454,28 @@ const Finances: React.FC = () => {
                     placeholder="Ej: Insumos médicos, Pago arriendo, Bono..."
                   />
                 </div>
+                {newManual.type === 'Ingreso' && myPatients.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Paciente (opcional)</label>
+                    <select
+                      value={newManual.patientId}
+                      onChange={e => setNewManual({ ...newManual, patientId: e.target.value })}
+                      className="w-full bg-slate-50/80 border border-slate-200 rounded-2xl py-4 px-6 font-bold text-sm focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner text-slate-600"
+                    >
+                      <option value="">Sin paciente asociado</option>
+                      {myPatients.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}{p.leadSource === 'meta_ads' ? ' · anuncio' : ''}</option>
+                      ))}
+                    </select>
+                    {pacienteElegido?.leadSource === 'meta_ads' && (
+                      <p className={`text-xs font-bold ml-1 ${pacienteElegido.adConsent ? 'text-primary' : 'text-amber-600'}`}>
+                        {pacienteElegido.adConsent
+                          ? 'Llegó por un anuncio: esta venta se informará a Meta.'
+                          : 'Llegó por un anuncio, pero no autorizó la medición: no se informará a Meta.'}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Fecha</label>
                   <input
