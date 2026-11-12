@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { createHash, timingSafeEqual } from 'crypto';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -12,10 +13,13 @@ const ipCounts = new Map<string, { count: number; windowStart: number }>();
 export function checkIpRateLimit(
   headers: VercelRequest['headers'],
   max: number,
-  windowMs: number
+  windowMs: number,
+  // Contador aparte por uso: sin esto, el refresco de recepción (center) gastaría
+  // el cupo de la reserva pública de pacientes que comparten la misma IP.
+  bucket = ''
 ): boolean {
   const forwarded = headers['x-forwarded-for'];
-  const ip = (Array.isArray(forwarded) ? forwarded[0] : (forwarded || 'unknown'))
+  const ip = bucket + (Array.isArray(forwarded) ? forwarded[0] : (forwarded || 'unknown'))
     .split(',')[0]
     .trim();
   const now = Date.now();
@@ -45,4 +49,23 @@ export async function requireSupabaseAuth(
     return null;
   }
   return { id: data.user.id, email: data.user.email };
+}
+
+// ── Llamadas internas entre funciones (servidor → servidor) ─────────────────
+// Recepción agenda muchas citas desde una misma IP; sus correos salen desde el
+// servidor (api/_lib/center.ts → /api/notify) con esta cabecera, que solo puede
+// calcular quien tiene la service role key. Así no chocan con el límite por IP
+// que protege a /api/notify de ser usado como relay de correo.
+export const INTERNAL_HEADER = 'x-agendamas-internal';
+
+export function internalKey(): string {
+  return createHash('sha256').update(`${process.env.SUPABASE_SERVICE_ROLE_KEY || ''}:agendamas-internal`).digest('hex');
+}
+
+export function isInternalCall(headers: VercelRequest['headers']): boolean {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return false;
+  const got = headers[INTERNAL_HEADER];
+  if (typeof got !== 'string') return false;
+  const a = Buffer.from(got), b = Buffer.from(internalKey());
+  return a.length === b.length && timingSafeEqual(a, b);
 }

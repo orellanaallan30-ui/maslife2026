@@ -5,6 +5,7 @@ import { htmlAtexto } from './_lib/emailText';
 import { getProduct } from './_lib/products';
 import { tokenMatches, TOKEN_RE, UUID_RE as ORDER_UUID_RE } from './_lib/orders';
 import { normalizarTelefonoCL, telefonoLegible, rutLegible, linkWhatsApp, fechaLarga as fechaCita, fechaCorta, estadoPago, detectarReagendamiento, type EstadoPago, type Historial } from './_lib/correoCita';
+import { isInternalCall } from './_lib/auth';
 
 function verifyAdminJwt(token: string, secret: string): boolean {
   try {
@@ -552,6 +553,27 @@ function patientRescheduleHtml(p: { patientName: string; doctorName: string; ser
   });
 }
 
+function cancelHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; paraPaciente: boolean }) {
+  return emailShell({
+    kicker: 'Cita cancelada',
+    title: p.paraPaciente ? 'Tu cita fue cancelada' : 'Cita cancelada',
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 8px;">Hola <strong>${escapeHtml(p.paraPaciente ? p.patientName : p.doctorName)}</strong>,</p>
+      <p style="color:#64748b;font-size:14px;margin:0 0 12px;">${p.paraPaciente
+        ? 'Tu cita fue cancelada y la hora quedó liberada. Estos eran los datos:'
+        : `Se canceló la cita de <strong>${escapeHtml(p.patientName)}</strong>. La hora quedó libre en tu agenda.`}</p>
+      <div style="${INFO_BOX}">
+        <table style="width:100%;border-collapse:collapse;">
+          ${tableRow(p.paraPaciente ? 'Profesional' : 'Paciente', p.paraPaciente ? p.doctorName : p.patientName)}
+          ${tableRow('Servicio', p.serviceName || 'Consulta')}
+          ${tableRow('Fecha', fechaCita(p.date))}
+          ${tableRow('Hora', soloHoraMinuto(p.time))}
+        </table>
+      </div>
+      ${p.paraPaciente ? '<p style="color:#64748b;font-size:13px;margin:0;">Si quieres tomar otra hora, comunícate con el centro o con tu profesional.</p>' : ''}`,
+  });
+}
+
 function patientConfirmationHtml(p: { patientName: string; doctorName: string; serviceName: string; date: string; time: string; type: string; price?: number }) {
   const paidRow = p.price && p.price > 0
     ? tableRow('Pagado', `$${Number(p.price).toLocaleString('es-CL')}`)
@@ -748,7 +770,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Rate-limit GLOBAL por IP, antes de CUALQUIER acción (antes solo cubría el flujo
   // principal; rating-request/pro-welcome/reward-referral se lo saltaban). Frena el
   // abuso del endpoint como relay de correo.
-  if (!checkRateLimit(req.headers, 20, 60 * 60 * 1000)) {
+  // Las llamadas internas del servidor (recepción de centros) no cuentan: ya pasaron
+  // por sesión y permisos en api/_lib/center.ts.
+  if (!isInternalCall(req.headers) && !checkRateLimit(req.headers, 20, 60 * 60 * 1000)) {
     return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta en una hora.' });
   }
 
@@ -1335,6 +1359,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Limpia saltos de línea/espacios accidentales en la variable de entorno
   const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+
+  // ── Cita cancelada: aviso al profesional y al paciente (sin invitación) ──
+  // Solo con una cita real de la BD: evita usar esta rama como relay de correo.
+  if (kind === 'cancelada') {
+    if (!cita) return res.status(400).json({ error: 'Cita no encontrada para avisar la cancelación' });
+    const datos = {
+      patientName: String(cita.patient_name || patientName), doctorName: String(professionalName || ''),
+      serviceName: String(cita.service_name || serviceName || ''), date: String(cita.date), time: String(cita.time),
+    };
+    const dest = cita.patient_email && EMAIL_RE.test(String(cita.patient_email)) ? String(cita.patient_email) : '';
+    let proEstado: 'ok' | 'error' = 'ok';
+    let pacienteEstado: 'ok' | 'error' | 'sin-correo' = dest ? 'ok' : 'sin-correo';
+    try {
+      await enviarConReintento(() => sendEmail(RESEND_API_KEY, FROM, to,
+        `[Cancelada] ${cleanLine(datos.patientName)} · ${fechaCorta(datos.date)} ${soloHoraMinuto(datos.time)}`,
+        cancelHtml({ ...datos, paraPaciente: false })), 'profesional');
+    } catch (e: any) { proEstado = 'error'; console.error('[notify] aviso de cancelación al profesional NO salió:', e?.message); }
+    if (dest) {
+      try {
+        await enviarConReintento(() => sendEmail(RESEND_API_KEY, FROM, dest,
+          `Tu cita fue cancelada – ${cleanLine(datos.serviceName)}`,
+          cancelHtml({ ...datos, paraPaciente: true })), 'paciente');
+      } catch (e: any) { pacienteEstado = 'error'; console.error('[notify] aviso de cancelación al paciente NO salió:', e?.message); }
+    }
+    if (proEstado === 'error' && pacienteEstado !== 'ok') return res.status(500).json({ error: 'No se pudo enviar el aviso de cancelación' });
+    return res.status(200).json({ success: true, pro: proEstado, patient: pacienteEstado });
+  }
 
   // Generar invitación .ics solo para confirmaciones (no comprobantes de pago),
   // y solo si el date tiene formato YYYY-MM-DD. Cada destinatario recibe su propia
