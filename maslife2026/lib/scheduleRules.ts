@@ -8,17 +8,17 @@
 // Funciones puras, sin React ni Supabase, para poder testearlas.
 
 import { toMinutes } from '../../api/_lib/overlap';
+import type { DiaHorario } from '../../api/_lib/horario';
+
+// La definición vive en api/_lib/horario.ts para que el servidor (recepción de
+// centros) use exactamente la misma regla que el navegador.
+export { horarioDelDia } from '../../api/_lib/horario';
+export type { DiaHorario } from '../../api/_lib/horario';
 
 export const DIAS_SEMANA = [
   'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado',
 ];
 
-/** Horario de un día concreto de la semana. */
-export interface DiaHorario {
-  active: boolean;
-  start: string;
-  end: string;
-}
 
 /** Cita mínima necesaria para evaluar el impacto de un cambio de jornada. */
 export interface CitaAgendada {
@@ -57,21 +57,6 @@ export function indiceDia(entrada: string | number): number | null {
   return idx === -1 ? null : idx;
 }
 
-/**
- * Horario vigente de un día, aplicando el mismo valor por defecto que usa la
- * pantalla de Ajustes: lunes a viernes activos de 09:00 a 18:00, fin de semana
- * inactivo.
- */
-export function horarioDelDia(
-  schedule: Record<number, DiaHorario> | undefined | null,
-  idx: number
-): DiaHorario {
-  return schedule?.[idx] || {
-    active: idx !== 0 && idx !== 6,
-    start: '09:00',
-    end: '18:00',
-  };
-}
 
 /** `true` si el rango horario es coherente (inicio antes que fin). */
 export function rangoValido(start: string, end: string): boolean {

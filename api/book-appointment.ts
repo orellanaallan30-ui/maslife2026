@@ -5,6 +5,7 @@ import { validateBooking, insertBooking, confirmBookingPaid, claimNotify, releas
 import { syncAppointmentToGoogle } from './_lib/googleCalendar';
 import { reconcilePendingWithMP, notificarCitaEnPanel, resendMissingPatientEmails } from './_lib/mpReconcile';
 import { confirmAndDeliver, orderStatus, consumeDownload } from './_lib/orders';
+import { esAccionDeCentro, handleCenter } from './_lib/center';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -25,8 +26,13 @@ const supabase = createClient(
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', 'https://clinicamaslife.cl');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // ── Centros de AgendaMas (recepción, boxes, reporte): con sesión y rol ──
+  // Vive en _lib/center.ts y se despacha desde aquí para no sumar una función
+  // (límite de 12 en Vercel). Va antes del límite por IP de la reserva pública.
+  if (req.method === 'POST' && esAccionDeCentro(req.body?.action)) return handleCenter(req, res);
 
   // ── Disponibilidad pública (sin datos personales) ──
   if (req.method === 'GET') {
