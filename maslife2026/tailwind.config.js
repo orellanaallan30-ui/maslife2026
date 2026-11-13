@@ -12,6 +12,7 @@ export default {
     './App.tsx',
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
+    './*.{ts,tsx}',
   ],
   theme: {
     extend: {
@@ -27,6 +28,14 @@ export default {
         // directamente a emerald/amber/rose/sky de la escala default de Tailwind).
         // Alias de una sola tonalidad, igual que `primary` — no reemplazan la
         // escala default (emerald-500 etc. sigue disponible y en uso).
+        // AgendaMas (panel de centros) — identidad "Aurora": índigo + cian sobre vidrio.
+        // No reemplaza a `primary` (turquesa Clínica Mas Life), que sigue en la landing
+        // y en el panel del profesional.
+        am: {
+          50: '#EEF2FF', 100: '#E0E7FF', 200: '#C7D2FE', 400: '#818CF8', 500: '#6366F1',
+          600: '#4F46E5', 700: '#4338CA', 800: '#3730A3',
+          cyan: '#06B6D4', mint: '#34D399', ink: '#0F172A', muted: '#475569',
+        },
         success: '#10b981',
         warning: '#f59e0b',
         danger: '#f43f5e',
@@ -79,6 +88,10 @@ export default {
         cta: '0 10px 30px -10px rgba(19,91,236,0.6)',
         // Sombra estándar de tarjetas de modal (3+ repeticiones sueltas).
         modal: '0 32px 64px -16px rgba(0,0,0,0.5)',
+        // AgendaMas: vidrio y botones índigo.
+        glass: '0 1px 0 0 rgba(255,255,255,0.85) inset, 0 12px 32px -14px rgba(30,27,75,0.22)',
+        'glass-lg': '0 1px 0 0 rgba(255,255,255,0.9) inset, 0 32px 64px -24px rgba(30,27,75,0.35)',
+        'am-btn': '0 8px 20px -8px rgba(79,70,229,0.65)',
       },
     },
   },

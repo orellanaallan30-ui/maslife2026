@@ -8,9 +8,11 @@ import { useCenter } from '../../CenterContext';
 import { useClinic } from '../../ClinicContext';
 import { supabase } from '../../supabaseClient';
 import { PRODUCT_NAME } from '../../brand';
+import { AuroraBackground, AgendaMasLogo } from '../../components/centro/Aurora';
 
 const TABS = [
   { to: 'recepcion', label: 'Recepción', icon: 'event_available' },
+  { to: 'caja', label: 'Caja', icon: 'point_of_sale' },
   { to: 'boxes', label: 'Boxes', icon: 'meeting_room' },
   { to: 'reporte', label: 'Reporte', icon: 'bar_chart' },
   { to: 'equipo', label: 'Equipo', icon: 'groups' },
@@ -38,8 +40,9 @@ const CentroLayout: React.FC<{ demo?: boolean }> = ({ demo = false }) => {
 
   if (memberships === null) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-50">
-        <span className="material-icons-round animate-spin text-primary text-4xl">sync</span>
+      <div className="am-root flex-1 flex items-center justify-center">
+        <AuroraBackground />
+        <span className="material-icons-round animate-spin text-am-600 text-4xl">sync</span>
       </div>
     );
   }
@@ -53,65 +56,70 @@ const CentroLayout: React.FC<{ demo?: boolean }> = ({ demo = false }) => {
     navigate('/pro/login');
   };
 
+  const rol = demo ? 'Demo' : active.role === 'admin' ? 'Administración' : 'Recepción';
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col w-full bg-slate-50">
+    <div className="am-root flex-1 min-h-0 flex flex-col w-full">
+      <AuroraBackground />
       {demo && (
-        <div role="note" className="shrink-0 bg-amber-100 border-b border-amber-200 text-amber-900 text-xs lg:text-sm font-bold px-4 lg:px-8 py-2 text-center">
-          <span>Estás viendo una demo con datos de ejemplo. Puedes agendar, reagendar y asignar boxes: nada se guarda.</span>
+        <div role="note" className="shrink-0 bg-amber-100/90 border-b border-amber-200 text-amber-900 text-xs lg:text-sm font-bold px-4 lg:px-8 py-2 text-center">
+          Estás viendo una demo con datos de ejemplo. Puedes agendar, cobrar y asignar boxes: nada se guarda.
         </div>
       )}
-      <header className="shrink-0 bg-white border-b border-slate-200">
-        <div className="flex items-center gap-3 px-4 lg:px-8 h-14">
-          <span className="font-black text-lg tracking-tight text-slate-900">{PRODUCT_NAME}</span>
-          <span className="text-slate-300">·</span>
-          {!demo && gestionables.length > 1 ? (
-            <select
-              value={active.center.id}
-              onChange={e => selectCenter(e.target.value)}
-              aria-label="Centro"
-              className="text-sm font-bold text-slate-700 bg-transparent border border-slate-200 rounded-lg py-1 pl-2 pr-7 max-w-[45vw]"
-            >
-              {gestionables.map(m => <option key={m.center.id} value={m.center.id}>{m.center.name}</option>)}
-            </select>
-          ) : (
-            <span className="text-sm font-bold text-slate-700 truncate">{active.center.name}</span>
-          )}
-          <span className="hidden lg:inline text-[11px] font-bold uppercase tracking-wider text-primary bg-primary/10 rounded-full px-2.5 py-1">
-            {demo ? 'Demo' : active.role === 'admin' ? 'Administración' : 'Recepción'}
-          </span>
-          <div className="flex-1" />
-          {demo ? (
-            <button onClick={() => navigate('/pro/register')} className="text-sm font-bold text-white bg-primary rounded-xl px-3 py-2 hover:brightness-95 whitespace-nowrap">
-              Crear mi cuenta
-            </button>
-          ) : (
-            <>
-              {loggedPro && (
-                <button onClick={() => navigate('/pro/dashboard')} className="text-sm font-bold text-slate-600 hover:text-primary px-2 py-1.5 rounded-lg">
-                  Mi panel
-                </button>
+      <header className="shrink-0 px-3 lg:px-6 pt-3 lg:pt-4">
+        <div className="am-glass rounded-[22px] px-3 lg:px-5">
+          <div className="flex items-center gap-3 h-14">
+            <AgendaMasLogo className="shrink-0" />
+            <span className="hidden lg:block w-px h-6 bg-am-ink/10" />
+            <div className="min-w-0 flex items-center gap-2">
+              {!demo && gestionables.length > 1 ? (
+                <select
+                  value={active.center.id}
+                  onChange={e => selectCenter(e.target.value)}
+                  aria-label="Centro"
+                  className="text-sm font-bold text-am-ink bg-white/60 border border-am-ink/10 rounded-lg py-1 pl-2 pr-7 max-w-[40vw]"
+                >
+                  {gestionables.map(m => <option key={m.center.id} value={m.center.id}>{m.center.name}</option>)}
+                </select>
+              ) : (
+                <span className="text-sm font-bold text-am-ink truncate hidden sm:inline">{active.center.name}</span>
               )}
-              <button onClick={salir} className="text-sm font-bold text-slate-600 hover:text-rose-600 px-2 py-1.5 rounded-lg flex items-center gap-1">
-                <span className="material-icons-round text-base">logout</span>
-                <span className="hidden lg:inline">Salir</span>
+              <span className="hidden lg:inline text-[11px] font-black uppercase tracking-wider text-am-700 bg-am-50 border border-am-100 rounded-full px-2.5 py-1">{rol}</span>
+            </div>
+            <div className="flex-1" />
+            {demo ? (
+              <button onClick={() => navigate('/pro/register')} className="am-btn-primary text-sm font-bold rounded-xl px-3 lg:px-4 py-2 whitespace-nowrap">
+                Crear mi cuenta
               </button>
-            </>
-          )}
+            ) : (
+              <>
+                {loggedPro && (
+                  <button onClick={() => navigate('/pro/dashboard')} className="hidden sm:inline-flex text-sm font-bold text-am-muted hover:text-am-700 px-2 py-1.5 rounded-lg">
+                    Mi panel
+                  </button>
+                )}
+                <button onClick={salir} className="text-sm font-bold text-am-muted hover:text-rose-600 px-2 py-1.5 rounded-lg flex items-center gap-1">
+                  <span className="material-icons-round text-base">logout</span>
+                  <span className="hidden lg:inline">Salir</span>
+                </button>
+              </>
+            )}
+          </div>
+          <nav className="flex gap-1 pb-2.5 overflow-x-auto -mx-1 px-1" aria-label="Secciones del centro">
+            {TABS.map(t => (
+              <NavLink
+                key={t.to}
+                to={`${base}/${t.to}`}
+                className={({ isActive }) =>
+                  `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition ${
+                    isActive ? 'bg-am-ink text-white shadow-[0_8px_20px_-10px_rgba(15,23,42,0.6)]' : 'text-am-muted hover:text-am-ink hover:bg-white/70'}`}
+              >
+                <span className="material-icons-round text-[18px]">{t.icon}</span>
+                {t.label}
+              </NavLink>
+            ))}
+          </nav>
         </div>
-        <nav className="flex gap-1 px-2 lg:px-6 overflow-x-auto" aria-label="Secciones del centro">
-          {TABS.map(t => (
-            <NavLink
-              key={t.to}
-              to={`${base}/${t.to}`}
-              className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 lg:px-4 py-2.5 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
-                  isActive ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-            >
-              <span className="material-icons-round text-lg">{t.icon}</span>
-              {t.label}
-            </NavLink>
-          ))}
-        </nav>
       </header>
       <main className="flex-1 min-h-0 overflow-y-auto">
         <Outlet />

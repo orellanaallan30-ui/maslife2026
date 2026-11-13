@@ -42,6 +42,7 @@ import CentroRecepcion from './pages/centro/Recepcion';
 import CentroBoxes   from './pages/centro/Boxes';
 import CentroReporte from './pages/centro/Reporte';
 import CentroEquipo  from './pages/centro/Equipo';
+import CentroCaja    from './pages/centro/Caja';
 import { AppView, Notification } from './types';
 import logoClinica from './assets/logo-clinica.png';
 import logoAgenda  from './assets/logo-agenda.png';
@@ -621,6 +622,7 @@ const AppContent: React.FC = () => {
           <Route element={<CentroLayout />}>
             <Route path="/centro"           element={<Navigate to="/centro/recepcion" replace />} />
             <Route path="/centro/recepcion" element={<CentroRecepcion />} />
+            <Route path="/centro/caja"      element={<CentroCaja />} />
             <Route path="/centro/boxes"     element={<CentroBoxes />} />
             <Route path="/centro/reporte"   element={<CentroReporte />} />
             <Route path="/centro/equipo"    element={<CentroEquipo />} />
@@ -629,6 +631,7 @@ const AppContent: React.FC = () => {
           <Route element={<DemoCenterProvider><CentroLayout demo /></DemoCenterProvider>}>
             <Route path="/demo"           element={<Navigate to="/demo/recepcion" replace />} />
             <Route path="/demo/recepcion" element={<CentroRecepcion />} />
+            <Route path="/demo/caja"      element={<CentroCaja />} />
             <Route path="/demo/boxes"     element={<CentroBoxes />} />
             <Route path="/demo/reporte"   element={<CentroReporte />} />
             <Route path="/demo/equipo"    element={<CentroEquipo />} />
