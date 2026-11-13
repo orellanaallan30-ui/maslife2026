@@ -550,12 +550,29 @@ const ProfessionalAgenda: React.FC = () => {
                                              </div>
                                           );
                                        })
-                                    ) : continuan.length > 0 ? (
-                                       <button onClick={() => handleAppClick(continuan[0])} className="flex-1 rounded-xl bg-slate-100/70 border border-slate-200 flex items-center gap-2 pl-4 text-left text-slate-500 hover:bg-slate-100 transition-colors">
-                                          <span className="material-icons-round text-base">more_time</span>
-                                          <span className="text-xs font-bold">Ocupado · sigue la cita de las {continuan[0].time.slice(0, 5)}{continuan[0].status !== 'Bloqueado' && continuan[0].patientName ? ` con ${continuan[0].patientName}` : ''}</span>
-                                       </button>
-                                    ) : (
+                                    ) : continuan.length > 0 ? (() => {
+                                       // La cita anterior termina dentro de esta hora: se muestra hasta
+                                       // cuándo ocupa y, si queda tiempo libre en la fila, se ofrece.
+                                       const c = continuan[0];
+                                       const [hh, mm] = c.time.split(':').map(Number);
+                                       const finMin = hh * 60 + mm + (c.duration || 60);
+                                       const fin = `${String(Math.floor(finMin / 60)).padStart(2, '0')}:${String(finMin % 60).padStart(2, '0')}`;
+                                       const libreDesde = fin < `${String(Number(hour.slice(0, 2)) + 1).padStart(2, '0')}:00` ? fin : null;
+                                       return (
+                                          <>
+                                             <button onClick={() => handleAppClick(c)} className="flex-1 rounded-xl bg-slate-100/70 border border-slate-200 flex items-center gap-2 pl-4 text-left text-slate-500 hover:bg-slate-100 transition-colors">
+                                                <span className="material-icons-round text-base">more_time</span>
+                                                <span className="text-xs font-bold">Ocupado hasta las {fin}{c.status !== 'Bloqueado' && c.patientName ? ` · ${c.patientName}` : ''}</span>
+                                             </button>
+                                             {libreDesde && (
+                                                <button onClick={() => handleSlotClick(libreDesde, formatDate(currentDate))} className="rounded-xl border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 transition-all flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-primary">
+                                                   <span className="material-icons-round text-lg">add_circle_outline</span>
+                                                   <span className="text-[11px] font-bold">Libre desde las {libreDesde}</span>
+                                                </button>
+                                             )}
+                                          </>
+                                       );
+                                    })() : (
                                        <button onClick={() => handleSlotClick(hour, formatDate(currentDate))} className="flex-1 rounded-xl border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-start gap-2 pl-4 text-slate-300 hover:text-primary group active:scale-[0.99]">
                                           <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">add_circle_outline</span>
                                           <span className="text-[11px] font-bold uppercase tracking-wider">Disponible</span>

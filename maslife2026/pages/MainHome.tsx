@@ -65,11 +65,22 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
   };
   const [activeSpecFilter, setActiveSpecFilter] = useState<'destacados' | 'todos'>('destacados');
   const [scrollY, setScrollY] = useState(0);
+  // El botón flotante de WhatsApp se oculta cuando el pie está a la vista,
+  // para no tapar sus enlaces (el pie ya trae WhatsApp).
+  const footerRef = useRef<HTMLElement>(null);
+  const [footerVisible, setFooterVisible] = useState(false);
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => setFooterVisible(e.isIntersecting), { threshold: 0.05 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const heroRef        = useRef<HTMLElement>(null);
   const heroTitleRef   = useRef<HTMLDivElement>(null);
   const manifestoRef   = useRef<HTMLDivElement>(null);
-  const featuresRef    = useRef<HTMLDivElement>(null);
+  const featuresRef    = useRef<HTMLOListElement>(null);
   const expansionRef   = useRef<HTMLDivElement>(null);
   const expansionWrap  = useRef<HTMLDivElement>(null);
   const cursorDotRef   = useRef<HTMLDivElement>(null);
@@ -171,17 +182,7 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
       });
     }
 
-    // "Cómo Funciona" cards stagger on enter
-    if (featuresRef.current) {
-      gsap.fromTo(
-        featuresRef.current.querySelectorAll('.feature-card'),
-        { opacity: 0, y: 60 },
-        {
-          opacity: 1, y: 0, stagger: 0.15, duration: 0.9, ease: 'power3.out',
-          scrollTrigger: { trigger: featuresRef.current, start: 'top 82%' },
-        }
-      );
-    }
+    // "Cómo funciona" se revela con data-reveal (rv), sin GSAP.
 
     // Custom cursor (desktop)
     const dot = cursorDotRef.current;
@@ -427,18 +428,18 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
             { label: 'Filosofía', id: 'filosofia' },
           ].map(({ label, id }) => (
             <button key={id} onClick={() => scrollToSection(id)}
-              className="text-[.8rem] font-medium uppercase tracking-[0.04em] opacity-80 hover:opacity-100 transition-opacity"
+              className="text-[.94rem] font-medium opacity-80 hover:opacity-100 transition-opacity"
               style={{ color: 'inherit' }}>
               {label}
             </button>
           ))}
           <button onClick={() => navigate('/patient/results')}
-            className="text-[.8rem] font-medium uppercase tracking-[0.04em] opacity-80 hover:opacity-100 transition-opacity"
+            className="text-[.94rem] font-medium opacity-80 hover:opacity-100 transition-opacity"
             style={{ color: 'inherit' }}>
             Buscar profesionales
           </button>
           <button onClick={() => setIsGeneralFormOpen(true)}
-            className="text-[.8rem] font-semibold px-5 py-2.5 rounded-full text-white transition-all hover:shadow-lg hover:-translate-y-px"
+            className="text-[.94rem] font-semibold px-5 py-2.5 rounded-full text-white transition-all hover:shadow-lg hover:-translate-y-px"
             style={{ background: '#007a73' }}>
             Agendar
           </button>
@@ -485,31 +486,24 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
       <section ref={heroRef} id="hero" className="relative min-h-screen flex items-center overflow-hidden"
                style={{ background: '#f4f8f7' }}>
 
-        {/* Imagen hero — solo mobile, acento superior derecho con degradé */}
-        <div className="absolute top-0 right-0 w-[64%] max-w-[380px] lg:hidden pointer-events-none" style={{ height: '58%' }}>
-
-          <img
-            src="/hero-profesional.jpg"
-            alt=""
-            className="w-full h-full object-cover object-[center_top]"
-            draggable={false}
-          />
-          {/* Degradé izquierda — solo blanco en el borde, deja ver más la imagen */}
-          <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to right, #f4f8f7 0%, rgba(244,248,247,0.85) 14%, rgba(244,248,247,0.35) 34%, transparent 58%)'
-          }} />
-          {/* Degradé abajo — funde con el contenido */}
-          <div className="absolute inset-0" style={{
-            background: 'linear-gradient(to top, #f4f8f7 0%, rgba(244,248,247,0.8) 24%, transparent 55%)'
-          }} />
-        </div>
-
         {/* Contenido — RESPONSIVE: mobile usa padding top para librar nav; desktop centra vertical */}
-        <div className="relative z-10 max-w-7xl mx-auto px-[6vw] pt-28 pb-20 lg:py-28 w-full">
+        <div className="relative z-10 max-w-7xl mx-auto px-[6vw] pt-24 pb-16 lg:py-28 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
             {/* Columna izquierda — texto */}
             <div className="max-w-xl lg:max-w-2xl relative z-10">
+              {/* Foto en celular: arriba y separada del texto (antes iba de fondo
+                  y el titular caía sobre la cara de la profesional). */}
+              <div className="lg:hidden mb-7 rounded-3xl overflow-hidden aspect-[4/3] shadow-lg">
+                <img
+                  src="/hero-profesional.webp"
+                  alt="Profesional de Clínica Mas Life atendiendo a una paciente"
+                  width={848} height={1235}
+                  className="w-full h-full object-cover object-[center_20%]"
+                  fetchPriority="high"
+                  draggable={false}
+                />
+              </div>
               {/* ── RESPONSIVE: badge — base=mobile  lg:=desktop ── */}
               <span className="inline-block text-[.6rem] lg:text-xs font-sans font-bold uppercase tracking-[.5px] mb-7 px-3 py-1 rounded-full text-white"
                     style={{ background: '#007a73' }}>
@@ -540,25 +534,21 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
                 <strong className="font-semibold" style={{ color: '#0f172a' }}>Ovalle, Coquimbo y La Serena</strong>.
               </p>
 
-              {/* CTAs */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={() => navigate('/patient/results')}
-                  className="group inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-sans font-semibold transition-all duration-300 hover:-translate-y-1"
-                  style={{ background: '#007a73', color: '#fff', boxShadow: '0 1px 2px rgba(15,23,42,.08)' }}>
-                  Buscar especialista
-                  <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">search</span>
-                </button>
+              {/* CTAs: un botón principal y el directorio como enlace secundario */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-7">
                 <button
                   onClick={() => setIsGeneralFormOpen(true)}
-                  className="inline-flex items-center gap-3 px-8 py-4 rounded-full text-base font-sans font-semibold border transition-all duration-300 hover:-translate-y-1"
-                  style={{
-                    background: 'rgba(0,168,158,.07)',
-                    color: '#007a73',
-                    borderColor: 'rgba(0,168,158,.3)',
-                  }}>
+                  className="group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full text-base font-sans font-semibold transition-all duration-300 hover:-translate-y-1"
+                  style={{ background: '#007a73', color: '#fff', boxShadow: '0 12px 28px -12px rgba(0,122,115,.6)' }}>
                   <span className="material-icons-round text-base">calendar_month</span>
                   Agendar atención
+                </button>
+                <button
+                  onClick={() => navigate('/patient/results')}
+                  className="group inline-flex items-center justify-center gap-1.5 text-base font-sans font-semibold underline-offset-4 hover:underline"
+                  style={{ color: '#007a73' }}>
+                  Ver especialistas
+                  <span className="material-icons-round text-base group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </button>
               </div>
 
@@ -581,7 +571,8 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
             <div className="relative hidden lg:flex items-center justify-end mt-10 lg:mt-0">
               <div className="relative w-full max-w-[520px] h-[clamp(440px,68vh,580px)] rounded-3xl overflow-hidden shadow-2xl">
                 <img
-                  src="/hero-profesional.jpg"
+                  src="/hero-profesional.webp"
+                  width={848} height={1235}
                   alt="Profesional de salud Clínica Mas Life"
                   className="w-full h-full object-cover object-[center_top]"
                   draggable={false}
@@ -637,7 +628,7 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
               className="font-display font-normal leading-[1.3]"
               style={{ fontSize: 'clamp(1.65rem,4.2vw,3.2rem)', letterSpacing: '-.4px', color: '#0f172a' }}
             >
-              {"Agenda Maslife conecta pacientes con los mejores especialistas de salud en Chile, entregando acceso rápido, profesional y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
+              {"En Clínica Mas Life te conectamos con especialistas de salud verificados, con acceso rápido, cercano y sin barreras a la atención que necesitas, cuando más lo necesitas.".split(' ').map((word, i) => (
                 <span key={i} className="word-reveal"> {word}</span>
               ))}
             </div>
@@ -646,44 +637,59 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
       </section>
 
       {/* ═══════════════════ COMO FUNCIONA ═══════════════════ */}
-      {/* ── RESPONSIVE: padding — base=mobile (menos vh) lg:=desktop ── */}
+      {/* Tres pasos reales del proceso, unidos por una línea (antes eran tres
+          tarjetas genéricas con un título pensado para profesionales). */}
       <section id="como-funciona" className="px-[6vw] py-[7vh] lg:py-[11vh]" style={{ background: '#ffffff' }}>
         <div className="max-w-7xl mx-auto">
-          <div className="max-w-xl mb-[6vh]">
-            <p className="font-sans text-[.78rem] uppercase tracking-[0.05em] mb-5" style={{ color: '#007a73' }}>Proceso simple</p>
-            <h2 className="font-display font-normal leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#0f172a' }}>
-              Menos administración.<br />Más presencia.
-            </h2>
-            <p className="font-sans font-light text-base mt-5 leading-relaxed" style={{ color: '#475569' }}>
-              Domicilio · Online · Presencial — en Ovalle, Coquimbo y La Serena.
-            </p>
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12 lg:mb-16">
+            <div className="max-w-xl">
+              <p className="font-sans text-[.85rem] font-semibold mb-4" style={{ color: '#007a73' }}>Cómo funciona</p>
+              <h2 className="font-display font-normal leading-[1.05]" style={{ fontSize: 'clamp(2rem,5vw,3.6rem)', letterSpacing: '-1px', color: '#0f172a' }}>
+                De tu mensaje a tu<br />primera sesión.
+              </h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { icon: 'home', label: 'A domicilio' },
+                { icon: 'videocam', label: 'Online' },
+                { icon: 'storefront', label: 'Presencial' },
+              ].map(m => (
+                <span key={m.label} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium" style={{ background: '#e3f3f1', color: '#0f3d3a' }}>
+                  <span className="material-icons-round text-base" style={{ color: '#007a73' }}>{m.icon}</span>{m.label}
+                </span>
+              ))}
+            </div>
           </div>
 
-          <div ref={featuresRef} className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
+          <ol ref={featuresRef} className="relative grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-12">
+            {/* Línea que une los pasos: vertical en celular, horizontal en computador */}
+            <span aria-hidden="true" className="absolute left-6 top-6 bottom-6 w-px lg:left-6 lg:right-[16%] lg:top-6 lg:bottom-auto lg:h-px lg:w-auto" style={{ background: 'linear-gradient(90deg, #00a89e, rgba(0,168,158,.15))' }} />
             {[
-              { icon: 'assignment', step: '01', title: 'Rellenas el formulario', desc: 'Tu información y requerimiento, en segundos.' },
-              { icon: 'groups', step: '02', title: 'Asignación profesional', desc: 'Un agente revisa y te asigna el especialista ideal.' },
-              { icon: 'event_available', step: '03', title: 'Primera cita', desc: 'El profesional te contacta y coordinan juntos el primer encuentro.' },
+              { icon: 'chat', title: 'Cuéntanos qué necesitas', desc: 'Completa un formulario corto o escríbenos por WhatsApp: tu molestia, tu comuna y cuándo puedes.' },
+              { icon: 'person_search', title: 'Te asignamos un profesional', desc: 'Revisamos tu caso y te proponemos un especialista verificado según tu necesidad y tu zona.' },
+              { icon: 'event_available', title: 'Tu primera sesión', desc: 'Coordinan día y hora, en tu casa, online o en consulta. Tú decides cómo seguir.' },
             ].map((step, i) => (
-              <div key={i} data-reveal={`step-${i}`}
-                className={`feature-card relative overflow-hidden rounded-[18px] p-10 transition-all duration-500 ${rv(`step-${i}`)}`}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  transitionDelay: `${i * 150}ms`,
-                  cursor: 'default',
-                }}
-              >
-                {/* Icono */}
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-2"
-                  style={{ background: '#e3f3f1' }}>
-                  <span className="material-icons-round text-xl" style={{ color: '#007a73' }}>{step.icon}</span>
+              <li key={i} data-reveal={`step-${i}`} className={`relative flex lg:flex-col gap-5 ${rv(`step-${i}`)}`} style={{ transitionDelay: `${i * 150}ms` }}>
+                <span className="relative z-10 w-12 h-12 rounded-full flex items-center justify-center shrink-0 text-white shadow-lg" style={{ background: '#007a73', boxShadow: '0 0 0 6px #ffffff' }}>
+                  <span className="material-icons-round text-xl">{step.icon}</span>
+                </span>
+                <div className="min-w-0">
+                  <p className="font-sans text-sm font-semibold mb-1" style={{ color: '#00a89e' }}>Paso {i + 1}</p>
+                  <h3 className="font-display font-normal text-2xl mb-2 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h3>
+                  <p className="font-sans font-light text-[.98rem] leading-[1.65] max-w-sm" style={{ color: '#475569' }}>{step.desc}</p>
                 </div>
-                <p className="font-sans text-[.78rem] tracking-[0.04em] uppercase mb-4 font-bold" style={{ color: '#007a73' }}>{step.step}</p>
-                <h4 className="font-display font-normal text-xl mb-3 leading-tight" style={{ color: '#0f172a' }}>{step.title}</h4>
-                <p className="font-sans font-light text-[.93rem] leading-[1.65]" style={{ color: '#475569' }}>{step.desc}</p>
-              </div>
+              </li>
             ))}
+          </ol>
+
+          <div className="mt-12 lg:mt-14">
+            <button
+              onClick={() => setIsGeneralFormOpen(true)}
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-base font-sans font-semibold transition-all hover:-translate-y-0.5"
+              style={{ background: '#e3f3f1', color: '#0f3d3a' }}>
+              Empezar ahora
+              <span className="material-icons-round text-base">arrow_forward</span>
+            </button>
           </div>
         </div>
       </section>
@@ -827,7 +833,7 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.transform = ''; }}
                    onClick={() => navigate('/patient/results')}>
                 <div className="aspect-[4/3] overflow-hidden">
-                  <img src={card.img} alt={card.alt || card.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img src={card.img} alt={card.alt || card.name} loading="lazy" decoding="async" width={600} height={450} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
                 <div className="p-4 sm:p-5">
                   <h4 className="font-display font-normal text-sm sm:text-base mb-1 leading-snug" style={{ color: '#0f172a' }}>{card.name}</h4>
@@ -1001,7 +1007,7 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
       {/* ═══════════════════ CTA FINAL ═══════════════════ */}
       {/* ── RESPONSIVE: CTA final — padding base=mobile lg:=desktop ── */}
       <section className="px-[6vw] py-16 lg:py-24 relative overflow-hidden"
-               style={{ background: '#0f3d3a' }}>
+               style={{ background: '#0f3d3a', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <p className="font-sans text-[.78rem] uppercase tracking-[0.05em] mb-6" style={{ color: 'rgba(201,236,232,.85)' }}>Comienza hoy</p>
           <h2 className="font-display font-normal leading-[1.0] mb-6" style={{ fontSize: 'clamp(2.2rem,6vw,4.5rem)', color: '#ffffff', letterSpacing: '-1.5px' }}>
@@ -1016,14 +1022,14 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
               className="px-8 py-4 rounded-full font-sans font-semibold text-sm transition-all hover:-translate-y-1"
               style={{ background: '#ffffff', color: '#007a73' }}
             >
-              Agendar Atención
+              Agendar atención
             </button>
             <button
               onClick={() => navigate('/patient/results')}
               className="px-8 py-4 rounded-full font-sans font-semibold text-sm border transition-all hover:-translate-y-1"
               style={{ background: 'rgba(255,255,255,.12)', color: '#ffffff', borderColor: 'rgba(255,255,255,.4)' }}
             >
-              Explorar Especialistas
+              Ver especialistas
             </button>
           </div>
         </div>
@@ -1031,7 +1037,7 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
 
       {/* ═══════════════════ FOOTER ═══════════════════ */}
       {/* ── RESPONSIVE: footer — base=mobile lg:=desktop ── */}
-      <footer className="pt-12 lg:pt-20 pb-8 px-[6vw]" style={{ background: '#0f172a', color: '#f4f8f7' }}>
+      <footer ref={footerRef} className="pt-12 lg:pt-20 pb-8 px-[6vw]" style={{ background: '#0a2b29', color: '#f4f8f7' }}>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-10 mb-10 lg:mb-14">
             {/* Brand */}
@@ -1128,13 +1134,15 @@ const MainHome: React.FC<{ etiqueta?: string }> = ({ etiqueta }) => {
         href="https://wa.me/56965329974?text=Hola! Me gustaría que me asignen un profesional de Clínica Mas Life o hacer una consulta."
         target="_blank"
         rel="noreferrer"
-        className="fixed bottom-6 right-6 z-[100] group"
+        aria-label="Escríbenos por WhatsApp"
+        className={`fixed z-[100] group transition-all duration-300 ${footerVisible ? 'opacity-0 pointer-events-none translate-y-4' : 'opacity-100'}`}
+        style={{ right: 'max(16px, env(safe-area-inset-right, 0px))', bottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}
       >
         {/* Pulse animation */}
         <div className="absolute inset-0 bg-[#25D366] rounded-full animate-ping opacity-20"></div>
         {/* Button */}
-        <div className="relative bg-[#25D366] text-white w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-xl shadow-green-600/30 hover:shadow-green-600/50 hover:scale-110 active:scale-95 transition-all flex items-center justify-center">
-          <svg viewBox="0 0 24 24" className="w-7 h-7 sm:w-8 sm:h-8 fill-current" xmlns="http://www.w3.org/2000/svg">
+        <div className="relative bg-[#25D366] text-white w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-xl shadow-green-600/30 hover:shadow-green-600/50 hover:scale-110 active:scale-95 transition-all flex items-center justify-center">
+          <svg viewBox="0 0 24 24" className="w-6 h-6 sm:w-8 sm:h-8 fill-current" xmlns="http://www.w3.org/2000/svg">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
           </svg>
         </div>
