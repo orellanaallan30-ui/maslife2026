@@ -28,15 +28,16 @@ export const colorBox = (boxes: Box[], id: string): string => {
   return (i >= 0 && boxes[i].color) || COLORES_BOX[Math.max(0, i) % COLORES_BOX.length];
 };
 
+// Pastillas suaves por estado (AgendaMas · Aurora). Borde izquierdo = color del estado.
 function estiloCita(c: CenterAppointment): string {
-  if (c.ajena) return 'bg-slate-200 border-slate-300 text-slate-500';
-  if (c.esBloqueo) return 'bg-slate-100 border-slate-300 text-slate-500';
+  if (c.ajena) return 'am-hatch bg-slate-100/90 border-slate-300 text-slate-500';
+  if (c.esBloqueo) return 'am-hatch bg-slate-50/90 border-slate-300 text-slate-500';
   switch (c.status) {
-    case 'Llegado': return 'bg-emerald-100 border-emerald-400 text-emerald-900';
-    case 'En Sesión': return 'bg-sky-100 border-sky-400 text-sky-900';
-    case 'Finalizado': return 'bg-slate-100 border-slate-300 text-slate-500';
-    case 'Pendiente': return 'bg-amber-100 border-amber-400 text-amber-900';
-    default: return 'bg-teal-50 border-teal-500 text-teal-900';
+    case 'Llegado': return 'bg-emerald-50/95 border-emerald-500 text-emerald-950';
+    case 'En Sesión': return 'bg-cyan-50/95 border-am-cyan text-cyan-950';
+    case 'Finalizado': return 'bg-slate-50/95 border-slate-300 text-slate-500';
+    case 'Pendiente': return 'bg-amber-50/95 border-amber-400 text-amber-950';
+    default: return 'bg-am-50/95 border-am-500 text-am-800';
   }
 }
 
@@ -64,20 +65,20 @@ const DayGrid: React.FC<Props> = ({ columnas, citas, asignaciones, boxes, ahora,
   for (let t = t0; t < t1; t += paso) filas.push(t);
 
   if (!columnas.length) {
-    return <p className="text-sm text-slate-500 p-6">Aún no hay profesionales en este centro. Agrégalos en la pestaña Equipo.</p>;
+    return <p className="text-sm text-am-muted p-6">Aún no hay profesionales en este centro. Agrégalos en la pestaña Equipo.</p>;
   }
 
   return (
-    <div className="overflow-auto max-h-[calc(100vh-250px)] min-h-[320px] rounded-2xl border border-slate-200 bg-white">
+    <div className="overflow-auto max-h-[calc(100vh-250px)] min-h-[320px] am-glass rounded-[22px]">
       <div className="grid" style={{ gridTemplateColumns: `52px repeat(${columnas.length}, minmax(150px, 1fr))`, minWidth: 52 + columnas.length * 150 }}>
         {/* Encabezado */}
-        <div className="sticky top-0 left-0 z-30 bg-white border-b border-slate-200" />
+        <div className="sticky top-0 left-0 z-30 bg-white/85 backdrop-blur-md border-b border-am-ink/[0.07]" />
         {columnas.map(col => {
           const boxesDia = asignaciones.filter(a => a.professionalId === col.pro.id && a.date === col.fecha);
           return (
-            <div key={col.key} className="sticky top-0 z-20 bg-white border-b border-l border-slate-200 px-2 py-2 text-center">
-              <p className="text-sm font-black text-slate-800 truncate">{col.titulo}</p>
-              {col.subtitulo && <p className="text-[11px] font-semibold text-slate-500 truncate">{col.subtitulo}</p>}
+            <div key={col.key} className="sticky top-0 z-20 bg-white/85 backdrop-blur-md border-b border-l border-am-ink/[0.07] px-2 py-2.5 text-center">
+              <p className="text-sm font-black text-am-ink truncate">{col.titulo}</p>
+              {col.subtitulo && <p className="text-[11px] font-semibold text-am-muted truncate">{col.subtitulo}</p>}
               <div className="flex flex-wrap justify-center gap-1 mt-1 min-h-[18px]">
                 {boxesDia.length === 0 && <span className="text-[10px] font-bold text-slate-400">Sin box</span>}
                 {boxesDia.map(a => {
@@ -94,7 +95,7 @@ const DayGrid: React.FC<Props> = ({ columnas, citas, asignaciones, boxes, ahora,
         })}
 
         {/* Columna de horas */}
-        <div className="sticky left-0 z-10 bg-white relative" style={{ height: alto }}>
+        <div className="sticky left-0 z-10 bg-white/80 backdrop-blur-md relative" style={{ height: alto }}>
           {filas.filter(t => t % 60 === 0).map(t => (
             <span key={t} className="absolute right-1.5 -translate-y-1/2 text-[11px] font-bold text-slate-400 tabular-nums" style={{ top: (t - t0) * PX_MIN }}>
               {t === t0 ? '' : aHora(t)}
@@ -112,7 +113,7 @@ const DayGrid: React.FC<Props> = ({ columnas, citas, asignaciones, boxes, ahora,
           const esHoy = col.fecha === ahora.fecha;
           const pasado = col.fecha < ahora.fecha;
           return (
-            <div key={col.key} className="relative border-l border-slate-200" style={{ height: alto }}>
+            <div key={col.key} className="relative border-l border-am-ink/[0.07]" style={{ height: alto }}>
               {/* Fondo: horas libres clicables, fuera de horario sombreado */}
               {filas.map(t => {
                 const enHorario = h.active && t >= hIni && t + paso <= hFin;
@@ -125,15 +126,15 @@ const DayGrid: React.FC<Props> = ({ columnas, citas, asignaciones, boxes, ahora,
                     type="button"
                     onClick={() => onSlot(col, aHora(t))}
                     aria-label={`Agendar a las ${aHora(t)} con ${col.pro.name}`}
-                    className={`group absolute inset-x-0 text-left hover:bg-primary/10 focus-visible:bg-primary/10 focus-visible:outline-none ${t % 60 === 0 ? 'border-t border-slate-200' : 'border-t border-dashed border-slate-100'}`}
+                    className={`group absolute inset-x-0 text-left hover:bg-am-50 focus-visible:bg-am-50 focus-visible:outline-none ${t % 60 === 0 ? 'border-t border-am-ink/[0.07]' : 'border-t border-dashed border-am-ink/[0.05]'}`}
                     style={{ top: (t - t0) * PX_MIN, height: paso * PX_MIN }}
                   >
-                    <span className="hidden group-hover:inline group-focus-visible:inline text-[11px] font-bold text-primary pl-3">+ {aHora(t)}</span>
+                    <span className="hidden group-hover:inline group-focus-visible:inline text-[11px] font-bold text-am-600 pl-3">+ {aHora(t)}</span>
                   </button>
                 ) : (
                   <div
                     key={t}
-                    className={`absolute inset-x-0 ${t % 60 === 0 ? 'border-t border-slate-200' : 'border-t border-dashed border-slate-100'} ${enHorario && !yaPaso ? '' : 'bg-slate-100/70'}`}
+                    className={`absolute inset-x-0 ${t % 60 === 0 ? 'border-t border-am-ink/[0.07]' : 'border-t border-dashed border-am-ink/[0.05]'} ${enHorario && !yaPaso ? '' : 'bg-am-ink/[0.035]'}`}
                     style={{ top: (t - t0) * PX_MIN, height: paso * PX_MIN }}
                   />
                 );
@@ -160,7 +161,7 @@ const DayGrid: React.FC<Props> = ({ columnas, citas, asignaciones, boxes, ahora,
                     key={c.id}
                     type="button"
                     onClick={() => onCita(c)}
-                    className={`absolute left-3 right-1 rounded-lg border-l-4 border px-2 py-0.5 text-left overflow-hidden flex flex-col justify-center shadow-sm hover:shadow-md hover:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${estiloCita(c)}`}
+                    className={`absolute left-3 right-1.5 rounded-xl border-l-[3px] border px-2 py-0.5 text-left overflow-hidden flex flex-col justify-center shadow-[0_2px_8px_-2px_rgba(30,27,75,0.12)] hover:shadow-[0_8px_20px_-6px_rgba(30,27,75,0.3)] hover:-translate-y-px transition hover:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-am-500 ${estiloCita(c)}`}
                     style={{ top, height: altoCita }}
                   >
                     {altoCita < 40 ? (
@@ -189,7 +190,7 @@ const DayGrid: React.FC<Props> = ({ columnas, citas, asignaciones, boxes, ahora,
 
               {/* Línea de "ahora" */}
               {esHoy && ahora.minutos >= t0 && ahora.minutos <= t1 && (
-                <div className="absolute inset-x-0 h-0.5 bg-rose-500 pointer-events-none z-10" style={{ top: (ahora.minutos - t0) * PX_MIN }}>
+                <div className="absolute inset-x-0 h-0.5 bg-gradient-to-r from-rose-500 to-fuchsia-500 pointer-events-none z-10" style={{ top: (ahora.minutos - t0) * PX_MIN }}>
                   <span className="absolute -left-1 -top-1 w-2.5 h-2.5 rounded-full bg-rose-500" />
                 </div>
               )}

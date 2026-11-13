@@ -54,7 +54,7 @@ const Equipo: React.FC = () => {
   return (
     <div className="p-4 lg:p-8 space-y-6 max-w-5xl">
       <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-        <h1 className="text-xl font-black text-slate-900">Equipo</h1>
+        <h1 className="text-2xl font-black tracking-tight text-am-ink">Equipo</h1>
         <div className="flex-1" />
         {esAdmin && (
           <div className="flex flex-wrap gap-2">
@@ -69,20 +69,20 @@ const Equipo: React.FC = () => {
       </div>
 
       {error && <p role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl px-4 py-3 text-sm font-bold">{error}</p>}
-      {members === null && <div className="flex justify-center py-16"><span className="material-icons-round animate-spin text-primary text-4xl">sync</span></div>}
+      {members === null && <div className="flex justify-center py-16"><span className="material-icons-round animate-spin text-am-600 text-4xl">sync</span></div>}
 
       {members && members.length > 0 && (
-        <ul className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100">
+        <ul className="am-glass rounded-[22px] divide-y divide-am-ink/[0.06]">
           {members.map(m => (
             <li key={m.id} className="flex items-center gap-3 px-4 py-3">
-              <span className="w-10 h-10 rounded-full bg-primary/10 text-primary font-black flex items-center justify-center shrink-0">
+              <span className="w-10 h-10 rounded-full bg-am-50 text-am-600 font-black flex items-center justify-center shrink-0">
                 {(m.name || m.email || '?').trim().charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-black text-slate-800 truncate">{m.name || m.email}{m.soyYo ? ' (tú)' : ''}</p>
-                <p className="text-xs font-semibold text-slate-500 truncate">{[m.specialty, m.email].filter(Boolean).join(' · ')}</p>
+                <p className="text-sm font-black text-am-ink truncate">{m.name || m.email}{m.soyYo ? ' (tú)' : ''}</p>
+                <p className="text-xs font-semibold text-am-muted truncate">{[m.specialty, m.email].filter(Boolean).join(' · ')}</p>
               </div>
-              <span className="text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 shrink-0">{m.esDueno ? 'Dueño' : ROL[m.role] || m.role}</span>
+              <span className="text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-slate-100 text-am-muted shrink-0">{m.esDueno ? 'Dueño' : ROL[m.role] || m.role}</span>
               {m.status === 'invited' && <span className="text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 shrink-0">Invitación pendiente</span>}
               {esAdmin && !m.esDueno && !m.soyYo && (
                 <button type="button" aria-label={`Quitar a ${m.name || m.email}`} className="w-9 h-9 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center shrink-0" onClick={() => { setErrForm(''); setQuitar(m); }}>
@@ -94,13 +94,13 @@ const Equipo: React.FC = () => {
         </ul>
       )}
 
-      <p className="text-xs text-slate-500 max-w-3xl">
+      <p className="text-xs text-am-muted max-w-3xl">
         Recepción ve la agenda y los datos de contacto de los pacientes, y nunca la ficha clínica. Un profesional invitado debe aceptar la invitación en sus Ajustes: desde ese momento recepción puede ver y gestionar todas sus citas.
       </p>
 
       {esAdmin && (
-        <form onSubmit={guardarCentro} className="bg-white border border-slate-200 rounded-2xl p-4 lg:p-6 space-y-4">
-          <h2 className="text-base font-black text-slate-900">Datos del centro</h2>
+        <form onSubmit={guardarCentro} className="am-glass rounded-[22px] p-4 lg:p-6 space-y-4">
+          <h2 className="text-base font-black text-am-ink">Datos del centro</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <div>
               <label className={etiqueta} htmlFor="ce-nombre">Nombre</label>
@@ -129,7 +129,7 @@ const Equipo: React.FC = () => {
       {alta && (
         <Modal titulo={alta.role === 'recepcion' ? 'Agregar recepción' : 'Invitar profesional'} onClose={() => setAlta(null)} ancho="max-w-md">
           <form onSubmit={agregar} className="space-y-4" noValidate>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-am-muted">
               {alta.role === 'recepcion'
                 ? 'Se creará una cuenta para esta persona con una clave temporal que verás una sola vez.'
                 : 'Escribe el correo con el que el profesional ya tiene cuenta. Le llegará un aviso para aceptar.'}
@@ -159,11 +159,11 @@ const Equipo: React.FC = () => {
       {clave && (
         <Modal titulo="Cuenta de recepción creada" onClose={() => setClave(null)} ancho="max-w-md">
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">Entrega estos datos a la persona. La clave no se volverá a mostrar; puede cambiarla con "Olvidé mi contraseña" en la pantalla de ingreso.</p>
-            <dl className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2 text-sm">
-              <div><dt className="text-xs font-bold text-slate-500">Ingreso</dt><dd className="font-bold text-slate-800">clinicamaslife.cl/pro/login</dd></div>
-              <div><dt className="text-xs font-bold text-slate-500">Correo</dt><dd className="font-bold text-slate-800 break-all">{clave.email}</dd></div>
-              <div><dt className="text-xs font-bold text-slate-500">Clave temporal</dt><dd className="font-black text-slate-900 font-mono tracking-wide select-all">{clave.clave}</dd></div>
+            <p className="text-sm text-am-muted">Entrega estos datos a la persona. La clave no se volverá a mostrar; puede cambiarla con "Olvidé mi contraseña" en la pantalla de ingreso.</p>
+            <dl className="bg-white/60 border border-am-ink/[0.07] rounded-xl p-4 space-y-2 text-sm">
+              <div><dt className="text-xs font-bold text-am-muted">Ingreso</dt><dd className="font-bold text-am-ink">clinicamaslife.cl/pro/login</dd></div>
+              <div><dt className="text-xs font-bold text-am-muted">Correo</dt><dd className="font-bold text-am-ink break-all">{clave.email}</dd></div>
+              <div><dt className="text-xs font-bold text-am-muted">Clave temporal</dt><dd className="font-black text-am-ink font-mono tracking-wide select-all">{clave.clave}</dd></div>
             </dl>
             <div className="flex justify-end gap-2">
               <button type="button" className={botonSecundario} onClick={() => { navigator.clipboard?.writeText(`Ingreso: https://clinicamaslife.cl/pro/login\nCorreo: ${clave.email}\nClave temporal: ${clave.clave}`).then(() => toast.success('Copiado'), () => toast.error('No se pudo copiar')); }}>
@@ -179,7 +179,7 @@ const Equipo: React.FC = () => {
       {quitar && (
         <Modal titulo="Quitar del equipo" onClose={() => setQuitar(null)} ancho="max-w-md">
           <div className="space-y-4">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-am-muted">
               <strong>{quitar.name || quitar.email}</strong> dejará de pertenecer a {center.name}.
               {quitar.role === 'profesional' ? ' Recepción ya no verá su agenda. Sus citas y pacientes no se borran.' : ' Ya no podrá entrar al panel del centro.'}
             </p>

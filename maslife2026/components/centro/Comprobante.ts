@@ -25,7 +25,7 @@ export function imprimirComprobante(d: DatosComprobante): boolean {
   const w = window.open('', '_blank', 'width=480,height=720');
   if (!w) return false;
   const fecha = new Date(d.fechaPago);
-  const cuando = `${fecha.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}, ${fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+  const cuando = `${fecha.toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}, ${fecha.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })}`;
   const fila = (k: string, v: string) => v ? `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>` : '';
   w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Comprobante ${esc(d.numero.slice(0, 8))}</title>
 <style>

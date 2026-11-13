@@ -55,7 +55,7 @@ const Boxes: React.FC = () => {
   return (
     <div className="p-4 lg:p-8 space-y-4">
       <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-        <h1 className="text-xl font-black text-slate-900">Boxes</h1>
+        <h1 className="text-2xl font-black tracking-tight text-am-ink">Boxes</h1>
         <div className="flex items-center gap-2 lg:ml-4">
           <button type="button" aria-label="Semana anterior" className={`${botonSecundario} !px-2.5`} onClick={() => setLunes(l => sumarDias(l, -7))}>
             <span className="material-icons-round text-lg">chevron_left</span>
@@ -64,7 +64,7 @@ const Boxes: React.FC = () => {
           <button type="button" aria-label="Semana siguiente" className={`${botonSecundario} !px-2.5`} onClick={() => setLunes(l => sumarDias(l, 7))}>
             <span className="material-icons-round text-lg">chevron_right</span>
           </button>
-          <span className="text-sm font-bold text-slate-600">{fechaCorta(lunes)} al {fechaCorta(sumarDias(lunes, 6))}</span>
+          <span className="text-sm font-bold text-am-muted">{fechaCorta(lunes)} al {fechaCorta(sumarDias(lunes, 6))}</span>
         </div>
         <div className="flex-1" />
         <button type="button" className={botonPrimario} onClick={() => { setErrForm(''); setEditBox({ name: '', color: COLORES_BOX[boxes.length % COLORES_BOX.length], active: true }); }}>
@@ -73,23 +73,23 @@ const Boxes: React.FC = () => {
       </div>
 
       {error && <p role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl px-4 py-3 text-sm font-bold">{error}</p>}
-      {!data && !error && <div className="flex justify-center py-20"><span className="material-icons-round animate-spin text-primary text-4xl">sync</span></div>}
+      {!data && !error && <div className="flex justify-center py-20"><span className="material-icons-round animate-spin text-am-600 text-4xl">sync</span></div>}
 
       {data && boxes.length === 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
-          <p className="text-base font-black text-slate-800">Aún no hay boxes</p>
-          <p className="text-sm text-slate-500 mt-1">Crea el primero con "Nuevo box" y luego asigna qué profesional lo ocupa cada día.</p>
+        <div className="am-glass rounded-[22px] p-8 text-center">
+          <p className="text-base font-black text-am-ink">Aún no hay boxes</p>
+          <p className="text-sm text-am-muted mt-1">Crea el primero con "Nuevo box" y luego asigna qué profesional lo ocupa cada día.</p>
         </div>
       )}
 
       {data && boxes.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto am-glass rounded-[22px]">
           <table className="w-full text-sm" style={{ minWidth: 860 }}>
             <thead>
-              <tr className="border-b border-slate-200">
-                <th scope="col" className="text-left px-3 py-2.5 text-xs font-bold text-slate-500 w-36">Box</th>
+              <tr className="border-b border-am-ink/[0.07]">
+                <th scope="col" className="text-left px-3 py-2.5 text-xs font-bold text-am-muted w-36">Box</th>
                 {dias.map(d => (
-                  <th key={d} scope="col" className={`text-left px-2 py-2.5 text-xs font-bold ${d === data.ahora.fecha ? 'text-primary' : 'text-slate-500'}`}>{fechaCorta(d)}</th>
+                  <th key={d} scope="col" className={`text-left px-2 py-2.5 text-xs font-bold ${d === data.ahora.fecha ? 'text-am-600' : 'text-am-muted'}`}>{fechaCorta(d)}</th>
                 ))}
               </tr>
             </thead>
@@ -97,9 +97,9 @@ const Boxes: React.FC = () => {
               {boxes.map(b => {
                 const color = colorBox(boxes, b.id);
                 return (
-                  <tr key={b.id} className="border-b border-slate-100 last:border-0 align-top">
+                  <tr key={b.id} className="border-b border-am-ink/[0.05] last:border-0 align-top">
                     <th scope="row" className="text-left px-3 py-3">
-                      <button type="button" className="flex items-center gap-2 font-black text-slate-800 hover:text-primary" onClick={() => { setErrForm(''); setEditBox(b); }}>
+                      <button type="button" className="flex items-center gap-2 font-black text-am-ink hover:text-am-600" onClick={() => { setErrForm(''); setEditBox(b); }}>
                         <span className="w-3 h-3 rounded-full shrink-0" style={{ background: color }} />
                         <span className={b.active ? '' : 'line-through text-slate-400'}>{b.name}</span>
                       </button>
@@ -112,14 +112,14 @@ const Boxes: React.FC = () => {
                           <div className="space-y-1">
                             {asigs.map(a => (
                               <button key={a.id} type="button" onClick={() => { setErrForm(''); setVerAsig(a); }}
-                                className="w-full text-left rounded-lg px-2 py-1 border-l-4 bg-slate-50 hover:bg-slate-100" style={{ borderColor: color }}>
-                                <span className="block text-[11px] font-bold text-slate-500 tabular-nums">{a.start} a {a.end}</span>
-                                <span className="block text-xs font-black text-slate-800 truncate">{nombrePro(a.professionalId)}</span>
+                                className="w-full text-left rounded-xl px-2 py-1.5 border-l-[3px] bg-white/80 hover:bg-white shadow-[0_2px_8px_-3px_rgba(30,27,75,0.15)] transition" style={{ borderColor: color }}>
+                                <span className="block text-[11px] font-bold text-am-muted tabular-nums">{a.start} a {a.end}</span>
+                                <span className="block text-xs font-black text-am-ink truncate">{nombrePro(a.professionalId)}</span>
                               </button>
                             ))}
                             {b.active && (
                               <button type="button" onClick={() => abrirAsignacion(b.id, d)} aria-label={`Asignar ${b.name} el ${fechaLarga(d)}`}
-                                className="w-full rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-primary hover:text-primary text-xs font-bold py-1">
+                                className="w-full rounded-lg border border-dashed border-am-ink/15 text-slate-400 hover:border-am-500 hover:text-am-600 text-xs font-bold py-1">
                                 + Asignar
                               </button>
                             )}
@@ -153,8 +153,8 @@ const Boxes: React.FC = () => {
               </div>
             </div>
             {editBox.id && (
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
-                <input type="checkbox" className="accent-primary w-4 h-4" checked={editBox.active !== false} onChange={e => setEditBox({ ...editBox, active: e.target.checked })} />
+              <label className="flex items-center gap-2 text-sm font-semibold text-am-ink cursor-pointer">
+                <input type="checkbox" className="accent-am-600 w-4 h-4" checked={editBox.active !== false} onChange={e => setEditBox({ ...editBox, active: e.target.checked })} />
                 Box activo (se puede asignar)
               </label>
             )}
@@ -174,7 +174,7 @@ const Boxes: React.FC = () => {
       {nuevaAsig && (
         <Modal titulo="Asignar box" onClose={() => setNuevaAsig(null)} ancho="max-w-md">
           {pros.length === 0 ? (
-            <p className="text-sm text-slate-600">Aún no hay profesionales activos en el centro. Invítalos en la pestaña Equipo.</p>
+            <p className="text-sm text-am-muted">Aún no hay profesionales activos en el centro. Invítalos en la pestaña Equipo.</p>
           ) : (
             <form className="space-y-4" onSubmit={e => { e.preventDefault(); accion(() => centerApi.saveAssignment(centerId, nuevaAsig), 'Horario de box asignado', () => setNuevaAsig(null)); }}>
               <div className="grid grid-cols-2 gap-3">
@@ -210,7 +210,7 @@ const Boxes: React.FC = () => {
                 </div>
               </div>
               {aMin(nuevaAsig.end) > aMin(nuevaAsig.start) && (
-                <p className="text-xs font-semibold text-slate-500">
+                <p className="text-xs font-semibold text-am-muted">
                   {horasTexto(aMin(nuevaAsig.end) - aMin(nuevaAsig.start))} por día{nuevaAsig.weeks > 1 ? ` · ${horasTexto((aMin(nuevaAsig.end) - aMin(nuevaAsig.start)) * nuevaAsig.weeks)} en total` : ''}.
                 </p>
               )}
@@ -231,10 +231,10 @@ const Boxes: React.FC = () => {
         <Modal titulo="Horario de box" onClose={() => setVerAsig(null)} ancho="max-w-md">
           <div className="space-y-4">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <div><dt className="text-xs font-bold text-slate-500">Box</dt><dd className="font-bold text-slate-800">{boxes.find(b => b.id === verAsig.boxId)?.name}</dd></div>
-              <div><dt className="text-xs font-bold text-slate-500">Profesional</dt><dd className="font-bold text-slate-800">{nombrePro(verAsig.professionalId)}</dd></div>
-              <div><dt className="text-xs font-bold text-slate-500">Fecha</dt><dd className="font-bold text-slate-800">{fechaLarga(verAsig.date)}</dd></div>
-              <div><dt className="text-xs font-bold text-slate-500">Horario</dt><dd className="font-bold text-slate-800 tabular-nums">{verAsig.start} a {verAsig.end}</dd></div>
+              <div><dt className="text-xs font-bold text-am-muted">Box</dt><dd className="font-bold text-am-ink">{boxes.find(b => b.id === verAsig.boxId)?.name}</dd></div>
+              <div><dt className="text-xs font-bold text-am-muted">Profesional</dt><dd className="font-bold text-am-ink">{nombrePro(verAsig.professionalId)}</dd></div>
+              <div><dt className="text-xs font-bold text-am-muted">Fecha</dt><dd className="font-bold text-am-ink">{fechaLarga(verAsig.date)}</dd></div>
+              <div><dt className="text-xs font-bold text-am-muted">Horario</dt><dd className="font-bold text-am-ink tabular-nums">{verAsig.start} a {verAsig.end}</dd></div>
             </dl>
             {errForm && <p role="alert" className="text-sm font-bold text-rose-600">{errForm}</p>}
             <div className="flex flex-col gap-2">
