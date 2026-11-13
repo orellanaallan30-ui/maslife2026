@@ -19,7 +19,7 @@ Yo, el/la abajo firmante, en mi calidad de paciente o representante legal, decla
 
 4. Tengo derecho a retirar este consentimiento en cualquier momento sin expresión de causa y sin que ello afecte la calidad de mi atención.
 
-5. Autorizo al profesional a registrar mis datos clínicos en el sistema de gestión Agenda Maslife para fines terapéuticos, de acuerdo con la Ley 20.584 sobre Derechos y Deberes del Paciente.
+5. Autorizo al profesional a registrar mis datos clínicos en el sistema de gestión AgendaMas para fines terapéuticos, de acuerdo con la Ley 20.584 sobre Derechos y Deberes del Paciente.
 
 6. He podido formular preguntas sobre mi tratamiento y estas han sido respondidas satisfactoriamente.
   `.trim(),
@@ -143,13 +143,13 @@ export const ConsentSendPanel: React.FC<{
   // Plantilla breve y clara (la aprobada). Se arma con el nombre y especialidad del
   // profesional. Las versiones largas por especialidad siguen en CONSENT_TEMPLATES
   // por si se necesitan a futuro.
-  const consentText = `Yo autorizo a ${loggedPro.name} (${loggedPro.specialty}) a atenderme y a registrar mis datos de salud en Agenda Maslife para mi tratamiento.\n\n• Entiendo en qué consiste mi atención y pude hacer preguntas.\n• Puedo retirar esta autorización cuando quiera.\n• Mis datos se protegen según la Ley 20.584 y la Ley 21.719.`;
+  const consentText = `Yo autorizo a ${loggedPro.name} (${loggedPro.specialty}) a atenderme y a registrar mis datos de salud en AgendaMas para mi tratamiento.\n\n• Entiendo en qué consiste mi atención y pude hacer preguntas.\n• Puedo retirar esta autorización cuando quiera.\n• Mis datos se protegen según la Ley 20.584 y la Ley 21.719.`;
 
   // Enlace para compartir con el paciente (disponible apenas se crea el consentimiento).
   const activeConsent = createdConsent || (existingConsent?.status === 'PENDING' ? existingConsent : null);
   const consentLink = activeConsent ? `${window.location.origin}/consent/${activeConsent.id}` : '';
   const shareWhatsApp = () => {
-    const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de Agenda Maslife. Antes de tu atención necesito tu autorización para atenderte y guardar tu ficha de salud. Es rápido (1 minuto) y firmas desde tu teléfono aquí: ${consentLink}  ¡Gracias!`;
+    const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de AgendaMas. Antes de tu atención necesito tu autorización para atenderte y guardar tu ficha de salud. Es rápido (1 minuto) y firmas desde tu teléfono aquí: ${consentLink}  ¡Gracias!`;
     const phone = (patient.phone || '').replace(/\D/g, '');
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
   };

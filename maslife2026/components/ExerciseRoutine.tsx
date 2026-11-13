@@ -369,7 +369,7 @@ export const ExerciseRoutinePanel: React.FC<Props> = ({ patient, loggedPro }) =>
         return `${i + 1}. ${it.exercise?.nameEs || 'Ejercicio'} — ${setsReps}${rest}`;
       }).join('\n');
       const linkLine = routineLink ? `\n\n📋 Ver rutina con imágenes e indicaciones: ${routineLink}` : '';
-      const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de Agenda Maslife. Te envío tu rutina "${title}":\n\n${list}${linkLine}\n\nSi sientes dolor al hacer algún ejercicio, detente y avísame. Cualquier duda, escríbeme por aquí.`;
+      const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de AgendaMas. Te envío tu rutina "${title}":\n\n${list}${linkLine}\n\nSi sientes dolor al hacer algún ejercicio, detente y avísame. Cualquier duda, escríbeme por aquí.`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
       toast.success('Rutina enviada por WhatsApp');
     } catch (e) {

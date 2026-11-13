@@ -309,7 +309,7 @@ const ProfessionalRegistration: React.FC = () => {
             </div>
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left">
               <p className="text-xs text-slate-600 leading-relaxed">
-                <strong className="text-slate-800">1.</strong> Abre el correo de Agenda Maslife.<br/>
+                <strong className="text-slate-800">1.</strong> Abre el correo que te enviamos.<br/>
                 <strong className="text-slate-800">2.</strong> Haz clic en <strong>"Confirmar cuenta"</strong>.<br/>
                 <strong className="text-slate-800">3.</strong> Inicia sesión y completa tu perfil.
               </p>
