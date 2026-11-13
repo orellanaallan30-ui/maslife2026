@@ -8,12 +8,13 @@
 import {
   choque, fueraDeHorario, boxParaCita, choqueAsignacion, fechasSemanales, horasDeBox,
   servicioDelPro, esHora, sumarDias, lunesDe, diaSemana,
+  esMedioPago, montoCobro, resumenCaja, diferenciaCierre, ESTADOS_COBRABLES, MEDIOS_PAGO,
 } from '../api/_lib/centerRules';
 import { toMinutes } from '../api/_lib/overlap';
 import {
   CenterError,
   type Assignment, type Box, type CenterAppointment, type CenterInfo, type CenterPro,
-  type Member, type PatientContact,
+  type Member, type PatientContact, type Cobro, type MedioPago, type CierreCaja,
 } from './centerService';
 
 const CENTER_ID = 'demo-centro';
@@ -27,6 +28,8 @@ interface Estado {
   appointments: CenterAppointment[];
   patients: PatientContact[];
   members: Member[];
+  cobros: Cobro[];
+  cierres: Record<string, CierreCaja>;
   seq: number;
 }
 
@@ -158,7 +161,27 @@ function crearEstado(): Estado {
     { id: 'demo-m-5', role: 'profesional', status: 'invited', email: 'nutricion@ejemplo.cl', name: 'Nut. Andrea Lagos', specialty: 'Nutrición', professionalId: 'demo-pro-4', esDueno: false, soyYo: false },
   ];
 
+  // Cobros de ejemplo: las citas pagadas en recepción (no las pagadas en línea).
+  const cobros: Cobro[] = [];
+  const nombrePro = (id: string) => pros.find(p => p.id === id)?.name || '';
+  for (const a of appointments) {
+    if (a.paymentStatus !== 'Pagado' || a.bookingSource === 'web' || a.ajena || a.esBloqueo) continue;
+    if (a.date < sumarDias(hoy.fecha, -14) || a.date > hoy.fecha) continue;
+    const r = azar(`${a.id}m`);
+    const method: MedioPago = r < 0.38 ? 'efectivo' : r < 0.7 ? 'transferencia' : r < 0.9 ? 'debito' : 'credito';
+    const fin = toMinutes(a.time) + a.duration;
+    const t = `${a.date}T${String(Math.floor(fin / 60)).padStart(2, '0')}:${String(fin % 60).padStart(2, '0')}:00`;
+    cobros.push({
+      id: `demo-cobro-${cobros.length + 1}`, appointmentId: a.id, professionalId: a.professionalId, professionalName: nombrePro(a.professionalId),
+      patientName: a.patientName, serviceName: a.serviceName, citaFecha: a.date, citaHora: a.time,
+      amount: a.price || 0, method, reference: method === 'transferencia' ? `TRF-${String(4100 + cobros.length * 7)}` : '', note: '',
+      createdAt: new Date(t).toISOString(), receivedBy: 'Daniela Fuentes', afterClose: false, voidedAt: null, voidReason: '', voidedBy: '',
+    });
+    Object.assign(a, { paidAt: new Date(t).toISOString(), paymentAmount: a.price || 0 });
+  }
+
   return {
+    cobros, cierres: {},
     center: { id: CENTER_ID, name: 'Centro Demo AgendaMas', city: 'Ovalle', address: 'Av. Ejemplo 123', phone: '+56 53 2 555 000', esDueno: true },
     pros, boxes, assignments, appointments, patients, members, seq: 1000,
   };
@@ -348,11 +371,73 @@ const acciones: Record<string, (s: Estado, b: Body) => unknown> = {
   'center-payment': (s, b) => {
     const apt = citaEditable(s, b.appointmentId);
     exigir(apt.status !== 'Bloqueado' && apt.status !== 'Cancelado', 409, 'Esa cita no admite pagos');
-    const paid = b.paid === true;
-    Object.assign(apt, paid
-      ? { paymentStatus: 'Pagado', paidAt: new Date().toISOString(), paymentAmount: apt.price || 0 }
-      : { paymentStatus: 'Pendiente', paidAt: null, paymentAmount: null });
+    if (b.paid === false) return acciones['center-payment-void'](s, { ...b, reason: 'Pago desmarcado' });
+    exigir(apt.paymentStatus !== 'Pagado', 409, 'Esa cita ya está pagada');
+    const method: MedioPago = esMedioPago(b.method) ? b.method : 'efectivo';
+    const note = txt(b.note, 300);
+    const r = montoCobro(apt.price || 0, b.amount, note);
+    if ('error' in r) falla(400, r.error);
+    const monto = (r as { monto: number }).monto;
+    const fecha = ahora().fecha;
+    const cobro: Cobro = {
+      id: `demo-cobro-${++s.seq}`, appointmentId: apt.id, professionalId: apt.professionalId,
+      professionalName: s.pros.find(p => p.id === apt.professionalId)?.name || '', patientName: apt.patientName, serviceName: apt.serviceName,
+      citaFecha: apt.date, citaHora: apt.time, amount: monto, method, reference: txt(b.reference, 80), note,
+      createdAt: new Date().toISOString(), receivedBy: 'Tú (demo)', afterClose: !!s.cierres[fecha], voidedAt: null, voidReason: '', voidedBy: '',
+    };
+    s.cobros.push(cobro);
+    Object.assign(apt, { paymentStatus: 'Pagado', paidAt: cobro.createdAt, paymentAmount: monto });
+    return { ok: true, paymentId: cobro.id, amount: monto, afterClose: cobro.afterClose };
+  },
+
+  'center-payment-void': (s, b) => {
+    const reason = txt(b.reason, 200);
+    exigir(reason.length >= 3, 400, 'Escribe el motivo de la anulación');
+    const cobro = s.cobros.find(x => !x.voidedAt && (b.paymentId ? x.id === b.paymentId : x.appointmentId === b.appointmentId));
+    if (!cobro) {
+      const apt = citaEditable(s, b.appointmentId);
+      exigir(!(apt.bookingSource === 'web' && apt.paymentStatus === 'Pagado'), 409, 'Ese pago se hizo en línea y no se puede anular aquí');
+      exigir(apt.paymentStatus === 'Pagado', 404, 'Esa cita no tiene un cobro vigente');
+      Object.assign(apt, { paymentStatus: 'Pendiente', paidAt: null, paymentAmount: null });
+      return { ok: true };
+    }
+    Object.assign(cobro, { voidedAt: new Date().toISOString(), voidReason: reason, voidedBy: 'Tú (demo)' });
+    const apt = s.appointments.find(a => a.id === cobro.appointmentId);
+    if (apt) Object.assign(apt, { paymentStatus: 'Pendiente', paidAt: null, paymentAmount: null });
     return { ok: true };
+  },
+
+  'center-cashbox': (s, b) => {
+    const fecha = String(b.date || '');
+    exigir(FECHA.test(fecha), 400, 'Fecha inválida');
+    const fechaLocal = (iso: string) => new Date(iso).toLocaleDateString('en-CA');
+    const cobros = s.cobros.filter(x => fechaLocal(x.createdAt) === fecha);
+    const vigentes = new Set(cobros.filter(x => !x.voidedAt).map(x => x.appointmentId));
+    const nombre = (id: string) => s.pros.find(p => p.id === id)?.name || '';
+    const delDia = s.appointments.filter(a => a.date === fecha && !a.ajena && !a.esBloqueo && a.status !== 'Cancelado');
+    return {
+      date: fecha, rol: 'admin', center: s.center, cobros,
+      porCobrar: delDia.filter(a => a.paymentStatus !== 'Pagado' && ESTADOS_COBRABLES.includes(a.status) && !vigentes.has(a.id))
+        .map(a => ({ ...a, professionalName: nombre(a.professionalId) })).sort((x, y) => x.time.localeCompare(y.time)),
+      enLinea: delDia.filter(a => a.paymentStatus === 'Pagado' && a.bookingSource === 'web').map(a => ({ ...a, professionalName: nombre(a.professionalId) })),
+      resumen: resumenCaja(cobros),
+      profesionales: Object.fromEntries(s.pros.map(p => [p.id, p.name])),
+      cierre: s.cierres[fecha] || null,
+    };
+  },
+
+  'center-cash-close': (s, b) => {
+    const fecha = String(b.date || '');
+    exigir(FECHA.test(fecha), 400, 'Fecha inválida');
+    exigir(fecha <= ahora().fecha, 400, 'No se puede cerrar una caja de un día futuro');
+    const contado = Math.round(Number(b.countedCash));
+    exigir(Number.isFinite(contado) && contado >= 0, 400, 'Escribe el efectivo contado');
+    const r = resumenCaja(s.cobros.filter(x => new Date(x.createdAt).toLocaleDateString('en-CA') === fecha));
+    const expected: Record<string, number> = { total: r.total, cobros: r.cobros };
+    for (const m of MEDIOS_PAGO) expected[m] = r.porMedio[m];
+    const difference = diferenciaCierre(r.porMedio.efectivo, contado);
+    s.cierres[fecha] = { expected, countedCash: contado, difference, note: txt(b.note, 300), closedAt: new Date().toISOString(), closedBy: 'Tú (demo)' };
+    return { ok: true, difference };
   },
 
   'center-report': (s, b) => {

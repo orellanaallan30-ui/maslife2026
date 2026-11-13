@@ -17,13 +17,18 @@ export type Accion =
   | 'agenda.ver'         // agenda de todos los profesionales del centro
   | 'agenda.editar'      // agendar, reagendar, liberar, marcar llegada/pago
   | 'pacientes.buscar'   // SOLO datos de contacto
-  | 'reporte.ver';
+  | 'reporte.ver'
+  | 'caja.ver'           // cobros del día, por cobrar y cierre
+  | 'caja.cobrar'        // registrar un cobro a un paciente
+  | 'caja.cerrar'        // cierre de caja diario
+  | 'caja.anular';       // anular un cobro (recepción: solo con la caja del día abierta)
 
 const PERMISOS: Record<Rol, Accion[]> = {
   admin: ['centro.editar', 'equipo.ver', 'equipo.editar', 'boxes.ver', 'boxes.editar',
-          'agenda.ver', 'agenda.editar', 'pacientes.buscar', 'reporte.ver'],
+          'agenda.ver', 'agenda.editar', 'pacientes.buscar', 'reporte.ver',
+          'caja.ver', 'caja.cobrar', 'caja.cerrar', 'caja.anular'],
   recepcion: ['equipo.ver', 'boxes.ver', 'boxes.editar', 'agenda.ver', 'agenda.editar',
-              'pacientes.buscar', 'reporte.ver'],
+              'pacientes.buscar', 'reporte.ver', 'caja.ver', 'caja.cobrar', 'caja.cerrar', 'caja.anular'],
   // El profesional usa su propia agenda (/pro/agenda); en el centro solo ve su box.
   profesional: ['boxes.ver'],
 };
@@ -219,3 +224,68 @@ export function servicioDelPro(services: unknown, nombre: string): { price: numb
   if (!s) return null;
   return { price: Math.max(0, Math.round(Number((s as any).price) || 0)), duration: Math.max(5, Math.round(Number((s as any).duration) || DUR_DEFECTO)) };
 }
+
+// ── Caja de recepción ────────────────────────────────────────────────────
+export const MEDIOS_PAGO = ['efectivo', 'transferencia', 'debito', 'credito', 'otro'] as const;
+export type MedioPago = typeof MEDIOS_PAGO[number];
+export const NOMBRE_MEDIO: Record<MedioPago, string> = {
+  efectivo: 'Efectivo', transferencia: 'Transferencia', debito: 'Débito', credito: 'Crédito', otro: 'Otro',
+};
+export const esMedioPago = (m: unknown): m is MedioPago => typeof m === 'string' && (MEDIOS_PAGO as readonly string[]).includes(m);
+
+/**
+ * Monto del cobro. Por defecto, el precio guardado en la cita (el servidor nunca
+ * confía en el navegador para el precio). Un monto distinto exige una nota que lo
+ * explique (descuento, abono, cortesía) y no puede pasar de 10 veces el precio.
+ */
+export function montoCobro(precio: number, pedido: unknown, nota: string): { monto: number } | { error: string } {
+  const base = Math.max(0, Math.round(Number(precio) || 0));
+  if (pedido === undefined || pedido === null || pedido === '') return { monto: base };
+  const m = Math.round(Number(pedido));
+  if (!Number.isFinite(m) || m < 0) return { error: 'El monto no es válido' };
+  if (m === base) return { monto: m };
+  if (!nota.trim()) return { error: 'Escribe una nota que explique por qué el monto es distinto al precio' };
+  if (base > 0 && m > base * 10) return { error: 'El monto es demasiado alto para este servicio' };
+  if (base === 0 && m > 5_000_000) return { error: 'El monto no es válido' };
+  return { monto: m };
+}
+
+export interface CobroCaja {
+  id: string;
+  amount: number;
+  method: MedioPago;
+  professionalId: string;
+  voidedAt?: string | null;
+}
+
+export interface ResumenCaja {
+  total: number;
+  cobros: number;
+  anulados: number;
+  porMedio: Record<MedioPago, number>;
+  porProfesional: Record<string, { total: number; cobros: number }>;
+}
+
+/** Totales del día: solo los cobros vigentes (los anulados se cuentan aparte). */
+export function resumenCaja(cobros: CobroCaja[]): ResumenCaja {
+  const porMedio = Object.fromEntries(MEDIOS_PAGO.map(m => [m, 0])) as Record<MedioPago, number>;
+  const porProfesional: ResumenCaja['porProfesional'] = {};
+  let total = 0, n = 0, anulados = 0;
+  for (const c of cobros) {
+    if (c.voidedAt) { anulados++; continue; }
+    const monto = Math.max(0, Math.round(c.amount) || 0);
+    total += monto; n++;
+    porMedio[c.method] = (porMedio[c.method] || 0) + monto;
+    const p = porProfesional[c.professionalId] ||= { total: 0, cobros: 0 };
+    p.total += monto; p.cobros++;
+  }
+  return { total, cobros: n, anulados, porMedio, porProfesional };
+}
+
+/** Diferencia del cierre: efectivo contado menos efectivo esperado (negativo = falta plata). */
+export function diferenciaCierre(esperadoEfectivo: number, contado: number): number {
+  return Math.round(contado) - Math.round(esperadoEfectivo);
+}
+
+/** Estados en que una cita del día ya se atendió o está por atenderse y puede cobrarse. */
+export const ESTADOS_COBRABLES = ['Confirmado', 'Pendiente', 'Llegado', 'En Sesión', 'Finalizado'];

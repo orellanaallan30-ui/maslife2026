@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   puede, slotsLibres, boxParaCita, choqueAsignacion, horasDeBox, fechasSemanales,
   lunesDe, diaSemana, choque, fueraDeHorario, servicioDelPro, PACIENTE_CONTACTO, CITA_RECEPCION,
+  montoCobro, resumenCaja, diferenciaCierre, esMedioPago,
   type Asignacion,
 } from '../../api/_lib/centerRules';
 
@@ -135,5 +136,50 @@ describe('centros: reporte de horas de box', () => {
     expect(r[0].porSemana['2026-11-23']).toBe(150);
     expect(r[0].porMes['2026-11']).toBe(630);
     expect(r[1].totalMin).toBe(60);
+  });
+});
+
+describe('centros: caja de recepción', () => {
+  it('caja: permisos de administración y recepción; el profesional no ve la caja', () => {
+    for (const a of ['caja.ver', 'caja.cobrar', 'caja.cerrar', 'caja.anular'] as const) {
+      expect(puede('admin', a)).toBe(true);
+      expect(puede('recepcion', a)).toBe(true);
+      expect(puede('profesional', a)).toBe(false);
+    }
+  });
+  it('medios de pago válidos', () => {
+    expect(esMedioPago('efectivo')).toBe(true);
+    expect(esMedioPago('transferencia')).toBe(true);
+    expect(esMedioPago('cheque')).toBe(false);
+    expect(esMedioPago(undefined)).toBe(false);
+  });
+  it('el monto por defecto es el precio de la cita; uno distinto exige nota', () => {
+    expect(montoCobro(17000, undefined, '')).toEqual({ monto: 17000 });
+    expect(montoCobro(17000, '17000', '')).toEqual({ monto: 17000 });
+    expect(montoCobro(17000, 15000, '')).toHaveProperty('error');
+    expect(montoCobro(17000, 15000, 'Descuento convenio')).toEqual({ monto: 15000 });
+    expect(montoCobro(17000, -1, 'x')).toHaveProperty('error');
+    expect(montoCobro(17000, 999999999, 'x')).toHaveProperty('error');
+    expect(montoCobro(0, 20000, 'Consulta sin servicio definido')).toEqual({ monto: 20000 });
+  });
+  it('resumen del día: por medio y por profesional, sin contar anulados', () => {
+    const r = resumenCaja([
+      { id: '1', amount: 17000, method: 'efectivo', professionalId: 'p1' },
+      { id: '2', amount: 25000, method: 'transferencia', professionalId: 'p1' },
+      { id: '3', amount: 30000, method: 'debito', professionalId: 'p2' },
+      { id: '4', amount: 99999, method: 'efectivo', professionalId: 'p2', voidedAt: '2026-11-13T15:00:00Z' },
+    ]);
+    expect(r.total).toBe(72000);
+    expect(r.cobros).toBe(3);
+    expect(r.anulados).toBe(1);
+    expect(r.porMedio.efectivo).toBe(17000);
+    expect(r.porMedio.transferencia).toBe(25000);
+    expect(r.porMedio.credito).toBe(0);
+    expect(r.porProfesional.p1).toEqual({ total: 42000, cobros: 2 });
+    expect(r.porProfesional.p2).toEqual({ total: 30000, cobros: 1 });
+  });
+  it('diferencia del cierre: contado menos esperado', () => {
+    expect(diferenciaCierre(50000, 48000)).toBe(-2000);
+    expect(diferenciaCierre(50000, 50000)).toBe(0);
   });
 });

@@ -13,7 +13,8 @@ import { requireSupabaseAuth, checkIpRateLimit, internalKey, INTERNAL_HEADER } f
 import {
   puede, PACIENTE_CONTACTO, CITA_RECEPCION, choque, fueraDeHorario, boxParaCita, choqueAsignacion,
   fechasSemanales, horasDeBox, servicioDelPro, esHora, sumarDias,
-  type Accion, type Asignacion, type Rol,
+  esMedioPago, montoCobro, resumenCaja, diferenciaCierre, NOMBRE_MEDIO, ESTADOS_COBRABLES,
+  type Accion, type Asignacion, type Rol, type MedioPago,
 } from './centerRules';
 import { toMinutes } from './overlap';
 import { getValidToken, appointmentToGCalEvent, updateGCalEvent, deleteGCalEvent, syncAppointmentToGoogle } from './googleCalendar';
@@ -40,6 +41,11 @@ function ahoraChile(): { fecha: string; minutos: number } {
   const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Santiago' }));
   const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   return { fecha, minutos: d.getHours() * 60 + d.getMinutes() };
+}
+
+/** Fecha (YYYY-MM-DD) de un instante, en hora de Chile. */
+function fechaChile(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
 }
 
 interface Ctx {
@@ -589,21 +595,159 @@ const acciones: Record<string, (u: Usuario, b: Body) => Promise<unknown>> = {
     return { ok: true };
   },
 
-  // Registrar el pago en recepción (el monto es el precio guardado en la cita).
+  // ── Caja: cobrar una cita en recepción ──
+  // El monto por defecto es el precio guardado en la cita; uno distinto exige nota.
   'center-payment': async (u, b) => {
-    const c = await contexto(u.id, u.email, b.centerId, 'agenda.editar');
+    const c = await contexto(u.id, u.email, b.centerId, 'caja.cobrar');
     const apt = await citaEditable(c, b.appointmentId);
     exigir(apt.status !== 'Bloqueado' && apt.status !== 'Cancelado', 409, 'Esa cita no admite pagos');
-    const paid = b.paid === true;
-    // Un pago hecho en línea (MercadoPago) no se desmarca desde recepción.
-    exigir(paid || !(apt.mp_preference_id && apt.payment_status === 'Pagado'), 409, 'Ese pago se hizo en línea y no se puede desmarcar aquí');
-    const cambios = paid
-      ? { payment_status: 'Pagado', paid_at: new Date().toISOString(), payment_amount: apt.price || 0, center_id: c.centerId }
-      : { payment_status: 'Pendiente', paid_at: null, payment_amount: null, center_id: c.centerId };
-    const { error } = await supabase.from('appointments').update(cambios).eq('id', apt.id);
-    if (error) throw new Fallo(500, 'No se pudo registrar el pago');
-    await auditar(c, paid ? 'cita.pago' : 'cita.pago.deshacer', 'appointment', apt.id, { monto: apt.price || 0 });
+    // Compatibilidad: { paid: false } = anular el cobro vigente.
+    if (b.paid === false) return acciones['center-payment-void'](u, { ...b, reason: txt(b.reason, 200) || 'Pago desmarcado' });
+    exigir(apt.payment_status !== 'Pagado', 409, 'Esa cita ya está pagada');
+    const method = esMedioPago(b.method) ? b.method : 'efectivo';
+    const note = txt(b.note, 300);
+    const r = montoCobro(apt.price || 0, b.amount, note);
+    if ('error' in r) throw new Fallo(400, r.error);
+    const fecha = fechaChile(new Date());
+    const { data: cierre } = await supabase.from('center_cash_closings').select('id').eq('center_id', c.centerId).eq('date', fecha).maybeSingle();
+    const { data: pago, error } = await supabase.from('center_payments').insert({
+      center_id: c.centerId, appointment_id: apt.id, professional_id: apt.professional_id, patient_id: apt.patient_id || null,
+      amount: r.monto, method, reference: txt(b.reference, 80) || null, note: note || null, received_by: u.id, after_close: !!cierre,
+    }).select('id, created_at').single();
+    if (error || !pago) {
+      if (error?.code === '23505') throw new Fallo(409, 'Esa cita ya tiene un cobro registrado. Actualiza la caja.');
+      console.error('[center] cobro:', error?.message);
+      throw new Fallo(500, 'No se pudo registrar el cobro');
+    }
+    const { error: aErr } = await supabase.from('appointments')
+      .update({ payment_status: 'Pagado', paid_at: pago.created_at, payment_amount: r.monto, center_id: c.centerId }).eq('id', apt.id);
+    if (aErr) {
+      // Sin la cita marcada, el cobro quedaría huérfano: se anula y se avisa.
+      await supabase.from('center_payments').update({ voided_at: new Date().toISOString(), voided_by: u.id, void_reason: 'Error al marcar la cita' }).eq('id', pago.id);
+      throw new Fallo(500, 'No se pudo registrar el cobro');
+    }
+    await auditar(c, 'caja.cobrar', 'payment', pago.id, { cita: apt.id, monto: r.monto, medio: method, despuesDelCierre: !!cierre });
+    if (b.sendReceipt === true && apt.patient_email) {
+      const { data: pro } = await supabase.from('professionals').select('email, name').eq('id', apt.professional_id).maybeSingle();
+      await avisarPorCorreo(apt, pro || {}, { isReceipt: true, price: r.monto, transactionRef: `${NOMBRE_MEDIO[method as MedioPago]} · ${c.center.name}` });
+    }
+    return { ok: true, paymentId: pago.id, amount: r.monto, afterClose: !!cierre };
+  },
+
+  // Anular un cobro: no se borra, queda con motivo. La cita vuelve a "por cobrar".
+  'center-payment-void': async (u, b) => {
+    const c = await contexto(u.id, u.email, b.centerId, 'caja.anular');
+    const reason = txt(b.reason, 200);
+    exigir(reason.length >= 3, 400, 'Escribe el motivo de la anulación');
+    let q = supabase.from('center_payments').select('*').eq('center_id', c.centerId).is('voided_at', null);
+    q = b.paymentId ? q.eq('id', String(b.paymentId)) : q.eq('appointment_id', String(b.appointmentId || ''));
+    const { data: pago } = await q.maybeSingle();
+    if (!pago) {
+      // Pago marcado sin cobro de caja (en línea o anterior a la caja).
+      const apt = await citaEditable(c, b.appointmentId);
+      exigir(!(apt.mp_preference_id && apt.payment_status === 'Pagado'), 409, 'Ese pago se hizo en línea y no se puede anular aquí');
+      exigir(apt.payment_status === 'Pagado', 404, 'Esa cita no tiene un cobro vigente');
+      const { error } = await supabase.from('appointments').update({ payment_status: 'Pendiente', paid_at: null, payment_amount: null }).eq('id', apt.id);
+      if (error) throw new Fallo(500, 'No se pudo anular el pago');
+      await auditar(c, 'caja.anular', 'appointment', apt.id, { motivo: reason, sinCobro: true });
+      return { ok: true };
+    }
+    const fechaCobro = fechaChile(new Date(pago.created_at));
+    if (c.rol !== 'admin') {
+      const { data: cierre } = await supabase.from('center_cash_closings').select('id').eq('center_id', c.centerId).eq('date', fechaCobro).maybeSingle();
+      exigir(!cierre, 403, 'La caja de ese día ya se cerró. Solo administración puede anular este cobro.');
+    }
+    const { error } = await supabase.from('center_payments')
+      .update({ voided_at: new Date().toISOString(), voided_by: u.id, void_reason: reason }).eq('id', pago.id).is('voided_at', null);
+    if (error) throw new Fallo(500, 'No se pudo anular el cobro');
+    const { error: aErr } = await supabase.from('appointments').update({ payment_status: 'Pendiente', paid_at: null, payment_amount: null }).eq('id', pago.appointment_id);
+    if (aErr) console.error('[center] anular: la cita no volvió a pendiente:', aErr.message);
+    await auditar(c, 'caja.anular', 'payment', pago.id, { motivo: reason, monto: pago.amount, fecha: fechaCobro });
     return { ok: true };
+  },
+
+  // Caja de un día: cobros, citas por cobrar, pagos en línea, resumen y cierre.
+  'center-cashbox': async (u, b) => {
+    const c = await contexto(u.id, u.email, b.centerId, 'caja.ver');
+    const fecha = String(b.date || '');
+    exigir(/^\d{4}-\d{2}-\d{2}$/.test(fecha), 400, 'Fecha inválida');
+    const ids = await prosDelCentro(c.centerId);
+    // Margen de ±1 día en UTC y filtro exacto por fecha de Chile (cubre el cambio de horario).
+    const [pagos, citas, cierre, pros] = await Promise.all([
+      supabase.from('center_payments').select('*').eq('center_id', c.centerId)
+        .gte('created_at', `${sumarDias(fecha, -1)}T00:00:00Z`).lt('created_at', `${sumarDias(fecha, 2)}T00:00:00Z`).order('created_at'),
+      ids.length ? supabase.from('appointments').select(CITA_RECEPCION + ', mp_preference_id').in('professional_id', ids).eq('date', fecha)
+        .neq('status', 'Cancelado').neq('status', 'Bloqueado') : Promise.resolve({ data: [], error: null } as any),
+      supabase.from('center_cash_closings').select('*').eq('center_id', c.centerId).eq('date', fecha).maybeSingle(),
+      ids.length ? supabase.from('professionals').select('id, name').in('id', ids) : Promise.resolve({ data: [], error: null } as any),
+    ]);
+    if (pagos.error || citas.error) throw new Fallo(500, 'No se pudo cargar la caja');
+    const delDia = (pagos.data || []).filter((p: any) => fechaChile(new Date(p.created_at)) === fecha);
+    const citasPorId = new Map(((citas.data || []) as any[]).map(a => [a.id, a]));
+    // Citas de cobros de otros días (abonos de citas futuras): se buscan aparte.
+    const faltan = delDia.map((p: any) => p.appointment_id).filter((id: string) => !citasPorId.has(id));
+    if (faltan.length) {
+      const { data: extra } = await supabase.from('appointments').select(CITA_RECEPCION).in('id', faltan);
+      for (const a of (extra || []) as any[]) citasPorId.set(a.id, a);
+    }
+    const quien = [...new Set(delDia.flatMap((p: any) => [p.received_by, p.voided_by]).filter(Boolean))] as string[];
+    const { data: personas } = quien.length
+      ? await supabase.from('center_members').select('user_id, name, email').eq('center_id', c.centerId).in('user_id', quien) : { data: [] as any[] };
+    const nombreDe = new Map((personas || []).map((m: any) => [m.user_id, m.name || m.email || '']));
+    const nombrePro = new Map(((pros.data || []) as any[]).map(p => [p.id, p.name || '']));
+    const cobros = delDia.map((p: any) => {
+      const a = citasPorId.get(p.appointment_id) || {};
+      return {
+        id: p.id, appointmentId: p.appointment_id, professionalId: p.professional_id, professionalName: nombrePro.get(p.professional_id) || '',
+        patientName: a.patient_name || '', serviceName: a.service_name || '', citaFecha: a.date || null, citaHora: hm(a.time),
+        amount: p.amount, method: p.method, reference: p.reference || '', note: p.note || '', createdAt: p.created_at,
+        receivedBy: nombreDe.get(p.received_by) || '', afterClose: p.after_close,
+        voidedAt: p.voided_at, voidReason: p.void_reason || '', voidedBy: p.voided_by ? nombreDe.get(p.voided_by) || '' : '',
+      };
+    });
+    const conCobroVigente = new Set(cobros.filter(x => !x.voidedAt).map(x => x.appointmentId));
+    const delDiaCitas = ((citas.data || []) as any[]);
+    const porCobrar = delDiaCitas
+      .filter(a => a.payment_status !== 'Pagado' && ESTADOS_COBRABLES.includes(a.status) && !conCobroVigente.has(a.id))
+      .map(a => ({ ...aCita(a, c.centerId), professionalName: nombrePro.get(a.professional_id) || '' }))
+      .sort((x, y) => x.time.localeCompare(y.time));
+    const enLinea = delDiaCitas
+      .filter(a => a.payment_status === 'Pagado' && a.mp_preference_id)
+      .map(a => ({ ...aCita(a, c.centerId), professionalName: nombrePro.get(a.professional_id) || '' }));
+    return {
+      date: fecha, rol: c.rol, center: { id: c.centerId, name: c.center.name, address: c.center.address || '', city: c.center.city || '', phone: c.center.phone || '' },
+      cobros, porCobrar, enLinea,
+      resumen: resumenCaja(cobros.map(x => ({ id: x.id, amount: x.amount, method: x.method, professionalId: x.professionalId, voidedAt: x.voidedAt }))),
+      profesionales: Object.fromEntries(nombrePro),
+      cierre: cierre.data ? {
+        expected: cierre.data.expected, countedCash: cierre.data.counted_cash, difference: cierre.data.difference,
+        note: cierre.data.note || '', closedAt: cierre.data.closed_at, closedBy: nombreDe.get(cierre.data.closed_by) || '',
+      } : null,
+    };
+  },
+
+  // Cierre de caja: efectivo contado vs. esperado. Se puede volver a cerrar (queda auditado).
+  'center-cash-close': async (u, b) => {
+    const c = await contexto(u.id, u.email, b.centerId, 'caja.cerrar');
+    const fecha = String(b.date || '');
+    exigir(/^\d{4}-\d{2}-\d{2}$/.test(fecha), 400, 'Fecha inválida');
+    exigir(fecha <= fechaChile(new Date()), 400, 'No se puede cerrar una caja de un día futuro');
+    const contado = Math.round(Number(b.countedCash));
+    exigir(Number.isFinite(contado) && contado >= 0, 400, 'Escribe el efectivo contado');
+    const { data: pagos, error } = await supabase.from('center_payments').select('id, amount, method, professional_id, voided_at, created_at')
+      .eq('center_id', c.centerId).gte('created_at', `${sumarDias(fecha, -1)}T00:00:00Z`).lt('created_at', `${sumarDias(fecha, 2)}T00:00:00Z`);
+    if (error) throw new Fallo(500, 'No se pudo calcular la caja');
+    const r = resumenCaja((pagos || []).filter((p: any) => fechaChile(new Date(p.created_at)) === fecha)
+      .map((p: any) => ({ id: p.id, amount: p.amount, method: p.method, professionalId: p.professional_id, voidedAt: p.voided_at })));
+    const fila = {
+      center_id: c.centerId, date: fecha, expected: { ...r.porMedio, total: r.total, cobros: r.cobros },
+      counted_cash: contado, difference: diferenciaCierre(r.porMedio.efectivo, contado), note: txt(b.note, 300) || null,
+      closed_by: u.id, closed_at: new Date().toISOString(),
+    };
+    const { error: cErr } = await supabase.from('center_cash_closings').upsert(fila, { onConflict: 'center_id,date' });
+    if (cErr) throw new Fallo(500, 'No se pudo guardar el cierre');
+    await auditar(c, 'caja.cerrar', 'cash', null, { fecha, esperado: r.porMedio.efectivo, contado, diferencia: fila.difference });
+    return { ok: true, difference: fila.difference };
   },
 
   // ── Reporte: horas de box asignadas por profesional ──

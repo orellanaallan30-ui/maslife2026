@@ -4,6 +4,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Modal, { campo, etiqueta, botonPrimario, botonSecundario, botonPeligro } from './Modal';
 import { useDia } from './useDia';
+import CobroModal from './CobroModal';
 import {
   centerApi, CenterError, slotsLibres, fechaLarga, pesos, telWhatsApp,
   type CenterAppointment, type CenterRange,
@@ -20,7 +21,9 @@ interface Props {
 }
 
 const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDone }) => {
-  const [panel, setPanel] = useState<'' | 'reagendar' | 'liberar'>('');
+  const [panel, setPanel] = useState<'' | 'reagendar' | 'liberar' | 'anularPago'>('');
+  const [cobrando, setCobrando] = useState(false);
+  const [motivo, setMotivo] = useState('');
   const [fecha, setFecha] = useState(cita.date);
   const [hora, setHora] = useState('');
   const [avisar, setAvisar] = useState(true);
@@ -106,17 +109,41 @@ const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDo
             </div>
 
             {/* Llegada y pago */}
-            {!cerrada && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+              {!cerrada && (
                 <button type="button" disabled={ocupado || !['Confirmado', 'Pendiente', 'Llegado'].includes(cita.status)}
                   className={llego ? botonSecundario : botonPrimario}
                   onClick={() => ejecutar(() => centerApi.setStatus(centerId, cita.id, llego ? 'Confirmado' : 'Llegado'), llego ? 'Llegada quitada' : 'Paciente recepcionado', false)}>
                   <span className="material-icons-round text-base">how_to_reg</span>{llego ? 'Quitar llegada' : 'Marcar que llegó'}
                 </button>
-                <button type="button" disabled={ocupado} className={botonSecundario}
-                  onClick={() => ejecutar(() => centerApi.setPaid(centerId, cita.id, !pagada), pagada ? 'Pago quitado' : 'Pago registrado', false)}>
-                  <span className="material-icons-round text-base">paid</span>{pagada ? 'Quitar pago' : `Registrar pago${cita.price ? ` · ${pesos(cita.price)}` : ''}`}
+              )}
+              {cita.status !== 'Cancelado' && (pagada ? (
+                <button type="button" disabled={ocupado} className={botonSecundario} onClick={() => { setError(''); setMotivo(''); setPanel('anularPago'); }}>
+                  <span className="material-icons-round text-base text-emerald-600">verified</span>
+                  Pagado{cita.paymentAmount != null ? ` · ${pesos(cita.paymentAmount)}` : ''} · Anular
                 </button>
+              ) : (
+                <button type="button" disabled={ocupado} className={cerrada || llego ? botonPrimario : botonSecundario} onClick={() => setCobrando(true)}>
+                  <span className="material-icons-round text-base">point_of_sale</span>{`Cobrar${cita.price ? ` · ${pesos(cita.price)}` : ''}`}
+                </button>
+              ))}
+            </div>
+
+            {panel === 'anularPago' && (
+              <div className="border-t border-am-ink/[0.06] pt-4 space-y-3">
+                <p className="text-sm font-black text-am-ink">Anular el pago</p>
+                <p className="text-sm text-am-muted">El cobro queda registrado como anulado y la cita vuelve a "por cobrar".</p>
+                <div>
+                  <label className={etiqueta} htmlFor="cm-motivo">Motivo</label>
+                  <input id="cm-motivo" className={campo} value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Ej: se cobró al paciente equivocado" />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button type="button" className={botonSecundario} onClick={() => setPanel('')}>Volver</button>
+                  <button type="button" className={botonPeligro} disabled={ocupado || motivo.trim().length < 3}
+                    onClick={() => ejecutar(() => centerApi.voidPayment(centerId, { appointmentId: cita.id, reason: motivo.trim() }), 'Pago anulado')}>
+                    {ocupado ? 'Anulando…' : 'Anular pago'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -178,6 +205,11 @@ const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDo
               </div>
             )}
           </>
+        )}
+
+        {cobrando && (
+          <CobroModal centerId={centerId} cita={{ ...cita, professionalName: pro?.name }} onClose={() => setCobrando(false)}
+            onDone={() => { setCobrando(false); onDone(); onClose(); }} />
         )}
 
         {(error || dia.error) && <p role="alert" className="text-sm font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">{error || dia.error}</p>}

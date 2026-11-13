@@ -40,6 +40,35 @@ export interface ReportRow {
   porDia: Record<string, number>; porSemana: Record<string, number>; porMes: Record<string, number>;
 }
 
+export type MedioPago = 'efectivo' | 'transferencia' | 'debito' | 'credito' | 'otro';
+export const MEDIOS: { value: MedioPago; label: string; icon: string }[] = [
+  { value: 'efectivo', label: 'Efectivo', icon: 'payments' },
+  { value: 'transferencia', label: 'Transferencia', icon: 'account_balance' },
+  { value: 'debito', label: 'Débito', icon: 'credit_card' },
+  { value: 'credito', label: 'Crédito', icon: 'credit_score' },
+  { value: 'otro', label: 'Otro', icon: 'more_horiz' },
+];
+export const nombreMedio = (m: string): string => MEDIOS.find(x => x.value === m)?.label || m;
+
+export interface Cobro {
+  id: string; appointmentId: string; professionalId: string; professionalName: string;
+  patientName: string; serviceName: string; citaFecha: string | null; citaHora: string;
+  amount: number; method: MedioPago; reference: string; note: string; createdAt: string;
+  receivedBy: string; afterClose: boolean; voidedAt: string | null; voidReason: string; voidedBy: string;
+}
+export interface CitaCaja extends CenterAppointment { professionalName: string }
+export interface ResumenCaja {
+  total: number; cobros: number; anulados: number;
+  porMedio: Record<MedioPago, number>;
+  porProfesional: Record<string, { total: number; cobros: number }>;
+}
+export interface CierreCaja { expected: Record<string, number>; countedCash: number; difference: number; note: string; closedAt: string; closedBy: string }
+export interface Cashbox {
+  date: string; rol: CenterRole; center: CenterInfo;
+  cobros: Cobro[]; porCobrar: CitaCaja[]; enLinea: CitaCaja[];
+  resumen: ResumenCaja; profesionales: Record<string, string>; cierre: CierreCaja | null;
+}
+
 /** Error de una acción del centro, con el motivo que envía el servidor (p. ej. SLOT_TAKEN). */
 export class CenterError extends Error {
   constructor(message: string, public status: number, public reason?: string, public extra?: Record<string, unknown>) { super(message); }
@@ -97,7 +126,12 @@ export const centerApi = {
     call<{ appointment: CenterAppointment }>('center-reschedule', { centerId, appointmentId, date, time, fueraHorario }),
   cancel: (centerId: string, appointmentId: string, notify = true) => call<{ ok: true }>('center-cancel', { centerId, appointmentId, notify }),
   setStatus: (centerId: string, appointmentId: string, status: 'Llegado' | 'Confirmado') => call<{ ok: true }>('center-status', { centerId, appointmentId, status }),
-  setPaid: (centerId: string, appointmentId: string, paid: boolean) => call<{ ok: true }>('center-payment', { centerId, appointmentId, paid }),
+  charge: (centerId: string, d: { appointmentId: string; method: MedioPago; amount?: number; reference?: string; note?: string; sendReceipt?: boolean }) =>
+    call<{ ok: true; paymentId: string; amount: number; afterClose: boolean }>('center-payment', { centerId, ...d }),
+  voidPayment: (centerId: string, d: { paymentId?: string; appointmentId?: string; reason: string }) => call<{ ok: true }>('center-payment-void', { centerId, ...d }),
+  cashbox: (centerId: string, date: string) => call<Cashbox>('center-cashbox', { centerId, date }),
+  closeCash: (centerId: string, date: string, countedCash: number, note: string) =>
+    call<{ ok: true; difference: number }>('center-cash-close', { centerId, date, countedCash, note }),
 
   report: (centerId: string, from: string, to: string) => call<{ from: string; to: string; rows: ReportRow[] }>('center-report', { centerId, from, to }),
 };
