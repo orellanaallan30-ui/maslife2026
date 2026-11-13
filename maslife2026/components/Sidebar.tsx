@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useClinic } from '../ClinicContext';
+import { useCenter } from '../CenterContext';
 
 interface SidebarProps {
   onLogout?: () => void;
@@ -10,6 +11,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
   const navigate = useNavigate();
   const { loggedPro, isAdmin } = useClinic();
+  const { puedeGestionar } = useCenter();
 
   const menuItems = [
     { icon: 'home',           label: 'Inicio',    path: '/pro/dashboard' },
@@ -91,6 +93,19 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
             </span>
             <span className="font-semibold text-base text-slate-800 hidden lg:inline">Asistente IA</span>
           </button>
+
+          {/* Panel del centro (AgendaMas) — solo si administra o es recepción de un centro */}
+          {puedeGestionar && (
+            <button
+              onClick={() => navigate('/centro/recepcion')}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all w-full hover:bg-primary/5 group"
+            >
+              <span className="material-icons-round text-2xl text-primary flex-shrink-0 group-hover:scale-110 transition-transform">
+                meeting_room
+              </span>
+              <span className="font-semibold text-base text-slate-800 hidden lg:inline">Mi centro</span>
+            </button>
+          )}
 
           {/* Admin — solo si el email coincide con VITE_ADMIN_EMAIL */}
           {isAdmin && (

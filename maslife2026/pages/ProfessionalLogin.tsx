@@ -75,6 +75,9 @@ const ProfessionalLogin: React.FC = () => {
       if ('error' in result && result.error) {
         setError(result.error);
         setRl(checkRateLimit());
+      } else if ('staff' in result && result.staff) {
+        // Personal de recepción de un centro: va directo al panel del centro.
+        navigate('/centro/recepcion');
       } else if ('pro' in result && result.pro) {
         // Solo guardamos el email, nunca la contraseña en localStorage
         if (rememberMe) {
