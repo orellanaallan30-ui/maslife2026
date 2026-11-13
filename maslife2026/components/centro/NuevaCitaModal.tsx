@@ -146,54 +146,54 @@ const NuevaCitaModal: React.FC<Props> = ({ centerId, data, rango, inicial, onClo
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-slate-600">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold text-am-muted">
           <span className="inline-flex items-center gap-1">
             <span className="material-icons-round text-base text-slate-400">meeting_room</span>
             {hora ? (box ? box.name : 'Sin box asignado a esa hora') : 'Elige una hora para ver el box'}
           </span>
           <label className="inline-flex items-center gap-1.5 cursor-pointer">
-            <input type="checkbox" className="accent-primary w-4 h-4" checked={fueraHorario} onChange={e => setFueraHorario(e.target.checked)} />
+            <input type="checkbox" className="accent-am-600 w-4 h-4" checked={fueraHorario} onChange={e => setFueraHorario(e.target.checked)} />
             Agendar fuera del horario del profesional
           </label>
         </div>
         {dia.error && <p className="text-xs font-bold text-rose-600">{dia.error}</p>}
 
-        <div className="border-t border-slate-200 pt-4">
+        <div className="border-t border-am-ink/[0.07] pt-4">
           <div className="flex gap-2 mb-3">
             {(['buscar', 'nuevo'] as const).map(m => (
               <button key={m} type="button" onClick={() => { setModo(m); setError(''); }}
-                className={`flex-1 py-2 rounded-xl text-sm font-bold border ${modo === m ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-slate-300 text-slate-600'}`}>
+                className={`flex-1 py-2 rounded-xl text-sm font-bold border ${modo === m ? 'bg-am-50 border-am-500 text-am-600' : 'bg-white border-am-ink/15 text-am-muted'}`}>
                 {m === 'buscar' ? 'Paciente del centro' : 'Paciente nuevo'}
               </button>
             ))}
           </div>
 
           {modo === 'buscar' && (paciente ? (
-            <div className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3">
+            <div className="flex items-center justify-between gap-3 bg-white/60 border border-am-ink/[0.07] rounded-xl p-3">
               <div className="min-w-0">
-                <p className="text-sm font-black text-slate-900 truncate">{paciente.name}</p>
-                <p className="text-xs font-semibold text-slate-500 truncate">{[paciente.rut, paciente.phone, paciente.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'}</p>
+                <p className="text-sm font-black text-am-ink truncate">{paciente.name}</p>
+                <p className="text-xs font-semibold text-am-muted truncate">{[paciente.rut, paciente.phone, paciente.email].filter(Boolean).join(' · ') || 'Sin datos de contacto'}</p>
               </div>
-              <button type="button" className="text-xs font-bold text-primary shrink-0" onClick={() => { setPaciente(null); setQ(''); setResultados(null); }}>Cambiar</button>
+              <button type="button" className="text-xs font-bold text-am-600 shrink-0" onClick={() => { setPaciente(null); setQ(''); setResultados(null); }}>Cambiar</button>
             </div>
           ) : (
             <div>
               <label className={etiqueta} htmlFor="nc-q">Buscar por nombre, RUT o teléfono</label>
               <input id="nc-q" className={campo} value={q} onChange={e => setQ(e.target.value)} placeholder="Ej: María Pérez" autoComplete="off" />
-              {buscando && <p className="text-xs text-slate-500 mt-2">Buscando…</p>}
+              {buscando && <p className="text-xs text-am-muted mt-2">Buscando…</p>}
               {resultados && !buscando && (resultados.length ? (
-                <ul className="mt-2 border border-slate-200 rounded-xl divide-y divide-slate-100 max-h-44 overflow-y-auto">
+                <ul className="mt-2 border border-am-ink/[0.07] rounded-xl divide-y divide-am-ink/[0.06] max-h-44 overflow-y-auto">
                   {resultados.map(p => (
                     <li key={p.id}>
-                      <button type="button" onClick={() => setPaciente(p)} className="w-full text-left px-3 py-2 hover:bg-primary/5">
-                        <span className="block text-sm font-bold text-slate-800">{p.name}</span>
-                        <span className="block text-xs text-slate-500">{[p.rut, p.phone].filter(Boolean).join(' · ')}</span>
+                      <button type="button" onClick={() => setPaciente(p)} className="w-full text-left px-3 py-2 hover:bg-am-50/70">
+                        <span className="block text-sm font-bold text-am-ink">{p.name}</span>
+                        <span className="block text-xs text-am-muted">{[p.rut, p.phone].filter(Boolean).join(' · ')}</span>
                       </button>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-slate-500 mt-2">Sin resultados. Usa "Paciente nuevo" para registrarlo.</p>
+                <p className="text-xs text-am-muted mt-2">Sin resultados. Usa "Paciente nuevo" para registrarlo.</p>
               ))}
             </div>
           ))}

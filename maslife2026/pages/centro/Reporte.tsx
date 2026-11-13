@@ -76,12 +76,12 @@ const Reporte: React.FC = () => {
   return (
     <div className="p-4 lg:p-8 space-y-4">
       <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-        <h1 className="text-xl font-black text-slate-900">Horas de box por profesional</h1>
+        <h1 className="text-2xl font-black tracking-tight text-am-ink">Horas de box por profesional</h1>
         <div className="flex-1" />
-        <div className="flex rounded-xl border border-slate-300 overflow-hidden self-start" role="group" aria-label="Período">
+        <div className="flex rounded-xl bg-white/60 border border-am-ink/10 p-1 gap-1 self-start" role="group" aria-label="Período">
           {(['dia', 'semana', 'mes'] as const).map(p => (
             <button key={p} type="button" aria-pressed={periodo === p} onClick={() => setPeriodo(p)}
-              className={`px-3 py-2 text-sm font-bold ${periodo === p ? 'bg-primary text-white' : 'bg-white text-slate-600'}`}>
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition ${periodo === p ? 'bg-am-ink text-white shadow' : 'text-am-muted hover:text-am-ink'}`}>
               {p === 'dia' ? 'Día' : p === 'semana' ? 'Semana' : 'Mes'}
             </button>
           ))}
@@ -93,7 +93,7 @@ const Reporte: React.FC = () => {
         <button type="button" className={botonSecundario} onClick={() => setFecha(hoyLocal())}>Hoy</button>
         <button type="button" aria-label="Siguiente" className={`${botonSecundario} !px-2.5`} onClick={() => mover(1)}><span className="material-icons-round text-lg">chevron_right</span></button>
         <input type="date" aria-label="Fecha" className={`${campo} !w-auto`} value={fecha} onChange={e => e.target.value && setFecha(e.target.value)} />
-        <span className="text-base font-black text-slate-800 ml-1">{titulo}</span>
+        <span className="text-base font-black text-am-ink ml-1">{titulo}</span>
         <div className="flex-1" />
         <button type="button" className={botonSecundario} onClick={descargarCSV} disabled={!rows || !rows.length}>
           <span className="material-icons-round text-base">download</span>Descargar CSV
@@ -101,31 +101,31 @@ const Reporte: React.FC = () => {
       </div>
 
       {error && <p role="alert" className="bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl px-4 py-3 text-sm font-bold">{error}</p>}
-      {rows === null && <div className="flex justify-center py-20"><span className="material-icons-round animate-spin text-primary text-4xl">sync</span></div>}
+      {rows === null && <div className="flex justify-center py-20"><span className="material-icons-round animate-spin text-am-600 text-4xl">sync</span></div>}
 
       {rows && rows.length === 0 && !error && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
-          <p className="text-base font-black text-slate-800">Sin horas de box en este período</p>
-          <p className="text-sm text-slate-500 mt-1">Las horas se cuentan desde los horarios asignados en la pestaña Boxes.</p>
+        <div className="am-glass rounded-[22px] p-8 text-center">
+          <p className="text-base font-black text-am-ink">Sin horas de box en este período</p>
+          <p className="text-sm text-am-muted mt-1">Las horas se cuentan desde los horarios asignados en la pestaña Boxes.</p>
         </div>
       )}
 
       {rows && rows.length > 0 && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3">
-              <p className="text-2xl font-black text-slate-900 tabular-nums">{horasTexto(total)}</p>
-              <p className="text-xs font-bold text-slate-500">Total asignado</p>
+            <div className="am-glass rounded-[22px] px-4 py-3">
+              <p className="text-2xl font-black text-am-ink tabular-nums">{horasTexto(total)}</p>
+              <p className="text-xs font-bold text-am-muted">Total asignado</p>
             </div>
-            <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3">
-              <p className="text-2xl font-black text-slate-900 tabular-nums">{rows.length}</p>
-              <p className="text-xs font-bold text-slate-500">Profesionales con box</p>
+            <div className="am-glass rounded-[22px] px-4 py-3">
+              <p className="text-2xl font-black text-am-ink tabular-nums">{rows.length}</p>
+              <p className="text-xs font-bold text-am-muted">Profesionales con box</p>
             </div>
           </div>
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+          <div className="overflow-x-auto am-glass rounded-[22px]">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-xs font-bold text-slate-500">
+                <tr className="border-b border-am-ink/[0.07] text-xs font-bold text-am-muted">
                   <th scope="col" className="text-left px-4 py-2.5">Profesional</th>
                   {columnas.map(c => <th key={c.key} scope="col" className="text-right px-3 py-2.5 whitespace-nowrap">{c.titulo}</th>)}
                   <th scope="col" className="text-right px-4 py-2.5">Total</th>
@@ -133,27 +133,27 @@ const Reporte: React.FC = () => {
               </thead>
               <tbody>
                 {rows.map(r => (
-                  <tr key={r.professionalId} className="border-b border-slate-100 last:border-0">
+                  <tr key={r.professionalId} className="border-b border-am-ink/[0.05] last:border-0">
                     <th scope="row" className="text-left px-4 py-3">
-                      <span className="block font-black text-slate-800">{r.name}</span>
-                      {r.specialty && <span className="block text-xs font-semibold text-slate-500">{r.specialty}</span>}
+                      <span className="block font-black text-am-ink">{r.name}</span>
+                      {r.specialty && <span className="block text-xs font-semibold text-am-muted">{r.specialty}</span>}
                     </th>
                     {columnas.map(c => {
                       const min = r[c.de][c.key] || 0;
-                      return <td key={c.key} className={`text-right px-3 py-3 tabular-nums ${min ? 'font-bold text-slate-700' : 'text-slate-300'}`}>{min ? horasTexto(min) : '–'}</td>;
+                      return <td key={c.key} className={`text-right px-3 py-3 tabular-nums ${min ? 'font-bold text-am-ink' : 'text-slate-300'}`}>{min ? horasTexto(min) : '–'}</td>;
                     })}
-                    <td className="text-right px-4 py-3 font-black text-slate-900 tabular-nums whitespace-nowrap">{horasTexto(r.totalMin)}</td>
+                    <td className="text-right px-4 py-3 font-black text-am-ink tabular-nums whitespace-nowrap">{horasTexto(r.totalMin)}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t border-slate-200 bg-slate-50">
-                  <th scope="row" className="text-left px-4 py-3 font-black text-slate-800">Total</th>
+                <tr className="border-t border-am-ink/[0.07] bg-am-50/60">
+                  <th scope="row" className="text-left px-4 py-3 font-black text-am-ink">Total</th>
                   {columnas.map(c => {
                     const min = rows.reduce((s, r) => s + (r[c.de][c.key] || 0), 0);
-                    return <td key={c.key} className="text-right px-3 py-3 font-bold text-slate-700 tabular-nums">{min ? horasTexto(min) : '–'}</td>;
+                    return <td key={c.key} className="text-right px-3 py-3 font-bold text-am-ink tabular-nums">{min ? horasTexto(min) : '–'}</td>;
                   })}
-                  <td className="text-right px-4 py-3 font-black text-slate-900 tabular-nums whitespace-nowrap">{horasTexto(total)}</td>
+                  <td className="text-right px-4 py-3 font-black text-am-ink tabular-nums whitespace-nowrap">{horasTexto(total)}</td>
                 </tr>
               </tfoot>
             </table>

@@ -12,7 +12,7 @@ import CobroModal from '../../components/centro/CobroModal';
 import { imprimirComprobante } from '../../components/centro/Comprobante';
 import { toast } from '../../lib/toast';
 
-const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+const hora = (iso: string) => new Date(iso).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 const Caja: React.FC = () => {
   const { active } = useCenter();

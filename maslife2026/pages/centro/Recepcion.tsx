@@ -94,15 +94,15 @@ const Recepcion: React.FC = () => {
           </button>
           <input type="date" aria-label="Fecha" className={`${campo} !w-auto`} value={fecha} onChange={e => e.target.value && setFecha(e.target.value)} />
         </div>
-        <h1 className="text-lg lg:text-xl font-black text-slate-900 lg:ml-2">
+        <h1 className="text-xl lg:text-2xl font-black tracking-tight text-am-ink lg:ml-2">
           {vista === 'dia' ? fechaLarga(fecha) : `Semana del ${fechaCorta(rango.from)} al ${fechaCorta(rango.to)}`}
         </h1>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
-          <div className="flex rounded-xl border border-slate-300 overflow-hidden" role="group" aria-label="Vista">
+          <div className="flex rounded-xl bg-white/60 border border-am-ink/10 p-1 gap-1" role="group" aria-label="Vista">
             {(['dia', 'semana'] as const).map(v => (
               <button key={v} type="button" onClick={() => setVista(v)} aria-pressed={vista === v}
-                className={`px-3 py-2 text-sm font-bold ${vista === v ? 'bg-primary text-white' : 'bg-white text-slate-600'}`}>
+                className={`px-3 py-1.5 rounded-lg text-sm font-bold transition ${vista === v ? 'bg-am-ink text-white shadow' : 'text-am-muted hover:text-am-ink'}`}>
                 {v === 'dia' ? 'Día' : 'Semana'}
               </button>
             ))}
@@ -117,13 +117,18 @@ const Recepcion: React.FC = () => {
       {/* Resumen del día */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { n: resumen.total, t: 'Citas del día' },
-          { n: resumen.llegaron, t: 'Ya llegaron' },
-          { n: resumen.porPagar, t: 'Por pagar' },
+          { n: resumen.total, t: 'Citas del día', icon: 'event', color: 'text-am-600 bg-am-50' },
+          { n: resumen.llegaron, t: 'Ya llegaron', icon: 'how_to_reg', color: 'text-emerald-700 bg-emerald-50' },
+          { n: resumen.porPagar, t: 'Por pagar', icon: 'point_of_sale', color: 'text-amber-700 bg-amber-50' },
         ].map(k => (
-          <div key={k.t} className="bg-white border border-slate-200 rounded-2xl px-4 py-3">
-            <p className="text-2xl font-black text-slate-900 tabular-nums">{data ? k.n : '–'}</p>
-            <p className="text-xs font-bold text-slate-500">{k.t}</p>
+          <div key={k.t} className="am-glass rounded-[22px] px-4 py-3 lg:px-5 lg:py-4 flex items-center gap-3">
+            <span className={`hidden lg:flex w-11 h-11 rounded-2xl items-center justify-center shrink-0 ${k.color}`}>
+              <span className="material-icons-round text-[22px]">{k.icon}</span>
+            </span>
+            <div>
+              <p className="text-2xl lg:text-3xl font-black text-am-ink tabular-nums tracking-tight leading-none">{data ? k.n : '–'}</p>
+              <p className="text-xs font-bold text-am-muted mt-1">{k.t}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -137,7 +142,7 @@ const Recepcion: React.FC = () => {
               return (
                 <button key={p.id} type="button" aria-pressed={visible}
                   onClick={() => setOcultos(o => visible ? [...o, p.id] : o.filter(x => x !== p.id))}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold border ${visible ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-slate-300 text-slate-400 line-through'}`}>
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border ${visible ? 'bg-white/80 border-am-200 text-am-700 shadow-sm' : 'bg-white/40 border-am-ink/10 text-slate-400 line-through'}`}>
                   {p.name}
                 </button>
               );
@@ -158,7 +163,7 @@ const Recepcion: React.FC = () => {
       )}
 
       {!data && !error && (
-        <div className="flex items-center justify-center py-20"><span className="material-icons-round animate-spin text-primary text-4xl">sync</span></div>
+        <div className="flex items-center justify-center py-20"><span className="material-icons-round animate-spin text-am-600 text-4xl">sync</span></div>
       )}
 
       {data && (
@@ -174,7 +179,7 @@ const Recepcion: React.FC = () => {
       )}
 
       {data && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-am-muted">
           Toca una hora libre para agendar o una cita para gestionarla. La franja de color indica el box asignado. Se actualiza sola cada 20 segundos.
         </p>
       )}

@@ -68,23 +68,23 @@ const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDo
     <Modal titulo={cita.esBloqueo ? 'Horario bloqueado' : cita.ajena ? 'Hora ocupada' : cita.patientName || 'Cita'} onClose={onClose}>
       <div className="space-y-4">
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <div><dt className="text-xs font-bold text-slate-500">Fecha</dt><dd className="font-bold text-slate-800">{fechaLarga(cita.date)}</dd></div>
-          <div><dt className="text-xs font-bold text-slate-500">Hora</dt><dd className="font-bold text-slate-800 tabular-nums">{cita.time} · {cita.duration} min</dd></div>
-          <div><dt className="text-xs font-bold text-slate-500">Profesional</dt><dd className="font-bold text-slate-800">{pro?.name || '—'}</dd></div>
-          <div><dt className="text-xs font-bold text-slate-500">Box</dt><dd className="font-bold text-slate-800">{box?.name || 'Sin box'}</dd></div>
+          <div><dt className="text-xs font-bold text-am-muted">Fecha</dt><dd className="font-bold text-am-ink">{fechaLarga(cita.date)}</dd></div>
+          <div><dt className="text-xs font-bold text-am-muted">Hora</dt><dd className="font-bold text-am-ink tabular-nums">{cita.time} · {cita.duration} min</dd></div>
+          <div><dt className="text-xs font-bold text-am-muted">Profesional</dt><dd className="font-bold text-am-ink">{pro?.name || '—'}</dd></div>
+          <div><dt className="text-xs font-bold text-am-muted">Box</dt><dd className="font-bold text-am-ink">{box?.name || 'Sin box'}</dd></div>
           {!soloLectura && (
             <>
-              <div><dt className="text-xs font-bold text-slate-500">Servicio</dt><dd className="font-bold text-slate-800">{cita.serviceName || 'Consulta'}</dd></div>
-              <div><dt className="text-xs font-bold text-slate-500">Estado</dt><dd className="font-bold text-slate-800">{cita.status}{pagada ? ' · Pagado' : ''}</dd></div>
-              {cita.patientRut && <div><dt className="text-xs font-bold text-slate-500">RUT</dt><dd className="font-bold text-slate-800">{cita.patientRut}</dd></div>}
-              {cita.patientPhone && <div><dt className="text-xs font-bold text-slate-500">Teléfono</dt><dd className="font-bold text-slate-800">{cita.patientPhone}</dd></div>}
-              {cita.patientEmail && <div className="col-span-2"><dt className="text-xs font-bold text-slate-500">Correo</dt><dd className="font-bold text-slate-800 break-all">{cita.patientEmail}</dd></div>}
+              <div><dt className="text-xs font-bold text-am-muted">Servicio</dt><dd className="font-bold text-am-ink">{cita.serviceName || 'Consulta'}</dd></div>
+              <div><dt className="text-xs font-bold text-am-muted">Estado</dt><dd className="font-bold text-am-ink">{cita.status}{pagada ? ' · Pagado' : ''}</dd></div>
+              {cita.patientRut && <div><dt className="text-xs font-bold text-am-muted">RUT</dt><dd className="font-bold text-am-ink">{cita.patientRut}</dd></div>}
+              {cita.patientPhone && <div><dt className="text-xs font-bold text-am-muted">Teléfono</dt><dd className="font-bold text-am-ink">{cita.patientPhone}</dd></div>}
+              {cita.patientEmail && <div className="col-span-2"><dt className="text-xs font-bold text-am-muted">Correo</dt><dd className="font-bold text-am-ink break-all">{cita.patientEmail}</dd></div>}
             </>
           )}
         </dl>
 
-        {cita.ajena && <p className="text-sm text-slate-600">El profesional tiene esta hora tomada en otro lugar. Recepción no puede verla ni modificarla.</p>}
-        {cita.esBloqueo && <p className="text-sm text-slate-600">El profesional bloqueó este horario desde su agenda. Solo él puede quitar el bloqueo.</p>}
+        {cita.ajena && <p className="text-sm text-am-muted">El profesional tiene esta hora tomada en otro lugar. Recepción no puede verla ni modificarla.</p>}
+        {cita.esBloqueo && <p className="text-sm text-am-muted">El profesional bloqueó este horario desde su agenda. Solo él puede quitar el bloqueo.</p>}
 
         {!soloLectura && (
           <>
@@ -97,15 +97,15 @@ const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDo
               )}
               {cita.patientPhone && (
                 <a className={botonSecundario} href={`tel:${cita.patientPhone.replace(/[^\d+]/g, '')}`}>
-                  <span className="material-icons-round text-base text-slate-500">call</span>Llamar
+                  <span className="material-icons-round text-base text-am-muted">call</span>Llamar
                 </a>
               )}
               {cita.patientEmail && (
                 <a className={botonSecundario} href={`mailto:${cita.patientEmail}?subject=${encodeURIComponent(`Tu hora en ${data.center.name}`)}&body=${encodeURIComponent(mensaje)}`}>
-                  <span className="material-icons-round text-base text-slate-500">mail</span>Correo
+                  <span className="material-icons-round text-base text-am-muted">mail</span>Correo
                 </a>
               )}
-              {!wa && !cita.patientPhone && !cita.patientEmail && <p className="text-sm text-slate-500">Este paciente no tiene datos de contacto.</p>}
+              {!wa && !cita.patientPhone && !cita.patientEmail && <p className="text-sm text-am-muted">Este paciente no tiene datos de contacto.</p>}
             </div>
 
             {/* Llegada y pago */}
@@ -149,7 +149,7 @@ const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDo
 
             {/* Reagendar / liberar */}
             {!cerrada && panel === '' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 border-t border-slate-200 pt-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 border-t border-am-ink/[0.07] pt-4">
                 <button type="button" className={botonSecundario} onClick={() => { setPanel('reagendar'); setError(''); }}>
                   <span className="material-icons-round text-base">event_repeat</span>Reagendar
                 </button>
@@ -160,8 +160,8 @@ const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDo
             )}
 
             {panel === 'reagendar' && (
-              <div className="border-t border-slate-200 pt-4 space-y-3">
-                <p className="text-sm font-black text-slate-800">Reagendar</p>
+              <div className="border-t border-am-ink/[0.07] pt-4 space-y-3">
+                <p className="text-sm font-black text-am-ink">Reagendar</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className={etiqueta} htmlFor="cm-fecha">Nueva fecha</label>
@@ -176,7 +176,7 @@ const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDo
                     </select>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500">Se avisará por correo al profesional y al paciente{cita.patientEmail ? '' : ' (este paciente no tiene correo)'}.</p>
+                <p className="text-xs text-am-muted">Se avisará por correo al profesional y al paciente{cita.patientEmail ? '' : ' (este paciente no tiene correo)'}.</p>
                 <div className="flex gap-2 justify-end">
                   <button type="button" className={botonSecundario} onClick={() => setPanel('')}>Volver</button>
                   <button type="button" className={botonPrimario} disabled={ocupado || !hora}
@@ -188,11 +188,11 @@ const CitaModal: React.FC<Props> = ({ centerId, data, rango, cita, onClose, onDo
             )}
 
             {panel === 'liberar' && (
-              <div className="border-t border-slate-200 pt-4 space-y-3">
-                <p className="text-sm font-black text-slate-800">¿Liberar esta hora?</p>
-                <p className="text-sm text-slate-600">La cita quedará cancelada y el horario volverá a estar disponible.</p>
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
-                  <input type="checkbox" className="accent-primary w-4 h-4" checked={avisar} onChange={e => setAvisar(e.target.checked)} />
+              <div className="border-t border-am-ink/[0.07] pt-4 space-y-3">
+                <p className="text-sm font-black text-am-ink">¿Liberar esta hora?</p>
+                <p className="text-sm text-am-muted">La cita quedará cancelada y el horario volverá a estar disponible.</p>
+                <label className="flex items-center gap-2 text-sm font-semibold text-am-ink cursor-pointer">
+                  <input type="checkbox" className="accent-am-600 w-4 h-4" checked={avisar} onChange={e => setAvisar(e.target.checked)} />
                   Avisar por correo al profesional y al paciente
                 </label>
                 <div className="flex gap-2 justify-end">
