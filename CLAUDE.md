@@ -224,6 +224,35 @@ git push -u origin main-local:main
 
 ---
 
+## Centros (AgendaMas): recepción, boxes y reporte de horas
+
+AgendaMas es el nombre del producto (la agenda que se ofrece a otros centros). Un **centro**
+agrupa profesionales, personal de recepción y boxes. Quien no pertenece a un centro usa la
+plataforma igual que siempre.
+
+```
+Tablas (migración 0023): centers, center_members (admin | recepcion | profesional),
+  boxes, box_assignments, center_audit  + appointments.center_id / box_id / created_by
+Servidor:  api/_lib/center.ts (acciones center-*) → se despachan desde api/book-appointment.ts
+Reglas:    api/_lib/centerRules.ts (permisos, horas libres, choques de box, reporte) — con tests
+Cliente:   centerService.ts, CenterContext.tsx, pages/centro/*, components/centro/*
+Rutas:     /centro/recepcion · /centro/boxes · /centro/reporte · /centro/equipo
+```
+
+Reglas que no deben romperse:
+- **Recepción nunca lee la ficha clínica.** Las tablas de centro tienen RLS sin políticas y las
+  políticas de `patients`/`appointments` no cambian: todo lo que hace recepción pasa por las
+  acciones `center-*`, que devuelven solo las columnas de `PACIENTE_CONTACTO` y `CITA_RECEPCION`.
+  No agregar columnas clínicas (ni `notes`) a esas listas.
+- Un profesional invitado debe **aceptar** (Ajustes) antes de que recepción vea su agenda.
+- Las citas creadas por recepción usan `booking_source: 'presencial'` y el precio sale de
+  `professionals.services` en el servidor.
+- Liberar una hora desde recepción la deja `Cancelado` (no se borra) y queda en `center_audit`.
+- El reporte cuenta **horas de box asignadas** (`box_assignments`), no citas.
+- Las funciones nuevas van como `action` en un endpoint existente (siguen siendo 12).
+
+---
+
 ## Organización por áreas (una sesión por tema)
 
 Cada tema va en su propia sesión, etiquetada, para no mezclar contexto:

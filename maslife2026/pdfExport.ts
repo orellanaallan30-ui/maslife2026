@@ -110,7 +110,7 @@ export async function exportSOAPtoPDF(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(255, 255, 255);
-  doc.text('AgendaMaslife', clinicLogoBase64 ? MARGIN + 26 : MARGIN, 14);
+  doc.text('AgendaMas', clinicLogoBase64 ? MARGIN + 26 : MARGIN, 14);
 
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
@@ -274,7 +274,7 @@ export async function exportSOAPtoPDF(
     doc.setFontSize(7);
     doc.setTextColor(148, 163, 184);
     doc.text(
-      `AgendaMaslife — Documento oficial. Página ${p} de ${totalPages}`,
+      `AgendaMas — Documento oficial. Página ${p} de ${totalPages}`,
       W / 2, 290, { align: 'center' }
     );
     doc.text(
@@ -1518,7 +1518,7 @@ export async function exportOrdenPDF(
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);
-  doc.text('Documento emitido por AgendaMaslife. Válido con firma electrónica del profesional.', W / 2, y, { align: 'center' });
+  doc.text('Documento emitido por AgendaMas. Válido con firma electrónica del profesional.', W / 2, y, { align: 'center' });
 
   drawFooters(doc, W, professional);
 
