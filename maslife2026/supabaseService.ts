@@ -1,5 +1,6 @@
 // supabaseService.ts — v3: Supabase Auth + sin hardcodeos + rate-limiting
 import { supabase } from './supabaseClient';
+import { centerApi } from './centerService';
 import { Patient, Appointment, Transaction, ProfessionalProfile, Review } from './types';
 
 // Detecta si un error de Supabase se debe a la sesión (JWT expirado / sin permiso
@@ -79,7 +80,7 @@ export function clearRateLimit(): void { localStorage.removeItem(RL_KEY); }
 export async function loginProfessional(
   email: string,
   password: string
-): Promise<{ pro: ProfessionalProfile; error?: never } | { pro?: never; error: string }> {
+): Promise<{ pro: ProfessionalProfile; error?: never; staff?: never } | { pro?: never; error: string; staff?: never } | { staff: true; pro?: never; error?: never }> {
   const rl = checkRateLimit();
   if (rl.blocked) {
     const min = Math.ceil(rl.remainingMs / 60000);
@@ -105,6 +106,17 @@ export async function loginProfessional(
     .maybeSingle();
 
   if (proError || !proData) {
+    // Sin perfil profesional: puede ser personal de recepción de un centro
+    // (AgendaMas). Entra directo al panel del centro, sin acceso a /pro/*.
+    try {
+      const { memberships } = await centerApi.me();
+      if (memberships.some(m => m.status === 'active' && (m.role === 'recepcion' || m.role === 'admin'))) {
+        clearRateLimit();
+        return { staff: true };
+      }
+    } catch (err) {
+      console.error('[login] no se pudo consultar los centros:', (err as Error)?.message);
+    }
     await supabase.auth.signOut();
     return { error: 'Perfil de profesional no encontrado. Contacta al administrador.' };
   }

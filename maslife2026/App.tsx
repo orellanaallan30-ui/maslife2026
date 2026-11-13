@@ -36,6 +36,12 @@ import Sidebar          from './components/Sidebar';
 import GlobalAIPanel    from './components/GlobalAIPanel';
 import ToastContainer   from './components/ToastContainer';
 import { ClinicProvider, useClinic } from './ClinicContext';
+import { CenterProvider } from './CenterContext';
+import CentroLayout  from './pages/centro/CentroLayout';
+import CentroRecepcion from './pages/centro/Recepcion';
+import CentroBoxes   from './pages/centro/Boxes';
+import CentroReporte from './pages/centro/Reporte';
+import CentroEquipo  from './pages/centro/Equipo';
 import { AppView, Notification } from './types';
 import logoClinica from './assets/logo-clinica.png';
 import logoAgenda  from './assets/logo-agenda.png';
@@ -224,6 +230,8 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
 
   // Ocultar navbar completamente en landing (MainHome tiene su propia)
   if (esRutaLanding(location.pathname)) return null;
+  // El panel del centro (AgendaMas) trae su propia cabecera con pestañas.
+  if (location.pathname.startsWith('/centro')) return null;
 
   const isPublicView = isFullPublic;
 
@@ -609,6 +617,14 @@ const AppContent: React.FC = () => {
             <Route path="/pro/settings"    element={<Settings />} />
             <Route path="/pro/referral"    element={<ReferralProgram />} />
           </Route>
+          {/* Panel del centro (AgendaMas): administración y recepción. El acceso lo valida CentroLayout. */}
+          <Route element={<CentroLayout />}>
+            <Route path="/centro"           element={<Navigate to="/centro/recepcion" replace />} />
+            <Route path="/centro/recepcion" element={<CentroRecepcion />} />
+            <Route path="/centro/boxes"     element={<CentroBoxes />} />
+            <Route path="/centro/reporte"   element={<CentroReporte />} />
+            <Route path="/centro/equipo"    element={<CentroEquipo />} />
+          </Route>
           {/* Protegidas admin */}
           <Route element={<AdminGuard><ProLayout /></AdminGuard>}>
             <Route path="/admin/management" element={<AdminManagement />} />
@@ -623,8 +639,10 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => (
   <BrowserRouter>
     <ClinicProvider>
-      <AppContent />
-      <ToastContainer />
+      <CenterProvider>
+        <AppContent />
+        <ToastContainer />
+      </CenterProvider>
     </ClinicProvider>
   </BrowserRouter>
 );

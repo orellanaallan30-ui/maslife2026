@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ProfessionalProfile, Service } from '../types';
 import { useClinic } from '../ClinicContext';
+import CentroEnAjustes from '../components/centro/CentroEnAjustes';
 import { saveProfessional, getProfessionalBySlugOrId } from '../supabaseService';
 import { resizeImageDataUrl } from '../lib/imageResize';
 import { supabase } from '../supabaseClient';
@@ -1061,6 +1062,7 @@ const Settings: React.FC = () => {
                 </div>
               </section>
 
+              <CentroEnAjustes />
             </div>
           )}
 
