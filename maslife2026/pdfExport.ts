@@ -316,7 +316,7 @@ function drawMembrete(doc: jsPDFInstance, W: number, MARGIN: number, rightText: 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(15);
   doc.setTextColor(255, 255, 255);
-  doc.text('Agenda Maslife', MARGIN, 13);
+  doc.text('AgendaMas', MARGIN, 13);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(224, 242, 241);
@@ -337,7 +337,7 @@ function drawFooters(doc: jsPDFInstance, W: number, pro: ProfessionalProfile): v
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(120, 132, 150);
-    doc.text(`Agenda Maslife · ${pro.name} · ${pro.specialty}`, 18, 291);
+    doc.text(`AgendaMas · ${pro.name} · ${pro.specialty}`, 18, 291);
     doc.text(`Página ${p} de ${total}`, W - 18, 291, { align: 'right' });
   }
 }

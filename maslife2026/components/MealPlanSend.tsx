@@ -100,7 +100,7 @@ export const MealPlanSend: React.FC<Props> = ({ patient, loggedPro, rows }) => {
       const planLink = planId ? `${window.location.origin}/plan/${planId}` : '';
       const list = visibleRows.map(r => `• ${r.meal}: ${r.food}${r.quantity ? ` (${r.quantity})` : ''}`).join('\n');
       const linkLine = planLink ? `\n\n🍽️ Ver plan completo con detalle: ${planLink}` : '';
-      const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de Agenda Maslife. Te envío tu plan alimentario:\n\n${list}${linkLine}\n\nCualquier duda, escríbeme por aquí.`;
+      const msg = `Hola ${patient.name || ''} 👋 Soy ${loggedPro.name} de AgendaMas. Te envío tu plan alimentario:\n\n${list}${linkLine}\n\nCualquier duda, escríbeme por aquí.`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
       toast.success('Plan enviado por WhatsApp');
     } catch (e) {

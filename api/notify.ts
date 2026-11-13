@@ -911,7 +911,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       restSeconds: typeof it?.restSeconds === 'number' ? it.restSeconds : null,
     }));
 
-    const subject = `Tu rutina de ejercicios — ${cleanLine(routineTitle) || 'Agenda Maslife'}`;
+    const subject = `Tu rutina de ejercicios — ${cleanLine(routineTitle) || 'AgendaMas'}`;
     try {
       await sendEmail(RESEND_KEY, FROM, String(patientEmail), subject,
         exerciseRoutineHtml({
@@ -955,7 +955,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       kcal: cleanLine(r?.kcal).slice(0, 12),
     }));
 
-    const subject = `Tu plan alimentario — ${cleanLine(planTitle) || 'Agenda Maslife'}`;
+    const subject = `Tu plan alimentario — ${cleanLine(planTitle) || 'AgendaMas'}`;
     try {
       await sendEmail(RESEND_KEY, FROM, String(patientEmail), subject,
         mealPlanHtml({

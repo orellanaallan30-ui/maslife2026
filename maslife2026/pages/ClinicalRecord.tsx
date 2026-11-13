@@ -630,7 +630,7 @@ const ClinicalRecord: React.FC = () => {
     try {
       const clinicalContext = buildClinicalContext();
       const actionPrompt = ACTION_PROMPTS[action] || '';
-      const systemPrompt = `Eres AgenteMasLife, asistente clínico inteligente integrado en el software Agenda Maslife (Chile).
+      const systemPrompt = `Eres AgenteMasLife, asistente clínico inteligente integrado en el software AgendaMas (Chile).
 Especialidad del profesional: ${loggedPro?.specialty || 'Salud General'}.
 Fecha actual: ${new Date().toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}.
 
