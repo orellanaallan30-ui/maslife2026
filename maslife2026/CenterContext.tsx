@@ -3,8 +3,9 @@
 // quien no pertenece a un centro no nota ningún cambio.
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from './supabaseClient';
-import { centerApi, type Membership } from './centerService';
+import { centerApi, enDemo, type Membership } from './centerService';
 
 interface CenterContextType {
   /** null = aún no se sabe (cargando); [] = no pertenece a ningún centro. */
@@ -26,7 +27,11 @@ export const CenterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [memberships, setMemberships] = useState<Membership[] | null>(null);
   const [selected, setSelected] = useState<string | null>(() => localStorage.getItem(CLAVE));
 
+  // En la demo pública (/demo) este contexto no consulta nada: la demo trae el suyo.
+  const demo = useLocation().pathname.startsWith('/demo');
+
   const reload = useCallback(async (): Promise<Membership[]> => {
+    if (enDemo()) return [];
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setMemberships([]); return []; }
     try {
@@ -41,8 +46,10 @@ export const CenterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
+  // Carga al entrar y también al salir de la demo hacia el panel real.
+  useEffect(() => { if (!demo) reload(); }, [demo, reload]);
+
   useEffect(() => {
-    reload();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(event => {
       if (event === 'SIGNED_OUT') { setMemberships([]); }
       else if (event === 'SIGNED_IN') { reload(); }
@@ -64,6 +71,22 @@ export const CenterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, [memberships, selected, reload]);
 
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+};
+
+/** Contexto de la demo pública: un centro de ejemplo con rol de administración, sin sesión. */
+export const DemoCenterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [memberships, setMemberships] = useState<Membership[] | null>(null);
+  const reload = useCallback(async (): Promise<Membership[]> => {
+    const { memberships: m } = await centerApi.me();
+    setMemberships(m);
+    return m;
+  }, []);
+  useEffect(() => { reload().catch(() => setMemberships([])); }, [reload]);
+  const value = useMemo<CenterContextType>(() => ({
+    memberships, active: memberships?.[0] || null, invites: [], puedeGestionar: !!memberships?.[0],
+    selectCenter: () => {}, reload,
+  }), [memberships, reload]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 };
 

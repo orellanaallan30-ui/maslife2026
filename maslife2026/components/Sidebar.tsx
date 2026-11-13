@@ -94,10 +94,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
             <span className="font-semibold text-base text-slate-800 hidden lg:inline">Asistente IA</span>
           </button>
 
-          {/* Panel del centro (AgendaMas) — solo si administra o es recepción de un centro */}
-          {puedeGestionar && (
+          {/* Panel del centro (AgendaMas). Sin centro, lleva al bloque de Ajustes para crearlo. */}
+          {(
             <button
-              onClick={() => navigate('/centro/recepcion')}
+              onClick={() => navigate(puedeGestionar ? '/centro/recepcion' : '/pro/settings?seccion=centro')}
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all w-full hover:bg-primary/5 group"
             >
               <span className="material-icons-round text-2xl text-primary flex-shrink-0 group-hover:scale-110 transition-transform">

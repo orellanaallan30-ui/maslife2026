@@ -47,7 +47,7 @@ const CentroEnAjustes: React.FC = () => {
   };
 
   return (
-    <section className="bg-white rounded-2xl border border-slate-200 p-4 lg:p-8 space-y-4">
+    <section id="centro" className="bg-white rounded-2xl border border-slate-200 p-4 lg:p-8 space-y-4 scroll-mt-24">
       <div>
         <h2 className="text-base font-black text-slate-900">Centro · {PRODUCT_NAME}</h2>
         <p className="text-sm text-slate-500 mt-1">Trabaja con recepción y boxes: una recepcionista agenda para todos los profesionales del centro y se lleva el control de horas de box.</p>

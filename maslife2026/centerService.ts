@@ -45,7 +45,14 @@ export class CenterError extends Error {
   constructor(message: string, public status: number, public reason?: string, public extra?: Record<string, unknown>) { super(message); }
 }
 
+/** true en la demo pública (/demo): las llamadas van al centro de ejemplo en memoria, sin red ni sesión. */
+export const enDemo = (): boolean => typeof window !== 'undefined' && window.location.pathname.startsWith('/demo');
+
 async function call<T>(action: string, body: Record<string, unknown> = {}): Promise<T> {
+  if (enDemo()) {
+    const { demoCall } = await import('./centerDemo');
+    return demoCall<T>(action, body);
+  }
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.access_token) throw new CenterError('Tu sesión terminó. Vuelve a entrar.', 401);
   let res: Response;

@@ -4,7 +4,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCenter } from '../../CenterContext';
 import {
-  centerApi, hoyLocal, sumarDias, lunesDe, fechaLarga, fechaCorta,
+  centerApi, hoyLocal, sumarDias, lunesDe, fechaLarga, fechaCorta, diaSemana, enDemo,
   type CenterAppointment, type CenterRange,
 } from '../../centerService';
 import DayGrid, { type Columna } from '../../components/centro/DayGrid';
@@ -17,7 +17,8 @@ const REFRESCO_MS = 20000;
 const Recepcion: React.FC = () => {
   const { active } = useCenter();
   const centerId = active!.center.id;
-  const [fecha, setFecha] = useState(hoyLocal());
+  // La demo abierta un domingo parte en lunes, para que no se vea vacía.
+  const [fecha, setFecha] = useState(() => { const h = hoyLocal(); return enDemo() && diaSemana(h) === 0 ? sumarDias(h, 1) : h; });
   const [vista, setVista] = useState<'dia' | 'semana'>('dia');
   const [proSemana, setProSemana] = useState('');
   const [ocultos, setOcultos] = useState<string[]>([]);
