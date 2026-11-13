@@ -58,6 +58,8 @@ const Finances: React.FC = () => {
   };
   const onLogout = () => logout(navigate, 'PROFESSIONAL');
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [menuMas, setMenuMas] = useState(false);
+  const [textoReinicio, setTextoReinicio] = useState('');
   const [showManualModal, setShowManualModal] = useState(false);
 
   // ── Panel de Ventas MercadoPago ──
@@ -113,8 +115,11 @@ const Finances: React.FC = () => {
   const totalIncome = incomeFromApps + incomeManual;
   const netBalance = totalIncome - expensesManual;
 
-  const totalItems = appointments.length + manualTransactions.length;
-  const ticketPromedio = totalItems > 0 ? totalIncome / totalItems : 0;
+  // Promedio por pago: solo cuenta lo que efectivamente se cobró. Antes dividía
+  // también por citas sin pagar, y el valor salía muy por debajo del precio real.
+  const pagosContados = appointments.filter(a => a.paymentStatus === 'Pagado').length
+    + manualTransactions.filter(t => t.type === 'Ingreso').length;
+  const ticketPromedio = pagosContados > 0 ? Math.round(totalIncome / pagosContados) : 0;
 
   // Gráfico dinámico - Se asegura que siempre haya al menos dos puntos para evitar errores de renderizado
   const incomeData = [
@@ -149,7 +154,7 @@ const Finances: React.FC = () => {
         <div className="max-w-[1400px] mx-auto space-y-4 md:space-y-10">
           <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-6">
             <div>
-              <p className="text-[11px] font-black text-teal-600 uppercase tracking-[0.05em] mb-0.5">Agenda Maslife Finanzas</p>
+              <p className="text-[11px] font-black text-teal-600 uppercase tracking-[0.05em] mb-0.5">AgendaMas Finanzas</p>
               <h1 className="text-xl md:text-3xl font-black tracking-tight text-slate-900">Balance de Gestión Clínica</h1>
             </div>
             <div className="flex items-center gap-2 md:gap-4">
@@ -160,17 +165,37 @@ const Finances: React.FC = () => {
                 <span className="material-icons-round text-base">add_circle</span>
                 <span>NUEVO REGISTRO</span>
               </button>
-              <button
-                onClick={() => setShowConfirmReset(true)}
-                className="bg-white border-b-4 border-slate-200 text-rose-500 px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-rose-50 hover:border-rose-300 active:border-b-0 active:translate-y-1 flex items-center gap-1.5 transition-all shadow-sm"
-              >
-                <span className="material-icons-round text-sm">history_toggle_off</span>
-                <span className="hidden md:inline">REINICIAR</span>
-              </button>
               <button onClick={() => window.print()} className="bg-teal-500 text-white px-3 md:px-8 py-3 md:py-5 rounded-xl md:rounded-2xl font-black text-[11px] uppercase tracking-widest border-b-4 border-teal-700 active:border-b-0 active:translate-y-1 shadow-teal-500/60 hover:brightness-110 flex items-center gap-1.5 transition-all">
                 <span className="material-icons-round text-sm">download</span>
                 <span className="hidden md:inline">INFORME</span>
               </button>
+              {/* Acción destructiva fuera de la fila principal: va en un menú aparte. */}
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-label="Más opciones"
+                  aria-expanded={menuMas}
+                  onClick={() => setMenuMas(v => !v)}
+                  className="w-11 h-11 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white border border-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
+                >
+                  <span className="material-icons-round">more_horiz</span>
+                </button>
+                {menuMas && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setMenuMas(false)} />
+                    <div className="absolute right-0 mt-2 z-50 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl p-2">
+                      <button
+                        type="button"
+                        onClick={() => { setMenuMas(false); setTextoReinicio(''); setShowConfirmReset(true); }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-sm font-bold text-rose-600 hover:bg-rose-50"
+                      >
+                        <span className="material-icons-round text-base">history_toggle_off</span>
+                        Borrar registros manuales…
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </header>
 
@@ -179,7 +204,7 @@ const Finances: React.FC = () => {
             <div className="flex justify-between items-end">
               <div>
                 <h1 className="text-4xl font-black text-slate-900 mb-2">REPORTE FINANCIERO CLÍNICO</h1>
-                <p className="text-teal-600 font-black tracking-widest uppercase text-sm">Agenda Maslife 🧡 Gestión de Balance</p>
+                <p className="text-teal-600 font-black tracking-widest uppercase text-sm">AgendaMas 🧡 Gestión de Balance</p>
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de Generación</p>
@@ -193,7 +218,7 @@ const Finances: React.FC = () => {
               { label: 'Balance Neto', val: `$${netBalance.toLocaleString('es-CL')}`, grow: 'Saldo Final', icon: 'account_balance', color: 'text-indigo-600', bg: 'bg-indigo-50' },
               { label: 'Ingresos Totales', val: `$${totalIncome.toLocaleString('es-CL')}`, grow: 'Citas + Otros', icon: 'trending_up', color: 'text-teal-600', bg: 'bg-teal-50' },
               { label: 'Gastos Registrados', val: `$${expensesManual.toLocaleString('es-CL')}`, grow: 'Egresos', icon: 'trending_down', color: 'text-rose-500', bg: 'bg-rose-50' },
-              { label: 'Ticket Promedio', val: `$${ticketPromedio.toLocaleString('es-CL')}`, grow: 'Eficiencia', icon: 'analytics', color: 'text-amber-500', bg: 'bg-amber-50' },
+              { label: 'Promedio por pago', val: `$${ticketPromedio.toLocaleString('es-CL')}`, grow: `${pagosContados} pagos`, icon: 'analytics', color: 'text-amber-500', bg: 'bg-amber-50' },
             ].map((stat, i) => (
               <div key={i} className="bg-white p-4 md:p-8 rounded-2xl md:rounded-blob-lg border border-slate-100 shadow-sm hover:-translate-y-1 hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between mb-3 md:mb-8">
@@ -504,12 +529,16 @@ const Finances: React.FC = () => {
               </div>
               <h3 className="text-xl font-black text-slate-900 text-center mb-2">¿Reiniciar ingresos y gastos manuales?</h3>
               <p className="text-slate-500 text-sm text-center mb-10 leading-relaxed font-medium">Se eliminarán solo los ingresos y gastos que digitaste manualmente en Finanzas. <strong>Tus citas y tu agenda NO se tocan.</strong> Esta acción no se puede deshacer.</p>
+              <label htmlFor="fin-reinicio" className="block text-xs font-bold text-slate-500 mb-2">Para confirmar, escribe BORRAR</label>
+              <input id="fin-reinicio" autoComplete="off" value={textoReinicio} onChange={e => setTextoReinicio(e.target.value)}
+                className="w-full mb-6 px-4 py-3 rounded-xl border border-slate-200 text-sm font-bold uppercase tracking-widest focus:outline-none focus:border-rose-400" />
               <div className="flex gap-4">
                 <button onClick={() => setShowConfirmReset(false)} className="flex-1 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Cancelar</button>
                 <button
+                  disabled={textoReinicio.trim().toUpperCase() !== 'BORRAR'}
                   onClick={() => { onReset(); setShowConfirmReset(false); }}
-                  className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-rose-600/20 transition-all hover:bg-rose-700"
-                >REINICIAR</button>
+                  className="flex-1 py-4 bg-rose-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-rose-600/20 transition-all hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                >Borrar</button>
               </div>
             </div>
           </div>

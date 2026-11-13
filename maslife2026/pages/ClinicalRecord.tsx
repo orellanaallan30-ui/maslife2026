@@ -1462,7 +1462,7 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
             </div>
             <div className="min-w-0">
               <h1 className="text-sm lg:text-2xl font-black text-slate-900 tracking-tight truncate">{personalData.name}</h1>
-              <p className="text-[11px] lg:text-xs font-bold text-primary uppercase tracking-widest mt-0.5">Paciente Agenda Maslife Premium</p>
+              <p className="text-[11px] lg:text-xs font-bold text-primary uppercase tracking-widest mt-0.5">Paciente AgendaMas</p>
             </div>
           </div>
           {/* Actions */}
@@ -1546,7 +1546,7 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
           <div className="flex justify-between items-end">
             <div>
               <h1 className="text-4xl font-black text-slate-900 mb-2">FICHA CLÍNICA PROFESIONAL</h1>
-              <p className="text-primary font-black tracking-widest uppercase text-sm">Agenda Maslife 🧡 Centro de Salud Integral</p>
+              <p className="text-primary font-black tracking-widest uppercase text-sm">AgendaMas 🧡 Centro de Salud Integral</p>
             </div>
             <div className="text-right">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha de Emisión</p>
@@ -3369,7 +3369,7 @@ Tu respuesta es SOLO el objeto JSON pedido: sin markdown ni texto fuera del JSON
           <div className="flex justify-between items-end border-b-4 border-slate-900 pb-8">
             <div>
               <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">Informe Clínico</h1>
-              <p className="text-primary font-black uppercase tracking-widest text-xs mt-2 italic">Emitido por Plataforma Agenda Maslife 🧡</p>
+              <p className="text-primary font-black uppercase tracking-widest text-xs mt-2 italic">Emitido por Plataforma AgendaMas 🧡</p>
             </div>
             <div className="text-right">
               <p className="text-xs font-black text-slate-500 uppercase tracking-[0.05em]">Fecha del Documento</p>
