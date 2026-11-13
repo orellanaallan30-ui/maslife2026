@@ -235,6 +235,14 @@ const Settings: React.FC = () => {
     setLocalProfile(profile);
   }, [profile, navigate]);
 
+  // Llegada desde "Mi centro" sin tener centro: abrir Mi Perfil y bajar al bloque para crearlo.
+  useEffect(() => {
+    if (searchParams.get('seccion') !== 'centro') return;
+    setActiveTab('perfil');
+    const id = window.setTimeout(() => document.getElementById('centro')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    return () => window.clearTimeout(id);
+  }, [searchParams]);
+
   useEffect(() => {
     if (searchParams.get('subscribed') === '1') {
       setSubscribedMsg(true);

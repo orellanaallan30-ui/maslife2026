@@ -36,7 +36,7 @@ import Sidebar          from './components/Sidebar';
 import GlobalAIPanel    from './components/GlobalAIPanel';
 import ToastContainer   from './components/ToastContainer';
 import { ClinicProvider, useClinic } from './ClinicContext';
-import { CenterProvider } from './CenterContext';
+import { CenterProvider, DemoCenterProvider } from './CenterContext';
 import CentroLayout  from './pages/centro/CentroLayout';
 import CentroRecepcion from './pages/centro/Recepcion';
 import CentroBoxes   from './pages/centro/Boxes';
@@ -231,7 +231,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
   // Ocultar navbar completamente en landing (MainHome tiene su propia)
   if (esRutaLanding(location.pathname)) return null;
   // El panel del centro (AgendaMas) trae su propia cabecera con pestañas.
-  if (location.pathname.startsWith('/centro')) return null;
+  if (location.pathname.startsWith('/centro') || location.pathname.startsWith('/demo')) return null;
 
   const isPublicView = isFullPublic;
 
@@ -624,6 +624,14 @@ const AppContent: React.FC = () => {
             <Route path="/centro/boxes"     element={<CentroBoxes />} />
             <Route path="/centro/reporte"   element={<CentroReporte />} />
             <Route path="/centro/equipo"    element={<CentroEquipo />} />
+          </Route>
+          {/* Demo pública de AgendaMas: las mismas pantallas con un centro de ejemplo en memoria (sin sesión ni base de datos). */}
+          <Route element={<DemoCenterProvider><CentroLayout demo /></DemoCenterProvider>}>
+            <Route path="/demo"           element={<Navigate to="/demo/recepcion" replace />} />
+            <Route path="/demo/recepcion" element={<CentroRecepcion />} />
+            <Route path="/demo/boxes"     element={<CentroBoxes />} />
+            <Route path="/demo/reporte"   element={<CentroReporte />} />
+            <Route path="/demo/equipo"    element={<CentroEquipo />} />
           </Route>
           {/* Protegidas admin */}
           <Route element={<AdminGuard><ProLayout /></AdminGuard>}>
