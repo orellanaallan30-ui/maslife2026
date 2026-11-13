@@ -76,3 +76,60 @@ export function validarJornada(hora: string, duracion: number, jornada?: Jornada
   }
   return null;
 }
+
+/**
+ * Qué mostrar en una fila de la agenda por horas (vista día o semana).
+ *
+ * La grilla tiene una fila por hora, pero las citas pueden empezar a cualquier
+ * minuto (10:30, 13:15) y durar más de una hora. Antes la fila comparaba la
+ * hora exacta: una cita de 10:30 no aparecía en ninguna fila y su espacio se
+ * ofrecía como "Disponible".
+ *
+ * - `inician`: citas que empiezan dentro de la fila [hora, hora + paso).
+ * - `continuan`: citas que empezaron antes y siguen ocupando esta fila.
+ *
+ * Usa el mismo criterio de ocupación que `citasQueOcupan` (sin canceladas ni
+ * finalizadas), así la agenda no ofrece una hora que la base rechaza.
+ */
+export function filaDeAgenda<T extends FranjaOcupada>(
+  citas: T[],
+  fecha: string,
+  hora: string,
+  paso = 60
+): { inician: T[]; continuan: T[] } {
+  const ini = toMinutes(hora);
+  const fin = ini + paso;
+  const delDia = citasQueOcupan(citas, fecha);
+  const inician = delDia
+    .filter(a => { const m = toMinutes(a.time); return m >= ini && m < fin; })
+    .sort((a, b) => toMinutes(a.time) - toMinutes(b.time));
+  const continuan = delDia.filter(a => {
+    const m = toMinutes(a.time);
+    return m < ini && m + (a.duration || DUR_DEFECTO) > ini;
+  });
+  return { inician, continuan };
+}
+
+/**
+ * Horas ("HH:00") que debe mostrar la grilla: la jornada del profesional, más
+ * cualquier hora donde haya una cita fuera de ella, para que ninguna quede
+ * escondida por estar antes del inicio o después del término.
+ */
+export function horasDeGrilla(
+  jornada: { start: string; end: string },
+  citas: FranjaOcupada[],
+  fechas: string[]
+): string[] {
+  let desde = Math.floor(toMinutes(jornada.start) / 60);
+  let hasta = Math.floor(toMinutes(jornada.end) / 60);
+  for (const f of fechas) {
+    for (const a of citasQueOcupan(citas, f)) {
+      const m = toMinutes(a.time);
+      desde = Math.min(desde, Math.floor(m / 60));
+      hasta = Math.max(hasta, Math.floor((m + (a.duration || DUR_DEFECTO) - 1) / 60));
+    }
+  }
+  desde = Math.max(0, desde);
+  hasta = Math.min(23, hasta);
+  return Array.from({ length: hasta - desde + 1 }, (_, i) => `${String(desde + i).padStart(2, '0')}:00`);
+}

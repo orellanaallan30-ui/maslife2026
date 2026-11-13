@@ -239,7 +239,9 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
   return (
     <nav className="bg-white border-b border-slate-200 flex items-center px-3 sm:px-6 md:px-10 shrink-0 z-50 sticky top-0 shadow-sm" style={{height: 68}}>
       {/* Logo */}
-      <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => navigate('/')}>
+      {/* En el panel, el logo ya está en el menú lateral (visible desde md): aquí
+          solo se muestra en celular, para no repetirlo. */}
+      <div className={`flex items-center gap-3 cursor-pointer shrink-0 ${isPublicView ? '' : 'md:hidden'}`} onClick={() => navigate('/')}>
         <img
           src={isPublicView ? logoClinica : logoAgenda}
           alt="Mas Life Logo"
@@ -548,11 +550,15 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
             <div
               onClick={() => navigate('/pro/settings')}
               className="w-10 h-10 rounded-xl bg-slate-100 border-2 border-slate-200 overflow-hidden cursor-pointer hover:border-teal-400 transition-all shrink-0">
-              <img
-                src={loggedPro.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(loggedPro.name)}&background=00a89e&color=fff&size=80`}
-                alt={loggedPro.name}
-                className="w-full h-full object-cover"
-              />
+              {/* Sin foto: iniciales locales (antes se pedían a un servicio externo y,
+                  si no cargaba, se veía el texto alternativo cortado). */}
+              {loggedPro.avatar ? (
+                <img src={loggedPro.avatar} alt={loggedPro.name} className="w-full h-full object-cover" />
+              ) : (
+                <span aria-label={loggedPro.name} className="w-full h-full flex items-center justify-center bg-teal-500 text-white text-sm font-black">
+                  {loggedPro.name.trim().split(/\s+/).filter(w => !/^(dr|dra|klgo|klga|mat|ps|nut|tm|to)\.?$/i.test(w)).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'}
+                </span>
+              )}
             </div>
           </>
         )}

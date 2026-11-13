@@ -413,7 +413,7 @@ const Settings: React.FC = () => {
         <div className="max-w-5xl mx-auto space-y-5 pb-24 md:pb-10">
           <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-black text-primary uppercase tracking-[0.06em] mb-1">Configuración Agenda Maslife</p>
+              <p className="text-xs font-black text-primary uppercase tracking-[0.06em] mb-1">Configuración AgendaMas</p>
               <h1 className="text-2xl font-black tracking-tight text-black">Ajustes de Cuenta</h1>
               <div className="flex bg-slate-50 p-1.5 rounded-xl mt-4 max-w-fit border border-slate-200 shadow-inner gap-1.5">
                 <button onClick={() => setActiveTab('perfil')} className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'perfil' ? 'bg-white text-primary shadow-sm border border-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>Mi Perfil</button>
@@ -1109,7 +1109,7 @@ const Settings: React.FC = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-black tracking-tight">Agenda Maslife</h3>
+                      <h3 className="text-sm font-black tracking-tight">AgendaMas</h3>
                       <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-[0.12em]"
                         style={{ background: 'rgba(255,255,255,0.20)', border: '1px solid rgba(255,255,255,0.30)' }}>
                         {localProfile.subscriptionStatus === 'trial' ? 'Prueba Gratis'
@@ -1122,7 +1122,7 @@ const Settings: React.FC = () => {
                         ? `Trial hasta el ${localProfile.trialEndDate ? new Date(localProfile.trialEndDate).toLocaleDateString('es-CL', { day: 'numeric', month: 'long' }) : '---'}.`
                         : localProfile.subscriptionStatus === 'paused'
                           ? 'Tu perfil está pausado. Regulariza tu pago para reactivarlo.'
-                          : 'Tu suscripción está activa y tu agenda es visible en Agenda Maslife.'}
+                          : 'Tu suscripción está activa y tu agenda es visible en AgendaMas.'}
                     </p>
                   </div>
                 </div>
@@ -1200,7 +1200,7 @@ const Settings: React.FC = () => {
                     { icon: 'group', label: 'Gestión de pacientes completa' },
                     { icon: 'payments', label: 'Control de finanzas y transacciones' },
                     { icon: 'notifications', label: 'Notificaciones automáticas' },
-                    { icon: 'public', label: 'Perfil público en la red Agenda Maslife' },
+                    { icon: 'public', label: 'Perfil público en la red AgendaMas' },
                     { icon: 'support_agent', label: 'Soporte prioritario 24/7' },
                   ].map(f => (
                     <div key={f.icon} className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
@@ -1220,7 +1220,7 @@ const Settings: React.FC = () => {
                 <p className="text-[11px] font-black uppercase tracking-widest mb-4" style={{ color: '#7A859F' }}>Soporte y Ayuda</p>
                 <div className="flex flex-col lg:flex-row gap-3">
                   <a
-                    href={`https://wa.me/${SUPPORT_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola Agenda Maslife! Soy ${localProfile.name} y necesito ayuda con mi cuenta.`)}`}
+                    href={`https://wa.me/${SUPPORT_PHONE.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola AgendaMas! Soy ${localProfile.name} y necesito ayuda con mi cuenta.`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-xl font-black text-sm text-white transition-all active:scale-95"
@@ -1509,7 +1509,7 @@ const Settings: React.FC = () => {
                 <div className="p-5 space-y-4">
                   <div className="rounded-xl bg-rose-50 border border-rose-100 p-4 space-y-1">
                     <p className="text-xs font-black text-rose-700 uppercase tracking-widest">Se eliminará permanentemente:</p>
-                    {['Tu perfil profesional y foto', 'Todos tus pacientes y fichas clínicas', 'Historial de citas y transacciones', 'Acceso a Agenda Maslife'].map(item => (
+                    {['Tu perfil profesional y foto', 'Todos tus pacientes y fichas clínicas', 'Historial de citas y transacciones', 'Acceso a AgendaMas'].map(item => (
                       <div key={item} className="flex items-center gap-2 text-xs text-rose-600">
                         <span className="material-icons-round text-sm">remove_circle_outline</span>
                         {item}

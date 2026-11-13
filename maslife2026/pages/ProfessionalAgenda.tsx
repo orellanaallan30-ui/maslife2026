@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Appointment, Patient } from '../types';
 import { useClinic } from '../ClinicContext';
 import { esCupoEnEspera } from '../lib/holds';
+import { filaDeAgenda, horasDeGrilla } from '../lib/agendaConflict';
 
 const ProfessionalAgenda: React.FC = () => {
    const navigate = useNavigate();
@@ -88,10 +89,6 @@ const ProfessionalAgenda: React.FC = () => {
    ];
 
    const workingHours = loggedPro?.workingHours || { start: "08:00", end: "20:00" };
-   const startHour = parseInt(workingHours.start.split(':')[0]);
-   const endHour = parseInt(workingHours.end.split(':')[0]);
-   const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => `${String(startHour + i).padStart(2, '0')}:00`);
-
    const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
    const weekDays = useMemo(() => {
@@ -105,6 +102,20 @@ const ProfessionalAgenda: React.FC = () => {
          return d;
       });
    }, [currentDate]);
+
+   // Filas de la grilla: la jornada más cualquier hora con citas fuera de ella,
+   // para que ninguna cita quede escondida.
+   const hours = useMemo(() => horasDeGrilla(
+      workingHours,
+      appointments,
+      viewMode === 'week' ? weekDays.map(formatDate) : [formatDate(currentDate)],
+   ), [workingHours.start, workingHours.end, appointments, viewMode, weekDays, currentDate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+   // El selector de bloqueos ofrece solo las horas de la jornada.
+   const horasJornada = useMemo(() => horasDeGrilla(workingHours, [], []), [workingHours.start, workingHours.end]); // eslint-disable-line react-hooks/exhaustive-deps
+
+   /** "10:30 · 60 min" para mostrar en la tarjeta de la cita. */
+   const horaYDuracion = (app: Appointment) => `${app.time.slice(0, 5)} · ${app.duration || 60} min`;
 
    // Days the professional works, for the block date picker (next 14 days)
    const blockableDays = useMemo(() => {
@@ -467,15 +478,15 @@ const ProfessionalAgenda: React.FC = () => {
                   </div>
                 </div>
 
-               {/* Stat chips — fila horizontal scrollable */}
-               <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 lg:mx-0 lg:px-0 lg:grid lg:grid-cols-4">
+               {/* Resumen del día: 2×2 en celular (antes se cortaba a la derecha), 4 en fila desde lg */}
+               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                   {[
                     { icon: 'event', label: 'Citas hoy', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado' && !esCupoEnEspera(a)).length },
                     { icon: 'check_circle', label: 'Confirmadas', value: appointments.filter(a => a.date === formatDate(currentDate) && a.status === 'Confirmado').length },
                     { icon: 'payments', label: 'Ingreso hoy', value: '$' + appointments.filter(a => a.date === formatDate(currentDate) && a.status !== 'Cancelado' && a.status !== 'Bloqueado' && !esCupoEnEspera(a)).reduce((sum, a) => sum + (a.price || 0), 0).toLocaleString('es-CL') },
                     { icon: 'date_range', label: 'Esta semana', value: appointments.filter(a => weekDays.some(d => formatDate(d) === a.date) && a.status !== 'Cancelado' && !esCupoEnEspera(a)).length },
                   ].map(({ icon, label, value }) => (
-                    <div key={label} className="bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex items-center gap-2 shrink-0 min-w-[130px] md:min-w-0">
+                    <div key={label} className="bg-white rounded-xl border border-slate-100 shadow-sm p-3 flex items-center gap-2 min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                         <span className="material-icons-round text-primary text-base">{icon}</span>
                       </div>
@@ -494,7 +505,10 @@ const ProfessionalAgenda: React.FC = () => {
                            // Las finalizadas ya no ocupan: atendido el paciente, la casilla
                            // vuelve a quedar libre para agendar la siguiente. Coincide con
                            // citasQueOcupan y con el índice uq_slot_active (migración 0016).
-                           const appsInSlot = appointments.filter(a => a.time === hour && a.date === formatDate(currentDate) && a.status !== 'Finalizado');
+                           // Entra toda cita que empieza dentro de esta hora (10:30 va en la
+                           // fila de las 10) y la fila queda ocupada si una cita anterior
+                           // sigue corriendo (una sesión de 90 min tapa la hora siguiente).
+                           const { inician: appsInSlot, continuan } = filaDeAgenda<Appointment>(appointments, formatDate(currentDate), hour);
                            return (
                                <div key={hour} className="flex min-h-[48px] lg:min-h-[56px] group">
                                   <div className="w-24 shrink-0 flex items-center justify-center border-r-2 border-slate-100 bg-slate-50/50">
@@ -511,6 +525,7 @@ const ProfessionalAgenda: React.FC = () => {
                                                        <span className="material-icons-round text-lg">{styles.icon}</span>
                                                     </div>
                                                     <div>
+                                                       <p className={`text-[11px] font-bold tabular-nums ${app.status === 'Bloqueado' ? 'text-white/70' : 'opacity-60'}`}>{horaYDuracion(app)}</p>
                                                        <p className={`font-black text-base tracking-tight mb-0 ${app.status === 'Bloqueado' ? 'text-white' : esCupoEnEspera(app) ? 'text-slate-400' : 'text-slate-900'}`}>{app.patientName}</p>
                                                        {/* Un cupo retenido durante el pago no es una cita: se muestra
                                                            apagado y con su propia etiqueta, para que no se confunda
@@ -535,6 +550,11 @@ const ProfessionalAgenda: React.FC = () => {
                                              </div>
                                           );
                                        })
+                                    ) : continuan.length > 0 ? (
+                                       <button onClick={() => handleAppClick(continuan[0])} className="flex-1 rounded-xl bg-slate-100/70 border border-slate-200 flex items-center gap-2 pl-4 text-left text-slate-500 hover:bg-slate-100 transition-colors">
+                                          <span className="material-icons-round text-base">more_time</span>
+                                          <span className="text-xs font-bold">Ocupado · sigue la cita de las {continuan[0].time.slice(0, 5)}{continuan[0].status !== 'Bloqueado' && continuan[0].patientName ? ` con ${continuan[0].patientName}` : ''}</span>
+                                       </button>
                                     ) : (
                                        <button onClick={() => handleSlotClick(hour, formatDate(currentDate))} className="flex-1 rounded-xl border border-dashed border-slate-200 hover:border-primary hover:bg-primary/5 transition-all flex items-center justify-start gap-2 pl-4 text-slate-300 hover:text-primary group active:scale-[0.99]">
                                           <span className="material-icons-round text-lg group-hover:scale-110 transition-transform">add_circle_outline</span>
@@ -567,7 +587,7 @@ const ProfessionalAgenda: React.FC = () => {
                                   </div>
                                   {weekDays.map((day, idx) => {
                                      const dateStr = formatDate(day);
-                                     const appsInSlot = appointments.filter(a => a.time === hour && a.date === dateStr && a.status !== 'Finalizado');
+                                     const { inician: appsInSlot, continuan } = filaDeAgenda<Appointment>(appointments, dateStr, hour);
                                      return (
                                         <div key={`${hour}-${idx}`} className={`flex-1 min-w-[150px] p-1 flex flex-col gap-1 border-r-2 border-slate-50 ${day.toDateString() === new Date().toDateString() ? 'bg-primary/5' : ''}`}>
                                            {appsInSlot.length > 0 ? (
@@ -579,10 +599,14 @@ const ProfessionalAgenda: React.FC = () => {
                                                          <span className="material-icons-round text-[14px]">{styles.icon}</span>
                                                          <p className={`font-black text-xs truncate leading-tight ${app.status === 'Bloqueado' ? 'text-white' : 'text-slate-900'}`}>{app.patientName}</p>
                                                       </div>
-                                                      <p className={`text-xs font-black uppercase tracking-widest truncate ${app.status === 'Bloqueado' ? 'text-white/70' : 'opacity-70'}`}>{app.status}</p>
+                                                      <p className={`text-[11px] font-bold tabular-nums truncate ${app.status === 'Bloqueado' ? 'text-white/70' : 'opacity-70'}`}>{horaYDuracion(app)} · {app.status}</p>
                                                    </div>
                                                 );
                                               })
+                                           ) : continuan.length > 0 ? (
+                                              <button onClick={() => handleAppClick(continuan[0])} title={`Sigue la cita de las ${continuan[0].time.slice(0, 5)}`} className="w-full min-h-[40px] rounded-lg bg-slate-100/80 border border-slate-200 text-slate-400 flex items-center justify-center">
+                                                 <span className="material-icons-round text-base">more_time</span>
+                                              </button>
                                            ) : (
                                               <button onClick={() => handleSlotClick(hour, dateStr)} className="w-full min-h-[40px] rounded-lg opacity-0 group-hover:opacity-100 bg-slate-50 hover:bg-primary/10 hover:text-primary transition-all flex items-center justify-center text-slate-400">
                                                  <span className="material-icons-round text-lg">add</span>
@@ -802,17 +826,17 @@ const ProfessionalAgenda: React.FC = () => {
                                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">Horas a bloquear</label>
                                     <div className="flex gap-2">
                                        {[['08:00','13:00','Mañana'],['14:00','20:00','Tarde'],['08:00','20:00','Todo']].map(([s,e,lbl]) => (
-                                          <button key={lbl} onClick={() => setBlockTimes(hours.filter(h => h >= s && h <= e && !appointments.some(a => a.date === blockDate && a.time === h)))}
+                                          <button key={lbl} onClick={() => setBlockTimes(horasJornada.filter(h => h >= s && h <= e && !appointments.some(a => a.date === blockDate && a.time === h)))}
                                              className="text-[11px] font-black text-primary uppercase tracking-widest hover:underline">{lbl}</button>
                                        ))}
-                                       <button onClick={() => { const f = hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)); setBlockTimes(f.length === blockTimes.length ? [] : f); }}
+                                       <button onClick={() => { const f = horasJornada.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)); setBlockTimes(f.length === blockTimes.length ? [] : f); }}
                                           className="text-[11px] font-black text-slate-400 uppercase tracking-widest hover:underline">
-                                          {hours.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)).length === blockTimes.length ? '✕' : 'Todo'}
+                                          {horasJornada.filter(h => !appointments.some(a => a.date === blockDate && a.time === h)).length === blockTimes.length ? '✕' : 'Todo'}
                                        </button>
                                     </div>
                                  </div>
                                  <div className="grid grid-cols-4 gap-1.5">
-                                    {hours.map(h => {
+                                    {horasJornada.map(h => {
                                        const isOccupied = appointments.some(a => a.date === blockDate && a.time === h && a.status !== 'Cancelado');
                                        const isSelected = blockTimes.includes(h);
                                        return (
