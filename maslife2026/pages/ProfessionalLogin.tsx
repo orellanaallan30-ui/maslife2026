@@ -110,7 +110,7 @@ const ProfessionalLogin: React.FC = () => {
           <div className="inline-flex items-center justify-center cursor-pointer mb-2" onClick={() => navigate('/')}>
             <img
               src="/logo-agenda-online.svg"
-              alt="Agenda Maslife"
+              alt="AgendaMas"
               className="w-full max-w-[220px] lg:max-w-[310px] h-auto object-contain"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -123,7 +123,7 @@ const ProfessionalLogin: React.FC = () => {
               </div>
               <div className="text-left">
                 <p className="text-xs font-black text-teal-600 uppercase tracking-widest leading-none">PLATAFORMA</p>
-                <p className="text-2xl font-black text-slate-900 leading-tight">Agenda Maslife 🧡</p>
+                <p className="text-2xl font-black text-slate-900 leading-tight">AgendaMas 🧡</p>
               </div>
             </div>
           </div>

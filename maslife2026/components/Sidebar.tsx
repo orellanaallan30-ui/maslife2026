@@ -29,11 +29,11 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, onToggleAI }) => {
         <div className="px-4 lg:px-6 pt-5 pb-3 border-b border-slate-100 flex items-center justify-center lg:justify-start">
           <img
             src="/logo-agenda-online.svg"
-            alt="Agenda Maslife"
+            alt="AgendaMas"
             className="h-10 w-auto object-contain"
             onError={(e) => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }}
           />
-          <span className="hidden text-lg font-extrabold tracking-tight text-slate-900">Agenda Maslife</span>
+          <span className="hidden text-lg font-extrabold tracking-tight text-slate-900">AgendaMas</span>
         </div>
 
         <nav className="flex-1 p-3 lg:p-4 space-y-1">

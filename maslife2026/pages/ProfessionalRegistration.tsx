@@ -343,7 +343,7 @@ const ProfessionalRegistration: React.FC = () => {
             </div>
             <div className="text-left">
               <p className="text-[11px] font-black text-teal-600 uppercase tracking-widest">PLATAFORMA</p>
-              <p className="text-lg lg:text-xl font-black text-slate-900">Agenda Maslife 🧡</p>
+              <p className="text-lg lg:text-xl font-black text-slate-900">AgendaMas 🧡</p>
             </div>
           </div>
           <h1 className="text-xl lg:text-2xl font-black text-slate-900">Registro de Especialista</h1>
