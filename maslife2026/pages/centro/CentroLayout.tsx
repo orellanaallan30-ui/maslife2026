@@ -27,10 +27,13 @@ const CentroLayout: React.FC<{ demo?: boolean }> = ({ demo = false }) => {
     if (!demo) return;
     const titulo = document.title;
     document.title = `Demo ${PRODUCT_NAME}: recepción, boxes y reporte de horas`;
-    const meta = document.createElement('meta');
-    meta.name = 'robots'; meta.content = 'noindex';
-    document.head.appendChild(meta);
-    return () => { document.title = titulo; meta.remove(); };
+    // index.html ya trae una etiqueta robots ("index, follow"): se cambia esa misma y se repone al salir.
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    const creada = !meta;
+    if (!meta) { meta = document.createElement('meta'); meta.name = 'robots'; document.head.appendChild(meta); }
+    const anterior = meta.content;
+    meta.content = 'noindex, nofollow';
+    return () => { document.title = titulo; if (creada) meta!.remove(); else meta!.content = anterior; };
   }, [demo]);
 
   if (memberships === null) {
@@ -53,7 +56,7 @@ const CentroLayout: React.FC<{ demo?: boolean }> = ({ demo = false }) => {
   return (
     <div className="flex-1 min-h-0 flex flex-col w-full bg-slate-50">
       {demo && (
-        <div className="shrink-0 bg-slate-900 text-white text-xs lg:text-sm font-semibold px-4 lg:px-8 py-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+        <div role="note" className="shrink-0 bg-amber-100 border-b border-amber-200 text-amber-900 text-xs lg:text-sm font-bold px-4 lg:px-8 py-2 text-center">
           <span>Estás viendo una demo con datos de ejemplo. Puedes agendar, reagendar y asignar boxes: nada se guarda.</span>
         </div>
       )}
