@@ -180,3 +180,85 @@ export async function discoverIds() {
     return gget(`/me`, { fields: "id,name,instagram_business_account{id,username}" });
   }
 }
+
+// ---------- Investigación (cuentas y hashtags públicos) ----------
+
+const MEDIA_FIELDS = "id,caption,media_type,media_product_type,like_count,comments_count,permalink,timestamp";
+
+function mediana(nums: number[]): number | null {
+  const v = nums.filter((n) => typeof n === "number").sort((a, b) => a - b);
+  if (!v.length) return null;
+  const m = Math.floor(v.length / 2);
+  return v.length % 2 ? v[m] : Math.round((v[m - 1] + v[m]) / 2);
+}
+
+/**
+ * Datos públicos de otra cuenta profesional (Business Discovery): seguidores,
+ * bio y sus últimas publicaciones con me gusta y comentarios. Agrega la mediana
+ * de interacciones para medir qué publicación se salió de lo normal.
+ * Meta no entrega reproducciones ni guardados de cuentas ajenas.
+ */
+export async function businessDiscovery(username: string, limit = 25) {
+  const u = username.replace(/^@/, "").trim();
+  const d = await gget(`/${igUserId()}`, {
+    fields: `business_discovery.username(${u}){username,name,biography,website,followers_count,follows_count,media_count,media.limit(${limit}){${MEDIA_FIELDS}}}`,
+  });
+  const bd = d.business_discovery ?? {};
+  const media: any[] = bd.media?.data ?? [];
+  const inter = media.map((m) => (m.like_count ?? 0) + (m.comments_count ?? 0));
+  const med = mediana(inter);
+  const publicaciones = media
+    .map((m) => {
+      const i = (m.like_count ?? 0) + (m.comments_count ?? 0);
+      return {
+        tipo: m.media_product_type === "REELS" ? "reel" : m.media_type === "CAROUSEL_ALBUM" ? "carrusel" : "foto",
+        fecha: m.timestamp?.slice(0, 10),
+        me_gusta: m.like_count ?? null,
+        comentarios: m.comments_count ?? 0,
+        veces_la_mediana: med ? Math.round((i / med) * 10) / 10 : null,
+        inicio_texto: (m.caption ?? "").split("\n")[0].slice(0, 160),
+        enlace: m.permalink,
+      };
+    })
+    .sort((a, b) => (b.veces_la_mediana ?? 0) - (a.veces_la_mediana ?? 0));
+  return {
+    usuario: bd.username,
+    nombre: bd.name,
+    bio: bd.biography,
+    web: bd.website,
+    seguidores: bd.followers_count,
+    sigue: bd.follows_count,
+    publicaciones_totales: bd.media_count,
+    mediana_interacciones: med,
+    analizadas: media.length,
+    publicaciones,
+  };
+}
+
+/** Publicaciones con más interacción (o las más recientes) bajo un hashtag. Límite de Meta: 30 hashtags distintos cada 7 días. */
+export async function hashtagMedia(tag: string, orden: "top" | "recientes" = "top", limit = 25) {
+  const q = tag.replace(/^#/, "").trim().toLowerCase();
+  const s = await gget(`/ig_hashtag_search`, { user_id: igUserId(), q });
+  const id = s.data?.[0]?.id;
+  if (!id) throw new Error(`No encontré el hashtag #${q}`);
+  const d = await gget(`/${id}/${orden === "top" ? "top_media" : "recent_media"}`, {
+    user_id: igUserId(),
+    fields: MEDIA_FIELDS,
+    limit,
+  });
+  const media: any[] = d.data ?? [];
+  return {
+    hashtag: `#${q}`,
+    orden,
+    publicaciones: media
+      .map((m) => ({
+        tipo: m.media_product_type === "REELS" ? "reel" : m.media_type === "CAROUSEL_ALBUM" ? "carrusel" : "foto",
+        fecha: m.timestamp?.slice(0, 10),
+        me_gusta: m.like_count ?? null,
+        comentarios: m.comments_count ?? 0,
+        inicio_texto: (m.caption ?? "").split("\n")[0].slice(0, 160),
+        enlace: m.permalink,
+      }))
+      .sort((a, b) => (b.me_gusta ?? 0) + b.comentarios - ((a.me_gusta ?? 0) + a.comentarios)),
+  };
+}
