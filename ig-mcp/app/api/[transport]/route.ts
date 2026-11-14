@@ -270,6 +270,14 @@ const handler = createMcpHandler(
 
 async function guarded(req: Request) {
   if (!isAuthorized(req)) return new Response("No autorizado", { status: 401 });
+  // Llegó por /k/<clave>/mcp (ver middleware.ts): el handler espera /api/mcp.
+  const url = new URL(req.url);
+  if (url.pathname !== "/api/mcp" && url.pathname.startsWith("/k/")) {
+    url.pathname = "/api/mcp";
+    url.search = "";
+    const body = req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
+    req = new Request(url, { method: req.method, headers: req.headers, body });
+  }
   return handler(req);
 }
 

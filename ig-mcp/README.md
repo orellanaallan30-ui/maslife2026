@@ -52,7 +52,7 @@ select vault.create_secret('PEGA_AQUI_TU_CRON_SECRET', 'ig_mcp_cron_secret');
 
 ### 4. Conectarlo a Claude
 - **Claude (web, escritorio, móvil):** Configuración → Conectores → Agregar conector personalizado →
-  `https://TU-PROYECTO.vercel.app/api/mcp?key=TU_MCP_SECRET`
+  `https://TU-PROYECTO.vercel.app/k/TU_MCP_SECRET/mcp` (la clave va en la ruta: el conector puede descartar lo que va después de "?")
 - **Claude Code:**
   ```
   claude mcp add --transport http maslife-ig https://TU-PROYECTO.vercel.app/api/mcp --header "Authorization: Bearer TU_MCP_SECRET"
