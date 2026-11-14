@@ -211,7 +211,7 @@ export async function businessDiscovery(username: string, limit = 25) {
     .map((m) => {
       const i = (m.like_count ?? 0) + (m.comments_count ?? 0);
       return {
-        tipo: m.media_product_type === "REELS" ? "reel" : m.media_type === "CAROUSEL_ALBUM" ? "carrusel" : "foto",
+        tipo: m.media_product_type === "REELS" ? "reel" : m.media_type === "VIDEO" ? "video" : m.media_type === "CAROUSEL_ALBUM" ? "carrusel" : "foto",
         fecha: m.timestamp?.slice(0, 10),
         me_gusta: m.like_count ?? null,
         comentarios: m.comments_count ?? 0,
@@ -252,7 +252,7 @@ export async function hashtagMedia(tag: string, orden: "top" | "recientes" = "to
     orden,
     publicaciones: media
       .map((m) => ({
-        tipo: m.media_product_type === "REELS" ? "reel" : m.media_type === "CAROUSEL_ALBUM" ? "carrusel" : "foto",
+        tipo: m.media_product_type === "REELS" ? "reel" : m.media_type === "VIDEO" ? "video" : m.media_type === "CAROUSEL_ALBUM" ? "carrusel" : "foto",
         fecha: m.timestamp?.slice(0, 10),
         me_gusta: m.like_count ?? null,
         comentarios: m.comments_count ?? 0,
