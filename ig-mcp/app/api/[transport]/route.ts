@@ -35,6 +35,28 @@ const handler = createMcpHandler(
       () => run(() => ig.discoverIds()),
     );
 
+    // ---------- Investigación ----------
+    server.tool(
+      "analizar_cuenta",
+      "Datos públicos de otra cuenta profesional de Instagram (seguidores, bio y últimas publicaciones con me gusta y comentarios), ordenadas por cuánto superaron su propia mediana. Sirve para buscar referentes y videos que funcionaron.",
+      {
+        usuario: z.string().min(1).describe("Usuario de Instagram, con o sin @"),
+        limite: z.number().int().min(1).max(50).default(25),
+      },
+      ({ usuario, limite }) => run(() => ig.businessDiscovery(usuario, limite)),
+    );
+
+    server.tool(
+      "buscar_hashtag",
+      "Publicaciones con más interacción (o las más recientes) bajo un hashtag. Meta permite 30 hashtags distintos cada 7 días.",
+      {
+        hashtag: z.string().min(1).describe("Sin espacios, con o sin #"),
+        orden: z.enum(["top", "recientes"]).default("top"),
+        limite: z.number().int().min(1).max(50).default(25),
+      },
+      ({ hashtag, orden, limite }) => run(() => ig.hashtagMedia(hashtag, orden, limite)),
+    );
+
     // ---------- Lectura ----------
     server.tool("perfil", "Datos del perfil de Instagram: seguidores, bio, cantidad de publicaciones.", {}, () =>
       run(() => ig.getProfile()),
