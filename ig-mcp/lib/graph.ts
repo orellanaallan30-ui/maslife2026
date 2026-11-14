@@ -38,6 +38,32 @@ function encode(v: string | number | boolean | object): string {
   return typeof v === "object" ? JSON.stringify(v) : String(v);
 }
 
+/**
+ * Quita el token de todo lo que se devuelve. Meta incluye en las listas
+ * paginadas enlaces paging.next / paging.previous con ?access_token=..., y
+ * esos enlaces terminaban en el chat. Se eliminan esos enlaces (los cursores
+ * se mantienen), las claves "access_token" y cualquier access_token=... que
+ * quede dentro de un texto.
+ */
+function sanitize(v: unknown): unknown {
+  if (typeof v === "string") return v.replace(/access_token=[^&"\s]+/g, "access_token=OCULTO");
+  if (Array.isArray(v)) return v.map(sanitize);
+  if (v && typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, val] of Object.entries(v)) {
+      if (k === "access_token") continue;
+      if (k === "paging" && val && typeof val === "object") {
+        const { next: _n, previous: _p, ...rest } = val as Record<string, unknown>;
+        out[k] = sanitize(rest);
+        continue;
+      }
+      out[k] = sanitize(val);
+    }
+    return out;
+  }
+  return v;
+}
+
 async function handle(res: Response) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data?.error) {
@@ -48,7 +74,7 @@ async function handle(res: Response) {
       e.error_subcode,
     );
   }
-  return data;
+  return sanitize(data) as any;
 }
 
 export async function gget(path: string, params: Params = {}) {
