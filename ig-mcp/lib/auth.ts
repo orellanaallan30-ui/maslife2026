@@ -11,7 +11,7 @@ function safeEqual(a: string, b: string): boolean {
  * (Claude Code) o como ?key=<MCP_SECRET> en la URL (conector de claude.ai).
  */
 export function isAuthorized(req: Request): boolean {
-  const secret = process.env.MCP_SECRET;
+  const secret = process.env.MCP_SECRET?.trim();
   if (!secret || secret.length < 32) return false;
   const header = req.headers.get("authorization") ?? "";
   if (header.startsWith("Bearer ") && safeEqual(header.slice(7), secret)) return true;
@@ -20,14 +20,14 @@ export function isAuthorized(req: Request): boolean {
 }
 
 export function isCron(req: Request): boolean {
-  const secret = process.env.CRON_SECRET;
+  const secret = process.env.CRON_SECRET?.trim();
   if (!secret) return false;
   return safeEqual(req.headers.get("authorization") ?? "", `Bearer ${secret}`);
 }
 
 /** Valida la firma X-Hub-Signature-256 que Meta envía en los webhooks. */
 export function validMetaSignature(rawBody: string, signature: string | null): boolean {
-  const secret = process.env.META_APP_SECRET;
+  const secret = process.env.META_APP_SECRET?.trim();
   if (!secret || !signature) return false;
   const expected = "sha256=" + createHmac("sha256", secret).update(rawBody).digest("hex");
   return safeEqual(expected, signature);

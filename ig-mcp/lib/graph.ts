@@ -15,19 +15,19 @@ export class GraphError extends Error {
 }
 
 function token(): string {
-  const t = process.env.IG_ACCESS_TOKEN;
+  const t = process.env.IG_ACCESS_TOKEN?.trim();
   if (!t) throw new Error("Falta la variable de entorno IG_ACCESS_TOKEN");
   return t;
 }
 
 export function igUserId(): string {
-  const id = process.env.IG_USER_ID;
+  const id = process.env.IG_USER_ID?.trim();
   if (!id) throw new Error("Falta IG_USER_ID (usa la herramienta descubrir_ids)");
   return id;
 }
 
 export function pageId(): string {
-  const id = process.env.FB_PAGE_ID;
+  const id = process.env.FB_PAGE_ID?.trim();
   if (!id) throw new Error("Falta FB_PAGE_ID");
   return id;
 }

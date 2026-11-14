@@ -9,8 +9,8 @@ export async function GET(req: Request) {
   const p = new URL(req.url).searchParams;
   const ok =
     p.get("hub.mode") === "subscribe" &&
-    !!process.env.WEBHOOK_VERIFY_TOKEN &&
-    p.get("hub.verify_token") === process.env.WEBHOOK_VERIFY_TOKEN;
+    !!process.env.WEBHOOK_VERIFY_TOKEN?.trim() &&
+    p.get("hub.verify_token") === process.env.WEBHOOK_VERIFY_TOKEN?.trim();
   return ok ? new Response(p.get("hub.challenge") ?? "") : new Response("Forbidden", { status: 403 });
 }
 
