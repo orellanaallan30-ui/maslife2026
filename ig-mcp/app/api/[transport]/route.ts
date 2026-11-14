@@ -1,7 +1,7 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 import { isAuthorized } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { rpc } from "@/lib/db";
 import * as ig from "@/lib/instagram";
 
 export const maxDuration = 60;
@@ -152,13 +152,12 @@ const handler = createMcpHandler(
         run(async () => {
           const when = new Date(publicar_en);
           if (isNaN(when.getTime())) throw new Error("Fecha inválida");
-          const { data, error } = await db()
-            .from("scheduled_posts")
-            .insert({ kind: tipo, payload: contenido, publish_at: when.toISOString() })
-            .select("id,kind,publish_at,status")
-            .single();
-          if (error) throw error;
-          return data;
+          const rows = await rpc<any[]>("ig_schedule_post", {
+            p_kind: tipo,
+            p_payload: contenido,
+            p_publish_at: when.toISOString(),
+          });
+          return rows?.[0] ?? rows;
         }),
     );
 
@@ -168,11 +167,7 @@ const handler = createMcpHandler(
       { estado: z.enum(["pending", "processing", "published", "error", "cancelled"]).optional() },
       ({ estado }) =>
         run(async () => {
-          let q = db().from("scheduled_posts").select("id,kind,payload,publish_at,status,media_id,error").order("publish_at");
-          if (estado) q = q.eq("status", estado);
-          const { data, error } = await q.limit(50);
-          if (error) throw error;
-          return data;
+          return rpc("ig_list_scheduled", { p_status: estado ?? null });
         }),
     );
 
@@ -182,15 +177,8 @@ const handler = createMcpHandler(
       { id: z.string().uuid() },
       ({ id }) =>
         run(async () => {
-          const { data, error } = await db()
-            .from("scheduled_posts")
-            .update({ status: "cancelled", updated_at: new Date().toISOString() })
-            .eq("id", id)
-            .eq("status", "pending")
-            .select("id,status");
-          if (error) throw error;
-          if (!data?.length) throw new Error("No existe o ya no está pendiente");
-          return data[0];
+          const rows = await rpc<any[]>("ig_cancel_scheduled", { p_id: id });
+          return rows?.[0] ?? rows;
         }),
     );
 
@@ -251,24 +239,18 @@ const handler = createMcpHandler(
       ({ palabra, mensaje_privado, respuesta_publica }) =>
         run(async () => {
           if (!mensaje_privado && !respuesta_publica) throw new Error("Define al menos un mensaje");
-          const { data, error } = await db()
-            .from("keyword_rules")
-            .upsert(
-              { keyword: palabra.trim().toLowerCase(), dm_message: mensaje_privado, public_reply: respuesta_publica, active: true },
-              { onConflict: "keyword" },
-            )
-            .select()
-            .single();
-          if (error) throw error;
-          return data;
+          const rows = await rpc<any[]>("ig_upsert_rule", {
+            p_keyword: palabra,
+            p_dm: mensaje_privado ?? null,
+            p_reply: respuesta_publica ?? null,
+          });
+          return rows?.[0] ?? rows;
         }),
     );
 
     server.tool("listar_reglas", "Reglas de palabra clave activas e inactivas.", {}, () =>
       run(async () => {
-        const { data, error } = await db().from("keyword_rules").select("*").order("created_at");
-        if (error) throw error;
-        return data;
+        return rpc("ig_list_rules", { p_only_active: false });
       }),
     );
 
@@ -278,13 +260,7 @@ const handler = createMcpHandler(
       { palabra: z.string(), activa: z.boolean() },
       ({ palabra, activa }) =>
         run(async () => {
-          const { data, error } = await db()
-            .from("keyword_rules")
-            .update({ active: activa })
-            .eq("keyword", palabra.trim().toLowerCase())
-            .select();
-          if (error) throw error;
-          return data;
+          return rpc("ig_set_rule_active", { p_keyword: palabra, p_active: activa });
         }),
     );
   },

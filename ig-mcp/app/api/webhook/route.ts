@@ -1,5 +1,5 @@
 import { validMetaSignature } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { rpc } from "@/lib/db";
 import { privateReply, replyToComment } from "@/lib/instagram";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const body = JSON.parse(raw);
   if (body.object !== "instagram") return new Response("ok");
 
-  const { data: rules } = await db().from("keyword_rules").select("*").eq("active", true);
+  const rules = await rpc<any[]>("ig_list_rules", { p_only_active: true });
   if (!rules?.length) return new Response("ok");
 
   for (const entry of body.entry ?? []) {
@@ -45,14 +45,14 @@ export async function POST(req: Request) {
       if (!rule) continue;
 
       // Deduplicar: Meta puede reenviar el mismo evento.
-      const { error: dup } = await db().from("processed_comments").insert({ comment_id: c.id, rule_id: rule.id });
-      if (dup) continue;
+      const nuevo = await rpc<boolean>("ig_mark_processed", { p_comment_id: c.id, p_rule_id: rule.id });
+      if (!nuevo) continue;
 
       try {
         if (rule.dm_message) await privateReply(c.id, rule.dm_message);
         if (rule.public_reply) await replyToComment(c.id, rule.public_reply);
       } catch (e: any) {
-        await db().from("processed_comments").update({ error: String(e?.message ?? e) }).eq("comment_id", c.id);
+        await rpc("ig_processed_error", { p_comment_id: c.id, p_error: String(e?.message ?? e) });
       }
     }
   }
