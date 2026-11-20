@@ -116,6 +116,65 @@ describe('confirmPaidOrder', () => {
   });
 });
 
+describe('venta informada a Meta desde el servidor', () => {
+  const aMeta = () => llamadas.filter(l => l.url.includes('graph.facebook.com'));
+  const conMeta = () => { vi.stubEnv('META_CAPI_TOKEN', 'tok-test'); vi.stubEnv('META_DATASET_ID', '889'); };
+  const sinMeta = () => { vi.stubEnv('META_CAPI_TOKEN', ''); vi.stubEnv('META_DATASET_ID', ''); };
+
+  it('envía la compra una sola vez, con el id del pedido y el correo cifrado', async () => {
+    conMeta();
+    await orders.createOrder({ ...buenaCompra, meta: { ua: 'Mozilla/5.0 Prueba', fbp: 'fb.1.1700000000000.1234567890', fbc: 'no-valido' } });
+    const id = db.tables.orders[0].id;
+    expect(db.tables.orders[0]).toMatchObject({ client_ua: 'Mozilla/5.0 Prueba', meta_fbp: 'fb.1.1700000000000.1234567890' });
+    expect(db.tables.orders[0].meta_fbc).toBeUndefined();
+
+    expect(await orders.confirmPaidOrder(id, pagoOk(id))).toBe('pagado');
+    expect(await orders.confirmPaidOrder(id, pagoOk(id))).toBe('ya-pagado');
+    expect(aMeta()).toHaveLength(1);
+
+    expect(aMeta()[0].url).toContain('/889/events');
+    const cuerpo = aMeta()[0].init.body as string;
+    const ev = JSON.parse(cuerpo).data[0];
+    expect(ev).toMatchObject({
+      event_name: 'Purchase', event_id: id, action_source: 'website',
+      custom_data: { currency: 'CLP', value: 9990, content_ids: [SLUG] },
+    });
+    expect(ev.user_data.client_user_agent).toBe('Mozilla/5.0 Prueba');
+    expect(ev.user_data.fbp).toBe('fb.1.1700000000000.1234567890');
+    expect(ev.user_data.em[0]).toMatch(/^[0-9a-f]{64}$/);
+    expect(cuerpo).not.toContain('ana@mail.cl');
+    expect(cuerpo).not.toContain('Ana');
+    sinMeta();
+  });
+
+  it('si Meta falla, el pedido queda pagado igual', async () => {
+    conMeta();
+    const id = await pedidoPendiente();
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('graph.facebook.com')) throw new Error('sin red');
+      return { ok: false, status: 404, json: async () => ({}), text: async () => '' };
+    }));
+    expect(await orders.confirmPaidOrder(id, pagoOk(id))).toBe('pagado');
+    expect(db.tables.orders[0].status).toBe('pagado');
+    sinMeta();
+  });
+
+  it('sin las variables de Meta no se envía nada', async () => {
+    sinMeta();
+    const id = await pedidoPendiente();
+    expect(await orders.confirmPaidOrder(id, pagoOk(id))).toBe('pagado');
+    expect(aMeta()).toHaveLength(0);
+  });
+
+  it('solo guarda identificadores del navegador con formato válido', () => {
+    expect(orders.cleanMetaIds({ ua: ' UA ', fbp: 'fb.1.1700000000000.1234567890', fbc: 'fb.1.1700000000000.AbC-123_x' }))
+      .toEqual({ client_ua: 'UA', meta_fbp: 'fb.1.1700000000000.1234567890', meta_fbc: 'fb.1.1700000000000.AbC-123_x' });
+    expect(orders.cleanMetaIds({ ua: 12, fbp: "fb'; drop", fbc: '' })).toEqual({});
+    expect(orders.cleanMetaIds(null)).toEqual({});
+    expect(orders.cleanMetaIds({ ua: 'x'.repeat(900) }).client_ua).toHaveLength(400);
+  });
+});
+
 describe('deliverOrder', () => {
   it('envía el correo una sola vez aunque se llame dos veces', async () => {
     const id = await pedidoPendiente();

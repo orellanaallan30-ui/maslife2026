@@ -40,7 +40,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Venta de productos digitales propios: se cobra con el token de la plataforma y
   // el precio sale del catálogo del servidor (api/_lib/products.ts).
   if (req.body?.action === 'create-order') {
-    const r = await createOrder(req.body);
+    const ua = req.headers['user-agent'];
+    const r = await createOrder({
+      ...req.body,
+      meta: { ua: Array.isArray(ua) ? ua[0] : ua, fbp: req.body?.fbp, fbc: req.body?.fbc },
+    });
     return r.ok ? res.status(200).json(r.data) : res.status(r.code).json({ error: r.error });
   }
 

@@ -124,6 +124,15 @@ export function trackProgramPurchase(orderId: string, value: number): void {
 }
 
 /** UTM guardadas del anuncio (solo las 4 que se atribuyen a un pedido). */
+/** Cookies del píxel de Meta (si existen): ayudan a que la venta informada por el servidor calce con el anuncio. */
+export function getMetaIds(): { fbp?: string; fbc?: string } {
+  try {
+    const leer = (n: string) => document.cookie.split('; ').find(c => c.startsWith(n + '='))?.split('=')[1];
+    const fbp = leer('_fbp'); const fbc = leer('_fbc');
+    return { ...(fbp ? { fbp } : {}), ...(fbc ? { fbc } : {}) };
+  } catch { return {}; }
+}
+
 export function getUtms(): Record<string, string> {
   const out: Record<string, string> = {};
   for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content']) {
