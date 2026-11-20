@@ -600,6 +600,7 @@ const AppContent: React.FC = () => {
           <Route path="/unete"               element={<ProLanding />} />
           <Route path="/charlas"             element={<Charlas />} />
           <Route path="/programas/lumbar"    element={<ProgramaLumbar />} />
+          <Route path="/programa-lumbar"     element={<Navigate to="/programas/lumbar" replace />} />
           <Route path="/programas/gracias"   element={<ProgramaGracias />} />
           <Route path="/descarga/:token"     element={<Descarga />} />
           <Route path="/privacidad"          element={<PrivacyPolicy />} />

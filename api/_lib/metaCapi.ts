@@ -42,9 +42,11 @@ export interface MetaEvent {
   event_name: 'Purchase';
   event_time: number;
   event_id: string;
-  action_source: 'physical_store';
-  user_data: Record<string, string[]>;
-  custom_data: { currency: 'CLP'; value: number };
+  action_source: 'physical_store' | 'website';
+  event_source_url?: string;
+  // Cifrados van como lista; los identificadores del navegador (fbp, fbc, user agent) van en claro.
+  user_data: Record<string, string[] | string>;
+  custom_data: { currency: 'CLP'; value: number; content_type?: 'product'; content_ids?: string[] };
 }
 
 /** event_id estable: si se reintenta, Meta descarta el duplicado. */
@@ -88,6 +90,48 @@ export function buildPurchaseEvent(input: SaleInput): MetaEvent {
   };
 }
 
+export interface EbookSaleInput {
+  orderId: string;
+  productSlug: string;
+  amount: number;            // CLP, entero
+  email?: string | null;
+  fullName?: string | null;
+  userAgent?: string | null; // navegador del comprador al crear el pedido
+  fbp?: string | null;       // cookie _fbp del píxel
+  fbc?: string | null;       // cookie _fbc (clic en el anuncio)
+  nowSec?: number;
+}
+
+/**
+ * Compra de un producto digital en el sitio. El event_id es el id del pedido, el mismo
+ * que usa el píxel del navegador (eventID), para que Meta cuente la venta una sola vez.
+ * Solo lleva el producto y el monto: ningún dato de salud del comprador.
+ */
+export function buildEbookPurchaseEvent(input: EbookSaleInput): MetaEvent {
+  const user_data: Record<string, string[] | string> = {};
+  const em = hashed(input.email);
+  if (em) user_data.em = [em];
+  const parts = (input.fullName || '').trim().split(/\s+/).filter(Boolean).map(normName).filter(Boolean);
+  if (parts.length) user_data.fn = [sha256(parts[0])];
+  if (parts.length > 1) user_data.ln = [sha256(parts[parts.length - 1])];
+  user_data.country = [sha256('cl')];
+  if (input.userAgent) user_data.client_user_agent = input.userAgent;
+  if (input.fbp) user_data.fbp = input.fbp;
+  if (input.fbc) user_data.fbc = input.fbc;
+  return {
+    event_name: 'Purchase',
+    event_time: input.nowSec ?? Math.floor(Date.now() / 1000),
+    event_id: input.orderId,
+    action_source: 'website',
+    event_source_url: 'https://clinicamaslife.cl/programas/gracias',
+    user_data,
+    custom_data: {
+      currency: 'CLP', value: Math.max(0, Math.round(input.amount)),
+      content_type: 'product', content_ids: [input.productSlug],
+    },
+  };
+}
+
 /** Hay datos suficientes para que Meta pueda reconocer a la persona. */
 export function hasMatchKeys(ev: MetaEvent): boolean {
   return !!(ev.user_data.ph || ev.user_data.em);
@@ -95,7 +139,7 @@ export function hasMatchKeys(ev: MetaEvent): boolean {
 
 export async function sendMetaEvent(
   ev: MetaEvent,
-  cfg: { datasetId: string; token: string; testCode?: string },
+  cfg: { datasetId: string; token: string; testCode?: string; signal?: AbortSignal },
 ): Promise<{ ok: boolean; status: number; body: unknown }> {
   const payload: Record<string, unknown> = { data: [ev] };
   if (cfg.testCode) payload.test_event_code = cfg.testCode;
@@ -104,6 +148,7 @@ export async function sendMetaEvent(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal: cfg.signal,
   });
   const body = await r.json().catch(() => ({}));
   return { ok: r.ok, status: r.status, body };

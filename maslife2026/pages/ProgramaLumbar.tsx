@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '../lib/seo';
-import { trackProgramView, trackProgramCheckout, getUtms } from '../analytics';
+import { trackProgramView, trackProgramCheckout, getUtms, getMetaIds } from '../analytics';
 
 // Página de venta del "Programa de ejercicios para el dolor lumbar · 4 semanas".
 // El precio mostrado es informativo: el cobro lo calcula el servidor desde su
@@ -24,7 +24,7 @@ const ACCION = `Comprar por ${clp(PRECIO)}`;
 
 const INCLUYE = [
   'Una explicación clara de por qué duele la espalda y por qué no siempre hay un daño',
-  'Un plan de 4 semanas, con progresión gradual y 13 ejercicios con fotos',
+  'Un plan de 4 semanas, con progresión gradual y 13 ejercicios ilustrados paso a paso',
   'Cada ejercicio explicado paso a paso',
   'Escala de dolor, semáforo y registro de síntomas para seguir tu avance',
   'Señales de alarma: cuándo dejar de ejercitar y consultar',
@@ -39,6 +39,8 @@ const NO_PARA = [
   'Si te operaron hace poco o tuviste un golpe o caída reciente',
   'Si el dolor baja por la pierna con hormigueo o pérdida de fuerza',
   'Si hay fiebre, pérdida de peso sin causa o dolor que te despierta de noche',
+  'Si tienes antecedentes de cáncer u osteoporosis, o estás embarazada',
+  'Si pierdes el control de la orina o las deposiciones, o se te adormece la entrepierna: eso es una urgencia',
   'Si no sabes qué tienes: primero conviene una evaluación profesional',
 ];
 // Mismos datos que la tabla "Tu mes de un vistazo" del PDF.
@@ -162,7 +164,7 @@ const ProgramaLumbar: React.FC = () => {
       const r = await fetch('/api/process-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create-order', slug: SLUG, name: nombre, email: correo, acceptedTerms: true, utm: getUtms() }),
+        body: JSON.stringify({ action: 'create-order', slug: SLUG, name: nombre, email: correo, acceptedTerms: true, utm: getUtms(), ...getMetaIds() }),
       });
       const j = await r.json().catch(() => ({}));
       if (r.ok && j.init_point) { window.location.href = j.init_point; return; }
@@ -220,7 +222,7 @@ const ProgramaLumbar: React.FC = () => {
       <section aria-labelledby="dentro-titulo" className="py-14 lg:py-20">
         <div className="px-5 mx-auto max-w-6xl">
           <h2 id="dentro-titulo" className="text-3xl lg:text-4xl" style={{ ...SERIF, fontWeight: 600 }}>Así es por dentro</h2>
-          <p className="mt-2 text-slate-600 max-w-[60ch]">Diseñado como una revista: capítulos cortos, cuadros claros y cada ejercicio con fotos de inicio y final.</p>
+          <p className="mt-2 text-slate-600 max-w-[60ch]">Diseñado como una revista: capítulos cortos, cuadros claros y cada ejercicio con ilustraciones de inicio y final.</p>
         </div>
         <div className="mt-8 flex lg:grid lg:grid-cols-4 gap-4 lg:gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory px-5 pb-4 mx-auto max-w-6xl hide-scrollbar">
           {VISTA_PREVIA.map((v, i) => (
@@ -294,7 +296,7 @@ const ProgramaLumbar: React.FC = () => {
             <label className="mt-5 flex gap-3 text-sm text-slate-600 cursor-pointer">
               <input type="checkbox" className="mt-1 h-4 w-4 accent-[#0B4F5C]" checked={acepta} onChange={e => setAcepta(e.target.checked)} />
               <span>
-                Leí y acepto los <Link to="/terminos" className="underline font-bold">términos</Link> y la <Link to="/privacidad" className="underline font-bold">política de privacidad</Link>, y entiendo que este programa no reemplaza una evaluación profesional.
+                Leí y acepto los <Link to="/terminos" className="underline font-bold">términos</Link> y la <Link to="/privacidad" className="underline font-bold">política de privacidad</Link>, y entiendo que este programa no reemplaza una evaluación profesional. Al ser un producto digital de descarga inmediata, la compra no tiene devolución ni derecho a retracto.
               </span>
             </label>
 

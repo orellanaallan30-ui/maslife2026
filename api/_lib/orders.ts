@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { getProduct } from './products';
+import { buildEbookPurchaseEvent, sendMetaEvent } from './metaCapi';
 
 // Pedidos de productos digitales: crear el cobro, confirmar el pago, entregar el
 // enlace de descarga y canjearlo. Todo corre en el servidor con service_role; la
@@ -57,8 +58,47 @@ export function cleanUtms(raw: unknown): Record<string, string> {
   return out;
 }
 
+/**
+ * Identificadores del navegador que ayudan a Meta a reconocer la compra (user agent y
+ * cookies del píxel). Se guardan solo si tienen el formato esperado.
+ */
+export function cleanMetaIds(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.ua === 'string' && r.ua.trim()) out.client_ua = r.ua.trim().slice(0, 400);
+  if (typeof r.fbp === 'string' && /^fb\.\d\.\d{6,}\.\d{4,}$/.test(r.fbp)) out.meta_fbp = r.fbp;
+  if (typeof r.fbc === 'string' && /^fb\.\d\.\d{6,}\.[\w-]{1,300}$/.test(r.fbc)) out.meta_fbc = r.fbc;
+  return out;
+}
+
+/**
+ * Informa la venta a Meta desde el servidor, para no depender de que el comprador vuelva
+ * a la página de gracias. Nunca frena la venta: si falla o no está configurado, solo se registra.
+ */
+async function reportPurchaseToMeta(order: any): Promise<void> {
+  const token = (process.env.META_CAPI_TOKEN || '').trim();
+  const datasetId = (process.env.META_DATASET_ID || '').trim();
+  if (!token || !datasetId) return;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const ev = buildEbookPurchaseEvent({
+      orderId: order.id, productSlug: order.product_slug, amount: order.amount,
+      email: order.buyer_email, fullName: order.buyer_name,
+      userAgent: order.client_ua, fbp: order.meta_fbp, fbc: order.meta_fbc,
+    });
+    const r = await sendMetaEvent(ev, { datasetId, token, testCode: (process.env.META_CAPI_TEST_CODE || '').trim() || undefined, signal: ctrl.signal });
+    if (!r.ok) console.error('[orders] Meta no aceptó la venta:', r.status, JSON.stringify(r.body).slice(0, 300));
+  } catch (e: any) {
+    console.error('[orders] no se pudo informar la venta a Meta:', e?.message);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function createOrder(input: {
-  slug?: unknown; name?: unknown; email?: unknown; acceptedTerms?: unknown; utm?: unknown;
+  slug?: unknown; name?: unknown; email?: unknown; acceptedTerms?: unknown; utm?: unknown; meta?: unknown;
 }): Promise<Result<{ init_point: string; orderId: string }>> {
   const token = platformToken();
   if (!token) return { ok: false, code: 503, error: 'MP_NOT_CONFIGURED' };
@@ -80,6 +120,7 @@ export async function createOrder(input: {
       amount: product.price, currency: 'CLP', status: 'pendiente',
       accepted_terms_at: new Date().toISOString(),
       ...cleanUtms(input.utm),
+      ...cleanMetaIds(input.meta),
     })
     .select('id')
     .single();
@@ -178,7 +219,11 @@ export async function confirmPaidOrder(orderId: string, payment: any): Promise<'
       console.error('[orders] no se pudo marcar como pagado:', error.message);
       return 'rechazado';
     }
-    if (upd) return 'pagado';
+    if (upd) {
+      // El cambio a 'pagado' ocurre una sola vez, así que la venta se informa una sola vez.
+      await reportPurchaseToMeta(order);
+      return 'pagado';
+    }
   }
   return 'ya-pagado';
 }
