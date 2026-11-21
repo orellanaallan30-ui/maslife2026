@@ -254,6 +254,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     return res.status(200).json({ data });
   }
+  if (req.method === 'GET' && req.query.action === 'guide-suggestions') {
+    const { data, error } = await supabase.from('guide_suggestions')
+      .select('id, tema, email, product_slug, origen, created_at')
+      .order('created_at', { ascending: false }).limit(200);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ data: data || [] });
+  }
   // Entrega una URL firmada de un solo uso: el navegador del admin sube el PDF
   // directo al almacén privado (sin pasar por esta función ni su límite de tamaño).
   if (req.method === 'POST' && req.query.action === 'ebook-upload-url') {

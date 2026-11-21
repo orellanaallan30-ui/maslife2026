@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePageMeta } from '../lib/seo';
 import { trackProgramView, trackProgramCheckout, getUtms, getMetaIds } from '../analytics';
+import { RedesSociales, SugerenciaGuia } from '../components/ProgramaExtras';
 
 // Página de venta del "Programa de ejercicios para el dolor lumbar · 4 semanas".
 // El precio mostrado es informativo: el cobro lo calcula el servidor desde su
@@ -29,11 +30,17 @@ const INCLUYE = [
   'Escala de dolor, semáforo y registro de síntomas para seguir tu avance',
   'Señales de alarma: cuándo dejar de ejercitar y consultar',
 ];
-const VISTA_PREVIA = [
-  { src: '/programa-lumbar/preview-1.jpg', alt: 'Portada del programa de ejercicios para el dolor lumbar' },
-  { src: '/programa-lumbar/preview-2.jpg', alt: 'Página que explica por qué duele la espalda y por qué no siempre hay un daño' },
-  { src: '/programa-lumbar/preview-3.jpg', alt: 'Página sobre el círculo del dolor y lo que dicen las resonancias magnéticas' },
-  { src: '/programa-lumbar/preview-4.jpg', alt: 'Página de señales de alarma y semáforo del dolor' },
+// Solo se muestra la portada: las páginas interiores no se publican para no regalar el contenido.
+const PORTADA = { src: '/programa-lumbar/portada.jpg', alt: 'Portada de la guía: La espalda se puede mover sin miedo' };
+const INDICE: [string, string][] = [
+  ['Lee esto primero', 'Para quién no es y las señales para consultar antes de empezar.'],
+  ['El semáforo del dolor', 'Cuándo seguir, cuándo bajar y cuándo parar.'],
+  ['Por qué duele la espalda', 'Lo que pasa de verdad y lo que dice (y no dice) una resonancia.'],
+  ['Tu mes de un vistazo', 'El plan de las 4 semanas en una sola página.'],
+  ['Los 13 ejercicios', 'Cada uno con ilustraciones de inicio y final, series por semana, error frecuente y versión fácil y difícil.'],
+  ['Hojas de las 4 semanas', 'Para marcar cada sesión y ver tu avance.'],
+  ['Si el dolor aumenta', 'Qué ajustar y cuándo pedir ayuda.'],
+  ['Preguntas frecuentes', 'Las dudas que más aparecen al hacer el programa.'],
 ];
 const NO_PARA = [
   'Si te operaron hace poco o tuviste un golpe o caída reciente',
@@ -207,7 +214,7 @@ const ProgramaLumbar: React.FC = () => {
           <div className="order-1 lg:order-2 relative flex justify-center lg:justify-end">
             <div aria-hidden className="absolute rounded-full" style={{ background: C.naranja, width: '62%', aspectRatio: '1', right: '4%', top: '-10%' }} />
             <img
-              src={VISTA_PREVIA[0].src} alt={VISTA_PREVIA[0].alt}
+              src={PORTADA.src} alt={PORTADA.alt}
               className="relative w-[40%] max-w-[180px] lg:w-[80%] lg:max-w-[360px] rounded-md -rotate-3"
               style={{ boxShadow: '0 30px 60px -20px rgba(0,0,0,.55)' }}
             />
@@ -218,18 +225,19 @@ const ProgramaLumbar: React.FC = () => {
       {/* Momento interactivo */}
       <VolumenDelDolor />
 
-      {/* Hojeo */}
-      <section aria-labelledby="dentro-titulo" className="py-14 lg:py-20">
-        <div className="px-5 mx-auto max-w-6xl">
-          <h2 id="dentro-titulo" className="text-3xl lg:text-4xl" style={{ ...SERIF, fontWeight: 600 }}>Así es por dentro</h2>
-          <p className="mt-2 text-slate-600 max-w-[60ch]">Diseñado como una revista: capítulos cortos, cuadros claros y cada ejercicio con ilustraciones de inicio y final.</p>
-        </div>
-        <div className="mt-8 flex lg:grid lg:grid-cols-4 gap-4 lg:gap-6 overflow-x-auto lg:overflow-visible snap-x snap-mandatory px-5 pb-4 mx-auto max-w-6xl hide-scrollbar">
-          {VISTA_PREVIA.map((v, i) => (
-            <figure key={v.src} className={`snap-start flex-none w-[70%] sm:w-[45%] lg:w-auto ${i % 2 ? 'lg:translate-y-8' : ''}`}>
-              <img src={v.src} alt={v.alt} loading="lazy" className="w-full h-auto block rounded-md border border-slate-200" style={{ boxShadow: '0 18px 40px -24px rgba(11,79,92,.45)' }} />
-            </figure>
-          ))}
+      {/* Qué trae (índice, sin mostrar páginas interiores) */}
+      <section aria-labelledby="dentro-titulo" className="py-14 lg:py-20 px-5">
+        <div className="mx-auto max-w-6xl">
+          <h2 id="dentro-titulo" className="text-3xl lg:text-4xl" style={{ ...SERIF, fontWeight: 600 }}>Qué trae la guía</h2>
+          <p className="mt-2 text-slate-600 max-w-[60ch]">32 páginas pensadas como una revista: capítulos cortos, cuadros claros y cada ejercicio ilustrado paso a paso.</p>
+          <ol className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-x-10 border-t border-slate-200">
+            {INDICE.map(([t, d], i) => (
+              <li key={t} className="flex gap-4 py-4 border-b border-slate-200">
+                <span className="text-2xl leading-none w-8 shrink-0" style={{ ...SERIF, fontWeight: 600, color: C.naranja }}>{i + 1}</span>
+                <span><span className="block font-bold">{t}</span><span className="block text-sm text-slate-600">{d}</span></span>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -279,7 +287,7 @@ const ProgramaLumbar: React.FC = () => {
 
           <form id="comprar" onSubmit={comprar} className="rounded-3xl bg-white p-6 lg:p-8 h-fit scroll-mt-4 border-2" style={{ borderColor: C.petroleo }}>
             <div className="flex items-center gap-4">
-              <img src={VISTA_PREVIA[0].src} alt="" aria-hidden className="w-16 rounded-sm -rotate-3 shadow-md" />
+              <img src={PORTADA.src} alt="" aria-hidden className="w-16 rounded-sm -rotate-3 shadow-md" />
               <div>
                 <p className="font-bold">Programa lumbar de 4 semanas</p>
                 <p className="mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-extrabold uppercase tracking-wide" style={{ background: '#fdf0d8', color: '#8a5a00' }}>Precio de lanzamiento</p>
@@ -312,7 +320,7 @@ const ProgramaLumbar: React.FC = () => {
       </section>
 
       {/* Preguntas */}
-      <section aria-labelledby="faq-titulo" className="px-5 pt-14 pb-28 lg:pb-20 mx-auto max-w-3xl">
+      <section aria-labelledby="faq-titulo" className="px-5 pt-14 pb-14 mx-auto max-w-3xl">
         <h2 id="faq-titulo" className="text-3xl" style={{ ...SERIF, fontWeight: 600 }}>Preguntas frecuentes</h2>
         <div className="mt-6 divide-y divide-slate-200 border-y border-slate-200">
           {[
@@ -328,6 +336,12 @@ const ProgramaLumbar: React.FC = () => {
             </details>
           ))}
         </div>
+      </section>
+
+      {/* Redes y temas para próximas guías */}
+      <section className="px-5 pb-32 lg:pb-20 mx-auto max-w-3xl flex flex-col gap-10">
+        <SugerenciaGuia slug={SLUG} origen="pagina" color={C.petroleo} />
+        <RedesSociales color={C.petroleo} />
       </section>
 
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">

@@ -59,6 +59,7 @@ const AdminManagement: React.FC = () => {
   const [finance, setFinance] = useState<{ feePct: number; rows: FinanceRow[]; totals: { gross: number; fee: number; count: number } } | null>(null);
   const [ebooks, setEbooks] = useState<EbookRow[] | null>(null);
   const [ebookSubiendo, setEbookSubiendo] = useState<string | null>(null);
+  const [sugerencias, setSugerencias] = useState<{ id: string; tema: string; email: string | null; origen: string | null; created_at: string }[] | null>(null);
   const [health, setHealth] = useState<{ events: HealthEvent[]; outcomeCounts: Record<string, number>; pausedPros: { id: string; name: string }[] } | null>(null);
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [msgForm, setMsgForm] = useState({ asunto: '', mensaje: '' });
@@ -110,7 +111,7 @@ const AdminManagement: React.FC = () => {
     if (activeTab === 'charlas') loadCharlas();
     if (activeTab === 'finance') loadTab('finance', setFinance);
     if (activeTab === 'health')  loadTab('health', setHealth);
-    if (activeTab === 'programas') loadTab('ebooks', j => setEbooks(j.data || []));
+    if (activeTab === 'programas') { loadTab('ebooks', j => setEbooks(j.data || [])); loadTab('guide-suggestions', j => setSugerencias(j.data || [])); }
     if (activeTab === 'support') loadTab('feedback', j => setFeedbackList(j.data || []));
   }, [isAdmin, activeTab]);
 
@@ -900,6 +901,21 @@ const AdminManagement: React.FC = () => {
                 </label>
               </div>
             ))}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Temas que piden para próximas guías</p>
+                <span className="text-xs font-bold text-slate-400">{sugerencias ? sugerencias.length : '…'}</span>
+              </div>
+              <ul className="divide-y divide-slate-50">
+                {(sugerencias || []).map(s => (
+                  <li key={s.id} className="px-6 py-3">
+                    <p className="text-sm text-slate-800">{s.tema}</p>
+                    <p className="text-[11px] text-slate-400 mt-1">{new Date(s.created_at).toLocaleString('es-CL')}{s.email ? ` · ${s.email}` : ''}{s.origen === 'gracias' ? ' · compró la guía' : ''}</p>
+                  </li>
+                ))}
+                {sugerencias && sugerencias.length === 0 && <li className="px-6 py-8 text-center text-sm text-slate-400 italic">Todavía no hay temas propuestos.</li>}
+              </ul>
+            </div>
           </div>
         )}
 

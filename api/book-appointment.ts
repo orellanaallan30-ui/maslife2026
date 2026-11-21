@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { saveSuggestion } from './_lib/sugerencias';
 import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, confirmBookingPaid, claimNotify, releaseStaleHolds, BookingInput, UUID_RE } from './_lib/booking';
 import { syncAppointmentToGoogle } from './_lib/googleCalendar';
@@ -67,6 +68,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const body = req.body || {};
+
+  // ── Temas propuestos para próximas guías ──
+  if (body.action === 'guide-suggestion') {
+    const r = await saveSuggestion(body);
+    return r.ok ? res.status(200).json({ ok: true }) : res.status(r.code).json({ error: r.error });
+  }
 
   // ── Programa digital: estado del pedido, confirmación al volver de MercadoPago y descarga ──
   if (body.action === 'order-status' || body.action === 'order-confirm' || body.action === 'download') {
