@@ -222,7 +222,7 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
     prevCountRef.current = notifications.length;
   }, [notifications.length]);
 
-  const publicPaths = ['/pro/login','/pro/register','/pro/recover','/pro/reset-password','/verify/','/consent/','/admin/login', '/patient', '/rutina/', '/plan/'];
+  const publicPaths = ['/pro/login','/pro/register','/pro/recover','/pro/reset-password','/verify/','/consent/','/admin/login', '/patient', '/rutina/', '/plan/', '/programas', '/descarga'];
   const isFullPublic = esRutaLanding(location.pathname) || publicPaths.some(p => location.pathname.startsWith(p));
   const isAuthPage   = publicPaths.some(p => location.pathname.startsWith(p));
   const showProActions = view === 'PROFESSIONAL' && !isAuthPage && !!loggedPro;
