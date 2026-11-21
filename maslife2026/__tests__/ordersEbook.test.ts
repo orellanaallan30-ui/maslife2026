@@ -168,6 +168,33 @@ describe('venta informada a Meta desde el servidor', () => {
     sinMeta();
   });
 
+  it('la prueba del panel avisa si falta el token y no llama a Meta', async () => {
+    sinMeta();
+    const id = await pedidoPendiente();
+    await orders.confirmPaidOrder(id, pagoOk(id));
+    llamadas = [];
+    expect(await orders.resendLastPaidToMeta()).toEqual({ ok: false, reason: 'not_configured' });
+    expect(aMeta()).toHaveLength(0);
+  });
+
+  it('la prueba del panel reenvía el último pedido pagado con su mismo id', async () => {
+    sinMeta();
+    const id = await pedidoPendiente();
+    await orders.confirmPaidOrder(id, pagoOk(id));
+    conMeta();
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: any) => { llamadas.push({ url, init }); return { ok: true, status: 200, json: async () => ({ events_received: 1 }) }; }));
+    llamadas = [];
+    const r = await orders.resendLastPaidToMeta();
+    expect(r.ok).toBe(true);
+    expect(aMeta()).toHaveLength(1);
+    expect(JSON.parse(aMeta()[0].init.body).data[0].event_id).toBe(id);
+    sinMeta();
+  });
+
+  it('sin pedidos pagados la prueba lo dice', async () => {
+    expect(await orders.resendLastPaidToMeta()).toEqual({ ok: false, reason: 'no_orders' });
+  });
+
   it('sin las variables de Meta no se envía nada', async () => {
     sinMeta();
     const id = await pedidoPendiente();

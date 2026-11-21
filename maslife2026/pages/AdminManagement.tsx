@@ -59,6 +59,7 @@ const AdminManagement: React.FC = () => {
   const [finance, setFinance] = useState<{ feePct: number; rows: FinanceRow[]; totals: { gross: number; fee: number; count: number } } | null>(null);
   const [ebooks, setEbooks] = useState<EbookRow[] | null>(null);
   const [ebookSubiendo, setEbookSubiendo] = useState<string | null>(null);
+  const [metaPrueba, setMetaPrueba] = useState<{ cargando: boolean; texto: string; ok?: boolean }>({ cargando: false, texto: '' });
   const [sugerencias, setSugerencias] = useState<{ id: string; tema: string; email: string | null; origen: string | null; created_at: string }[] | null>(null);
   const [health, setHealth] = useState<{ events: HealthEvent[]; outcomeCounts: Record<string, number>; pausedPros: { id: string; name: string }[] } | null>(null);
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
@@ -901,6 +902,33 @@ const AdminManagement: React.FC = () => {
                 </label>
               </div>
             ))}
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 flex flex-col lg:flex-row lg:items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-slate-800">Conexión con Meta (ventas desde el servidor)</p>
+                <p className="text-xs text-slate-500 mt-1">Reenvía a Meta la última venta pagada. Meta no la cuenta dos veces.</p>
+                {metaPrueba.texto && <p className={`mt-2 text-sm font-bold ${metaPrueba.ok ? 'text-emerald-700' : 'text-rose-700'}`}>{metaPrueba.texto}</p>}
+              </div>
+              <button disabled={metaPrueba.cargando} onClick={async () => {
+                setMetaPrueba({ cargando: true, texto: '' });
+                try {
+                  const r = await adminFetch('POST', {}, 'meta-test');
+                  const j = await r.json();
+                  if (!r.ok) throw new Error(j.error || 'Error');
+                  const textos: Record<string, string> = {
+                    not_configured: 'Falta META_CAPI_TOKEN en Vercel (Production). Agrégala y haz Redeploy.',
+                    no_orders: 'Todavía no hay ventas pagadas para probar.',
+                    rejected: 'Meta rechazó el envío: revisa que el token sea del píxel PIXEL life.',
+                    network: 'No se pudo conectar con Meta. Intenta de nuevo.',
+                  };
+                  setMetaPrueba({ cargando: false, ok: !!j.ok, texto: j.ok ? '✅ Conectado: Meta recibió la venta.' : (textos[j.reason] || 'No se pudo enviar.') });
+                } catch (err) {
+                  setMetaPrueba({ cargando: false, ok: false, texto: `⚠️ ${(err as Error)?.message || 'Error'} (¿sesión de admin expirada?)` });
+                }
+              }} className="shrink-0 inline-flex items-center gap-2 rounded-xl px-5 py-3 font-black text-sm text-white bg-slate-800 hover:bg-slate-700 disabled:opacity-60">
+                <span className="material-icons-round text-base">{metaPrueba.cargando ? 'sync' : 'sensors'}</span>
+                {metaPrueba.cargando ? 'Probando…' : 'Probar conexión con Meta'}
+              </button>
+            </div>
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <p className="text-xs font-black text-slate-700 uppercase tracking-widest">Temas que piden para próximas guías</p>

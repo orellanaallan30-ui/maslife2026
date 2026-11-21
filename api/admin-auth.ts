@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual, randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { getProduct, listProducts } from './_lib/products';
+import { resendLastPaidToMeta } from './_lib/orders';
 
 const EBOOK_BUCKET = 'ebook-files';
 
@@ -260,6 +261,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .order('created_at', { ascending: false }).limit(200);
     if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ data: data || [] });
+  }
+  // Prueba la conexión con Meta reenviando el último pedido pagado (Meta lo deduplica).
+  if (req.method === 'POST' && req.query.action === 'meta-test') {
+    const r = await resendLastPaidToMeta();
+    return res.status(200).json(r);
   }
   // Entrega una URL firmada de un solo uso: el navegador del admin sube el PDF
   // directo al almacén privado (sin pasar por esta función ni su límite de tamaño).
