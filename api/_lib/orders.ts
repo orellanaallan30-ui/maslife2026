@@ -76,10 +76,16 @@ export function cleanMetaIds(raw: unknown): Record<string, string> {
  * Informa la venta a Meta desde el servidor, para no depender de que el comprador vuelva
  * a la página de gracias. Nunca frena la venta: si falla o no está configurado, solo se registra.
  */
-async function reportPurchaseToMeta(order: any): Promise<void> {
+export type MetaReport = { ok: true; body: unknown } | { ok: false; reason: 'not_configured' | 'rejected' | 'network'; detail?: unknown };
+
+async function reportPurchaseToMeta(order: any): Promise<MetaReport> {
   const token = (process.env.META_CAPI_TOKEN || '').trim();
   const datasetId = (process.env.META_DATASET_ID || META_DATASET_DEFAULT).trim();
-  if (!token || !datasetId) return;
+  if (!token || !datasetId) {
+    // Sin token la venta no llega a Meta: se deja constancia (antes salía callado).
+    console.warn('[orders] META_CAPI_TOKEN no configurado: la venta no se informó a Meta');
+    return { ok: false, reason: 'not_configured' };
+  }
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 4000);
   try {
@@ -89,12 +95,32 @@ async function reportPurchaseToMeta(order: any): Promise<void> {
       userAgent: order.client_ua, fbp: order.meta_fbp, fbc: order.meta_fbc,
     });
     const r = await sendMetaEvent(ev, { datasetId, token, testCode: (process.env.META_CAPI_TEST_CODE || '').trim() || undefined, signal: ctrl.signal });
-    if (!r.ok) console.error('[orders] Meta no aceptó la venta:', r.status, JSON.stringify(r.body).slice(0, 300));
+    if (!r.ok) {
+      console.error('[orders] Meta no aceptó la venta:', r.status, JSON.stringify(r.body).slice(0, 300));
+      return { ok: false, reason: 'rejected', detail: r.body };
+    }
+    return { ok: true, body: r.body };
   } catch (e: any) {
     console.error('[orders] no se pudo informar la venta a Meta:', e?.message);
+    return { ok: false, reason: 'network', detail: e?.message };
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Prueba desde el panel admin: vuelve a informar a Meta el último pedido pagado.
+ * Usa el mismo event_id (el id del pedido), así que Meta no lo cuenta dos veces.
+ */
+export async function resendLastPaidToMeta(): Promise<MetaReport | { ok: false; reason: 'no_orders' }> {
+  const { data: order } = await supabase
+    .from('orders')
+    .select('id, product_slug, amount, buyer_email, buyer_name, client_ua, meta_fbp, meta_fbc')
+    .eq('status', 'pagado')
+    .order('paid_at', { ascending: false })
+    .limit(1).maybeSingle();
+  if (!order) return { ok: false, reason: 'no_orders' };
+  return reportPurchaseToMeta(order);
 }
 
 export async function createOrder(input: {

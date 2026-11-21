@@ -32,6 +32,8 @@ export function makeFakeSupabase(
       update: (v: any) => { op = 'update'; patch = v; return b; },
       eq: (c: string, v: any) => { filters.push(r => r[c] === v); return b; },
       is: (c: string, v: any) => { filters.push(r => r[c] === v); return b; },
+      order: () => b,
+      limit: () => b,
       maybeSingle: async () => { const r = run().data[0]; return { data: r ? { ...r } : null, error: null }; },
       single: async () => { const r = run().data[0]; return { data: r ? { ...r } : null, error: null }; },
       then: (res: any, rej?: any) => Promise.resolve(run()).then(res, rej),
