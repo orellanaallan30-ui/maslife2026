@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { requireSupabaseAuth, checkIpRateLimit } from './_lib/auth';
-import { buildPurchaseEvent, hasMatchKeys, sendMetaEvent, eventIdFor } from './_lib/metaCapi';
+import { buildPurchaseEvent, hasMatchKeys, sendMetaEvent, eventIdFor, META_DATASET_DEFAULT } from './_lib/metaCapi';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -116,8 +116,8 @@ async function metaConversion(req: VercelRequest, res: VercelResponse) {
   if (!/^[0-9a-f-]{36}$/i.test(transactionId)) return res.status(400).json({ ok: false, reason: 'error', error: 'transactionId inválido' });
 
   const token = process.env.META_CAPI_TOKEN;
-  const datasetId = process.env.META_DATASET_ID;
-  if (!token || !datasetId) return res.status(200).json({ ok: false, reason: 'not_configured', error: 'Falta META_CAPI_TOKEN o META_DATASET_ID' });
+  const datasetId = process.env.META_DATASET_ID || META_DATASET_DEFAULT;
+  if (!token || !datasetId) return res.status(200).json({ ok: false, reason: 'not_configured', error: 'Falta META_CAPI_TOKEN' });
 
   const eventId = eventIdFor(transactionId);
   const { data: prev } = await supabase.from('ad_conversions').select('status').eq('event_id', eventId).maybeSingle();

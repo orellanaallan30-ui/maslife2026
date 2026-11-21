@@ -159,6 +159,15 @@ describe('venta informada a Meta desde el servidor', () => {
     sinMeta();
   });
 
+  it('con el token y sin META_DATASET_ID usa el píxel de la clínica', async () => {
+    vi.stubEnv('META_CAPI_TOKEN', 'tok-test'); vi.stubEnv('META_DATASET_ID', '');
+    const id = await pedidoPendiente();
+    expect(await orders.confirmPaidOrder(id, pagoOk(id))).toBe('pagado');
+    expect(aMeta()).toHaveLength(1);
+    expect(aMeta()[0].url).toContain('/889389027029147/events');
+    sinMeta();
+  });
+
   it('sin las variables de Meta no se envía nada', async () => {
     sinMeta();
     const id = await pedidoPendiente();

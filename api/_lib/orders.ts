@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { getProduct } from './products';
-import { buildEbookPurchaseEvent, sendMetaEvent } from './metaCapi';
+import { buildEbookPurchaseEvent, sendMetaEvent, META_DATASET_DEFAULT } from './metaCapi';
 
 // Pedidos de productos digitales: crear el cobro, confirmar el pago, entregar el
 // enlace de descarga y canjearlo. Todo corre en el servidor con service_role; la
@@ -78,7 +78,7 @@ export function cleanMetaIds(raw: unknown): Record<string, string> {
  */
 async function reportPurchaseToMeta(order: any): Promise<void> {
   const token = (process.env.META_CAPI_TOKEN || '').trim();
-  const datasetId = (process.env.META_DATASET_ID || '').trim();
+  const datasetId = (process.env.META_DATASET_ID || META_DATASET_DEFAULT).trim();
   if (!token || !datasetId) return;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 4000);
