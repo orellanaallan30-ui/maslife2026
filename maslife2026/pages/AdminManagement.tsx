@@ -4,8 +4,9 @@ import { ProfessionalProfile, SubscriptionStatus } from '../types';
 import { useClinic } from '../ClinicContext';
 import { supabase } from '../supabaseClient';
 
-type AdminTab = 'pending' | 'professionals' | 'config' | 'charlas' | 'finance' | 'support' | 'messages' | 'health';
+type AdminTab = 'pending' | 'professionals' | 'config' | 'charlas' | 'finance' | 'support' | 'messages' | 'health' | 'programas';
 
+interface EbookRow { slug: string; name: string; price: number; active: boolean; filePath: string; uploaded: boolean; size: number; updatedAt: string | null; }
 interface FinanceRow { id: string; name: string; email: string; paidCount: number; gross: number; platformFee: number; net: number; }
 interface HealthEvent { created_at: string; event_type: string | null; outcome: string | null; mp_status: string | null; payer_email: string | null; detail: string | null; }
 interface FeedbackItem { id: string; professional_name: string | null; professional_email: string | null; type: string; subject: string | null; message: string; status: string; admin_reply: string | null; created_at: string; }
@@ -56,6 +57,8 @@ const AdminManagement: React.FC = () => {
 
   // ── Finanzas / Salud / Soporte / Mensajes ──
   const [finance, setFinance] = useState<{ feePct: number; rows: FinanceRow[]; totals: { gross: number; fee: number; count: number } } | null>(null);
+  const [ebooks, setEbooks] = useState<EbookRow[] | null>(null);
+  const [ebookSubiendo, setEbookSubiendo] = useState<string | null>(null);
   const [health, setHealth] = useState<{ events: HealthEvent[]; outcomeCounts: Record<string, number>; pausedPros: { id: string; name: string }[] } | null>(null);
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
   const [msgForm, setMsgForm] = useState({ asunto: '', mensaje: '' });
@@ -107,6 +110,7 @@ const AdminManagement: React.FC = () => {
     if (activeTab === 'charlas') loadCharlas();
     if (activeTab === 'finance') loadTab('finance', setFinance);
     if (activeTab === 'health')  loadTab('health', setHealth);
+    if (activeTab === 'programas') loadTab('ebooks', j => setEbooks(j.data || []));
     if (activeTab === 'support') loadTab('feedback', j => setFeedbackList(j.data || []));
   }, [isAdmin, activeTab]);
 
@@ -517,6 +521,7 @@ const AdminManagement: React.FC = () => {
             { id: 'messages',      label: 'Mensajes',      icon: 'campaign',        count: 0 },
             { id: 'health',        label: 'Salud',         icon: 'monitor_heart',   count: healthAlertCount },
             { id: 'charlas',       label: 'Charlas',       icon: 'mic',             count: 0 },
+            { id: 'programas',     label: 'Programas',     icon: 'menu_book',       count: 0 },
             { id: 'config',        label: 'Config',        icon: 'settings',        count: 0 },
           ] as const).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -845,6 +850,56 @@ const AdminManagement: React.FC = () => {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── TAB: Programas digitales (PDF en el almacén privado) ── */}
+        {activeTab === 'programas' && (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">El PDF queda en un almacén privado: solo lo descarga quien pagó, con su enlace personal. Subir un archivo nuevo reemplaza al anterior.</p>
+            {!ebooks && <span className="material-icons-round text-slate-300 animate-spin">sync</span>}
+            {(ebooks || []).map(e => (
+              <div key={e.slug} className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 flex flex-col lg:flex-row lg:items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-slate-800">{e.name}</p>
+                  <p className="text-xs text-slate-500 mt-1">{clp(e.price)} · archivo: {e.filePath}</p>
+                  <div className="flex flex-wrap gap-2 mt-3 text-[11px] font-black uppercase tracking-widest">
+                    <span className={`px-3 py-1 rounded-full ${e.uploaded ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                      {e.uploaded ? `PDF subido · ${(e.size / 1024 / 1024).toFixed(1)} MB${e.updatedAt ? ' · ' + new Date(e.updatedAt).toLocaleString('es-CL') : ''}` : 'Falta subir el PDF'}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full ${e.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                      {e.active ? 'Venta encendida' : 'Venta apagada'}
+                    </span>
+                  </div>
+                </div>
+                <label className={`shrink-0 inline-flex items-center gap-2 rounded-xl px-5 py-3 font-black text-sm text-white cursor-pointer ${ebookSubiendo === e.slug ? 'bg-slate-400 pointer-events-none' : 'bg-teal-600 hover:bg-teal-700'}`}>
+                  <span className="material-icons-round text-base">{ebookSubiendo === e.slug ? 'sync' : 'upload_file'}</span>
+                  {ebookSubiendo === e.slug ? 'Subiendo…' : e.uploaded ? 'Reemplazar PDF' : 'Subir PDF'}
+                  <input type="file" accept="application/pdf" className="hidden" onChange={async ev => {
+                    const file = ev.target.files?.[0]; ev.target.value = '';
+                    if (!file) return;
+                    try {
+                      const cabecera = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+                      if (String.fromCharCode(...cabecera) !== '%PDF-') { showToast('❌ El archivo no es un PDF.'); return; }
+                      if (file.size > 50 * 1024 * 1024) { showToast('❌ El PDF pesa más de 50 MB.'); return; }
+                      setEbookSubiendo(e.slug);
+                      const r = await adminFetch('POST', { slug: e.slug }, 'ebook-upload-url');
+                      const j = await r.json();
+                      if (!r.ok || j.error) throw new Error(j.error || 'No se pudo preparar la subida');
+                      const { error } = await supabase.storage.from('ebook-files').uploadToSignedUrl(j.path, j.token, file, { contentType: 'application/pdf' });
+                      if (error) throw new Error(error.message);
+                      const r2 = await adminFetch('GET', undefined, 'ebooks');
+                      const j2 = await r2.json();
+                      if (r2.ok && !j2.error) setEbooks(j2.data || []);
+                      showToast('✅ PDF subido. Ya se entrega a quien compre.');
+                    } catch (err) {
+                      console.error('[ebook-upload]', (err as Error)?.message);
+                      showToast(`⚠️ El PDF NO se subió: ${(err as Error)?.message || 'error'}. Intenta de nuevo.`);
+                    } finally { setEbookSubiendo(null); }
+                  }} />
+                </label>
+              </div>
+            ))}
           </div>
         )}
 

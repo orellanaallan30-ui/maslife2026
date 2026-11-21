@@ -24,6 +24,10 @@ const BASE: Omit<Product, 'active'>[] = [
  * La venta se habilita con la variable de entorno EBOOK_PROGRAMA_LUMBAR_ACTIVO=1.
  * Debe encenderse solo cuando un kinesiólogo haya aprobado el contenido por escrito.
  */
+export function listProducts(): Product[] {
+  return BASE.map(b => getProduct(b.slug)!);
+}
+
 export function getProduct(slug: string): Product | null {
   const p = BASE.find(b => b.slug === slug);
   if (!p) return null;

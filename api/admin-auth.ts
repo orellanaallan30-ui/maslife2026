@@ -2,6 +2,9 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createHmac, timingSafeEqual, randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
+import { getProduct, listProducts } from './_lib/products';
+
+const EBOOK_BUCKET = 'ebook-files';
 
 const ADMIN_COLUMNS = [
   'id', 'slug', 'name', 'email', 'specialty', 'city', 'bio', 'avatar',
@@ -237,6 +240,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const counts: Record<string, number> = {};
     for (const e of events || []) counts[e.outcome || 'unknown'] = (counts[e.outcome || 'unknown'] || 0) + 1;
     return res.status(200).json({ events: events || [], outcomeCounts: counts, pausedPros: orphans || [] });
+  }
+
+  // ── Programas digitales: estado del PDF en el almacén privado y subida ──
+  if (req.method === 'GET' && req.query.action === 'ebooks') {
+    const { data: files, error } = await supabase.storage.from(EBOOK_BUCKET).list('', { limit: 100 });
+    if (error) return res.status(500).json({ error: error.message });
+    const data = listProducts().map(p => {
+      const f = (files || []).find(x => x.name === p.filePath);
+      const size = Number((f?.metadata as Record<string, unknown> | undefined)?.size) || 0;
+      return { slug: p.slug, name: p.name, price: p.price, active: p.active, filePath: p.filePath,
+        uploaded: !!f, size, updatedAt: f?.updated_at || f?.created_at || null };
+    });
+    return res.status(200).json({ data });
+  }
+  // Entrega una URL firmada de un solo uso: el navegador del admin sube el PDF
+  // directo al almacén privado (sin pasar por esta función ni su límite de tamaño).
+  if (req.method === 'POST' && req.query.action === 'ebook-upload-url') {
+    const product = getProduct(String(req.body?.slug || ''));
+    if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
+    // upsert: la versión anterior se reemplaza solo cuando la nueva termina de subir.
+    const { data, error } = await supabase.storage.from(EBOOK_BUCKET).createSignedUploadUrl(product.filePath, { upsert: true });
+    if (error || !data) return res.status(500).json({ error: error?.message || 'No se pudo preparar la subida' });
+    return res.status(200).json({ path: data.path, token: data.token });
   }
 
   // ── Buzón de sugerencias / soporte ──
