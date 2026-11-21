@@ -3,7 +3,7 @@
 // Diseño clave: TODO es opcional y "no-op" si no hay IDs configurados. Los IDs se
 // cargan desde variables de entorno de Vite (se ponen en Vercel), así la analítica
 // se activa sin tocar código:
-//   VITE_META_PIXEL_ID   → ID del píxel de Meta (Facebook/Instagram)
+//   VITE_META_PIXEL_ID   → ID del píxel de Meta (por defecto, el de Clínica Mas Life)
 //   VITE_GA4_ID          → ID de medición GA4 (formato G-XXXXXXX)
 //   VITE_GOOGLE_ADS_ID   → ID de Google Ads (formato AW-XXXXXXXXX) para conversiones
 //
@@ -11,7 +11,8 @@
 
 type Params = Record<string, unknown>;
 
-const META_PIXEL_ID = import.meta.env.VITE_META_PIXEL_ID as string | undefined;
+// Píxel de Clínica Mas Life por defecto (su ID es público: igual se ve en el navegador).
+const META_PIXEL_ID = (import.meta.env.VITE_META_PIXEL_ID as string | undefined) || '889389027029147';
 const GA4_ID = import.meta.env.VITE_GA4_ID as string | undefined;
 const ADS_ID = import.meta.env.VITE_GOOGLE_ADS_ID as string | undefined;
 

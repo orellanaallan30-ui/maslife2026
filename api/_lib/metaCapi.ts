@@ -11,6 +11,8 @@ import { createHash } from 'crypto';
 import { normalizarTelefonoCL } from './correoCita';
 
 export const META_GRAPH_VERSION = 'v21.0';
+/** Conjunto de datos (píxel) de Clínica Mas Life. Es público: va también en el navegador. */
+export const META_DATASET_DEFAULT = '889389027029147';
 
 export function sha256(value: string): string {
   return createHash('sha256').update(value).digest('hex');

@@ -282,6 +282,7 @@ const ProgramaLumbar: React.FC = () => {
               <img src={VISTA_PREVIA[0].src} alt="" aria-hidden className="w-16 rounded-sm -rotate-3 shadow-md" />
               <div>
                 <p className="font-bold">Programa lumbar de 4 semanas</p>
+                <p className="mt-1 inline-block rounded-full px-3 py-0.5 text-xs font-extrabold uppercase tracking-wide" style={{ background: '#fdf0d8', color: '#8a5a00' }}>Precio de lanzamiento</p>
                 <p className="text-4xl" style={{ ...SERIF, fontWeight: 600, color: C.petroleo }}>{clp(PRECIO)}</p>
               </div>
             </div>
@@ -330,7 +331,7 @@ const ProgramaLumbar: React.FC = () => {
       </section>
 
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3 flex items-center justify-between gap-3">
-        <div><p className="text-xs text-slate-500 leading-none">Pago único</p><p className="text-xl font-extrabold leading-tight" style={{ color: C.petroleo }}>{clp(PRECIO)}</p></div>
+        <div><p className="text-xs text-slate-500 leading-none">Precio de lanzamiento</p><p className="text-xl font-extrabold leading-tight" style={{ color: C.petroleo }}>{clp(PRECIO)}</p></div>
         <a href="#comprar" className="rounded-full px-6 py-3 font-extrabold text-white" style={{ background: C.petroleo }}>{ACCION}</a>
       </div>
     </div>
