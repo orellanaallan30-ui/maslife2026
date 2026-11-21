@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { usePageMeta } from '../lib/seo';
 import { trackProgramPurchase } from '../analytics';
+import { RedesSociales, SugerenciaGuia } from '../components/ProgramaExtras';
 
 const PRECIO = 9990;
 const EVALUACION_URL = '/p/rodrigo-orellana';
@@ -89,6 +90,12 @@ const ProgramaGracias: React.FC = () => {
         </>)}
         <Link to="/" className="mt-8 inline-block text-sm font-bold underline text-slate-500">Volver al inicio</Link>
       </div>
+      {estado === 'entregado' && (
+        <div className="mx-auto max-w-xl mt-10 flex flex-col gap-10">
+          <SugerenciaGuia slug="programa-lumbar-4-semanas" origen="gracias" color="#0B4F5C" />
+          <RedesSociales color="#0B4F5C" />
+        </div>
+      )}
     </div>
   );
 };
