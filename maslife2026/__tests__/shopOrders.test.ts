@@ -117,7 +117,9 @@ describe('catálogo público', () => {
     if (!r.ok) return;
     expect(r.data.productos).toHaveLength(1);
     expect(r.data.productos[0]).not.toHaveProperty('costo');
-    expect(r.data.regiones).toEqual([{ codigo: 'RM', nombre: 'METROPOLITANA DE SANTIAGO', envio: 3990 }]);
+    expect(r.data.regiones).toHaveLength(1);
+    expect(r.data.regiones[0]).toMatchObject({ codigo: 'RM', nombre: 'METROPOLITANA DE SANTIAGO', envio: 3990 });
+    expect(r.data.regiones[0].localidades).toContain('PROVIDENCIA');
   });
 
   it('cerrada no muestra nada', async () => {

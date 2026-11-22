@@ -20,7 +20,7 @@ import {
   crearPreferenciaMP, confirmPaidOrder, findApprovedPayment, fetchPayment, cleanUtms, cleanMetaIds,
   SHOP_REF_PREFIX, UUID_RE,
 } from './orders';
-import { REGIONES_DROPI } from './dropiPlaces';
+import { REGIONES_DROPI, LOCALIDADES_DROPI } from './dropiPlaces';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -73,7 +73,10 @@ export async function catalogoPublico(): Promise<Result<{ activa: boolean; produ
   if (error) { console.error('[shop] catálogo:', error.message); return { ok: false, code: 500, error: 'No se pudo cargar la tienda' }; }
   const regiones = REGIONES_DROPI
     .filter(r => tarifaEnvio(s.tarifasRegion, r.codigo) !== null)
-    .map(r => ({ codigo: r.codigo, nombre: r.nombre, envio: tarifaEnvio(s.tarifasRegion, r.codigo) }));
+    .map(r => ({
+      codigo: r.codigo, nombre: r.nombre, envio: tarifaEnvio(s.tarifasRegion, r.codigo),
+      localidades: [...(LOCALIDADES_DROPI[r.codigo] || [])].sort((a, b) => a.localeCompare(b, 'es')),
+    }));
   return { ok: true, data: { activa: true, productos: (data || []).map(p => aPublico(p, s.umbralStock)), regiones } };
 }
 

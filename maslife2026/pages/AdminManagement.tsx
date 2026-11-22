@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { ProfessionalProfile, SubscriptionStatus } from '../types';
 import { useClinic } from '../ClinicContext';
 import { supabase } from '../supabaseClient';
+import { TiendaAdmin } from '../components/TiendaAdmin';
 
-type AdminTab = 'pending' | 'professionals' | 'config' | 'charlas' | 'finance' | 'support' | 'messages' | 'health' | 'programas';
+type AdminTab = 'pending' | 'professionals' | 'config' | 'charlas' | 'finance' | 'support' | 'messages' | 'health' | 'programas' | 'tienda';
 
 interface EbookRow { slug: string; name: string; price: number; active: boolean; filePath: string; uploaded: boolean; size: number; updatedAt: string | null; }
 interface FinanceRow { id: string; name: string; email: string; paidCount: number; gross: number; platformFee: number; net: number; }
@@ -524,6 +525,7 @@ const AdminManagement: React.FC = () => {
             { id: 'health',        label: 'Salud',         icon: 'monitor_heart',   count: healthAlertCount },
             { id: 'charlas',       label: 'Charlas',       icon: 'mic',             count: 0 },
             { id: 'programas',     label: 'Programas',     icon: 'menu_book',       count: 0 },
+            { id: 'tienda',        label: 'Tienda',        icon: 'storefront',      count: 0 },
             { id: 'config',        label: 'Config',        icon: 'settings',        count: 0 },
           ] as const).map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -854,6 +856,9 @@ const AdminManagement: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* ── TAB: Tienda (Dropi) ── */}
+        {activeTab === 'tienda' && <TiendaAdmin adminFetch={adminFetch} />}
 
         {/* ── TAB: Programas digitales (PDF en el almacén privado) ── */}
         {activeTab === 'programas' && (

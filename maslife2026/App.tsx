@@ -22,6 +22,10 @@ import ReferralProgram       from './pages/ReferralProgram';
 import Charlas               from './pages/Charlas';
 import ProgramaLumbar        from './pages/ProgramaLumbar';
 import ProgramaGracias       from './pages/ProgramaGracias';
+import Tienda                from './pages/tienda/Tienda';
+import TiendaProducto        from './pages/tienda/TiendaProducto';
+import TiendaCheckout        from './pages/tienda/TiendaCheckout';
+import TiendaGracias         from './pages/tienda/TiendaGracias';
 import Descarga              from './pages/Descarga';
 import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
@@ -603,6 +607,10 @@ const AppContent: React.FC = () => {
           <Route path="/programa-lumbar"     element={<Navigate to="/programas/lumbar" replace />} />
           <Route path="/programas/gracias"   element={<ProgramaGracias />} />
           <Route path="/descarga/:token"     element={<Descarga />} />
+          <Route path="/tienda"             element={<Tienda />} />
+          <Route path="/tienda/checkout"    element={<TiendaCheckout />} />
+          <Route path="/tienda/gracias"     element={<TiendaGracias />} />
+          <Route path="/tienda/:sku"        element={<TiendaProducto />} />
           <Route path="/privacidad"          element={<PrivacyPolicy />} />
           <Route path="/terminos"            element={<TermsOfService />} />
           <Route path="/mi-ficha/:token"    element={<PatientPortal />} />
