@@ -1,32 +1,61 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   leerCarrito, cambiarCantidad, cargarCatalogo, catalogoEnCache, clp, MAX_UNIDADES, enVistaPrevia, salirDeVistaPrevia,
-  type Catalogo, type ItemCarrito,
+  CATEGORIAS, type Catalogo, type ItemCarrito,
 } from '../../lib/tienda';
 
 // Identidad de la clínica (la misma de la guía digital).
 export const C = {
-  petroleo: '#0B4F5C', petroleoClaro: '#0E6B6F', teal: '#00a89e', naranja: '#E8731C',
-  crema: '#F7F4EF', tinta: '#0F172A',
+  petroleo: '#0B4F5C', petroleoClaro: '#0E6B6F', petroleoOscuro: '#083D47', teal: '#00a89e', naranja: '#E8731C',
+  menta: '#E6F2F1', mentaClara: '#F2F8F7', crema: '#F7F4EF', tinta: '#0F172A',
 };
 export const SANS = { fontFamily: "'Manrope', system-ui, sans-serif" };
 export const SERIF = { fontFamily: "'Fraunces', Georgia, serif" };
 
 const WHATSAPP = 'https://wa.me/56965329974';
+const REDES = [
+  { nombre: 'Instagram', href: 'https://www.instagram.com/clinicamaslife/' },
+  { nombre: 'Facebook', href: 'https://www.facebook.com/106841074135065' },
+  { nombre: 'WhatsApp', href: WHATSAPP },
+];
 
 /** Logotipo en texto: evita cargar el PNG del logo (2 MB) en cada visita a la tienda. */
-const Logotipo: React.FC = () => (
+const Logotipo: React.FC<{ claro?: boolean }> = ({ claro = false }) => (
   <Link to="/tienda" className="flex items-center gap-2" aria-label="Tienda Mas Life, inicio">
-    <span className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: C.petroleo }}>
+    <span className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: claro ? '#fff' : C.petroleo }}>
       <span className="h-3.5 w-3.5 rounded-full" style={{ background: C.naranja }} />
     </span>
     <span className="leading-none">
-      <span className="block text-lg font-semibold" style={{ ...SERIF, color: C.petroleo }}>Mas Life</span>
-      <span className="block text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-500">Tienda</span>
+      <span className="block text-xl font-semibold" style={{ ...SERIF, color: claro ? '#fff' : C.petroleo }}>Mas Life</span>
+      <span className={`block text-[10px] font-extrabold uppercase tracking-[0.18em] ${claro ? 'text-white/60' : 'text-slate-500'}`}>Tienda</span>
     </span>
   </Link>
 );
+
+/** Buscador y selector de categorías: llevan a /tienda?q=… o /tienda?cat=…, donde se filtra. */
+const Buscador: React.FC<{ className?: string }> = ({ className = '' }) => {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [q, setQ] = useState(params.get('q') || '');
+  useEffect(() => { setQ(params.get('q') || ''); }, [params]);
+  return (
+    <form role="search" className={`flex min-w-0 items-center gap-2 ${className}`}
+      onSubmit={e => { e.preventDefault(); navigate(q.trim() ? `/tienda?q=${encodeURIComponent(q.trim())}` : '/tienda'); }}>
+      <select aria-label="Categorías" value={params.get('cat') || ''}
+        onChange={e => navigate(e.target.value ? `/tienda?cat=${e.target.value}` : '/tienda')}
+        className="hidden lg:block appearance-none rounded-full border-0 bg-white py-2.5 pl-4 pr-9 text-sm font-bold text-slate-700 outline-none" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%230B4F5C' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}>
+        <option value="">Todas las categorías</option>
+        {Object.entries(CATEGORIAS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+      </select>
+      <label className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2.5 focus-within:bg-white/20">
+        <span aria-hidden="true" className="material-icons-round text-lg text-white/80">search</span>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar productos…" aria-label="Buscar productos"
+          className="min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-sm text-white shadow-none outline-none ring-0 placeholder:text-white/70 focus:border-0 focus:outline-none focus:ring-0" />
+      </label>
+    </form>
+  );
+};
 
 const useUnidades = () => {
   const contar = () => leerCarrito().reduce((a, i) => a + i.cantidad, 0);
@@ -113,7 +142,7 @@ const CarritoLateral: React.FC<{ abierto: boolean; cerrar: () => void }> = ({ ab
             <div className="flex justify-between text-base"><span className="text-slate-600">Subtotal</span><span className="font-extrabold text-slate-900">{clp(subtotal)}</span></div>
             <p className="mt-1 text-xs text-slate-500">El envío se calcula según tu región en el siguiente paso.</p>
             <button onClick={() => { cerrar(); navigate('/tienda/checkout'); }}
-              className="mt-4 w-full rounded-xl px-6 py-4 text-base font-extrabold text-white" style={{ background: C.petroleo }}>
+              className="mt-4 w-full rounded-full px-6 py-4 text-base font-extrabold text-white" style={{ background: C.petroleo }}>
               Ir a pagar
             </button>
             <button onClick={cerrar} className="mt-2 w-full py-2 text-sm font-bold text-slate-500">Seguir comprando</button>
@@ -153,50 +182,65 @@ export const LayoutTienda: React.FC<{ children: React.ReactNode; fondo?: string 
           </span>
         </div>
       )}
-      <div className="px-4 py-2 text-center text-xs font-bold text-white" style={{ background: C.petroleo }}>
+      <div className="px-4 py-2 text-center text-xs font-bold" style={{ background: C.menta, color: C.petroleo }}>
         Despacho a domicilio en Chile · Pago seguro con MercadoPago
       </div>
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Logotipo />
-          <nav className="flex items-center gap-2">
-            <Link to="/" className="hidden lg:inline-block rounded-full px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100">Agenda tu hora</Link>
-            <button onClick={() => setAbierto(true)} aria-label={`Abrir carrito, ${unidades} productos`}
-              className="relative flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 font-bold text-slate-700 hover:border-slate-300">
-              <span aria-hidden="true" className="material-icons-round text-xl">shopping_bag</span>
-              <span className="hidden sm:inline text-sm">Carrito</span>
-              {unidades > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-black text-white" style={{ background: C.naranja }}>{unidades}</span>
-              )}
-            </button>
-          </nav>
+
+      <header className="sticky top-0 z-30 px-2 pt-2 lg:px-4" style={{ background: fondo }}>
+        <div className="mx-auto max-w-6xl">
+          {/* Bloque petróleo con el logo "recortado" en una pestaña clara, como en la referencia. */}
+          <div className="flex items-stretch">
+            <div className="flex items-center rounded-tl-3xl bg-white pr-6 pl-4 lg:pr-10" style={{ borderTopRightRadius: '1.5rem' }}>
+              <Logotipo />
+            </div>
+            <div className="flex flex-1 items-center gap-3 rounded-t-3xl px-3 py-3 lg:px-5" style={{ background: C.petroleo, borderTopLeftRadius: '1.5rem' }}>
+              <Buscador className="hidden lg:flex flex-1" />
+              <button onClick={() => setAbierto(true)} aria-label={`Abrir carrito, ${unidades} productos`}
+                className="relative ml-auto flex items-center gap-2 rounded-full bg-white px-4 py-2.5 font-bold" style={{ color: C.petroleo }}>
+                <span aria-hidden="true" className="material-icons-round text-xl">shopping_bag</span>
+                <span className="hidden sm:inline text-sm">Carrito</span>
+                {unidades > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-black text-white" style={{ background: C.naranja }}>{unidades}</span>
+                )}
+              </button>
+            </div>
+          </div>
+          <div className="rounded-b-3xl px-3 pb-3 lg:hidden" style={{ background: C.petroleo }}>
+            <Buscador />
+          </div>
+          <div className="hidden lg:block h-3 rounded-b-3xl" style={{ background: C.petroleo }} />
         </div>
       </header>
 
       <main className="flex-1">{children}</main>
 
-      <footer className="mt-auto border-t border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 lg:grid-cols-3 gap-6 px-4 py-10 text-sm text-slate-600">
-          <div>
-            <Logotipo />
-            <p className="mt-3 max-w-xs">Productos de salud, rehabilitación y bienestar seleccionados por el equipo de Clínica Mas Life.</p>
+      <footer className="mt-auto px-2 pb-2 lg:px-4 lg:pb-4">
+        <div className="mx-auto max-w-6xl rounded-3xl px-6 py-10 text-sm text-white/80 lg:px-10" style={{ background: C.petroleo }}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div>
+              <Logotipo claro />
+              <p className="mt-4 max-w-xs text-white/80">Bienestar para todos los días, con despacho a tu casa.</p>
+            </div>
+            <div>
+              <p className="font-extrabold text-white">Ayuda</p>
+              <ul className="mt-3 space-y-2">
+                <li><Link to="/tienda/terminos" className="hover:underline">Términos, despacho y devoluciones</Link></li>
+                <li><Link to="/privacidad" className="hover:underline">Privacidad</Link></li>
+                <li><a href="mailto:maslife@clinicamaslife.cl" className="hover:underline">maslife@clinicamaslife.cl</a></li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-extrabold text-white">¿Dudas antes de comprar?</p>
+              <a href={WHATSAPP} target="_blank" rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 font-bold" style={{ color: C.petroleo }}>
+                <span aria-hidden="true" className="material-icons-round text-base">chat</span> Escríbenos por WhatsApp
+              </a>
+              <ul className="mt-4 flex flex-wrap gap-4">
+                {REDES.map(r => <li key={r.nombre}><a href={r.href} target="_blank" rel="noopener noreferrer" className="hover:underline">{r.nombre}</a></li>)}
+              </ul>
+            </div>
           </div>
-          <div>
-            <p className="font-extrabold text-slate-900">Ayuda</p>
-            <ul className="mt-2 space-y-1">
-              <li><Link to="/tienda/terminos" className="hover:underline">Términos, despacho y devoluciones</Link></li>
-              <li><Link to="/privacidad" className="hover:underline">Privacidad</Link></li>
-              <li><a href="mailto:maslife@clinicamaslife.cl" className="hover:underline">maslife@clinicamaslife.cl</a></li>
-            </ul>
-          </div>
-          <div>
-            <p className="font-extrabold text-slate-900">¿Dudas antes de comprar?</p>
-            <a href={WHATSAPP} target="_blank" rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 font-bold text-slate-700 hover:border-slate-300">
-              <span className="material-icons-round text-base" style={{ color: C.teal }}>chat</span> Escríbenos por WhatsApp
-            </a>
-            <p className="mt-3 text-xs text-slate-400">Los productos no reemplazan una evaluación profesional.</p>
-          </div>
+          <p className="mt-10 border-t border-white/15 pt-6 text-xs text-white/60">© {new Date().getFullYear()} Clínica Mas Life · Todos los derechos reservados.</p>
         </div>
       </footer>
 

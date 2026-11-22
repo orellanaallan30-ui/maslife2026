@@ -72,7 +72,7 @@ const TiendaGracias: React.FC = () => {
             <p className="text-2xl font-extrabold text-slate-900">Tu pago aún se está procesando</p>
             <p className="mt-3 text-slate-600">Cuando MercadoPago lo apruebe, preparamos tu pedido. Esta página se actualiza sola.</p>
             <button onClick={() => { intentos.current = 0; setEstado('verificando'); verificar(); }}
-              className="mt-6 rounded-xl px-6 py-3 font-extrabold text-white" style={{ background: C.petroleo }}>Verificar de nuevo</button>
+              className="mt-6 rounded-full px-6 py-3 font-extrabold text-white" style={{ background: C.petroleo }}>Verificar de nuevo</button>
           </>)}
           {estado === 'pagado' && pedido && (<>
             <span className="material-icons-round rounded-full p-3 text-4xl text-white" style={{ background: C.teal }}>check</span>
@@ -89,7 +89,7 @@ const TiendaGracias: React.FC = () => {
               <li className="flex gap-3"><span className="material-icons-round text-base" style={{ color: C.teal }}>inventory_2</span>Preparamos tu pedido.</li>
               <li className="flex gap-3"><span className="material-icons-round text-base" style={{ color: C.teal }}>mail</span>Cuando salga, te enviamos por correo el número de seguimiento.</li>
             </ol>
-            <Link to="/tienda" className="mt-6 inline-block rounded-xl px-6 py-3 font-extrabold text-white" style={{ background: C.petroleo }}>Volver a la tienda</Link>
+            <Link to="/tienda" className="mt-6 inline-block rounded-full px-6 py-3 font-extrabold text-white" style={{ background: C.petroleo }}>Volver a la tienda</Link>
           </>)}
           {estado === 'error' && (<>
             <p className="text-2xl font-extrabold text-slate-900">No pudimos verificar tu compra</p>

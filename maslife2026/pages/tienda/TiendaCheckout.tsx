@@ -123,7 +123,7 @@ const TiendaCheckout: React.FC = () => {
           <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-10 text-center">
             <span className="material-icons-round text-5xl text-slate-300">shopping_bag</span>
             <p className="mt-2 text-slate-600">Tu carrito está vacío.</p>
-            <Link to="/tienda" className="mt-4 inline-block rounded-xl px-6 py-3 font-extrabold text-white" style={{ background: C.petroleo }}>Ver productos</Link>
+            <Link to="/tienda" className="mt-4 inline-block rounded-full px-6 py-3 font-extrabold text-white" style={{ background: C.petroleo }}>Ver productos</Link>
           </div>
         )}
 
@@ -222,7 +222,7 @@ const TiendaCheckout: React.FC = () => {
                 {error && <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
 
                 <button type="submit" disabled={cargando || hayAgotados || sinDespacho || previa}
-                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-base font-extrabold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-base font-extrabold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ background: C.petroleo }}>
                   <span aria-hidden="true" className="material-icons-round text-lg">lock</span>
                   {previa ? 'El pago se activa al abrir la tienda' : cargando ? 'Conectando con MercadoPago…' : hayAgotados ? 'Quita los productos agotados' : `Pagar ${clp(total)}`}

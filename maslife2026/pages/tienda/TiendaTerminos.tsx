@@ -51,7 +51,7 @@ const TiendaTerminos: React.FC = () => {
         </Seccion>
 
         <Seccion titulo="6. Uso de los productos">
-          <p>Los productos de esta tienda no son medicamentos ni reemplazan una evaluación profesional o un tratamiento médico. Lee siempre la etiqueta. Si tienes una condición de salud, estás embarazada o en lactancia, o tomas medicamentos, consulta con un profesional antes de usarlos.</p>
+          <p>Los productos de esta tienda no son medicamentos ni reemplazan un tratamiento médico. Lee siempre la etiqueta. Si tienes una condición de salud, estás embarazada o en lactancia, o tomas medicamentos, consulta a tu médico antes de usarlos.</p>
         </Seccion>
 
         <Seccion titulo="7. Datos personales">

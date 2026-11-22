@@ -62,9 +62,9 @@ const TiendaProducto: React.FC = () => {
         {p && (
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14">
             <div>
-              <div className="aspect-square overflow-hidden rounded-3xl bg-slate-100">
+              <div className="aspect-square overflow-hidden rounded-3xl" style={{ background: C.mentaClara }}>
                 {p.imagenes[foto]
-                  ? <img src={p.imagenes[foto]} alt={p.nombre} decoding="async" width={800} height={800} {...{ fetchpriority: 'high' }} className="h-full w-full object-cover" />
+                  ? <img src={p.imagenes[foto]} alt={p.nombre} decoding="async" width={800} height={800} {...{ fetchpriority: 'high' }} className="h-full w-full object-contain p-8" />
                   : <span className="flex h-full items-center justify-center material-icons-round text-6xl text-slate-300">inventory_2</span>}
               </div>
               {p.imagenes.length > 1 && (
@@ -72,7 +72,7 @@ const TiendaProducto: React.FC = () => {
                   {p.imagenes.map((src, i) => (
                     <button key={src} onClick={() => setFoto(i)} aria-label={`Ver foto ${i + 1}`} aria-pressed={i === foto}
                       className="h-16 w-16 flex-none overflow-hidden rounded-xl border-2" style={{ borderColor: i === foto ? C.petroleo : 'transparent' }}>
-                      <img src={src} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                      <img src={src} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain p-8" />
                     </button>
                   ))}
                 </div>
@@ -97,7 +97,7 @@ const TiendaProducto: React.FC = () => {
                     <span className="w-8 text-center font-extrabold" aria-live="polite">{cantidad}</span>
                     <button aria-label="Agregar uno" onClick={() => setCantidad(c => Math.min(MAX_UNIDADES, c + 1))} className="h-12 w-12 text-xl font-bold text-slate-600">+</button>
                   </div>
-                  <button onClick={agregar} className="flex-1 rounded-xl px-6 py-4 font-extrabold text-white transition-opacity hover:opacity-90" style={{ background: C.petroleo }}>
+                  <button onClick={agregar} className="flex-1 rounded-full px-6 py-4 font-extrabold text-white transition-opacity hover:opacity-90" style={{ background: C.petroleo }}>
                     Agregar al carrito · {clp(p.precio * cantidad)}
                   </button>
                 </div>
@@ -118,7 +118,7 @@ const TiendaProducto: React.FC = () => {
                 </section>
               )}
               <p className="mt-8 text-xs text-slate-500">
-                Este producto no reemplaza una evaluación profesional ni un tratamiento médico. Si tienes una condición de salud, estás embarazada o tomas medicamentos, consulta antes de usarlo.
+                Este producto no es un medicamento. Lee la etiqueta y, si tienes una condición de salud, estás embarazada o tomas medicamentos, consulta a tu médico antes de usarlo.
               </p>
             </div>
           </div>
@@ -134,7 +134,7 @@ const TiendaProducto: React.FC = () => {
               <span className="w-6 text-center font-extrabold">{cantidad}</span>
               <button aria-label="Agregar uno" onClick={() => setCantidad(c => Math.min(MAX_UNIDADES, c + 1))} className="h-11 w-10 text-xl font-bold text-slate-600">+</button>
             </div>
-            <button onClick={agregar} className="flex-1 rounded-xl py-3 font-extrabold text-white" style={{ background: C.petroleo }}>
+            <button onClick={agregar} className="flex-1 rounded-full py-3 font-extrabold text-white" style={{ background: C.petroleo }}>
               Agregar · {clp(p.precio * cantidad)}
             </button>
           </div>
