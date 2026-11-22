@@ -46,19 +46,123 @@ interface SettingsRow {
 
 /** Textos editables de la portada (editor con vista previa del panel). Texto plano. */
 export interface ContenidoBanner { titulo: string; destacado: string; bajada: string; boton: string }
-export interface ContenidoTienda { banner: ContenidoBanner; banner2: ContenidoBanner }
+export interface TemaTienda {
+  colorPrimario: string; colorAcento: string; colorSuave: string;
+  fuenteTitulos: string; fuenteTexto: string;
+  radio: 'recto' | 'suave' | 'redondeado'; espaciado: 'compacto' | 'normal' | 'amplio'; ancho: 'normal' | 'amplio';
+}
+export interface ContenidoTienda {
+  banner: ContenidoBanner; banner2: ContenidoBanner;
+  marca: { logoUrl: string; logoAltura: number; mostrarNombre: boolean };
+  imagenes: { banner: string; banner2: string };
+  tema: TemaTienda;
+  secciones: { categorias: boolean; banner2: boolean; beneficios: boolean; preguntas: boolean };
+}
 const LARGOS: Record<keyof ContenidoBanner, number> = { titulo: 80, destacado: 80, bajada: 240, boton: 30 };
+/** Fuentes permitidas (Google Fonts). El navegador solo carga las de esta lista. */
+export const FUENTES_PERMITIDAS = ['Fraunces', 'Manrope', 'Inter', 'Playfair Display', 'Lora', 'Montserrat', 'Poppins', 'DM Sans', 'Nunito', 'Cormorant Garamond'];
+const TEMA_POR_DEFECTO: TemaTienda = {
+  colorPrimario: '#0B4F5C', colorAcento: '#E8731C', colorSuave: '#E6F2F1',
+  fuenteTitulos: 'Fraunces', fuenteTexto: 'Manrope', radio: 'redondeado', espaciado: 'normal', ancho: 'normal',
+};
 
-/** Deja solo los campos conocidos, como texto plano corto (sin etiquetas HTML). */
+/**
+ * Deja solo los campos conocidos y válidos del diseño de la portada: texto plano corto,
+ * colores hex, fuentes de la lista, opciones cerradas e imágenes del bucket propio.
+ * Lo que no calza se reemplaza por el valor por defecto.
+ */
 export function limpiarContenido(raw: any): ContenidoTienda {
+  const texto = (v: unknown, max: number) => String(v ?? '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, max);
   const banner = (b: any): ContenidoBanner => {
     const out = {} as ContenidoBanner;
-    for (const k of Object.keys(LARGOS) as Array<keyof ContenidoBanner>) {
-      out[k] = String(b?.[k] ?? '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, LARGOS[k]);
-    }
+    for (const k of Object.keys(LARGOS) as Array<keyof ContenidoBanner>) out[k] = texto(b?.[k], LARGOS[k]);
     return out;
   };
-  return { banner: banner(raw?.banner), banner2: banner(raw?.banner2) };
+  const color = (v: unknown, d: string) => (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v.toUpperCase() : d);
+  const fuente = (v: unknown, d: string) => (typeof v === 'string' && FUENTES_PERMITIDAS.includes(v) ? v : d);
+  const opcion = <T extends string>(v: unknown, ops: readonly T[], d: T): T => (ops.includes(v as T) ? (v as T) : d);
+  const foto = (v: unknown) => (esFotoPropia(v) ? v : '');
+  const bool = (v: unknown, d: boolean) => (typeof v === 'boolean' ? v : d);
+  const t = raw?.tema || {};
+  const altura = Math.round(Number(raw?.marca?.logoAltura));
+  return {
+    banner: banner(raw?.banner),
+    banner2: banner(raw?.banner2),
+    marca: {
+      logoUrl: foto(raw?.marca?.logoUrl),
+      logoAltura: Number.isFinite(altura) && altura >= 24 && altura <= 96 ? altura : 40,
+      mostrarNombre: bool(raw?.marca?.mostrarNombre, true),
+    },
+    imagenes: { banner: foto(raw?.imagenes?.banner), banner2: foto(raw?.imagenes?.banner2) },
+    tema: {
+      colorPrimario: color(t.colorPrimario, TEMA_POR_DEFECTO.colorPrimario),
+      colorAcento: color(t.colorAcento, TEMA_POR_DEFECTO.colorAcento),
+      colorSuave: color(t.colorSuave, TEMA_POR_DEFECTO.colorSuave),
+      fuenteTitulos: fuente(t.fuenteTitulos, TEMA_POR_DEFECTO.fuenteTitulos),
+      fuenteTexto: fuente(t.fuenteTexto, TEMA_POR_DEFECTO.fuenteTexto),
+      radio: opcion(t.radio, ['recto', 'suave', 'redondeado'] as const, TEMA_POR_DEFECTO.radio),
+      espaciado: opcion(t.espaciado, ['compacto', 'normal', 'amplio'] as const, TEMA_POR_DEFECTO.espaciado),
+      ancho: opcion(t.ancho, ['normal', 'amplio'] as const, TEMA_POR_DEFECTO.ancho),
+    },
+    secciones: {
+      categorias: bool(raw?.secciones?.categorias, true),
+      banner2: bool(raw?.secciones?.banner2, true),
+      beneficios: bool(raw?.secciones?.beneficios, true),
+      preguntas: bool(raw?.secciones?.preguntas, true),
+    },
+  };
+}
+
+/**
+ * Asistente de diseño (solo admin): recibe un pedido en palabras ("más elegante, tonos
+ * verdes") y el diseño actual, y propone un diseño nuevo. La propuesta pasa por
+ * limpiarContenido, así que solo puede cambiar lo que el editor permite. No guarda:
+ * Rodrigo la ve en la vista previa y decide.
+ */
+export async function asistenteDiseno(pedido: unknown, actual: unknown): Promise<Result<{ contenido: ContenidoTienda; nota: string }>> {
+  const texto = String(pedido ?? '').trim().slice(0, 600);
+  if (texto.length < 3) return { ok: false, code: 400, error: 'Cuéntale al asistente qué quieres cambiar' };
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return { ok: false, code: 503, error: 'El asistente no está configurado (falta ANTHROPIC_API_KEY)' };
+  const base = limpiarContenido(actual);
+  const sistema = [
+    'Eres diseñador web de la tienda online de Clínica Mas Life (Chile): suplementos y productos de salud y bienestar.',
+    'Respondes SOLO con un objeto JSON válido, sin texto adicional, con esta forma:',
+    '{"contenido": <mismo esquema que el diseño actual>, "nota": "<1-2 frases en español explicando el cambio>"}.',
+    `Fuentes permitidas: ${FUENTES_PERMITIDAS.join(', ')}. Colores en hex #RRGGBB con buen contraste (texto blanco sobre colorPrimario).`,
+    'radio: recto|suave|redondeado. espaciado: compacto|normal|amplio. ancho: normal|amplio.',
+    'No cambies marca.logoUrl ni imagenes (son fotos subidas por el dueño).',
+    'Textos en español de Chile, breves. Prohibido prometer curas o efectos terapéuticos, mencionar profesionales de la salud, inventar reseñas, cifras o descuentos.',
+  ].join('\n');
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 45_000);
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-5',
+        max_tokens: 1500,
+        system: sistema,
+        messages: [{ role: 'user', content: `Diseño actual:\n${JSON.stringify(base)}\n\nPedido del dueño: ${texto}` }],
+      }),
+    });
+    const j: any = await r.json().catch(() => ({}));
+    if (!r.ok) { console.error('[shop] asistente de diseño:', r.status, JSON.stringify(j).slice(0, 300)); return { ok: false, code: 502, error: 'El asistente no respondió. Intenta de nuevo.' }; }
+    const salida = String(j?.content?.[0]?.text || '');
+    const json = salida.slice(salida.indexOf('{'), salida.lastIndexOf('}') + 1);
+    let propuesta: any;
+    try { propuesta = JSON.parse(json); } catch { return { ok: false, code: 502, error: 'El asistente devolvió algo que no se pudo leer. Intenta de nuevo.' }; }
+    // Las fotos y el logo nunca los cambia el asistente.
+    const c = limpiarContenido({ ...propuesta?.contenido, marca: base.marca, imagenes: base.imagenes });
+    return { ok: true, data: { contenido: c, nota: texto ? String(propuesta?.nota || '').replace(/[<>]/g, '').slice(0, 300) : '' } };
+  } catch (e: any) {
+    console.error('[shop] asistente de diseño:', e?.message);
+    return { ok: false, code: 502, error: 'El asistente tardó demasiado. Intenta de nuevo.' };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** Precio de venta: el fijo si Rodrigo lo definió; si no, la fórmula. */
@@ -791,6 +895,8 @@ export async function handleShopAdmin(req: VercelRequest, res: VercelResponse): 
     r = await guardarAjustes(body);
   } else if (req.method === 'POST' && action === 'shop-sync') {
     r = await sincronizarStock();
+  } else if (req.method === 'POST' && action === 'shop-ai-design') {
+    r = await asistenteDiseno(body.pedido, body.contenido);
   } else if (req.method === 'POST' && action === 'shop-import-csv') {
     r = await importarDesdeShopify(body.productos);
   } else if (req.method === 'POST' && action === 'shop-own-product') {

@@ -249,3 +249,49 @@ describe('modo prueba, precio fijo y contenido editable', () => {
     expect(c.banner2).toEqual({ titulo: '', destacado: '', bajada: '', boton: '' });
   });
 });
+
+describe('diseño de la tienda: tema, logo, imágenes y asistente IA', () => {
+  const FOTO = 'https://example.supabase.co/storage/v1/object/public/shop-images/logo.png';
+
+  it('acepta colores hex, fuentes de la lista, opciones válidas y fotos del bucket propio', () => {
+    const c = shop.limpiarContenido({
+      marca: { logoUrl: FOTO, logoAltura: 64, mostrarNombre: false },
+      imagenes: { banner: FOTO, banner2: 'https://otro-sitio.com/x.png' },
+      tema: { colorPrimario: '#14532d', colorAcento: 'red', fuenteTitulos: 'Lora', fuenteTexto: 'Comic Sans', radio: 'recto', espaciado: 'amplio', ancho: 'gigante' },
+      secciones: { categorias: false, preguntas: 'no' },
+    });
+    expect(c.marca).toEqual({ logoUrl: FOTO, logoAltura: 64, mostrarNombre: false });
+    expect(c.imagenes).toEqual({ banner: FOTO, banner2: '' }); // foto externa rechazada
+    expect(c.tema).toMatchObject({ colorPrimario: '#14532D', colorAcento: '#E8731C', fuenteTitulos: 'Lora', fuenteTexto: 'Manrope', radio: 'recto', espaciado: 'amplio', ancho: 'normal' });
+    expect(c.secciones).toEqual({ categorias: false, banner2: true, beneficios: true, preguntas: true });
+  });
+
+  it('el tamaño del logo fuera de rango vuelve a 40', () => {
+    expect(shop.limpiarContenido({ marca: { logoAltura: 500 } }).marca.logoAltura).toBe(40);
+    expect(shop.limpiarContenido({ marca: { logoAltura: 'x' } }).marca.logoAltura).toBe(40);
+  });
+
+  it('el asistente propone un diseño limpio y no puede cambiar logo ni fotos', async () => {
+    vi.stubEnv('ANTHROPIC_API_KEY', 'test');
+    const propuesta = { contenido: { tema: { colorPrimario: '#4C1D95', fuenteTitulos: 'Playfair Display' }, marca: { logoUrl: '' }, imagenes: { banner: '' }, banner: { titulo: '<b>Nuevo</b>' } }, nota: 'Más elegante.' };
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ content: [{ type: 'text', text: 'Aquí va:\n' + JSON.stringify(propuesta) }] }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const r: any = await shop.asistenteDiseno('más elegante', { marca: { logoUrl: FOTO }, imagenes: { banner: FOTO } });
+    vi.unstubAllGlobals();
+    expect(r.ok).toBe(true);
+    expect(r.data.contenido.tema).toMatchObject({ colorPrimario: '#4C1D95', fuenteTitulos: 'Playfair Display' });
+    expect(r.data.contenido.marca.logoUrl).toBe(FOTO);
+    expect(r.data.contenido.imagenes.banner).toBe(FOTO);
+    expect(r.data.contenido.banner.titulo).toBe('Nuevo');
+    expect(r.data.nota).toBe('Más elegante.');
+  });
+
+  it('el asistente pide un pedido y avisa si la IA falla', async () => {
+    expect(await shop.asistenteDiseno('', {})).toMatchObject({ ok: false, code: 400 });
+    vi.stubEnv('ANTHROPIC_API_KEY', 'test');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 500 })));
+    const r = await shop.asistenteDiseno('más minimalista', {});
+    vi.unstubAllGlobals();
+    expect(r).toMatchObject({ ok: false, code: 502 });
+  });
+});

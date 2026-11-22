@@ -1,17 +1,51 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useContenidoTienda, useEscucharEditor } from './useContenido';
 import {
   leerCarrito, cambiarCantidad, cargarCatalogo, catalogoEnCache, clp, MAX_UNIDADES, enVistaPrevia, salirDeVistaPrevia,
   CATEGORIAS, type Catalogo, type ItemCarrito,
 } from '../../lib/tienda';
 
 // Identidad de la clínica (la misma de la guía digital).
+// Los colores y fuentes salen de variables CSS que fija el layout con el diseño que
+// Rodrigo eligió en el editor del panel (Apariencia). Los valores de respaldo son
+// la identidad Mas Life.
 export const C = {
-  petroleo: '#0B4F5C', petroleoClaro: '#0E6B6F', petroleoOscuro: '#083D47', teal: '#00a89e', naranja: '#E8731C',
-  menta: '#E6F2F1', mentaClara: '#F2F8F7', crema: '#F7F4EF', tinta: '#0F172A',
+  petroleo: 'var(--t-primario, #0B4F5C)',
+  petroleoClaro: 'color-mix(in srgb, var(--t-primario, #0B4F5C) 80%, white)',
+  petroleoOscuro: 'color-mix(in srgb, var(--t-primario, #0B4F5C) 80%, black)',
+  teal: '#00a89e',
+  naranja: 'var(--t-acento, #E8731C)',
+  menta: 'var(--t-suave, #E6F2F1)',
+  mentaClara: 'color-mix(in srgb, var(--t-suave, #E6F2F1) 50%, white)',
+  crema: '#F7F4EF', tinta: '#0F172A',
 };
-export const SANS = { fontFamily: "'Manrope', system-ui, sans-serif" };
-export const SERIF = { fontFamily: "'Fraunces', Georgia, serif" };
+export const SANS = { fontFamily: "var(--t-texto, 'Manrope'), system-ui, sans-serif" };
+export const SERIF = { fontFamily: "var(--t-titulos, 'Fraunces'), Georgia, serif" };
+
+// Ajustes globales del diseño, limitados a la tienda (bordes, márgenes y ancho).
+const ESTILOS_TEMA = `
+.tienda-raiz[data-radio=suave] .rounded-3xl { border-radius: 1rem; }
+.tienda-raiz[data-radio=recto] .rounded-3xl, .tienda-raiz[data-radio=recto] .rounded-2xl { border-radius: .375rem; }
+.tienda-raiz[data-radio=recto] .rounded-full:not(.material-icons-round) { border-radius: .5rem; }
+.tienda-raiz[data-espaciado=compacto] .t-sec { padding-top: 1.75rem; }
+.tienda-raiz[data-espaciado=amplio] .t-sec { padding-top: 5rem; }
+.tienda-raiz[data-ancho=amplio] .max-w-6xl { max-width: 80rem; }
+`;
+const FUENTES_CARGADAS = new Set(['Fraunces', 'Manrope', 'Inter']); // ya vienen en index.html
+
+/** Carga desde Google Fonts las fuentes elegidas que aún no están en la página. */
+function cargarFuentes(fuentes: string[]) {
+  const faltan = fuentes.filter(f => f && !FUENTES_CARGADAS.has(f));
+  if (!faltan.length) return;
+  try {
+    const href = `https://fonts.googleapis.com/css2?${faltan.map(f => `family=${encodeURIComponent(f).replace(/%20/g, '+')}:wght@400;600;700;800`).join('&')}&display=swap`;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet'; link.href = href;
+    document.head.appendChild(link);
+    faltan.forEach(f => FUENTES_CARGADAS.add(f));
+  } catch { /* sin document */ }
+}
 
 const WHATSAPP = 'https://wa.me/56965329974';
 const REDES = [
@@ -21,7 +55,17 @@ const REDES = [
 ];
 
 /** Logotipo en texto: evita cargar el PNG del logo (2 MB) en cada visita a la tienda. */
-const Logotipo: React.FC<{ claro?: boolean }> = ({ claro = false }) => (
+const Logotipo: React.FC<{ claro?: boolean }> = ({ claro = false }) => {
+  const { marca } = useContenidoTienda();
+  if (marca.logoUrl) {
+    return (
+      <Link to="/tienda" className="flex items-center gap-2" aria-label="Tienda Mas Life, inicio">
+        <img src={marca.logoUrl} alt="Mas Life" style={{ height: marca.logoAltura, width: 'auto', maxWidth: 200 }} className="object-contain" />
+        {marca.mostrarNombre && <span className={`text-[10px] font-extrabold uppercase tracking-[0.18em] ${claro ? 'text-white/60' : 'text-slate-500'}`}>Tienda</span>}
+      </Link>
+    );
+  }
+  return (
   <Link to="/tienda" className="flex items-center gap-2" aria-label="Tienda Mas Life, inicio">
     <span className="flex h-9 w-9 items-center justify-center rounded-full" style={{ background: claro ? '#fff' : C.petroleo }}>
       <span className="h-3.5 w-3.5 rounded-full" style={{ background: C.naranja }} />
@@ -31,7 +75,8 @@ const Logotipo: React.FC<{ claro?: boolean }> = ({ claro = false }) => (
       <span className={`block text-[10px] font-extrabold uppercase tracking-[0.18em] ${claro ? 'text-white/60' : 'text-slate-500'}`}>Tienda</span>
     </span>
   </Link>
-);
+  );
+};
 
 /** Buscador y selector de categorías: llevan a /tienda?q=… o /tienda?cat=…, donde se filtra. */
 const Buscador: React.FC<{ className?: string }> = ({ className = '' }) => {
@@ -158,6 +203,13 @@ export const LayoutTienda: React.FC<{ children: React.ReactNode; fondo?: string 
   const unidades = useUnidades();
   const [abierto, setAbierto] = useState(false);
   const { pathname } = useLocation();
+  useEscucharEditor();
+  const { tema } = useContenidoTienda();
+  useEffect(() => { cargarFuentes([tema.fuenteTitulos, tema.fuenteTexto]); }, [tema.fuenteTitulos, tema.fuenteTexto]);
+  const variables = {
+    '--t-primario': tema.colorPrimario, '--t-acento': tema.colorAcento, '--t-suave': tema.colorSuave,
+    '--t-titulos': `'${tema.fuenteTitulos}'`, '--t-texto': `'${tema.fuenteTexto}'`,
+  } as React.CSSProperties;
 
   // Cada página de la tienda parte arriba (al abrir un producto desde la lista, por ejemplo).
   useEffect(() => {
@@ -172,7 +224,9 @@ export const LayoutTienda: React.FC<{ children: React.ReactNode; fondo?: string 
   }, []);
 
   return (
-    <div className="flex min-h-full w-full flex-col" style={{ ...SANS, background: fondo, color: C.tinta }}>
+    <div className="tienda-raiz flex min-h-full w-full flex-col" data-radio={tema.radio} data-espaciado={tema.espaciado} data-ancho={tema.ancho}
+      style={{ ...variables, ...SANS, background: fondo, color: C.tinta }}>
+      <style>{ESTILOS_TEMA}</style>
       {enVistaPrevia() && (
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 bg-amber-400 px-4 py-2 text-center text-sm font-extrabold text-amber-950" role="status">
           <span>Vista previa: solo tú ves esto. La tienda está cerrada al público.</span>

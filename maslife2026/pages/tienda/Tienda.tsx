@@ -4,10 +4,10 @@ import { usePageMeta } from '../../lib/seo';
 import { trackShopAddToCart } from '../../analytics';
 import {
   cargarCatalogo, catalogoEnCache, agregarAlCarrito, abrirCarrito, clp, CATEGORIAS, enVistaPrevia,
-  contenidoConDefectos, MENSAJE_EDITOR, type ContenidoTienda,
   type Catalogo, type ProductoTienda,
 } from '../../lib/tienda';
 import { LayoutTienda, Skeleton, C, SERIF } from './LayoutTienda';
+import { useContenidoTienda } from './useContenido';
 
 type Categoria = ProductoTienda['categoria'];
 const SUBTITULO: Record<Categoria, string> = {
@@ -85,19 +85,7 @@ const Tienda: React.FC = () => {
   const [catalogo, setCatalogo] = useState<Catalogo | null>(catalogoEnCache);
   const [error, setError] = useState('');
   const [abierta, setAbierta] = useState<number | null>(0);
-  const [borrador, setBorrador] = useState<ContenidoTienda | null>(null);
-
-  // Editor del panel: en vista previa, los textos llegan en vivo desde la ventana padre (mismo origen).
-  useEffect(() => {
-    if (!enVistaPrevia()) return;
-    const recibir = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin || e.data?.tipo !== MENSAJE_EDITOR) return;
-      setBorrador(contenidoConDefectos(e.data.contenido));
-    };
-    window.addEventListener('message', recibir);
-    try { window.parent?.postMessage({ tipo: `${MENSAJE_EDITOR}-listo` }, window.location.origin); } catch { /* sin ventana padre */ }
-    return () => window.removeEventListener('message', recibir);
-  }, []);
+  const txt = useContenidoTienda(); // diseño guardado o borrador en vivo del editor
   const filtro = (params.get('cat') || '') as Categoria | '';
   const busqueda = (params.get('q') || '').trim();
 
@@ -110,7 +98,6 @@ const Tienda: React.FC = () => {
   useEffect(() => { cargarCatalogo().then(setCatalogo).catch(e => { if (!catalogo) setError(e.message); }); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const todos = catalogo?.productos || [];
-  const txt = borrador || contenidoConDefectos(catalogo?.contenido);
   const categorias = useMemo(() => (Object.keys(CATEGORIAS) as Categoria[]).filter(c => todos.some(p => p.categoria === c)), [todos]);
   const normal = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
   const productos = todos
@@ -135,13 +122,15 @@ const Tienda: React.FC = () => {
               {txt.banner.boton} <span aria-hidden="true" className="material-icons-round text-lg">arrow_forward</span>
             </a>
           </div>
-          <Composicion fotos={fotosBanner} />
+          {txt.imagenes.banner
+            ? <div className="h-72 overflow-hidden rounded-3xl lg:h-full lg:min-h-[340px]"><img src={txt.imagenes.banner} alt="" className="h-full w-full object-cover" /></div>
+            : <Composicion fotos={fotosBanner} />}
         </div>
       </section>
 
       {/* 2. Categorías */}
-      {catalogo?.activa && categorias.length > 0 && (
-        <section className="px-4 pt-12">
+      {txt.secciones.categorias && catalogo?.activa && categorias.length > 0 && (
+        <section className="t-sec px-4 pt-12">
           <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-6 lg:gap-14">
             {categorias.map(c => {
               const foto = todos.find(p => p.categoria === c && p.imagenes[0])?.imagenes[0];
@@ -163,7 +152,7 @@ const Tienda: React.FC = () => {
       )}
 
       {/* 3. Productos */}
-      <section id="productos" className="scroll-mt-28 px-4 pt-12">
+      <section id="productos" className="t-sec scroll-mt-28 px-4 pt-12">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <h2 className="text-3xl font-extrabold" style={{ color: C.petroleo }}>
@@ -191,8 +180,8 @@ const Tienda: React.FC = () => {
       </section>
 
       {/* 4. Banner secundario */}
-      {catalogo?.activa && fotosSecundario.length > 0 && (
-        <section className="px-2 pt-14 lg:px-4">
+      {txt.secciones.banner2 && catalogo?.activa && (fotosSecundario.length > 0 || txt.imagenes.banner2) && (
+        <section className="t-sec px-2 pt-14 lg:px-4">
           <div className="mx-auto grid max-w-6xl grid-cols-1 lg:grid-cols-2 items-center gap-6 overflow-hidden rounded-3xl p-6 lg:p-10" style={{ background: C.menta }}>
             <div>
               <h2 className="text-3xl lg:text-4xl leading-tight" style={{ ...SERIF, color: C.petroleo }}>{txt.banner2.titulo} <em>{txt.banner2.destacado}</em></h2>
@@ -202,14 +191,17 @@ const Tienda: React.FC = () => {
               </a>
             </div>
             <div className="flex items-end justify-center gap-3">
-              {fotosSecundario.map(src => <img key={src} src={src} alt="" loading="lazy" decoding="async" className="h-36 w-28 rounded-2xl bg-white object-contain p-3 shadow-lg shadow-slate-900/10 lg:h-48 lg:w-36" />)}
+              {txt.imagenes.banner2
+                ? <img src={txt.imagenes.banner2} alt="" loading="lazy" decoding="async" className="max-h-64 w-full rounded-2xl object-cover" />
+                : fotosSecundario.map(src => <img key={src} src={src} alt="" loading="lazy" decoding="async" className="h-36 w-28 rounded-2xl bg-white object-contain p-3 shadow-lg shadow-slate-900/10 lg:h-48 lg:w-36" />)}
             </div>
           </div>
         </section>
       )}
 
       {/* 5. Beneficios */}
-      <section className="px-4 pt-14">
+      {txt.secciones.beneficios && (
+      <section className="t-sec px-4 pt-14">
         <div className="mx-auto grid max-w-6xl grid-cols-1 lg:grid-cols-3 gap-6">
           {BENEFICIOS.map(b => (
             <div key={b.titulo} className="flex items-start gap-4">
@@ -220,8 +212,11 @@ const Tienda: React.FC = () => {
         </div>
       </section>
 
+      )}
+
       {/* 6. Preguntas frecuentes */}
-      <section className="px-4 py-14">
+      {txt.secciones.preguntas ? (
+      <section className="t-sec px-4 py-14">
         <div className="mx-auto grid max-w-6xl grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8">
           <div>
             <h2 className="text-3xl font-extrabold" style={{ color: C.petroleo }}>Preguntas frecuentes</h2>
@@ -245,6 +240,7 @@ const Tienda: React.FC = () => {
           </div>
         </div>
       </section>
+      ) : <div className="h-14" />}
     </LayoutTienda>
   );
 };

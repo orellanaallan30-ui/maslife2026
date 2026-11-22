@@ -4,6 +4,9 @@ import { ImportarShopify } from './ImportarShopify';
 import { EditorTienda } from './tienda/EditorTienda';
 import { imprimirPedido } from './tienda/imprimirPedido';
 
+// Dropi queda pausado: la tienda trabaja con productos propios. Se reactiva con true.
+const DROPI_ACTIVO = false;
+
 // Pestaña "Tienda" del panel admin: ajustes, búsqueda e importación desde Dropi,
 // aprobación de productos y pedidos. Todo pasa por /api/admin-auth?action=shop-*.
 
@@ -238,7 +241,7 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
             <input type="number" min={0} max={100} className={input} value={ajustes.umbralStock} onChange={e => setAjustes({ ...ajustes, umbralStock: e.target.value })} />
           </label>
         </div>
-        <p className="mt-2 text-xs text-slate-500">Precio = costo (Dropi o tu costo por unidad) ÷ (1 − margen − comisión), terminado en 990. Al cambiar margen o comisión se recalculan todos los precios.</p>
+        <p className="mt-2 text-xs text-slate-500">Precio = tu costo por unidad ÷ (1 − margen − comisión), terminado en 990. Al cambiar margen o comisión se recalculan todos los precios.</p>
 
         <h4 className="mt-6 font-black text-slate-700 text-sm">Envío por región (CLP) — vacío = sin despacho a esa región</h4>
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -253,7 +256,6 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
         </div>
         <div className="mt-4 flex flex-wrap gap-3 items-center">
           <button onClick={guardarAjustes} disabled={ocupado === 'ajustes'} className={`${boton} bg-teal-500 text-white`}>Guardar ajustes</button>
-          <span className="text-xs text-slate-500">Envío automático a Dropi: <b>{datos.ajustes.envioDropiActivo ? 'activo' : 'apagado'}</b> (se habilita en la etapa 3).</span>
         </div>
       </section>
 
@@ -300,8 +302,8 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
         </form>
       </section>
 
-      {/* Buscar en Dropi */}
-      <section className={caja}>
+      {/* Buscar en Dropi (pausado: por ahora solo productos propios) */}
+      {DROPI_ACTIVO && <section className={caja}>
         <h3 className="font-black text-slate-800">Agregar productos desde Dropi</h3>
         <form onSubmit={buscar} className="mt-3 flex flex-col sm:flex-row gap-3">
           <input className={`${input} flex-1`} placeholder="Ej: rodillera, banda elástica, masajeador" value={busqueda} onChange={e => setBusqueda(e.target.value)} />
@@ -336,15 +338,15 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
             );
           })}
         </div>
-      </section>
+      </section>}
 
       {/* Productos */}
       <section className={caja}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <h3 className="font-black text-slate-800">Productos ({datos.productos.length})</h3>
-          <button onClick={sincronizar} disabled={ocupado === 'sync'} className={`${boton} bg-slate-100 text-slate-700`}>Sincronizar stock ahora</button>
+          {DROPI_ACTIVO && <button onClick={sincronizar} disabled={ocupado === 'sync'} className={`${boton} bg-slate-100 text-slate-700`}>Sincronizar stock ahora</button>}
         </div>
-        {datos.productos.length === 0 && <p className="mt-3 text-sm text-slate-500">Aún no hay productos. Búscalos arriba en Dropi.</p>}
+        {datos.productos.length === 0 && <p className="mt-3 text-sm text-slate-500">Aún no hay productos. Créalos arriba.</p>}
         <div className="mt-4 space-y-3">
           {datos.productos.map((p: any) => (
             <div key={p.id} className="rounded-2xl border border-slate-200 p-4">

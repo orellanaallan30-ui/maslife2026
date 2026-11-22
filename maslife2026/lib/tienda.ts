@@ -10,18 +10,49 @@ export interface ProductoTienda {
 }
 export interface RegionTienda { codigo: string; nombre: string; envio: number; localidades: string[] }
 export interface ContenidoBanner { titulo: string; destacado: string; bajada: string; boton: string }
-export interface ContenidoTienda { banner: ContenidoBanner; banner2: ContenidoBanner }
-export interface Catalogo { activa: boolean; productos: ProductoTienda[]; regiones: RegionTienda[]; preview?: boolean; contenido?: ContenidoTienda }
+export interface TemaTienda {
+  colorPrimario: string; colorAcento: string; colorSuave: string; fuenteTitulos: string; fuenteTexto: string;
+  radio: 'recto' | 'suave' | 'redondeado'; espaciado: 'compacto' | 'normal' | 'amplio'; ancho: 'normal' | 'amplio';
+}
+export interface ContenidoTienda {
+  banner: ContenidoBanner; banner2: ContenidoBanner;
+  marca: { logoUrl: string; logoAltura: number; mostrarNombre: boolean };
+  imagenes: { banner: string; banner2: string };
+  tema: TemaTienda;
+  secciones: { categorias: boolean; banner2: boolean; beneficios: boolean; preguntas: boolean };
+}
+export interface Catalogo { activa: boolean; productos: ProductoTienda[]; regiones: RegionTienda[]; preview?: boolean; contenido?: Partial<ContenidoTienda> }
 
-/** Textos por defecto de la portada; el editor del panel los reemplaza campo por campo. */
+export const FUENTES = ['Fraunces', 'Manrope', 'Inter', 'Playfair Display', 'Lora', 'Montserrat', 'Poppins', 'DM Sans', 'Nunito', 'Cormorant Garamond'];
+
+/** Diseño por defecto de la portada; el editor del panel lo reemplaza campo por campo. */
 export const CONTENIDO_POR_DEFECTO: ContenidoTienda = {
   banner: { titulo: 'Bienestar diario,', destacado: 'directo a tu puerta', bajada: 'Suplementos y productos de salud y bienestar, con pago seguro y despacho a domicilio en todo Chile.', boton: 'Ver productos' },
   banner2: { titulo: 'Arma tu pedido y', destacado: 'recíbelo en casa', bajada: 'Elige tus productos, paga con MercadoPago y te avisamos por correo cuando tu pedido salga.', boton: 'Comprar ahora' },
+  marca: { logoUrl: '', logoAltura: 40, mostrarNombre: true },
+  imagenes: { banner: '', banner2: '' },
+  tema: { colorPrimario: '#0B4F5C', colorAcento: '#E8731C', colorSuave: '#E6F2F1', fuenteTitulos: 'Fraunces', fuenteTexto: 'Manrope', radio: 'redondeado', espaciado: 'normal', ancho: 'normal' },
+  secciones: { categorias: true, banner2: true, beneficios: true, preguntas: true },
 };
 export function contenidoConDefectos(c?: Partial<ContenidoTienda> | null): ContenidoTienda {
-  const mezclar = (d: ContenidoBanner, v?: Partial<ContenidoBanner>): ContenidoBanner =>
-    ({ titulo: v?.titulo || d.titulo, destacado: v?.destacado || d.destacado, bajada: v?.bajada || d.bajada, boton: v?.boton || d.boton });
-  return { banner: mezclar(CONTENIDO_POR_DEFECTO.banner, c?.banner), banner2: mezclar(CONTENIDO_POR_DEFECTO.banner2, c?.banner2) };
+  const d = CONTENIDO_POR_DEFECTO;
+  const mezclar = (base: ContenidoBanner, v?: Partial<ContenidoBanner>): ContenidoBanner =>
+    ({ titulo: v?.titulo || base.titulo, destacado: v?.destacado || base.destacado, bajada: v?.bajada || base.bajada, boton: v?.boton || base.boton });
+  return {
+    banner: mezclar(d.banner, c?.banner), banner2: mezclar(d.banner2, c?.banner2),
+    marca: { ...d.marca, ...(c?.marca || {}) },
+    imagenes: { ...d.imagenes, ...(c?.imagenes || {}) },
+    tema: { ...d.tema, ...(c?.tema || {}) },
+    secciones: { ...d.secciones, ...(c?.secciones || {}) },
+  };
+}
+
+// Borrador en vivo del editor (solo en vista previa): la cabecera y la portada lo leen.
+let borradorEditor: ContenidoTienda | null = null;
+export const borradorEnVivo = () => borradorEditor;
+export function fijarBorrador(c: ContenidoTienda) {
+  borradorEditor = c;
+  try { window.dispatchEvent(new Event('tienda-contenido')); } catch { /* */ }
 }
 export const MENSAJE_EDITOR = 'maslife-tienda-contenido';
 /** Token admin de esta pestaña (para el modo prueba del checkout). */
