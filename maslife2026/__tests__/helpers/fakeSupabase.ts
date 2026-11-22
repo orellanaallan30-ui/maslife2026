@@ -52,6 +52,7 @@ export function makeFakeSupabase(
       from: (bucket: string) => ({
         createSignedUrl: async (path: string) => signUrl(path),
         createSignedUploadUrl: async (path: string) => ({ data: { path, token: 'tok' }, error: null }),
+        upload: async (path: string) => { ((tables as any).__uploads ||= []).push(`${bucket}/${path}`); return { data: { path }, error: null }; },
         getPublicUrl: (path: string) => ({ data: { publicUrl: `https://example.supabase.co/storage/v1/object/public/${bucket}/${path}` } }),
       }),
     },

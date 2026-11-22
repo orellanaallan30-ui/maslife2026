@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
+import { ImportarShopify } from './ImportarShopify';
 
 // Pestaña "Tienda" del panel admin: ajustes, búsqueda e importación desde Dropi,
 // aprobación de productos y pedidos. Todo pasa por /api/admin-auth?action=shop-*.
@@ -200,6 +201,9 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
           <span className="text-xs text-slate-500">Envío automático a Dropi: <b>{datos.ajustes.envioDropiActivo ? 'activo' : 'apagado'}</b> (se habilita en la etapa 3).</span>
         </div>
       </section>
+
+      {/* Importar productos desde el CSV de Shopify */}
+      <ImportarShopify adminFetch={adminFetch} alTerminar={cargar} />
 
       {/* Producto con stock propio */}
       <section className={caja}>

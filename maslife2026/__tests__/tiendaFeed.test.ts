@@ -153,6 +153,44 @@ describe('vista previa para Rodrigo', () => {
   });
 });
 
+describe('importación desde el CSV de Shopify', () => {
+  const imagen = (tipo = 'image/jpeg', bytes = 10) => ({
+    ok: true, status: 200, headers: { get: (h: string) => (h === 'content-type' ? tipo : String(bytes)) },
+    arrayBuffer: async () => new ArrayBuffer(bytes),
+  });
+
+  it('copia solo fotos de cdn.shopify.com y crea todo en borrador', async () => {
+    const pedidas: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => { pedidas.push(url); return imagen(); }));
+    const r = await shop.importarDesdeShopify([{
+      nombre: 'Magnesio importado de Shopify', categoria: 'suplementos', costo: 8000, stock: 12, registro: 'Reg. ISP F-1/26',
+      descripcion: '<p>Alta absorción</p>',
+      imagenes: ['https://cdn.shopify.com/s/a.jpg', 'https://malicioso.example/x.jpg', 'http://cdn.shopify.com/b.jpg'],
+    }]);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.resultados[0]).toMatchObject({ ok: true, fotos: 1, fotosFallidas: 2 });
+    expect(pedidas).toEqual(['https://cdn.shopify.com/s/a.jpg']);
+    const p = db.tables.shop_products.find((x: any) => x.nombre === 'Magnesio importado de Shopify');
+    expect(p).toMatchObject({ estado: 'borrador', origen: 'propio', costo: 8000, stock: 12, consumible: true, resolucion_sanitaria: 'Reg. ISP F-1/26' });
+    expect(p.imagenes[0]).toMatch(/^https:\/\/example\.supabase\.co\/storage\/v1\/object\/public\/shop-images\/productos\/.+\.jpg$/);
+  });
+
+  it('rechaza tipos de archivo no permitidos y fotos muy pesadas', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => (url.endsWith('.svg') ? imagen('image/svg+xml') : imagen('image/png', 6 * 1024 * 1024))));
+    expect(await shop.copiarFotoShopify('https://cdn.shopify.com/x.svg')).toBeNull();
+    expect(await shop.copiarFotoShopify('https://cdn.shopify.com/x.png')).toBeNull();
+  });
+
+  it('informa los productos sin costo y respeta el máximo por envío', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => imagen()));
+    const r = await shop.importarDesdeShopify([{ nombre: 'Sin costo', categoria: 'bienestar', costo: null, stock: 1, imagenes: [] }]);
+    expect(r.ok && r.data.resultados[0]).toMatchObject({ ok: false, error: expect.stringMatching(/cost/i) });
+    const muchos = Array.from({ length: 21 }, (_, i) => ({ nombre: `P${i}`, categoria: 'bienestar', costo: 1000, stock: 1 }));
+    expect(await shop.importarDesdeShopify(muchos)).toMatchObject({ ok: false, code: 400 });
+  });
+});
+
 describe('evento de Meta de la tienda', () => {
   it('lleva SKU, cantidades, teléfono cifrado y el id del pedido como event_id', () => {
     const ev = meta.buildEbookPurchaseEvent({

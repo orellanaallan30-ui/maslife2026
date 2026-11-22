@@ -458,6 +458,73 @@ export async function urlSubidaFoto(tipo: unknown): Promise<Result<{ path: strin
   return { ok: true, data: { path: data.path, token: data.token, publicUrl: pub.publicUrl } };
 }
 
+// ── Importación desde el CSV de Shopify ──────────────────────────────────
+
+const TIPOS_FOTO: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const MAX_FOTO_BYTES = 5 * 1024 * 1024;
+export const MAX_IMPORTAR_POR_LLAMADA = 20;
+
+/**
+ * Copia una foto del CDN de Shopify al bucket público de la tienda, para no depender
+ * de la tienda Shopify (está suspendida). Solo https y cdn.shopify.com, sin seguir
+ * redirecciones, imágenes JPG/PNG/WebP de hasta 5 MB.
+ */
+export async function copiarFotoShopify(url: unknown): Promise<string | null> {
+  let u: URL;
+  try { u = new URL(String(url)); } catch { return null; }
+  if (u.protocol !== 'https:' || u.hostname !== 'cdn.shopify.com') return null;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15_000);
+  try {
+    const r = await fetch(u.toString(), { redirect: 'error', signal: ctrl.signal });
+    if (!r.ok) return null;
+    const tipo = String(r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    const ext = TIPOS_FOTO[tipo];
+    if (!ext) return null;
+    if (Number(r.headers.get('content-length') || 0) > MAX_FOTO_BYTES) return null;
+    const bytes = Buffer.from(await r.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > MAX_FOTO_BYTES) return null;
+    const path = `productos/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from('shop-images').upload(path, bytes, { contentType: tipo, upsert: false });
+    if (error) { console.error('[shop] no se pudo guardar la foto:', error.message); return null; }
+    return supabase.storage.from('shop-images').getPublicUrl(path).data.publicUrl;
+  } catch (e: any) {
+    console.error('[shop] no se pudo descargar la foto de Shopify:', e?.message);
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Importa productos ya revisados en el panel (desde el CSV de Shopify) como productos
+ * propios en BORRADOR: nada se publica sin el visto bueno de Rodrigo. Hasta 20 por
+ * llamada para no pasar el límite de tiempo de la función; el panel envía en tandas.
+ */
+export async function importarDesdeShopify(lista: unknown): Promise<Result<{ resultados: Array<{ nombre: string; ok: boolean; sku?: string; error?: string; fotos: number; fotosFallidas: number }> }>> {
+  if (!Array.isArray(lista) || lista.length === 0) return { ok: false, code: 400, error: 'No hay productos para importar' };
+  if (lista.length > MAX_IMPORTAR_POR_LLAMADA) return { ok: false, code: 400, error: `Máximo ${MAX_IMPORTAR_POR_LLAMADA} productos por envío` };
+  const resultados = [];
+  for (const p of lista as any[]) {
+    const urls = (Array.isArray(p?.imagenes) ? p.imagenes : []).slice(0, 8);
+    const copias = await Promise.all(urls.map(copiarFotoShopify));
+    const imagenes = copias.filter(Boolean) as string[];
+    const r = await crearProductoPropio({
+      nombre: p?.nombre, categoria: p?.categoria, costo: p?.costo, stock: p?.stock,
+      descripcion: p?.descripcion, resolucion_sanitaria: p?.registro, consumible: p?.categoria === 'suplementos',
+      imagenes,
+    });
+    resultados.push({
+      nombre: String(p?.nombre || '').slice(0, 200),
+      ok: r.ok,
+      ...(r.ok === false ? { error: r.error } : { sku: r.data.sku }),
+      fotos: imagenes.length,
+      fotosFallidas: urls.length - imagenes.length,
+    });
+  }
+  return { ok: true, data: { resultados } };
+}
+
 const CAMPOS_EDITABLES = ['nombre', 'descripcion', 'categoria', 'envio_estimado', 'resolucion_sanitaria', 'consumible', 'dias_recompra', 'estado'] as const;
 const CAMPOS_SOLO_PROPIO = ['costo', 'stock', 'imagenes'] as const;
 
@@ -688,6 +755,8 @@ export async function handleShopAdmin(req: VercelRequest, res: VercelResponse): 
     r = await guardarAjustes(body);
   } else if (req.method === 'POST' && action === 'shop-sync') {
     r = await sincronizarStock();
+  } else if (req.method === 'POST' && action === 'shop-import-csv') {
+    r = await importarDesdeShopify(body.productos);
   } else if (req.method === 'POST' && action === 'shop-own-product') {
     r = await crearProductoPropio(body);
   } else if (req.method === 'POST' && action === 'shop-image-upload-url') {
