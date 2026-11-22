@@ -48,7 +48,10 @@ export interface MetaEvent {
   event_source_url?: string;
   // Cifrados van como lista; los identificadores del navegador (fbp, fbc, user agent) van en claro.
   user_data: Record<string, string[] | string>;
-  custom_data: { currency: 'CLP'; value: number; content_type?: 'product'; content_ids?: string[] };
+  custom_data: {
+    currency: 'CLP'; value: number; content_type?: 'product'; content_ids?: string[];
+    contents?: Array<{ id: string; quantity: number; item_price: number }>; num_items?: number;
+  };
 }
 
 /** event_id estable: si se reintenta, Meta descarta el duplicado. */
@@ -102,6 +105,11 @@ export interface EbookSaleInput {
   fbp?: string | null;       // cookie _fbp del píxel
   fbc?: string | null;       // cookie _fbc (clic en el anuncio)
   nowSec?: number;
+  // Tienda: SKU y cantidades (los mismos content_ids que el píxel y el catálogo),
+  // teléfono del comprador (se cifra) y la página de gracias de la tienda.
+  contents?: Array<{ id: string; quantity: number; item_price: number }>;
+  phone?: string | null;
+  sourceUrl?: string;
 }
 
 /**
@@ -120,16 +128,21 @@ export function buildEbookPurchaseEvent(input: EbookSaleInput): MetaEvent {
   if (input.userAgent) user_data.client_user_agent = input.userAgent;
   if (input.fbp) user_data.fbp = input.fbp;
   if (input.fbc) user_data.fbc = input.fbc;
+  const tel = normalizarTelefonoCL(input.phone);
+  if (tel) user_data.ph = [sha256(tel)];
+  const contents = (input.contents || []).filter(c => c.id && c.quantity > 0);
   return {
     event_name: 'Purchase',
     event_time: input.nowSec ?? Math.floor(Date.now() / 1000),
     event_id: input.orderId,
     action_source: 'website',
-    event_source_url: 'https://clinicamaslife.cl/programas/gracias',
+    event_source_url: input.sourceUrl || 'https://clinicamaslife.cl/programas/gracias',
     user_data,
     custom_data: {
       currency: 'CLP', value: Math.max(0, Math.round(input.amount)),
-      content_type: 'product', content_ids: [input.productSlug],
+      content_type: 'product',
+      content_ids: contents.length ? contents.map(c => c.id) : [input.productSlug],
+      ...(contents.length ? { contents, num_items: contents.reduce((a, c) => a + c.quantity, 0) } : {}),
     },
   };
 }

@@ -19,6 +19,10 @@
       "destination": "/enfermera-yas.html"
     },
     {
+      "source": "/tienda/feed.csv",
+      "destination": "/api/book-appointment?shop=feed"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

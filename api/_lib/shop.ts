@@ -32,7 +32,10 @@ type Result<T = Record<string, unknown>> = { ok: true; data: T } | { ok: false; 
 
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
 const SKU_RE = /^[A-Z0-9-]{3,40}$/;
-const COLUMNAS_PUBLICAS = 'sku, nombre, descripcion, imagenes, categoria, precio_venta, estado';
+const COLUMNAS_PUBLICAS = 'sku, nombre, descripcion, imagenes, categoria, precio_venta, estado, resolucion_sanitaria';
+/** Tope por pedido: un monto mayor no es una compra normal de la tienda. */
+export const MONTO_MAXIMO_PEDIDO = 1_000_000;
+const CHECKOUT_KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // ── Ajustes ───────────────────────────────────────────────────────────────
 
@@ -62,6 +65,8 @@ const aPublico = (p: any, umbral: number) => ({
   sku: p.sku, nombre: p.nombre, descripcion: p.descripcion, imagenes: p.imagenes || [],
   categoria: p.categoria, precio: p.precio_venta,
   agotado: p.estado === 'agotado' || (typeof p.stock === 'number' && p.stock < umbral),
+  // El registro sanitario va impreso en la etiqueta: mostrarlo da confianza.
+  registro: p.categoria === 'suplementos' ? (p.resolucion_sanitaria || null) : null,
 });
 
 /** Catálogo visible: solo productos aprobados (publicado o agotado). Nunca expone el costo. */
@@ -105,8 +110,19 @@ export function normalizarTelefono(raw: unknown): string | null {
  * sku + cantidad + datos de despacho: precios, flete y total salen de la BD.
  */
 export async function crearPedidoTienda(input: any): Promise<Result<{ init_point: string; orderId: string }>> {
+  // Campo trampa: es invisible para personas; si viene con algo, es un bot.
+  if (typeof input?.empresa === 'string' && input.empresa.trim() !== '') {
+    return { ok: false, code: 400, error: 'Solicitud inválida' };
+  }
   const s = await leerAjustes();
   if (!s.tiendaActiva) return { ok: false, code: 409, error: 'La tienda aún no está abierta' };
+
+  // La misma compra enviada dos veces (doble clic, reintento) devuelve el mismo link de pago.
+  const checkoutKey = CHECKOUT_KEY_RE.test(String(input?.checkoutKey || '')) ? String(input.checkoutKey).toLowerCase() : null;
+  if (checkoutKey) {
+    const previo = await pedidoPorCheckoutKey(checkoutKey);
+    if (previo) return previo;
+  }
 
   const nombre = String(input?.name || '').trim().replace(/\s+/g, ' ');
   const email = String(input?.email || '').trim().toLowerCase();
@@ -133,6 +149,9 @@ export async function crearPedidoTienda(input: any): Promise<Result<{ init_point
   if (eProd) { console.error('[shop] productos del carrito:', eProd.message); return { ok: false, code: 500, error: 'No se pudo crear el pedido' }; }
   const carrito = calcularCarrito(items, (productos || []) as any, s.umbralStock);
   if (carrito.ok === false) return { ok: false, code: 409, error: carrito.error };
+  if (carrito.subtotal + envio > MONTO_MAXIMO_PEDIDO) {
+    return { ok: false, code: 409, error: 'El pedido supera el monto máximo online. Escríbenos y lo coordinamos.' };
+  }
 
   const clienteId = await guardarCliente(nombre, email, telefono);
   if (!clienteId) return { ok: false, code: 500, error: 'No se pudo crear el pedido' };
@@ -142,10 +161,16 @@ export async function crearPedidoTienda(input: any): Promise<Result<{ init_point
     amount: carrito.subtotal + envio, currency: 'CLP', status: 'pendiente',
     region: codigoRegion, comuna: destino.ciudad, direccion, envio_monto: envio, metodo_pago: 'online',
     accepted_terms_at: new Date().toISOString(),
+    ...(checkoutKey ? { checkout_key: checkoutKey } : {}),
     ...cleanUtms(input?.utm),
     ...cleanMetaIds(input?.meta),
   }).select('id').single();
   if (error || !order) {
+    // Dos solicitudes simultáneas con la misma clave: la segunda choca con el índice único.
+    if (checkoutKey && /duplicate|unique/i.test(error?.message || '')) {
+      const previo = await pedidoPorCheckoutKey(checkoutKey);
+      if (previo) return previo;
+    }
     console.error('[shop] no se pudo crear el pedido:', error?.message);
     return { ok: false, code: 500, error: 'No se pudo crear el pedido' };
   }
@@ -170,7 +195,18 @@ export async function crearPedidoTienda(input: any): Promise<Result<{ init_point
       ...(envio > 0 ? [{ id: 'envio', title: `Envío a ${destino.ciudad}`, quantity: 1, unit_price: envio }] : []),
     ],
     payer: { email, name: nombre },
+    expiraEnMin: 120,
+    guardarLink: true,
   });
+}
+
+/** Si ya existe un pedido con esta clave de checkout, devuelve su link de pago (o por qué no). */
+async function pedidoPorCheckoutKey(key: string): Promise<Result<{ init_point: string; orderId: string }> | null> {
+  const { data } = await supabase.from('orders').select('id, status, mp_init_point').eq('checkout_key', key).maybeSingle();
+  if (!data) return null;
+  if (data.status === 'pendiente' && data.mp_init_point) return { ok: true, data: { init_point: data.mp_init_point, orderId: data.id } };
+  if (data.status === 'pagado') return { ok: false, code: 409, error: 'Este pedido ya fue pagado. Revisa tu correo.' };
+  return { ok: false, code: 409, error: 'Estamos procesando tu pedido. Espera unos segundos e inténtalo de nuevo.' };
 }
 
 async function guardarCliente(nombre: string, email: string, telefono: string): Promise<string | null> {
@@ -187,19 +223,72 @@ async function guardarCliente(nombre: string, email: string, telefono: string): 
 }
 
 /** Estado del pedido al volver de MercadoPago. Verifica el pago contra MP si sigue pendiente. */
-export async function estadoPedidoTienda(orderId: string, paymentId?: string): Promise<Result<{ status: string }>> {
+export async function estadoPedidoTienda(orderId: string, paymentId?: string): Promise<Result<EstadoPedido>> {
   if (!UUID_RE.test(orderId)) return { ok: false, code: 400, error: 'Pedido inválido' };
   const { data: order } = await supabase.from('orders').select('id, status, tipo').eq('id', orderId).maybeSingle();
   if (!order || order.tipo !== 'tienda') return { ok: false, code: 404, error: 'Pedido no encontrado' };
-  if (order.status === 'pendiente') {
+  let status = order.status as string;
+  if (status === 'pendiente') {
     const payment = paymentId ? await fetchPayment(paymentId) : await findApprovedPayment(orderId, SHOP_REF_PREFIX);
     if (payment) {
       const r = await confirmPaidOrder(orderId, payment);
       if (r === 'pagado') await alPagarPedidoTienda(orderId);
-      if (r !== 'rechazado') return { ok: true, data: { status: 'pagado' } };
+      if (r !== 'rechazado') status = 'pagado';
     }
   }
-  return { ok: true, data: { status: order.status } };
+  return { ok: true, data: status === 'pagado' ? await resumenPagado(orderId) : { status } };
+}
+
+type EstadoPedido = { status: string; amount?: number; envio?: number; items?: Array<{ sku: string; nombre: string; cantidad: number; precio: number }> };
+
+/**
+ * Resumen de un pedido pagado para la página de gracias y el píxel (valor y SKU).
+ * Sin datos personales: quien tiene el id del pedido no ve nombre, correo ni dirección.
+ */
+async function resumenPagado(orderId: string): Promise<EstadoPedido> {
+  const [{ data: o }, { data: items }] = await Promise.all([
+    supabase.from('orders').select('amount, envio_monto').eq('id', orderId).maybeSingle(),
+    supabase.from('order_items').select('sku, nombre, cantidad, precio_unitario').eq('order_id', orderId),
+  ]);
+  return {
+    status: 'pagado', amount: o?.amount ?? 0, envio: o?.envio_monto ?? 0,
+    items: (items || []).map((i: any) => ({ sku: i.sku, nombre: i.nombre, cantidad: i.cantidad, precio: i.precio_unitario })),
+  };
+}
+
+// ── Feed de catálogo para Meta (Commerce Manager) ─────────────────────────
+
+const csv = (v: unknown) => {
+  const s = String(v ?? '').replace(/[\r\n\t]+/g, ' ').trim();
+  return /[",]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+const sinHtml = (s: string) => s.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+const CATEGORIA_GOOGLE: Record<string, string> = {
+  suplementos: 'Health & Beauty > Health Care > Fitness & Nutrition > Vitamins & Supplements',
+  rehabilitacion: 'Health & Beauty > Health Care > Medical Supplies & Equipment',
+  salud: 'Health & Beauty > Health Care',
+  bienestar: 'Health & Beauty > Personal Care',
+};
+
+/**
+ * CSV con el formato de Meta: id = SKU (el mismo content_id del píxel), precio en CLP,
+ * disponibilidad según stock. Solo productos aprobados y con la tienda abierta.
+ */
+export async function feedMeta(): Promise<string> {
+  const cabecera = 'id,title,description,availability,condition,price,link,image_link,brand,google_product_category';
+  const s = await leerAjustes();
+  if (!s.tiendaActiva) return cabecera + '\n';
+  const { data } = await supabase.from('shop_products').select(`${COLUMNAS_PUBLICAS}, stock`)
+    .in('estado', ['publicado', 'agotado']).order('nombre');
+  const filas = (data || []).filter((p: any) => (p.imagenes || []).length > 0).map((p: any) => {
+    const pub = aPublico(p, s.umbralStock);
+    return [
+      p.sku, p.nombre.slice(0, 150), (sinHtml(p.descripcion || '') || p.nombre).slice(0, 5000),
+      pub.agotado ? 'out of stock' : 'in stock', 'new', `${p.precio_venta} CLP`,
+      `https://clinicamaslife.cl/tienda/${p.sku}`, p.imagenes[0], 'Clínica Mas Life', CATEGORIA_GOOGLE[p.categoria] || '',
+    ].map(csv).join(',');
+  });
+  return [cabecera, ...filas].join('\n') + '\n';
 }
 
 /** Pide a /api/notify un aviso de la tienda. El destinatario lo decide notify desde la BD. */
@@ -509,7 +598,35 @@ export async function handleShopPublic(req: VercelRequest, res: VercelResponse):
       break;
     default: r = { ok: false, code: 400, error: 'Acción desconocida' };
   }
+  // Estados de pedido y tareas internas nunca se guardan en caché.
+  res.setHeader('Cache-Control', 'no-store');
   if (r.ok === false) res.status(r.code).json({ error: r.error }); else res.status(200).json(r.data);
+}
+
+/** ¿Es una lectura pública de la tienda por GET (?shop=catalog|product|feed)? */
+export const esLecturaTienda = (q: unknown): boolean => q === 'catalog' || q === 'product' || q === 'feed';
+
+/**
+ * Lecturas públicas por GET, cacheadas en el borde de Vercel: el catálogo y la ficha
+ * responden desde la CDN en milisegundos. Nunca incluyen costos ni datos de clientes.
+ */
+export async function handleShopGet(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const tipo = String(req.query.shop || '');
+  if (tipo === 'feed') {
+    const cuerpo = await feedMeta();
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=3600');
+    res.status(200).send(cuerpo);
+    return;
+  }
+  const r: Result<any> = tipo === 'product' ? await productoPublico(String(req.query.sku || '')) : await catalogoPublico();
+  if (r.ok === false) {
+    res.setHeader('Cache-Control', 'public, s-maxage=30');
+    res.status(r.code).json({ error: r.error });
+    return;
+  }
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+  res.status(200).json(r.data);
 }
 
 /** Acciones del panel admin (desde api/admin-auth.ts, ya con token admin verificado). */

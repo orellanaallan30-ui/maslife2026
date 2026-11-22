@@ -7,7 +7,7 @@ import { syncAppointmentToGoogle } from './_lib/googleCalendar';
 import { reconcilePendingWithMP, notificarCitaEnPanel, resendMissingPatientEmails } from './_lib/mpReconcile';
 import { confirmAndDeliver, orderStatus, consumeDownload } from './_lib/orders';
 import { esAccionDeCentro, handleCenter } from './_lib/center';
-import { esAccionTienda, handleShopPublic } from './_lib/shop';
+import { esAccionTienda, handleShopPublic, esLecturaTienda, handleShopGet } from './_lib/shop';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -35,6 +35,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Vive en _lib/center.ts y se despacha desde aquí para no sumar una función
   // (límite de 12 en Vercel). Va antes del límite por IP de la reserva pública.
   if (req.method === 'POST' && esAccionDeCentro(req.body?.action)) return handleCenter(req, res);
+
+  // ── Tienda: catálogo, ficha y feed para Meta por GET (cacheados en la CDN) ──
+  if (req.method === 'GET' && esLecturaTienda(req.query.shop)) return handleShopGet(req, res);
 
   // ── Disponibilidad pública (sin datos personales) ──
   if (req.method === 'GET') {

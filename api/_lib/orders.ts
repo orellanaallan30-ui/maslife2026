@@ -91,10 +91,26 @@ async function reportPurchaseToMeta(order: any): Promise<MetaReport> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 4000);
   try {
+    // Tienda: SKU y cantidades (mismos ids que el píxel y el catálogo) y teléfono cifrado.
+    let tienda: { contents?: Array<{ id: string; quantity: number; item_price: number }>; phone?: string | null; sourceUrl?: string } = {};
+    if (order.tipo === 'tienda') {
+      const [{ data: items }, { data: cli }] = await Promise.all([
+        supabase.from('order_items').select('sku, cantidad, precio_unitario').eq('order_id', order.id),
+        order.customer_id
+          ? supabase.from('shop_customers').select('telefono').eq('id', order.customer_id).maybeSingle()
+          : Promise.resolve({ data: null as any }),
+      ]);
+      tienda = {
+        contents: (items || []).map((i: any) => ({ id: i.sku, quantity: i.cantidad, item_price: i.precio_unitario })),
+        phone: cli?.telefono ?? null,
+        sourceUrl: 'https://clinicamaslife.cl/tienda/gracias',
+      };
+    }
     const ev = buildEbookPurchaseEvent({
       orderId: order.id, productSlug: order.product_slug || 'tienda', amount: order.amount,
       email: order.buyer_email, fullName: order.buyer_name,
       userAgent: order.client_ua, fbp: order.meta_fbp, fbc: order.meta_fbc,
+      ...tienda,
     });
     const r = await sendMetaEvent(ev, { datasetId, token, testCode: (process.env.META_CAPI_TEST_CODE || '').trim() || undefined, signal: ctrl.signal });
     if (!r.ok) {
@@ -176,10 +192,17 @@ export async function crearPreferenciaMP(p: {
   backPath: string;
   items: Array<{ id: string; title: string; quantity: number; unit_price: number }>;
   payer: { email: string; name: string };
+  /** Minutos de vigencia del link de pago (la tienda usa 120: evita pagar un link viejo). */
+  expiraEnMin?: number;
+  /** Guarda el link en el pedido para reutilizarlo si la misma compra llega dos veces. */
+  guardarLink?: boolean;
 }): Promise<Result<{ init_point: string; orderId: string }>> {
   const token = platformToken();
   if (!token) return { ok: false, code: 503, error: 'MP_NOT_CONFIGURED' };
   const back = `${ORIGIN}${p.backPath}?order=${p.orderId}`;
+  const vencimiento = p.expiraEnMin
+    ? { expires: true, expiration_date_from: new Date(Date.now() - 60_000).toISOString(), expiration_date_to: new Date(Date.now() + p.expiraEnMin * 60_000).toISOString() }
+    : {};
   try {
     const r = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
@@ -198,6 +221,7 @@ export async function crearPreferenciaMP(p: {
         auto_return: 'approved',
         statement_descriptor: 'CLINICAMASLIFE',
         payer: p.payer,
+        ...vencimiento,
       }),
     });
     const pref: any = await r.json();
@@ -206,7 +230,10 @@ export async function crearPreferenciaMP(p: {
       await supabase.from('orders').update({ status: 'cancelado' }).eq('id', p.orderId);
       return { ok: false, code: 502, error: 'No se pudo iniciar el pago' };
     }
-    await supabase.from('orders').update({ mp_preference_id: String(pref.id) }).eq('id', p.orderId);
+    const guardar: Record<string, string> = { mp_preference_id: String(pref.id) };
+    if (p.guardarLink && /^https:\/\//.test(String(pref.init_point))) guardar.mp_init_point = String(pref.init_point);
+    const { error: eGuardar } = await supabase.from('orders').update(guardar).eq('id', p.orderId);
+    if (eGuardar) console.error('[orders] no se pudo guardar la preferencia:', eGuardar.message);
     return { ok: true, data: { init_point: pref.init_point, orderId: p.orderId } };
   } catch (e: any) {
     console.error('[orders] error de red con MP:', e?.message);
