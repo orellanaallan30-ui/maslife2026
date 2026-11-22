@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { getProduct, listProducts } from './_lib/products';
 import { resendLastPaidToMeta } from './_lib/orders';
+import { handleShopAdmin } from './_lib/shop';
 
 const EBOOK_BUCKET = 'ebook-files';
 
@@ -192,6 +193,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: 'SUPABASE_SERVICE_ROLE_KEY no configurada' });
   }
   const supabase = getAdminSupabase();
+
+  // ── Tienda (Dropi): catálogo, importación, aprobación y ajustes ──
+  if (String(req.query.action || '').startsWith('shop-')) return handleShopAdmin(req, res);
 
   if (req.method === 'GET' && req.query.action === 'list') {
     const { data, error } = await supabase

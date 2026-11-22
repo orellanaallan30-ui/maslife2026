@@ -7,6 +7,7 @@ import { syncAppointmentToGoogle } from './_lib/googleCalendar';
 import { reconcilePendingWithMP, notificarCitaEnPanel, resendMissingPatientEmails } from './_lib/mpReconcile';
 import { confirmAndDeliver, orderStatus, consumeDownload } from './_lib/orders';
 import { esAccionDeCentro, handleCenter } from './_lib/center';
+import { esAccionTienda, handleShopPublic } from './_lib/shop';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -68,6 +69,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const body = req.body || {};
+
+  // ── Tienda (Dropi): catálogo, estado del pedido y tareas de pg_cron ──
+  if (esAccionTienda(body.action)) return handleShopPublic(req, res);
 
   // ── Temas propuestos para próximas guías ──
   if (body.action === 'guide-suggestion') {

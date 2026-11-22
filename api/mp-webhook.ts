@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { confirmPaidAppointment } from './_lib/mpReconcile';
-import { confirmPaidOrder, deliverOrder, ORDER_REF_PREFIX } from './_lib/orders';
+import { confirmPaidOrder, deliverOrder, ORDER_REF_PREFIX, SHOP_REF_PREFIX } from './_lib/orders';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -256,6 +256,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             mp_status: payment.status ? String(payment.status) : undefined,
             outcome: estado === 'rechazado' ? 'ignored_status' : 'matched_updated',
             detail: `pedido ${orderId}: ${estado}, entrega ${entrega}`,
+          });
+        } else if (typeof ref === 'string' && ref.startsWith(SHOP_REF_PREFIX)) {
+          // Tienda (Dropi): confirma el pago con las mismas validaciones (monto exacto,
+          // referencia, moneda). El envío a Dropi lo hace la cola (etapa 3), no el webhook.
+          const orderId = ref.slice(SHOP_REF_PREFIX.length);
+          const estado = await confirmPaidOrder(orderId, payment);
+          await logWebhookEvent({
+            event_type: 'payment', mp_data_id: String(paymentId), signature_valid: true,
+            mp_status: payment.status ? String(payment.status) : undefined,
+            outcome: estado === 'rechazado' ? 'ignored_status' : 'matched_updated',
+            detail: `tienda ${orderId}: ${estado}`,
           });
         } else if (payment.status === 'approved' && ref && REF_UUID.test(ref)) {
           const amount = Math.round(Number(payment.transaction_amount) || 0);

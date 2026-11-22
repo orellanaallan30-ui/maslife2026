@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto';
 
 // Mini Supabase en memoria para probar la lógica de pedidos sin red.
-// Soporta lo que usan api/_lib/orders.ts y api/notify.ts: insert, update, select,
-// eq, is, maybeSingle, single y await directo. Las escrituras se aplican una sola
+// Soporta lo que usan api/_lib/orders.ts, api/_lib/shop.ts y api/notify.ts: insert
+// (una fila o varias), update, select, eq, neq, in, is, maybeSingle, single y await directo. Las escrituras se aplican una sola
 // vez, al ejecutar la consulta.
 export type Tables = Record<string, any[]>;
 
@@ -18,9 +18,11 @@ export function makeFakeSupabase(
     const run = () => {
       const rows = (tables[table] ||= []);
       if (op === 'insert') {
-        const row = { id: randomUUID(), status: 'pendiente', currency: 'CLP', download_count: 0, max_downloads: 5, delivered_at: null, mp_payment_id: null, ...inserted };
-        rows.push(row);
-        return { data: [row], error: null };
+        const nuevos = (Array.isArray(inserted) ? inserted : [inserted]).map((v: any) => (
+          { id: randomUUID(), status: 'pendiente', currency: 'CLP', download_count: 0, max_downloads: 5, delivered_at: null, mp_payment_id: null, ...v }
+        ));
+        rows.push(...nuevos);
+        return { data: nuevos, error: null };
       }
       const matched = rows.filter(r => filters.every(f => f(r)));
       if (op === 'update') matched.forEach(r => Object.assign(r, patch));
@@ -32,6 +34,8 @@ export function makeFakeSupabase(
       update: (v: any) => { op = 'update'; patch = v; return b; },
       eq: (c: string, v: any) => { filters.push(r => r[c] === v); return b; },
       is: (c: string, v: any) => { filters.push(r => r[c] === v); return b; },
+      neq: (c: string, v: any) => { filters.push(r => r[c] !== v); return b; },
+      in: (c: string, v: any[]) => { filters.push(r => v.includes(r[c])); return b; },
       order: () => b,
       limit: () => b,
       maybeSingle: async () => { const r = run().data[0]; return { data: r ? { ...r } : null, error: null }; },

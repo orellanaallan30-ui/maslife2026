@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, releaseBooking, releaseStaleHolds, BookingInput } from './_lib/booking';
 import { createOrder } from './_lib/orders';
+import { crearPedidoTienda } from './_lib/shop';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -46,6 +47,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       meta: { ua: Array.isArray(ua) ? ua[0] : ua, fbp: req.body?.fbp, fbc: req.body?.fbc },
     });
     return r.ok ? res.status(200).json(r.data) : res.status(r.code).json({ error: r.error });
+  }
+
+  // Tienda (Dropi): el cliente envía sku + cantidad + despacho; precio, flete y
+  // total se calculan en el servidor (api/_lib/shop.ts).
+  if (req.body?.action === 'create-shop-order') {
+    const ua = req.headers['user-agent'];
+    const r = await crearPedidoTienda({
+      ...req.body,
+      meta: { ua: Array.isArray(ua) ? ua[0] : ua, fbp: req.body?.fbp, fbc: req.body?.fbc },
+    });
+    if (r.ok === false) return res.status(r.code).json({ error: r.error });
+    return res.status(200).json(r.data);
   }
 
   const { payer, returnUrl, booking } = req.body || {};

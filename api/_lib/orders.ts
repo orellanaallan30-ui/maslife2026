@@ -14,6 +14,8 @@ const supabase = createClient(
 
 const ORIGIN = 'https://clinicamaslife.cl';
 export const ORDER_REF_PREFIX = 'ebook:';
+/** Pedidos de la tienda física (Dropi). Mismo cobro y webhook que la guía. */
+export const SHOP_REF_PREFIX = 'shop:';
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,253}\.[^\s@]{2,}$/;
 export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -90,7 +92,7 @@ async function reportPurchaseToMeta(order: any): Promise<MetaReport> {
   const timer = setTimeout(() => ctrl.abort(), 4000);
   try {
     const ev = buildEbookPurchaseEvent({
-      orderId: order.id, productSlug: order.product_slug, amount: order.amount,
+      orderId: order.id, productSlug: order.product_slug || 'tienda', amount: order.amount,
       email: order.buyer_email, fullName: order.buyer_name,
       userAgent: order.client_ua, fbp: order.meta_fbp, fbc: order.meta_fbc,
     });
@@ -126,8 +128,7 @@ export async function resendLastPaidToMeta(): Promise<MetaReport | { ok: false; 
 export async function createOrder(input: {
   slug?: unknown; name?: unknown; email?: unknown; acceptedTerms?: unknown; utm?: unknown; meta?: unknown;
 }): Promise<Result<{ init_point: string; orderId: string }>> {
-  const token = platformToken();
-  if (!token) return { ok: false, code: 503, error: 'MP_NOT_CONFIGURED' };
+  if (!platformToken()) return { ok: false, code: 503, error: 'MP_NOT_CONFIGURED' };
 
   const product = getProduct(String(input.slug || ''));
   if (!product) return { ok: false, code: 404, error: 'Producto no encontrado' };
@@ -155,48 +156,71 @@ export async function createOrder(input: {
     return { ok: false, code: 500, error: 'No se pudo crear el pedido' };
   }
 
-  const back = `${ORIGIN}/programas/gracias?order=${order.id}`;
+  return crearPreferenciaMP({
+    orderId: order.id,
+    refPrefix: ORDER_REF_PREFIX,
+    backPath: '/programas/gracias',
+    items: [{ id: product.slug, title: product.name, quantity: 1, unit_price: product.price }],
+    payer: { email, name },
+  });
+}
+
+/**
+ * Crea la preferencia de Checkout Pro de un pedido ya insertado como 'pendiente'.
+ * Los montos vienen siempre del servidor. Si MercadoPago falla, el pedido queda
+ * 'cancelado' para que no aparezca como una venta en curso.
+ */
+export async function crearPreferenciaMP(p: {
+  orderId: string;
+  refPrefix: string;
+  backPath: string;
+  items: Array<{ id: string; title: string; quantity: number; unit_price: number }>;
+  payer: { email: string; name: string };
+}): Promise<Result<{ init_point: string; orderId: string }>> {
+  const token = platformToken();
+  if (!token) return { ok: false, code: 503, error: 'MP_NOT_CONFIGURED' };
+  const back = `${ORIGIN}${p.backPath}?order=${p.orderId}`;
   try {
     const r = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
-        'X-Idempotency-Key': `order-${order.id}`,
+        'X-Idempotency-Key': `order-${p.orderId}`,
       },
       body: JSON.stringify({
-        items: [{ id: product.slug, title: product.name.slice(0, 250), quantity: 1, unit_price: product.price, currency_id: 'CLP' }],
-        external_reference: `${ORDER_REF_PREFIX}${order.id}`,
+        items: p.items.map(it => ({ ...it, title: it.title.slice(0, 250), currency_id: 'CLP' })),
+        external_reference: `${p.refPrefix}${p.orderId}`,
         back_urls: { success: back, failure: back, pending: back },
         notification_url: `${ORIGIN}/api/mp-webhook`,
-        // Solo medios inmediatos: el programa se entrega al aprobarse el pago.
+        // Solo medios inmediatos: el pedido se procesa al aprobarse el pago.
         payment_methods: { excluded_payment_types: [{ id: 'ticket' }, { id: 'atm' }] },
         auto_return: 'approved',
         statement_descriptor: 'CLINICAMASLIFE',
-        payer: { email, name },
+        payer: p.payer,
       }),
     });
     const pref: any = await r.json();
     if (!r.ok || !pref.init_point) {
       console.error('[orders] MP rechazó la preferencia:', JSON.stringify(pref).slice(0, 300));
-      await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id);
+      await supabase.from('orders').update({ status: 'cancelado' }).eq('id', p.orderId);
       return { ok: false, code: 502, error: 'No se pudo iniciar el pago' };
     }
-    await supabase.from('orders').update({ mp_preference_id: String(pref.id) }).eq('id', order.id);
-    return { ok: true, data: { init_point: pref.init_point, orderId: order.id } };
+    await supabase.from('orders').update({ mp_preference_id: String(pref.id) }).eq('id', p.orderId);
+    return { ok: true, data: { init_point: pref.init_point, orderId: p.orderId } };
   } catch (e: any) {
     console.error('[orders] error de red con MP:', e?.message);
-    await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id);
+    await supabase.from('orders').update({ status: 'cancelado' }).eq('id', p.orderId);
     return { ok: false, code: 502, error: 'No se pudo iniciar el pago' };
   }
 }
 
 /** Busca un pago aprobado del pedido en MercadoPago por su referencia externa. */
-async function findApprovedPayment(orderId: string): Promise<any | null> {
+export async function findApprovedPayment(orderId: string, refPrefix: string = ORDER_REF_PREFIX): Promise<any | null> {
   const token = platformToken();
   if (!token) return null;
   const r = await fetch(
-    `https://api.mercadopago.com/v1/payments/search?external_reference=${encodeURIComponent(ORDER_REF_PREFIX + orderId)}&sort=date_created&criteria=desc`,
+    `https://api.mercadopago.com/v1/payments/search?external_reference=${encodeURIComponent(refPrefix + orderId)}&sort=date_created&criteria=desc`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
   if (!r.ok) return null;
@@ -205,7 +229,7 @@ async function findApprovedPayment(orderId: string): Promise<any | null> {
 }
 
 /** Consulta un pago por id en MercadoPago. */
-async function fetchPayment(paymentId: string): Promise<any | null> {
+export async function fetchPayment(paymentId: string): Promise<any | null> {
   const token = platformToken();
   if (!token) return null;
   const r = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
@@ -227,7 +251,7 @@ export async function confirmPaidOrder(orderId: string, payment: any): Promise<'
 
   const valid =
     payment.status === 'approved' &&
-    String(payment.external_reference || '') === `${ORDER_REF_PREFIX}${orderId}` &&
+    String(payment.external_reference || '') === `${order.tipo === 'tienda' ? SHOP_REF_PREFIX : ORDER_REF_PREFIX}${orderId}` &&
     String(payment.currency_id || 'CLP') === order.currency &&
     Math.round(Number(payment.transaction_amount) || 0) === order.amount;
   if (!valid) {
