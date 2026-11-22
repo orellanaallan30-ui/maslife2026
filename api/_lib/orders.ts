@@ -81,6 +81,8 @@ export function cleanMetaIds(raw: unknown): Record<string, string> {
 export type MetaReport = { ok: true; body: unknown } | { ok: false; reason: 'not_configured' | 'rejected' | 'network'; detail?: unknown };
 
 async function reportPurchaseToMeta(order: any): Promise<MetaReport> {
+  // Las compras de prueba del admin (tienda cerrada) no son ventas: no van a Meta.
+  if (order?.es_prueba) return { ok: false, reason: 'not_configured', detail: 'pedido de prueba' };
   const token = (process.env.META_CAPI_TOKEN || '').trim();
   const datasetId = (process.env.META_DATASET_ID || META_DATASET_DEFAULT).trim();
   if (!token || !datasetId) {

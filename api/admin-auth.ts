@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createHmac, timingSafeEqual, randomBytes } from 'crypto';
+import { timingSafeEqual, randomBytes } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { checkIpRateLimit } from './_lib/auth';
 import { getProduct, listProducts } from './_lib/products';
 import { resendLastPaidToMeta } from './_lib/orders';
 import { handleShopAdmin } from './_lib/shop';
+import { createAdminToken, verifyAdminToken } from './_lib/adminToken';
 
 const EBOOK_BUCKET = 'ebook-files';
 
@@ -18,32 +19,6 @@ const ADMIN_COLUMNS = [
   'subscription_exempt', 'paused_at',
   'sis_code', 'seed_rating', 'seed_rating_count',
 ].join(', ');
-
-function createAdminToken(secret: string): string {
-  const exp = Date.now() + 8 * 60 * 60 * 1000;
-  const payload = Buffer.from(JSON.stringify({ role: 'admin', exp })).toString('base64url');
-  const sig = createHmac('sha256', secret).update(payload).digest('base64url');
-  return `${payload}.${sig}`;
-}
-
-function verifyAdminToken(token: string, secret: string): boolean {
-  try {
-    const parts = token.split('.');
-    if (parts.length !== 2) return false;
-    const [payload, sig] = parts;
-    const expectedSig = createHmac('sha256', secret).update(payload).digest('base64url');
-    const sigBuf = Buffer.from(sig, 'base64url');
-    const expectedBuf = Buffer.from(expectedSig, 'base64url');
-    if (sigBuf.length !== expectedBuf.length) return false;
-    if (!timingSafeEqual(sigBuf, expectedBuf)) return false;
-    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8'));
-    if (parsed.role !== 'admin') return false;
-    if (parsed.exp < Date.now()) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 function timingSafeEqualStr(a: string, b: string): boolean {
   const bufA = Buffer.from(a, 'utf8');

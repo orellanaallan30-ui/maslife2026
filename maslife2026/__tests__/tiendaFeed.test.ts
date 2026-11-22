@@ -214,3 +214,38 @@ describe('evento de Meta de la tienda', () => {
     expect(ev.user_data.ph).toBeUndefined();
   });
 });
+
+describe('modo prueba, precio fijo y contenido editable', () => {
+  it('con la tienda cerrada solo el admin compra, incluso borradores, y queda marcado como prueba', async () => {
+    db.tables.shop_settings[0].tienda_activa = false;
+    db.tables.shop_products = [producto({ estado: 'borrador', aprobado_at: null })];
+    expect(await shop.crearPedidoTienda(compra())).toMatchObject({ ok: false, code: 409 });
+    const r = await shop.crearPedidoTienda(compra(), { admin: true });
+    expect(r.ok).toBe(true);
+    expect(db.tables.orders[0]).toMatchObject({ es_prueba: true, amount: 13990 + 3990 });
+  });
+
+  it('con la tienda abierta el pedido del admin es normal', async () => {
+    await shop.crearPedidoTienda(compra(), { admin: true });
+    expect(db.tables.orders[0].es_prueba).toBe(false);
+  });
+
+  it('el precio fijo reemplaza a la fórmula y se mantiene al cambiar el margen', async () => {
+    const r = await shop.crearProductoPropio({ nombre: 'Melena de león', categoria: 'suplementos', costo: 1000, stock: 10, precio_manual: 1000 });
+    expect(r.ok).toBe(true);
+    const p = db.tables.shop_products.find((x: any) => x.nombre === 'Melena de león');
+    expect(p).toMatchObject({ precio_venta: 1000, precio_manual: 1000 });
+    await shop.guardarAjustes({ margen: 0.5 });
+    expect(p.precio_venta).toBe(1000);
+    const sinFijo = await shop.actualizarProducto(p.id, { precio_manual: null }, false);
+    expect(sinFijo).toMatchObject({ ok: true });
+    expect(p.precio_venta).toBeGreaterThan(1000); // vuelve a la fórmula
+  });
+
+  it('limpia el contenido editable: solo campos conocidos, sin HTML y con largo máximo', () => {
+    const c = shop.limpiarContenido({ banner: { titulo: '<script>x</script>Hola <b>mundo</b>', boton: 'B'.repeat(50), extra: 'no' }, otro: 1 });
+    expect(c.banner).toEqual({ titulo: 'xHola mundo', destacado: '', bajada: '', boton: 'B'.repeat(30) });
+    expect(c).not.toHaveProperty('otro');
+    expect(c.banner2).toEqual({ titulo: '', destacado: '', bajada: '', boton: '' });
+  });
+});

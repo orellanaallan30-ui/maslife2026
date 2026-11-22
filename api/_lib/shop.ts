@@ -44,10 +44,33 @@ interface SettingsRow {
   envio_dropi_activo: boolean; tarifas_region: Record<string, number> | null; tienda_activa: boolean; contra_entrega: boolean;
 }
 
-export async function leerAjustes(): Promise<ShopSettings & { tiendaActiva: boolean }> {
+/** Textos editables de la portada (editor con vista previa del panel). Texto plano. */
+export interface ContenidoBanner { titulo: string; destacado: string; bajada: string; boton: string }
+export interface ContenidoTienda { banner: ContenidoBanner; banner2: ContenidoBanner }
+const LARGOS: Record<keyof ContenidoBanner, number> = { titulo: 80, destacado: 80, bajada: 240, boton: 30 };
+
+/** Deja solo los campos conocidos, como texto plano corto (sin etiquetas HTML). */
+export function limpiarContenido(raw: any): ContenidoTienda {
+  const banner = (b: any): ContenidoBanner => {
+    const out = {} as ContenidoBanner;
+    for (const k of Object.keys(LARGOS) as Array<keyof ContenidoBanner>) {
+      out[k] = String(b?.[k] ?? '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, LARGOS[k]);
+    }
+    return out;
+  };
+  return { banner: banner(raw?.banner), banner2: banner(raw?.banner2) };
+}
+
+/** Precio de venta: el fijo si Rodrigo lo definió; si no, la fórmula. */
+export function precioDe(costo: number, envio: number, precioManual: number | null | undefined, s: Pick<ShopSettings, 'margen' | 'comisionPct'>) {
+  if (precioManual && precioManual > 0) return { ok: true as const, precio: Math.round(precioManual) };
+  return calcularPrecioVenta(costo, envio, s);
+}
+
+export async function leerAjustes(): Promise<ShopSettings & { tiendaActiva: boolean; contenido: ContenidoTienda }> {
   const { data } = await supabase.from('shop_settings').select('*').eq('id', true).maybeSingle();
   const r = data as SettingsRow | null;
-  if (!r) return { ...SETTINGS_POR_DEFECTO, tiendaActiva: false };
+  if (!r) return { ...SETTINGS_POR_DEFECTO, tiendaActiva: false, contenido: limpiarContenido({}) };
   return {
     margen: Number(r.margen),
     comisionPct: Number(r.comision_pct),
@@ -56,6 +79,7 @@ export async function leerAjustes(): Promise<ShopSettings & { tiendaActiva: bool
     envioDropiActivo: r.envio_dropi_activo,
     tarifasRegion: r.tarifas_region || {},
     tiendaActiva: r.tienda_activa,
+    contenido: limpiarContenido((r as any).contenido),
   };
 }
 
@@ -70,7 +94,7 @@ const aPublico = (p: any, umbral: number) => ({
 });
 
 /** Catálogo visible: solo productos aprobados (publicado o agotado). Nunca expone el costo. */
-export async function catalogoPublico(): Promise<Result<{ activa: boolean; productos: any[]; regiones: any[] }>> {
+export async function catalogoPublico(): Promise<Result<{ activa: boolean; productos: any[]; regiones: any[]; contenido?: ContenidoTienda }>> {
   const s = await leerAjustes();
   if (!s.tiendaActiva) return { ok: true, data: { activa: false, productos: [], regiones: [] } };
   const { data, error } = await supabase
@@ -83,14 +107,14 @@ export async function catalogoPublico(): Promise<Result<{ activa: boolean; produ
       codigo: r.codigo, nombre: r.nombre, envio: tarifaEnvio(s.tarifasRegion, r.codigo),
       localidades: [...(LOCALIDADES_DROPI[r.codigo] || [])].sort((a, b) => a.localeCompare(b, 'es')),
     }));
-  return { ok: true, data: { activa: true, productos: (data || []).map(p => aPublico(p, s.umbralStock)), regiones } };
+  return { ok: true, data: { activa: true, productos: (data || []).map(p => aPublico(p, s.umbralStock)), regiones, contenido: s.contenido } };
 }
 
 /**
  * Vista previa para Rodrigo (solo desde el panel admin, con token): la tienda tal como
  * la verá el cliente, aunque esté cerrada y con productos en borrador. Sin costos.
  */
-export async function vistaPreviaTienda(): Promise<Result<{ activa: boolean; preview: true; productos: any[]; regiones: any[] }>> {
+export async function vistaPreviaTienda(): Promise<Result<{ activa: boolean; preview: true; productos: any[]; regiones: any[]; contenido: ContenidoTienda }>> {
   const s = await leerAjustes();
   const { data, error } = await supabase
     .from('shop_products').select(`${COLUMNAS_PUBLICAS}, stock`)
@@ -102,7 +126,7 @@ export async function vistaPreviaTienda(): Promise<Result<{ activa: boolean; pre
       codigo: r.codigo, nombre: r.nombre, envio: tarifaEnvio(s.tarifasRegion, r.codigo),
       localidades: [...(LOCALIDADES_DROPI[r.codigo] || [])].sort((a, b) => a.localeCompare(b, 'es')),
     }));
-  return { ok: true, data: { activa: true, preview: true, productos: (data || []).map(p => aPublico(p, s.umbralStock)), regiones } };
+  return { ok: true, data: { activa: true, preview: true, productos: (data || []).map(p => aPublico(p, s.umbralStock)), regiones, contenido: s.contenido } };
 }
 
 export async function productoPublico(sku: string): Promise<Result<{ producto: any }>> {
@@ -128,13 +152,16 @@ export function normalizarTelefono(raw: unknown): string | null {
  * Crea el pedido de la tienda y su cobro en MercadoPago. El cliente solo envía
  * sku + cantidad + datos de despacho: precios, flete y total salen de la BD.
  */
-export async function crearPedidoTienda(input: any): Promise<Result<{ init_point: string; orderId: string }>> {
+export async function crearPedidoTienda(input: any, opciones: { admin?: boolean } = {}): Promise<Result<{ init_point: string; orderId: string }>> {
   // Campo trampa: es invisible para personas; si viene con algo, es un bot.
   if (typeof input?.empresa === 'string' && input.empresa.trim() !== '') {
     return { ok: false, code: 400, error: 'Solicitud inválida' };
   }
   const s = await leerAjustes();
-  if (!s.tiendaActiva) return { ok: false, code: 409, error: 'La tienda aún no está abierta' };
+  // Modo prueba: con la tienda cerrada, solo Rodrigo (token admin) puede comprar, incluso
+  // productos en borrador. El pedido queda marcado y no se informa a Meta.
+  const prueba = !s.tiendaActiva && opciones.admin === true;
+  if (!s.tiendaActiva && !prueba) return { ok: false, code: 409, error: 'La tienda aún no está abierta' };
 
   // La misma compra enviada dos veces (doble clic, reintento) devuelve el mismo link de pago.
   const checkoutKey = CHECKOUT_KEY_RE.test(String(input?.checkoutKey || '')) ? String(input.checkoutKey).toLowerCase() : null;
@@ -166,7 +193,8 @@ export async function crearPedidoTienda(input: any): Promise<Result<{ init_point
     .from('shop_products').select('id, sku, nombre, categoria, precio_venta, costo, stock, estado, resolucion_sanitaria, aprobado_at')
     .in('sku', skus);
   if (eProd) { console.error('[shop] productos del carrito:', eProd.message); return { ok: false, code: 500, error: 'No se pudo crear el pedido' }; }
-  const carrito = calcularCarrito(items, (productos || []) as any, s.umbralStock);
+  const catalogo = (productos || []).map((p: any) => (prueba && p.estado === 'borrador' ? { ...p, estado: 'publicado' } : p));
+  const carrito = calcularCarrito(items, catalogo as any, s.umbralStock);
   if (carrito.ok === false) return { ok: false, code: 409, error: carrito.error };
   if (carrito.subtotal + envio > MONTO_MAXIMO_PEDIDO) {
     return { ok: false, code: 409, error: 'El pedido supera el monto máximo online. Escríbenos y lo coordinamos.' };
@@ -176,7 +204,7 @@ export async function crearPedidoTienda(input: any): Promise<Result<{ init_point
   if (!clienteId) return { ok: false, code: 500, error: 'No se pudo crear el pedido' };
 
   const { data: order, error } = await supabase.from('orders').insert({
-    tipo: 'tienda', buyer_name: nombre, buyer_email: email, customer_id: clienteId,
+    tipo: 'tienda', buyer_name: nombre, buyer_email: email, customer_id: clienteId, es_prueba: prueba,
     amount: carrito.subtotal + envio, currency: 'CLP', status: 'pendiente',
     region: codigoRegion, comuna: destino.ciudad, direccion, envio_monto: envio, metodo_pago: 'online',
     accepted_terms_at: new Date().toISOString(),
@@ -433,12 +461,14 @@ export async function crearProductoPropio(input: any): Promise<Result<{ id: stri
   if (!(costo > 0)) return { ok: false, code: 400, error: 'Ingresa cuánto te costó cada unidad' };
   if (!Number.isInteger(stock) || stock < 0 || stock > 100000) return { ok: false, code: 400, error: 'Stock inválido' };
   const imagenes = (Array.isArray(input?.imagenes) ? input.imagenes : []).filter(esFotoPropia).slice(0, 8);
+  const precioManual = input?.precio_manual ? Math.round(Number(input.precio_manual)) : null;
+  if (precioManual !== null && !(precioManual > 0)) return { ok: false, code: 400, error: 'Precio fijo inválido' };
   const s = await leerAjustes();
-  const precio = calcularPrecioVenta(costo, 0, s);
+  const precio = precioDe(costo, 0, precioManual, s);
   if (precio.ok === false) return { ok: false, code: 400, error: precio.error };
   const sku = `MLP-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
   const { data, error } = await supabase.from('shop_products').insert({
-    sku, origen: 'propio', nombre, categoria, costo, stock, precio_venta: precio.precio, estado: 'borrador',
+    sku, origen: 'propio', nombre, categoria, costo, stock, precio_venta: precio.precio, precio_manual: precioManual, estado: 'borrador',
     descripcion: String(input?.descripcion || '').slice(0, 4000), imagenes,
     resolucion_sanitaria: String(input?.resolucion_sanitaria || '').trim().slice(0, 120) || null,
     consumible: input?.consumible === true,
@@ -536,6 +566,11 @@ export async function actualizarProducto(id: string, cambios: any, aprobar: bool
 
   const patch: Record<string, unknown> = {};
   for (const k of CAMPOS_EDITABLES) if (cambios?.[k] !== undefined) patch[k] = cambios[k];
+  if (cambios?.precio_manual !== undefined) {
+    const pm = cambios.precio_manual === null || cambios.precio_manual === '' ? null : Math.round(Number(cambios.precio_manual));
+    if (pm !== null && !(pm > 0)) return { ok: false, code: 400, error: 'Precio fijo inválido' };
+    patch.precio_manual = pm;
+  }
   if (actual.origen === 'propio') {
     for (const k of CAMPOS_SOLO_PROPIO) if (cambios?.[k] !== undefined) patch[k] = cambios[k];
     if (patch.costo !== undefined && !(Math.round(Number(patch.costo)) > 0)) return { ok: false, code: 400, error: 'Costo inválido' };
@@ -559,8 +594,8 @@ export async function actualizarProducto(id: string, cambios: any, aprobar: bool
     final.estado = estadoTrasSincronizar(final as ProductoTienda, s.umbralStock);
     patch.estado = final.estado;
   }
-  if (patch.envio_estimado !== undefined || patch.costo !== undefined) {
-    const precio = calcularPrecioVenta(final.costo, Number(final.envio_estimado), s);
+  if (patch.envio_estimado !== undefined || patch.costo !== undefined || patch.precio_manual !== undefined) {
+    const precio = precioDe(final.costo, Number(final.envio_estimado) || 0, final.precio_manual, s);
     if (precio.ok === false) return { ok: false, code: 400, error: precio.error };
     patch.precio_venta = precio.precio;
     final.precio_venta = precio.precio;
@@ -585,6 +620,7 @@ export async function guardarAjustes(c: any): Promise<Result<{ actualizados: num
   if (c?.retencionMin !== undefined) patch.retencion_min = Math.round(n(c.retencionMin));
   if (c?.envioDropiActivo !== undefined) patch.envio_dropi_activo = c.envioDropiActivo === true;
   if (c?.tiendaActiva !== undefined) patch.tienda_activa = c.tiendaActiva === true;
+  if (c?.contenido !== undefined) patch.contenido = limpiarContenido(c.contenido);
   if (c?.tarifasRegion !== undefined) {
     const t: Record<string, number> = {};
     for (const r of REGIONES_DROPI) {
@@ -606,9 +642,9 @@ export async function guardarAjustes(c: any): Promise<Result<{ actualizados: num
   let actualizados = 0;
   if (patch.margen !== undefined || patch.comision_pct !== undefined) {
     const s = await leerAjustes();
-    const { data: productos } = await supabase.from('shop_products').select('id, costo, envio_estimado, precio_venta');
+    const { data: productos } = await supabase.from('shop_products').select('id, costo, envio_estimado, precio_venta, precio_manual');
     for (const p of productos || []) {
-      const precio = calcularPrecioVenta(p.costo, p.envio_estimado, s);
+      const precio = precioDe(p.costo, p.envio_estimado, p.precio_manual, s);
       if (precio.ok && precio.precio !== p.precio_venta) {
         const { error: e } = await supabase.from('shop_products').update({ precio_venta: precio.precio, updated_at: new Date().toISOString() }).eq('id', p.id);
         if (e) console.error('[shop] no se pudo recalcular', p.id, e.message);
@@ -642,7 +678,7 @@ export async function sincronizarStock(): Promise<Result<{ revisados: number; ca
     const v = p.dropi_variation_id ? d.variaciones.find(x => x.id === Number(p.dropi_variation_id)) : null;
     const stock = p.dropi_variation_id ? (v?.stock ?? 0) : d.stock;
     const costo = Math.round((p.dropi_variation_id ? v?.costo : null) ?? d.costo) || p.costo;
-    const precio = calcularPrecioVenta(costo, p.envio_estimado, s);
+    const precio = precioDe(costo, p.envio_estimado, p.precio_manual, s);
     const estado = estadoTrasSincronizar({ ...p, stock } as ProductoTienda, s.umbralStock);
     const patch: Record<string, unknown> = { sincronizado_at: new Date().toISOString() };
     if (stock !== p.stock) patch.stock = stock;
@@ -725,7 +761,7 @@ export async function handleShopAdmin(req: VercelRequest, res: VercelResponse): 
       leerAjustes(),
       supabase.from('shop_products').select('*').order('created_at', { ascending: false }),
       supabase.from('orders')
-        .select('id, created_at, status, amount, envio_monto, buyer_name, buyer_email, region, comuna, direccion, customer_id, paid_at, despacho_estado, transportista, tracking, url_seguimiento')
+        .select('id, created_at, status, amount, envio_monto, buyer_name, buyer_email, region, comuna, direccion, customer_id, paid_at, despacho_estado, transportista, tracking, url_seguimiento, es_prueba')
         .eq('tipo', 'tienda').order('created_at', { ascending: false }).limit(100),
     ]);
     const lista = pedidos.data || [];

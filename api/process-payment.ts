@@ -4,6 +4,7 @@ import { checkIpRateLimit } from './_lib/auth';
 import { validateBooking, insertBooking, releaseBooking, releaseStaleHolds, BookingInput } from './_lib/booking';
 import { createOrder } from './_lib/orders';
 import { crearPedidoTienda } from './_lib/shop';
+import { esAdminAutorizado } from './_lib/adminToken';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -56,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const r = await crearPedidoTienda({
       ...req.body,
       meta: { ua: Array.isArray(ua) ? ua[0] : ua, fbp: req.body?.fbp, fbc: req.body?.fbc },
-    });
+    }, { admin: esAdminAutorizado(req.headers.authorization) }); // modo prueba con la tienda cerrada
     if (r.ok === false) return res.status(r.code).json({ error: r.error });
     return res.status(200).json(r.data);
   }
