@@ -9,6 +9,7 @@ export type Tables = Record<string, any[]>;
 export function makeFakeSupabase(
   tables: Tables,
   signUrl: (path: string) => { data: any; error: any } = p => ({ data: { signedUrl: `https://signed.example/${p}` }, error: null }),
+  rpc: (name: string, args: any) => { data: any; error: any } = () => ({ data: null, error: null }),
 ) {
   const builder = (table: string) => {
     let op: 'select' | 'insert' | 'update' = 'select';
@@ -46,6 +47,13 @@ export function makeFakeSupabase(
   };
   return {
     from: builder,
-    storage: { from: () => ({ createSignedUrl: async (path: string) => signUrl(path) }) },
+    rpc: async (name: string, args: any) => rpc(name, args),
+    storage: {
+      from: (bucket: string) => ({
+        createSignedUrl: async (path: string) => signUrl(path),
+        createSignedUploadUrl: async (path: string) => ({ data: { path, token: 'tok' }, error: null }),
+        getPublicUrl: (path: string) => ({ data: { publicUrl: `https://example.supabase.co/storage/v1/object/public/${bucket}/${path}` } }),
+      }),
+    },
   };
 }

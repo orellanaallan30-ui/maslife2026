@@ -21,6 +21,7 @@ import {
   SHOP_REF_PREFIX, UUID_RE,
 } from './orders';
 import { REGIONES_DROPI, LOCALIDADES_DROPI } from './dropiPlaces';
+import { internalKey, INTERNAL_HEADER } from './auth';
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
@@ -194,10 +195,61 @@ export async function estadoPedidoTienda(orderId: string, paymentId?: string): P
     const payment = paymentId ? await fetchPayment(paymentId) : await findApprovedPayment(orderId, SHOP_REF_PREFIX);
     if (payment) {
       const r = await confirmPaidOrder(orderId, payment);
+      if (r === 'pagado') await alPagarPedidoTienda(orderId);
       if (r !== 'rechazado') return { ok: true, data: { status: 'pagado' } };
     }
   }
   return { ok: true, data: { status: order.status } };
+}
+
+/** Pide a /api/notify un aviso de la tienda. El destinatario lo decide notify desde la BD. */
+async function avisar(tipo: 'nuevo-pedido' | 'enviado', orderId: string): Promise<boolean> {
+  try {
+    const base = (process.env.PUBLIC_BASE_URL || 'https://clinicamaslife.cl').replace(/\/$/, '');
+    const r = await fetch(`${base}/api/notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', [INTERNAL_HEADER]: internalKey() },
+      body: JSON.stringify({ action: 'shop-aviso', tipo, orderId }),
+    });
+    if (!r.ok) console.error(`[shop] aviso ${tipo} no salió:`, r.status, await r.text().catch(() => ''));
+    return r.ok;
+  } catch (e: any) {
+    console.error(`[shop] aviso ${tipo} falló:`, e?.message);
+    return false;
+  }
+}
+
+/**
+ * Tras confirmarse el pago: descuenta el stock propio (una sola vez, en la BD) y
+ * avisa a Rodrigo por correo. Lo llaman el webhook de MP y el retorno del checkout;
+ * solo el primero que reclama el pedido envía el aviso.
+ */
+export async function alPagarPedidoTienda(orderId: string): Promise<{ descontado: boolean; avisado: boolean }> {
+  const { data, error } = await supabase.rpc('shop_descontar_stock', { p_order: orderId });
+  if (error) {
+    console.error('[shop] no se pudo descontar el stock de', orderId, error.message);
+    return { descontado: false, avisado: false };
+  }
+  if (data !== true) return { descontado: false, avisado: false };
+  return { descontado: true, avisado: await avisar('nuevo-pedido', orderId) };
+}
+
+/** Rodrigo marca un pedido como despachado: guarda el seguimiento y avisa al cliente. */
+export async function marcarEnviado(input: any): Promise<Result<{ avisado: boolean }>> {
+  const orderId = String(input?.orderId || '');
+  if (!UUID_RE.test(orderId)) return { ok: false, code: 400, error: 'Pedido inválido' };
+  const transportista = String(input?.transportista || '').trim().slice(0, 60);
+  const tracking = String(input?.tracking || '').trim().slice(0, 80);
+  const url = String(input?.url || '').trim();
+  if (!transportista || !tracking) return { ok: false, code: 400, error: 'Indica transportista y número de seguimiento' };
+  if (url && !/^https:\/\/[^\s]{4,300}$/.test(url)) return { ok: false, code: 400, error: 'El enlace de seguimiento debe empezar con https://' };
+  const { data, error } = await supabase.from('orders')
+    .update({ despacho_estado: 'enviado', transportista, tracking, url_seguimiento: url || null, despachado_at: new Date().toISOString() })
+    .eq('id', orderId).eq('tipo', 'tienda').eq('status', 'pagado')
+    .select('id').maybeSingle();
+  if (error) { console.error('[shop] marcar enviado:', error.message); return { ok: false, code: 500, error: 'No se pudo guardar' }; }
+  if (!data) return { ok: false, code: 409, error: 'El pedido no está pagado' };
+  return { ok: true, data: { avisado: await avisar('enviado', orderId) } };
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────
@@ -258,7 +310,48 @@ export async function importarProducto(input: any): Promise<Result<{ id: string;
   return { ok: true, data: { id: data.id, sku: data.sku } };
 }
 
+/** URL pública de una foto subida al bucket de la tienda (no se aceptan URLs externas). */
+const esFotoPropia = (u: unknown): u is string =>
+  typeof u === 'string' && u.startsWith(`${(process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')}/storage/v1/object/public/shop-images/`);
+
+/** Crea un producto con stock propio (Rodrigo despacha). Nace como borrador. */
+export async function crearProductoPropio(input: any): Promise<Result<{ id: string; sku: string }>> {
+  const nombre = String(input?.nombre || '').trim().replace(/\s+/g, ' ');
+  const categoria = String(input?.categoria || '') as CategoriaTienda;
+  const costo = Math.round(Number(input?.costo));
+  const stock = Math.round(Number(input?.stock));
+  if (nombre.length < 2 || nombre.length > 200) return { ok: false, code: 400, error: 'Ingresa el nombre del producto' };
+  if (!CATEGORIAS_TIENDA.includes(categoria)) return { ok: false, code: 400, error: 'Categoría no permitida' };
+  if (!(costo > 0)) return { ok: false, code: 400, error: 'Ingresa cuánto te costó cada unidad' };
+  if (!Number.isInteger(stock) || stock < 0 || stock > 100000) return { ok: false, code: 400, error: 'Stock inválido' };
+  const imagenes = (Array.isArray(input?.imagenes) ? input.imagenes : []).filter(esFotoPropia).slice(0, 8);
+  const s = await leerAjustes();
+  const precio = calcularPrecioVenta(costo, 0, s);
+  if (precio.ok === false) return { ok: false, code: 400, error: precio.error };
+  const sku = `MLP-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  const { data, error } = await supabase.from('shop_products').insert({
+    sku, origen: 'propio', nombre, categoria, costo, stock, precio_venta: precio.precio, estado: 'borrador',
+    descripcion: String(input?.descripcion || '').slice(0, 4000), imagenes,
+    resolucion_sanitaria: String(input?.resolucion_sanitaria || '').trim().slice(0, 120) || null,
+    consumible: input?.consumible === true,
+  }).select('id, sku').single();
+  if (error || !data) { console.error('[shop] producto propio:', error?.message); return { ok: false, code: 500, error: 'No se pudo crear el producto' }; }
+  return { ok: true, data: { id: data.id, sku: data.sku } };
+}
+
+/** URL firmada para que el panel suba una foto directo al bucket público de la tienda. */
+export async function urlSubidaFoto(tipo: unknown): Promise<Result<{ path: string; token: string; publicUrl: string }>> {
+  const ext = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' } as Record<string, string>)[String(tipo)];
+  if (!ext) return { ok: false, code: 400, error: 'La foto debe ser JPG, PNG o WebP' };
+  const path = `productos/${crypto.randomUUID()}.${ext}`;
+  const { data, error } = await supabase.storage.from('shop-images').createSignedUploadUrl(path);
+  if (error || !data) return { ok: false, code: 500, error: error?.message || 'No se pudo preparar la subida' };
+  const { data: pub } = supabase.storage.from('shop-images').getPublicUrl(path);
+  return { ok: true, data: { path: data.path, token: data.token, publicUrl: pub.publicUrl } };
+}
+
 const CAMPOS_EDITABLES = ['nombre', 'descripcion', 'categoria', 'envio_estimado', 'resolucion_sanitaria', 'consumible', 'dias_recompra', 'estado'] as const;
+const CAMPOS_SOLO_PROPIO = ['costo', 'stock', 'imagenes'] as const;
 
 /** Edita un producto. Publicar exige visto bueno, resolución SEREMI (suplementos) y stock. */
 export async function actualizarProducto(id: string, cambios: any, aprobar: boolean): Promise<Result<{ producto: any }>> {
@@ -268,6 +361,17 @@ export async function actualizarProducto(id: string, cambios: any, aprobar: bool
 
   const patch: Record<string, unknown> = {};
   for (const k of CAMPOS_EDITABLES) if (cambios?.[k] !== undefined) patch[k] = cambios[k];
+  if (actual.origen === 'propio') {
+    for (const k of CAMPOS_SOLO_PROPIO) if (cambios?.[k] !== undefined) patch[k] = cambios[k];
+    if (patch.costo !== undefined && !(Math.round(Number(patch.costo)) > 0)) return { ok: false, code: 400, error: 'Costo inválido' };
+    if (patch.costo !== undefined) patch.costo = Math.round(Number(patch.costo));
+    if (patch.stock !== undefined) {
+      const st = Math.round(Number(patch.stock));
+      if (!Number.isInteger(st) || st < 0) return { ok: false, code: 400, error: 'Stock inválido' };
+      patch.stock = st;
+    }
+    if (patch.imagenes !== undefined) patch.imagenes = (Array.isArray(patch.imagenes) ? patch.imagenes : []).filter(esFotoPropia).slice(0, 8);
+  }
   if (patch.estado !== undefined && !['borrador', 'publicado', 'pausado'].includes(String(patch.estado))) {
     return { ok: false, code: 400, error: 'Estado no válido' };
   }
@@ -275,7 +379,12 @@ export async function actualizarProducto(id: string, cambios: any, aprobar: bool
 
   const s = await leerAjustes();
   const final = { ...actual, ...patch };
-  if (patch.envio_estimado !== undefined) {
+  // Si cambia el stock propio, el estado sigue la misma regla que la sincronización.
+  if (patch.stock !== undefined && (final.estado === 'publicado' || final.estado === 'agotado') && patch.estado === undefined) {
+    final.estado = estadoTrasSincronizar(final as ProductoTienda, s.umbralStock);
+    patch.estado = final.estado;
+  }
+  if (patch.envio_estimado !== undefined || patch.costo !== undefined) {
     const precio = calcularPrecioVenta(final.costo, Number(final.envio_estimado), s);
     if (precio.ok === false) return { ok: false, code: 400, error: precio.error };
     patch.precio_venta = precio.precio;
@@ -343,7 +452,7 @@ export async function guardarAjustes(c: any): Promise<Result<{ actualizados: num
  */
 export async function sincronizarStock(): Promise<Result<{ revisados: number; cambios: number; errores: number }>> {
   const s = await leerAjustes();
-  const { data: productos } = await supabase.from('shop_products').select('*').neq('estado', 'pausado');
+  const { data: productos } = await supabase.from('shop_products').select('*').eq('origen', 'dropi').neq('estado', 'pausado');
   let revisados = 0, cambios = 0, errores = 0;
   for (const p of productos || []) {
     const r = await obtenerProductoDropi(Number(p.dropi_product_id));
@@ -413,10 +522,22 @@ export async function handleShopAdmin(req: VercelRequest, res: VercelResponse): 
       leerAjustes(),
       supabase.from('shop_products').select('*').order('created_at', { ascending: false }),
       supabase.from('orders')
-        .select('id, created_at, status, amount, envio_monto, buyer_name, buyer_email, region, comuna, paid_at')
+        .select('id, created_at, status, amount, envio_monto, buyer_name, buyer_email, region, comuna, direccion, customer_id, paid_at, despacho_estado, transportista, tracking, url_seguimiento')
         .eq('tipo', 'tienda').order('created_at', { ascending: false }).limit(100),
     ]);
-    r = { ok: true, data: { ajustes, productos: productos.data || [], pedidos: pedidos.data || [], regiones: REGIONES_DROPI } };
+    const lista = pedidos.data || [];
+    const ids = lista.map((o: any) => o.id);
+    const clientes = [...new Set(lista.map((o: any) => o.customer_id).filter(Boolean))];
+    const [items, telefonos] = await Promise.all([
+      ids.length ? supabase.from('order_items').select('order_id, sku, nombre, cantidad, precio_unitario').in('order_id', ids) : Promise.resolve({ data: [] as any[] }),
+      clientes.length ? supabase.from('shop_customers').select('id, telefono').in('id', clientes) : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const tel = new Map((telefonos.data || []).map((c: any) => [c.id, c.telefono]));
+    const conItems = lista.map((o: any) => ({
+      ...o, telefono: tel.get(o.customer_id) || null,
+      items: (items.data || []).filter((i: any) => i.order_id === o.id),
+    }));
+    r = { ok: true, data: { ajustes, productos: productos.data || [], pedidos: conItems, regiones: REGIONES_DROPI } };
   } else if (req.method === 'GET' && action === 'shop-dropi-search') {
     r = await buscarEnDropi(String(req.query.q || ''), Number(req.query.page || 0));
   } else if (req.method === 'POST' && action === 'shop-import') {
@@ -427,6 +548,12 @@ export async function handleShopAdmin(req: VercelRequest, res: VercelResponse): 
     r = await guardarAjustes(body);
   } else if (req.method === 'POST' && action === 'shop-sync') {
     r = await sincronizarStock();
+  } else if (req.method === 'POST' && action === 'shop-own-product') {
+    r = await crearProductoPropio(body);
+  } else if (req.method === 'POST' && action === 'shop-image-upload-url') {
+    r = await urlSubidaFoto(body.tipo);
+  } else if (req.method === 'POST' && action === 'shop-shipped') {
+    r = await marcarEnviado(body);
   } else {
     r = { ok: false, code: 400, error: 'Acción desconocida' };
   }

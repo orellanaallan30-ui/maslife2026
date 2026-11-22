@@ -726,6 +726,49 @@ export function ebookDeliveryHtml(p: { buyerName: string; productName: string; d
   });
 }
 
+// ── Tienda ────────────────────────────────────────────────────────────────
+const clpTienda = (n: unknown) => `$${Math.round(Number(n) || 0).toLocaleString('es-CL')}`;
+
+/** Aviso a Rodrigo: pedido pagado con lo que hay que despachar. */
+export function shopNuevoPedidoHtml(p: {
+  nombre: string; email: string; telefono: string; direccion: string; comuna: string; region: string;
+  items: Array<{ nombre: string; cantidad: number; precio_unitario: number }>; envio: number; total: number; orderId: string;
+}): string {
+  return emailShell({
+    kicker: 'Tienda',
+    title: 'Nuevo pedido pagado',
+    subtitle: `${p.items.reduce((a, i) => a + i.cantidad, 0)} producto(s) · ${clpTienda(p.total)}`,
+    preheader: `Pedido pagado de ${p.nombre}: prepara el despacho.`,
+    bodyHtml: `
+      <p style="color:#475569;font-size:15px;margin:0 0 8px;line-height:1.6;">Recibiste un pago en la tienda. Prepara el despacho y, cuando lo envíes, márcalo como enviado en el panel (Admin → Tienda) para avisarle al cliente.</p>
+      ${tablaImportes([
+        ...p.items.map(i => ({ l: `${i.cantidad} × ${i.nombre}`, v: clpTienda(i.precio_unitario * i.cantidad) })),
+        { l: 'Envío', v: clpTienda(p.envio) },
+      ], { l: 'Total pagado', v: clpTienda(p.total) })}
+      <p style="color:#334155;font-size:14px;margin:0 0 4px;line-height:1.6;"><strong>Despachar a:</strong> ${escapeHtml(p.nombre)}</p>
+      <p style="color:#334155;font-size:14px;margin:0 0 4px;line-height:1.6;">${escapeHtml(p.direccion)}, ${escapeHtml(p.comuna)}, ${escapeHtml(p.region)}</p>
+      <p style="color:#334155;font-size:14px;margin:0 0 4px;line-height:1.6;">Teléfono: ${escapeHtml(p.telefono)} · Correo: ${escapeHtml(p.email)}</p>
+      <p style="color:#94a3b8;font-size:12px;margin:16px 0 0;">Pedido ${escapeHtml(p.orderId)}</p>`,
+  });
+}
+
+/** Aviso al cliente: su pedido va en camino. */
+export function shopEnviadoHtml(p: { nombre: string; transportista: string; tracking: string; url: string | null; items: Array<{ nombre: string; cantidad: number }> }): string {
+  const nombre = escapeHtml(String(p.nombre || '').split(' ')[0] || 'Hola');
+  return emailShell({
+    kicker: 'Tu pedido',
+    title: '¡Tu pedido va en camino!',
+    subtitle: `${escapeHtml(p.transportista)} · seguimiento ${escapeHtml(p.tracking)}`,
+    preheader: 'Tu pedido de la tienda Mas Life ya fue despachado.',
+    bodyHtml: `
+      <p style="color:#334155;font-size:15px;margin:0 0 16px;">Hola <strong>${nombre}</strong>,</p>
+      <p style="color:#475569;font-size:15px;margin:0 0 8px;line-height:1.6;">Despachamos tu pedido con <strong>${escapeHtml(p.transportista)}</strong>. Tu número de seguimiento es <strong>${escapeHtml(p.tracking)}</strong>.</p>
+      ${tablaImportes(p.items.map(i => ({ l: i.nombre, v: `× ${i.cantidad}` })))}
+      ${p.url ? `<div style="text-align:center;margin:0 0 24px;">${ctaButton(p.url, 'Seguir mi pedido')}</div>` : ''}
+      <p style="color:#94a3b8;font-size:12px;margin:16px 0 0;line-height:1.6;">¿Dudas con tu pedido? Responde este correo o escribe a maslife@clinicamaslife.cl.</p>`,
+  });
+}
+
 function ratingRequestHtml(p: { professionalName: string; patientName: string; serviceName: string; date: string; reviewLink: string }): string {
   const dateFormatted = p.date ? new Date(p.date + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
   return emailShell({
@@ -1010,6 +1053,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true });
     } catch (e: any) {
       console.error('[notify] ebook-delivery NO salió:', e?.message);
+      return res.status(502).json({ error: 'No se pudo enviar el correo' });
+    }
+  }
+
+  // ── Tienda: aviso de pedido pagado (a Rodrigo) y de despacho (al cliente) ──
+  // Solo llamadas internas del servidor. El destinatario y el contenido salen de la
+  // BD: el cuerpo solo trae el tipo de aviso y el id del pedido.
+  if (req.body?.action === 'shop-aviso') {
+    if (!isInternalCall(req.headers)) return res.status(403).json({ error: 'No autorizado' });
+    const { tipo, orderId } = req.body || {};
+    if (!ORDER_UUID_RE.test(String(orderId || '')) || !['nuevo-pedido', 'enviado'].includes(String(tipo))) {
+      return res.status(400).json({ error: 'Solicitud inválida' });
+    }
+    const { data: order } = await supabase
+      .from('orders')
+      .select('tipo, status, buyer_name, buyer_email, customer_id, direccion, comuna, region, envio_monto, amount, transportista, tracking, url_seguimiento')
+      .eq('id', orderId).maybeSingle();
+    if (!order || order.tipo !== 'tienda' || order.status !== 'pagado') return res.status(404).json({ error: 'Pedido no encontrado' });
+    const { data: items } = await supabase.from('order_items').select('nombre, cantidad, precio_unitario').eq('order_id', orderId);
+    const RESEND_KEY = process.env.RESEND_API_KEY;
+    if (!RESEND_KEY) return res.status(500).json({ error: 'RESEND_API_KEY no configurada' });
+    const FROM = (process.env.EMAIL_FROM || 'Clínica Maslife <notificaciones@clinicamaslife.cl>').trim();
+    try {
+      if (tipo === 'nuevo-pedido') {
+        const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || '').trim();
+        if (!EMAIL_RE.test(ADMIN_EMAIL)) return res.status(500).json({ error: 'ADMIN_EMAIL no configurado' });
+        const { data: cli } = await supabase.from('shop_customers').select('telefono').eq('id', order.customer_id).maybeSingle();
+        await enviarConReintento(() => sendEmail(
+          RESEND_KEY, FROM, ADMIN_EMAIL,
+          cleanLine(`[Tienda] Pedido pagado de ${order.buyer_name} · ${clpTienda(order.amount)}`),
+          shopNuevoPedidoHtml({
+            nombre: String(order.buyer_name), email: String(order.buyer_email), telefono: String(cli?.telefono || '—'),
+            direccion: String(order.direccion || ''), comuna: String(order.comuna || ''), region: String(order.region || ''),
+            items: (items || []) as any, envio: Number(order.envio_monto) || 0, total: Number(order.amount) || 0, orderId: String(orderId),
+          }),
+        ), 'admin (pedido de la tienda)');
+      } else {
+        if (!EMAIL_RE.test(String(order.buyer_email)) || !order.tracking) return res.status(409).json({ error: 'Pedido sin seguimiento' });
+        await enviarConReintento(() => sendEmail(
+          RESEND_KEY, FROM, String(order.buyer_email),
+          'Tu pedido de Mas Life va en camino',
+          shopEnviadoHtml({
+            nombre: String(order.buyer_name), transportista: String(order.transportista || ''), tracking: String(order.tracking),
+            url: order.url_seguimiento ? String(order.url_seguimiento) : null, items: (items || []) as any,
+          }),
+        ), 'cliente de la tienda');
+      }
+      return res.status(200).json({ ok: true });
+    } catch (e: any) {
+      console.error(`[notify] shop-aviso ${tipo} NO salió:`, e?.message);
       return res.status(502).json({ error: 'No se pudo enviar el correo' });
     }
   }

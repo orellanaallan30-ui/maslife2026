@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 
-const db = vi.hoisted(() => ({ tables: {} as Record<string, any[]> }));
+const db = vi.hoisted(() => ({ tables: {} as Record<string, any[]>, rpc: [] as Array<{ name: string; args: any }>, rpcResult: true as any }));
 
 vi.mock('@supabase/supabase-js', async () => {
   const { makeFakeSupabase } = await import('./helpers/fakeSupabase');
-  return { createClient: () => makeFakeSupabase(db.tables) };
+  return { createClient: () => makeFakeSupabase(db.tables, undefined, (name: string, args: any) => { db.rpc.push({ name, args }); return { data: db.rpcResult, error: null }; }) };
 });
 
 let shop: typeof import('../../api/_lib/shop');
@@ -25,7 +25,7 @@ const producto = (over: Record<string, unknown> = {}) => ({
   id: crypto.randomUUID(), sku: 'ML-001', nombre: 'Banda elástica', descripcion: 'Banda', imagenes: [],
   categoria: 'rehabilitacion', costo: 6000, envio_estimado: 0, precio_venta: 10990, stock: 20,
   estado: 'publicado', resolucion_sanitaria: null, aprobado_at: '2026-11-20T10:00:00Z',
-  dropi_product_id: 77, dropi_variation_id: null, ...over,
+  origen: 'dropi', dropi_product_id: 77, dropi_variation_id: null, ...over,
 });
 
 const compra = {
@@ -50,6 +50,7 @@ beforeEach(() => {
     envio_dropi_activo: false, tarifas_region: { RM: 3990 }, tienda_activa: true, contra_entrega: false,
   }];
   db.tables.shop_products = [producto()];
+  db.rpc = []; db.rpcResult = true;
   mockFetch();
 });
 
@@ -194,5 +195,87 @@ describe('seguridad', () => {
     expect(shop.normalizarTelefono('9 1234 5678')).toBe('+56912345678');
     expect(shop.normalizarTelefono('+56 9 1234 5678')).toBe('+56912345678');
     expect(shop.normalizarTelefono('123')).toBeNull();
+  });
+});
+
+describe('stock propio', () => {
+  const FOTO = 'https://example.supabase.co/storage/v1/object/public/shop-images/productos/a.jpg';
+
+  it('crea el producto como borrador, con precio por fórmula y solo fotos propias', async () => {
+    const r = await shop.crearProductoPropio({
+      nombre: 'Magnesio 120 cápsulas', categoria: 'suplementos', costo: 8000, stock: 12,
+      resolucion_sanitaria: 'Reg. ISP F-1234/26', imagenes: [FOTO, 'https://malicioso.example/x.jpg'],
+    });
+    expect(r.ok).toBe(true);
+    const p = db.tables.shop_products.find(x => x.origen === 'propio');
+    expect(p).toMatchObject({ estado: 'borrador', costo: 8000, stock: 12, precio_venta: 13990, imagenes: [FOTO] });
+    expect(p.sku).toMatch(/^MLP-[0-9A-F]{8}$/);
+    expect(p).not.toHaveProperty('dropi_product_id');
+  });
+
+  it('valida costo y stock', async () => {
+    expect((await shop.crearProductoPropio({ nombre: 'X1', categoria: 'suplementos', costo: 0, stock: 1 })).ok).toBe(false);
+    expect((await shop.crearProductoPropio({ nombre: 'X1', categoria: 'suplementos', costo: 1000, stock: -1 })).ok).toBe(false);
+    expect((await shop.crearProductoPropio({ nombre: 'X1', categoria: 'tecnologia', costo: 1000, stock: 1 })).ok).toBe(false);
+  });
+
+  it('al editar el stock propio se marca agotado o vuelve a publicarse; el costo recalcula el precio', async () => {
+    const p = producto({ origen: 'propio', dropi_product_id: null, sku: 'MLP-AAAA0001' });
+    db.tables.shop_products = [p];
+    await shop.actualizarProducto(p.id, { stock: 3 }, false);
+    expect(db.tables.shop_products[0]).toMatchObject({ stock: 3, estado: 'agotado' });
+    await shop.actualizarProducto(p.id, { stock: 9, costo: 7000 }, false);
+    expect(db.tables.shop_products[0]).toMatchObject({ stock: 9, estado: 'publicado', costo: 7000, precio_venta: 11990 });
+  });
+
+  it('el stock de un producto Dropi no se edita a mano', async () => {
+    const id = db.tables.shop_products[0].id;
+    await shop.actualizarProducto(id, { stock: 999, costo: 1 }, false);
+    expect(db.tables.shop_products[0]).toMatchObject({ stock: 20, costo: 6000 });
+  });
+
+  it('la sincronización con Dropi no toca los productos propios', async () => {
+    db.tables.shop_products = [producto({ origen: 'propio', dropi_product_id: null, sku: 'MLP-AAAA0002' })];
+    const r = await shop.sincronizarStock();
+    expect(r).toMatchObject({ ok: true, data: { revisados: 0 } });
+    expect(llamadas.filter(l => l.url.includes('dropi'))).toHaveLength(0);
+  });
+
+  it('entrega una URL de subida solo para imágenes', async () => {
+    expect((await shop.urlSubidaFoto('application/pdf')).ok).toBe(false);
+    const r = await shop.urlSubidaFoto('image/png');
+    expect(r.ok && r.data.publicUrl).toMatch(/\/shop-images\/productos\/.+\.png$/);
+  });
+});
+
+describe('después del pago', () => {
+  it('descuenta stock en la BD y avisa a Rodrigo una sola vez', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: any) => { llamadas.push({ url, init }); return { ok: true, status: 200, text: async () => '' }; }));
+    llamadas = [];
+    const id = crypto.randomUUID();
+    expect(await shop.alPagarPedidoTienda(id)).toEqual({ descontado: true, avisado: true });
+    expect(db.rpc).toEqual([{ name: 'shop_descontar_stock', args: { p_order: id } }]);
+    const aviso = llamadas.find(l => l.url.endsWith('/api/notify'))!;
+    expect(JSON.parse(aviso.init.body)).toEqual({ action: 'shop-aviso', tipo: 'nuevo-pedido', orderId: id });
+    expect(aviso.init.headers['x-agendamas-internal']).toBeTruthy();
+
+    db.rpcResult = false; llamadas = [];
+    expect(await shop.alPagarPedidoTienda(id)).toEqual({ descontado: false, avisado: false });
+    expect(llamadas).toHaveLength(0);
+  });
+
+  it('marcar enviado exige pedido pagado, seguimiento y enlace https', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string, init: any) => { llamadas.push({ url, init }); return { ok: true, status: 200, text: async () => '' }; }));
+    await shop.crearPedidoTienda(compra);
+    const o = db.tables.orders[0];
+    const datos = { orderId: o.id, transportista: 'Blue Express', tracking: 'BX123' };
+    expect(await shop.marcarEnviado(datos)).toMatchObject({ ok: false, code: 409 });
+    o.status = 'pagado';
+    expect(await shop.marcarEnviado({ ...datos, tracking: '' })).toMatchObject({ ok: false, code: 400 });
+    expect(await shop.marcarEnviado({ ...datos, url: 'javascript:alert(1)' })).toMatchObject({ ok: false, code: 400 });
+    llamadas = [];
+    expect(await shop.marcarEnviado({ ...datos, url: 'https://www.bluex.cl/seguimiento?n=BX123' })).toEqual({ ok: true, data: { avisado: true } });
+    expect(o).toMatchObject({ despacho_estado: 'enviado', transportista: 'Blue Express', tracking: 'BX123' });
+    expect(JSON.parse(llamadas[0].init.body)).toMatchObject({ action: 'shop-aviso', tipo: 'enviado' });
   });
 });
