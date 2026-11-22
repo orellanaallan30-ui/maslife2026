@@ -133,6 +133,26 @@ describe('feed de catálogo para Meta', () => {
   });
 });
 
+describe('vista previa para Rodrigo', () => {
+  it('muestra borradores con la tienda cerrada, sin pausados ni costos', async () => {
+    db.tables.shop_settings[0].tienda_activa = false;
+    db.tables.shop_products.push(producto({ sku: 'MLP-BORRADOR', estado: 'borrador' }));
+    db.tables.shop_products.push(producto({ sku: 'MLP-PAUSADO', estado: 'pausado' }));
+    const r = await shop.vistaPreviaTienda();
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data).toMatchObject({ activa: true, preview: true });
+    expect(r.data.productos.map((p: any) => p.sku).sort()).toEqual(['MLP-0000AAAA', 'MLP-BORRADOR']);
+    expect(JSON.stringify(r.data.productos)).not.toContain('8000');
+    expect(r.data.regiones[0]).toMatchObject({ codigo: 'RM', envio: 3990 });
+  });
+
+  it('la tienda pública sigue cerrada mientras tanto', async () => {
+    db.tables.shop_settings[0].tienda_activa = false;
+    expect(await shop.catalogoPublico()).toEqual({ ok: true, data: { activa: false, productos: [], regiones: [] } });
+  });
+});
+
 describe('evento de Meta de la tienda', () => {
   it('lleva SKU, cantidades, teléfono cifrado y el id del pedido como event_id', () => {
     const ev = meta.buildEbookPurchaseEvent({

@@ -164,6 +164,8 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
       <section className={caja}>
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
           <h3 className="font-black text-slate-800">Ajustes de la tienda</h3>
+          {/* Misma pestaña: la sesión admin vive en sessionStorage, que es por pestaña. */}
+          <a href="/tienda?vista=previa" className={`${boton} bg-slate-800 text-white text-center lg:ml-auto`}>Ver tienda como cliente</a>
           <label className="flex items-center gap-2 text-sm font-bold">
             <input type="checkbox" checked={ajustes.tiendaActiva} onChange={e => setAjustes({ ...ajustes, tiendaActiva: e.target.checked })} className="h-4 w-4 accent-teal-500" />
             Tienda abierta al público (/tienda)

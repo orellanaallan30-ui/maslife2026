@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { usePageMeta } from '../../lib/seo';
 import { trackShopAddToCart } from '../../analytics';
 import {
-  cargarCatalogo, catalogoEnCache, agregarAlCarrito, abrirCarrito, clp, CATEGORIAS,
+  cargarCatalogo, catalogoEnCache, agregarAlCarrito, abrirCarrito, clp, CATEGORIAS, enVistaPrevia,
   type Catalogo, type ProductoTienda,
 } from '../../lib/tienda';
 import { LayoutTienda, Skeleton, C, SERIF } from './LayoutTienda';
@@ -18,7 +18,7 @@ const Tarjeta: React.FC<{ p: ProductoTienda; prioridad: boolean }> = ({ p, prior
   const [agregado, setAgregado] = useState(false);
   const agregar = () => {
     agregarAlCarrito(p.sku);
-    trackShopAddToCart({ sku: p.sku, cantidad: 1, precio: p.precio });
+    if (!enVistaPrevia()) trackShopAddToCart({ sku: p.sku, cantidad: 1, precio: p.precio });
     setAgregado(true);
     abrirCarrito();
     setTimeout(() => setAgregado(false), 1500);

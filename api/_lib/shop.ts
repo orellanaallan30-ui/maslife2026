@@ -86,6 +86,25 @@ export async function catalogoPublico(): Promise<Result<{ activa: boolean; produ
   return { ok: true, data: { activa: true, productos: (data || []).map(p => aPublico(p, s.umbralStock)), regiones } };
 }
 
+/**
+ * Vista previa para Rodrigo (solo desde el panel admin, con token): la tienda tal como
+ * la verá el cliente, aunque esté cerrada y con productos en borrador. Sin costos.
+ */
+export async function vistaPreviaTienda(): Promise<Result<{ activa: boolean; preview: true; productos: any[]; regiones: any[] }>> {
+  const s = await leerAjustes();
+  const { data, error } = await supabase
+    .from('shop_products').select(`${COLUMNAS_PUBLICAS}, stock`)
+    .in('estado', ['borrador', 'publicado', 'agotado']).order('nombre');
+  if (error) { console.error('[shop] vista previa:', error.message); return { ok: false, code: 500, error: 'No se pudo cargar la vista previa' }; }
+  const regiones = REGIONES_DROPI
+    .filter(r => tarifaEnvio(s.tarifasRegion, r.codigo) !== null)
+    .map(r => ({
+      codigo: r.codigo, nombre: r.nombre, envio: tarifaEnvio(s.tarifasRegion, r.codigo),
+      localidades: [...(LOCALIDADES_DROPI[r.codigo] || [])].sort((a, b) => a.localeCompare(b, 'es')),
+    }));
+  return { ok: true, data: { activa: true, preview: true, productos: (data || []).map(p => aPublico(p, s.umbralStock)), regiones } };
+}
+
 export async function productoPublico(sku: string): Promise<Result<{ producto: any }>> {
   if (!SKU_RE.test(sku)) return { ok: false, code: 404, error: 'Producto no encontrado' };
   const s = await leerAjustes();
@@ -655,6 +674,10 @@ export async function handleShopAdmin(req: VercelRequest, res: VercelResponse): 
       items: (items.data || []).filter((i: any) => i.order_id === o.id),
     }));
     r = { ok: true, data: { ajustes, productos: productos.data || [], pedidos: conItems, regiones: REGIONES_DROPI } };
+  } else if (req.method === 'GET' && action === 'shop-preview') {
+    // Vista previa privada: nunca debe quedar en una caché compartida.
+    res.setHeader('Cache-Control', 'no-store');
+    r = await vistaPreviaTienda();
   } else if (req.method === 'GET' && action === 'shop-dropi-search') {
     r = await buscarEnDropi(String(req.query.q || ''), Number(req.query.page || 0));
   } else if (req.method === 'POST' && action === 'shop-import') {

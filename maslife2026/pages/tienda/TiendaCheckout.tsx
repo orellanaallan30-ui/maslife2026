@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { usePageMeta } from '../../lib/seo';
 import { getMetaIds, getUtms, trackShopCheckout } from '../../analytics';
 import {
-  cargarCatalogo, catalogoEnCache, leerCarrito, cambiarCantidad, clp, MAX_UNIDADES, nuevaClaveCheckout,
+  cargarCatalogo, catalogoEnCache, leerCarrito, cambiarCantidad, clp, MAX_UNIDADES, nuevaClaveCheckout, enVistaPrevia,
   type Catalogo, type ItemCarrito,
 } from '../../lib/tienda';
 import { LayoutTienda, Skeleton, C } from './LayoutTienda';
@@ -68,6 +68,7 @@ const TiendaCheckout: React.FC = () => {
   const total = subtotal + (region?.envio ?? 0);
   const hayAgotados = lineas.some(l => l.p!.agotado);
   const sinDespacho = !!catalogo && catalogo.regiones.length === 0;
+  const previa = !!catalogo?.preview; // vista previa de Rodrigo: se ve todo, pero no se paga
 
   const set = (k: keyof Campos) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setF(prev => ({ ...prev, [k]: e.target.value, ...(k === 'region' ? { comuna: '' } : {}) }));
@@ -77,7 +78,7 @@ const TiendaCheckout: React.FC = () => {
 
   const pagar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (cargando) return;
+    if (cargando || previa || enVistaPrevia()) return;
     setError('');
     const errs = validar(f, acepta);
     setErrores(errs);
@@ -220,11 +221,11 @@ const TiendaCheckout: React.FC = () => {
                 <ErrorCampo id="err-terminos" texto={errores.terminos} />
                 {error && <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700" role="alert">{error}</p>}
 
-                <button type="submit" disabled={cargando || hayAgotados || sinDespacho}
+                <button type="submit" disabled={cargando || hayAgotados || sinDespacho || previa}
                   className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-base font-extrabold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                   style={{ background: C.petroleo }}>
                   <span aria-hidden="true" className="material-icons-round text-lg">lock</span>
-                  {cargando ? 'Conectando con MercadoPago…' : hayAgotados ? 'Quita los productos agotados' : `Pagar ${clp(total)}`}
+                  {previa ? 'El pago se activa al abrir la tienda' : cargando ? 'Conectando con MercadoPago…' : hayAgotados ? 'Quita los productos agotados' : `Pagar ${clp(total)}`}
                 </button>
                 <p className="mt-3 text-center text-xs text-slate-500">Conexión cifrada · El total final se confirma en MercadoPago</p>
               </div>

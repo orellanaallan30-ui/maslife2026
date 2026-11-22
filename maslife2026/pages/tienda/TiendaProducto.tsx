@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { usePageMeta } from '../../lib/seo';
 import { trackShopView, trackShopAddToCart } from '../../analytics';
 import {
-  cargarProducto, catalogoEnCache, agregarAlCarrito, abrirCarrito, clp, CATEGORIAS, MAX_UNIDADES,
+  cargarProducto, catalogoEnCache, agregarAlCarrito, abrirCarrito, clp, CATEGORIAS, MAX_UNIDADES, enVistaPrevia,
   type ProductoTienda,
 } from '../../lib/tienda';
 import { LayoutTienda, Skeleton, C, SERIF } from './LayoutTienda';
@@ -30,13 +30,13 @@ const TiendaProducto: React.FC = () => {
   }, [sku]);
 
   useEffect(() => {
-    if (p && vista.current !== p.sku) { vista.current = p.sku; trackShopView(p.sku, p.nombre, p.precio); }
+    if (p && vista.current !== p.sku) { vista.current = p.sku; if (!enVistaPrevia()) trackShopView(p.sku, p.nombre, p.precio); }
   }, [p]);
 
   const agregar = () => {
     if (!p) return;
     agregarAlCarrito(p.sku, cantidad);
-    trackShopAddToCart({ sku: p.sku, cantidad, precio: p.precio });
+    if (!enVistaPrevia()) trackShopAddToCart({ sku: p.sku, cantidad, precio: p.precio });
     abrirCarrito();
   };
 

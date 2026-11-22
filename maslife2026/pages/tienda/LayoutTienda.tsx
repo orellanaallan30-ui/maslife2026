@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  leerCarrito, cambiarCantidad, cargarCatalogo, catalogoEnCache, clp, MAX_UNIDADES,
+  leerCarrito, cambiarCantidad, cargarCatalogo, catalogoEnCache, clp, MAX_UNIDADES, enVistaPrevia, salirDeVistaPrevia,
   type Catalogo, type ItemCarrito,
 } from '../../lib/tienda';
 
@@ -144,6 +144,15 @@ export const LayoutTienda: React.FC<{ children: React.ReactNode; fondo?: string 
 
   return (
     <div className="flex min-h-full w-full flex-col" style={{ ...SANS, background: fondo, color: C.tinta }}>
+      {enVistaPrevia() && (
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 bg-amber-400 px-4 py-2 text-center text-sm font-extrabold text-amber-950" role="status">
+          <span>Vista previa: solo tú ves esto. La tienda está cerrada al público.</span>
+          <span className="flex gap-3">
+            <Link to="/admin/management" className="underline">Volver al panel</Link>
+            <button onClick={() => { salirDeVistaPrevia(); window.location.assign('/tienda'); }} className="underline">Salir de la vista previa</button>
+          </span>
+        </div>
+      )}
       <div className="px-4 py-2 text-center text-xs font-bold text-white" style={{ background: C.petroleo }}>
         Despacho a domicilio en Chile · Pago seguro con MercadoPago
       </div>
