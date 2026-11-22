@@ -124,6 +124,37 @@ export function trackProgramPurchase(orderId: string, value: number): void {
   } catch { /* solo medición */ }
 }
 
+// ── Tienda: eventos estándar de e-commerce con SKU como content_id ──
+// Los ids son los mismos del feed de catálogo (/tienda/feed.csv) y de la API de
+// conversiones, así Meta puede emparejar producto, anuncio de catálogo y venta.
+export interface LineaPixel { sku: string; cantidad: number; precio: number }
+
+const contenidos = (lineas: LineaPixel[]) => ({
+  content_type: 'product',
+  content_ids: lineas.map(l => l.sku),
+  contents: lineas.map(l => ({ id: l.sku, quantity: l.cantidad, item_price: l.precio })),
+  num_items: lineas.reduce((a, l) => a + l.cantidad, 0),
+  currency: 'CLP',
+});
+
+export const trackShopView = (sku: string, nombre: string, precio: number) =>
+  track('ViewContent', 'view_item', { content_type: 'product', content_ids: [sku], content_name: nombre, value: precio, currency: 'CLP' });
+
+export const trackShopAddToCart = (linea: LineaPixel) =>
+  track('AddToCart', 'add_to_cart', { ...contenidos([linea]), value: linea.precio * linea.cantidad });
+
+export const trackShopCheckout = (lineas: LineaPixel[], total: number) =>
+  track('InitiateCheckout', 'begin_checkout_shop', { ...contenidos(lineas), value: total });
+
+/** Compra de la tienda: eventID = id del pedido, el mismo que usa la API de conversiones. */
+export function trackShopPurchase(orderId: string, lineas: LineaPixel[], total: number): void {
+  try {
+    const params = { ...contenidos(lineas), value: total };
+    if (window.fbq) window.fbq('track', 'Purchase', params, { eventID: orderId });
+    if (window.gtag) window.gtag('event', 'purchase', { ...utms, ...params, transaction_id: orderId });
+  } catch { /* solo medición */ }
+}
+
 /** UTM guardadas del anuncio (solo las 4 que se atribuyen a un pedido). */
 /** Cookies del píxel de Meta (si existen): ayudan a que la venta informada por el servidor calce con el anuncio. */
 export function getMetaIds(): { fbp?: string; fbc?: string } {

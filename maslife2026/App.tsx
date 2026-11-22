@@ -22,10 +22,15 @@ import ReferralProgram       from './pages/ReferralProgram';
 import Charlas               from './pages/Charlas';
 import ProgramaLumbar        from './pages/ProgramaLumbar';
 import ProgramaGracias       from './pages/ProgramaGracias';
-import Tienda                from './pages/tienda/Tienda';
-import TiendaProducto        from './pages/tienda/TiendaProducto';
-import TiendaCheckout        from './pages/tienda/TiendaCheckout';
-import TiendaGracias         from './pages/tienda/TiendaGracias';
+// Tienda: se carga aparte (React.lazy) para no sumar peso al resto de la app.
+const Tienda         = React.lazy(() => import('./pages/tienda/Tienda'));
+const TiendaProducto = React.lazy(() => import('./pages/tienda/TiendaProducto'));
+const TiendaCheckout = React.lazy(() => import('./pages/tienda/TiendaCheckout'));
+const TiendaGracias  = React.lazy(() => import('./pages/tienda/TiendaGracias'));
+const TiendaTerminos = React.lazy(() => import('./pages/tienda/TiendaTerminos'));
+const conCarga = (el: React.ReactNode) => (
+  <React.Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><span className="material-icons-round animate-spin text-3xl text-slate-300">sync</span></div>}>{el}</React.Suspense>
+);
 import Descarga              from './pages/Descarga';
 import PasswordSetup         from './pages/PasswordSetup';
 import DocumentVerifier      from './pages/DocumentVerifier';
@@ -237,6 +242,8 @@ const Navbar: React.FC<{ view: AppView; setView: (v: AppView) => void }> = ({ vi
   if (esRutaLanding(location.pathname)) return null;
   // El panel del centro (AgendaMas) trae su propia cabecera con pestañas.
   if (location.pathname.startsWith('/centro') || location.pathname.startsWith('/demo')) return null;
+  // La tienda trae su propia cabecera (logotipo, carrito) y pie.
+  if (location.pathname.startsWith('/tienda')) return null;
 
   const isPublicView = isFullPublic;
 
@@ -607,10 +614,11 @@ const AppContent: React.FC = () => {
           <Route path="/programa-lumbar"     element={<Navigate to="/programas/lumbar" replace />} />
           <Route path="/programas/gracias"   element={<ProgramaGracias />} />
           <Route path="/descarga/:token"     element={<Descarga />} />
-          <Route path="/tienda"             element={<Tienda />} />
-          <Route path="/tienda/checkout"    element={<TiendaCheckout />} />
-          <Route path="/tienda/gracias"     element={<TiendaGracias />} />
-          <Route path="/tienda/:sku"        element={<TiendaProducto />} />
+          <Route path="/tienda"             element={conCarga(<Tienda />)} />
+          <Route path="/tienda/checkout"    element={conCarga(<TiendaCheckout />)} />
+          <Route path="/tienda/gracias"     element={conCarga(<TiendaGracias />)} />
+          <Route path="/tienda/terminos"    element={conCarga(<TiendaTerminos />)} />
+          <Route path="/tienda/:sku"        element={conCarga(<TiendaProducto />)} />
           <Route path="/privacidad"          element={<PrivacyPolicy />} />
           <Route path="/terminos"            element={<TermsOfService />} />
           <Route path="/mi-ficha/:token"    element={<PatientPortal />} />
