@@ -9,7 +9,23 @@ export interface ProductoTienda {
   registro: string | null;
 }
 export interface RegionTienda { codigo: string; nombre: string; envio: number; localidades: string[] }
-export interface Catalogo { activa: boolean; productos: ProductoTienda[]; regiones: RegionTienda[]; preview?: boolean }
+export interface ContenidoBanner { titulo: string; destacado: string; bajada: string; boton: string }
+export interface ContenidoTienda { banner: ContenidoBanner; banner2: ContenidoBanner }
+export interface Catalogo { activa: boolean; productos: ProductoTienda[]; regiones: RegionTienda[]; preview?: boolean; contenido?: ContenidoTienda }
+
+/** Textos por defecto de la portada; el editor del panel los reemplaza campo por campo. */
+export const CONTENIDO_POR_DEFECTO: ContenidoTienda = {
+  banner: { titulo: 'Bienestar diario,', destacado: 'directo a tu puerta', bajada: 'Suplementos y productos de salud y bienestar, con pago seguro y despacho a domicilio en todo Chile.', boton: 'Ver productos' },
+  banner2: { titulo: 'Arma tu pedido y', destacado: 'recíbelo en casa', bajada: 'Elige tus productos, paga con MercadoPago y te avisamos por correo cuando tu pedido salga.', boton: 'Comprar ahora' },
+};
+export function contenidoConDefectos(c?: Partial<ContenidoTienda> | null): ContenidoTienda {
+  const mezclar = (d: ContenidoBanner, v?: Partial<ContenidoBanner>): ContenidoBanner =>
+    ({ titulo: v?.titulo || d.titulo, destacado: v?.destacado || d.destacado, bajada: v?.bajada || d.bajada, boton: v?.boton || d.boton });
+  return { banner: mezclar(CONTENIDO_POR_DEFECTO.banner, c?.banner), banner2: mezclar(CONTENIDO_POR_DEFECTO.banner2, c?.banner2) };
+}
+export const MENSAJE_EDITOR = 'maslife-tienda-contenido';
+/** Token admin de esta pestaña (para el modo prueba del checkout). */
+export const tokenAdminPestana = (): string => { try { return sessionStorage.getItem('maslife_admin_token') || ''; } catch { return ''; } };
 export interface ItemCarrito { sku: string; cantidad: number }
 export interface EstadoPedido {
   status: string; amount?: number; envio?: number;

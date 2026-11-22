@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { usePageMeta } from '../../lib/seo';
 import { trackShopPurchase } from '../../analytics';
-import { estadoPedido, guardarCarrito, clp, type EstadoPedido } from '../../lib/tienda';
+import { estadoPedido, guardarCarrito, clp, enVistaPrevia, type EstadoPedido } from '../../lib/tienda';
 import { LayoutTienda, C, SERIF } from './LayoutTienda';
 
 // Página a la que vuelve MercadoPago. No confía en los parámetros de la URL: el
@@ -33,7 +33,7 @@ const TiendaGracias: React.FC = () => {
       if (r.status === 'pagado') {
         guardarCarrito([]);
         setPedido(r);
-        informarCompra(orderId, r);
+        if (!enVistaPrevia()) informarCompra(orderId, r); // las compras de prueba no van al píxel
         setEstado('pagado');
         return true;
       }

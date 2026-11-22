@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { ImportarShopify } from './ImportarShopify';
+import { EditorTienda } from './tienda/EditorTienda';
+import { imprimirPedido } from './tienda/imprimirPedido';
 
 // Pestaña "Tienda" del panel admin: ajustes, búsqueda e importación desde Dropi,
 // aprobación de productos y pedidos. Todo pasa por /api/admin-auth?action=shop-*.
@@ -22,7 +24,15 @@ const caja = 'bg-white rounded-3xl border border-slate-200 shadow-sm p-5 lg:p-6'
 const input = 'rounded-xl border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500';
 const boton = 'rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest disabled:opacity-50';
 const TRANSPORTISTAS = ['Blue Express', 'Starken', 'Chilexpress', 'Correos de Chile', 'Urbano', 'Otro'];
-const PROPIO_VACIO = { nombre: '', categoria: 'suplementos', costo: '', stock: '', resolucion_sanitaria: '', descripcion: '', consumible: true, imagenes: [] as string[] };
+const PROPIO_VACIO = { nombre: '', categoria: 'suplementos', costo: '', stock: '', precio_manual: '', resolucion_sanitaria: '', descripcion: '', consumible: true, imagenes: [] as string[] };
+type Seccion = 'resumen' | 'pedidos' | 'productos' | 'apariencia' | 'ajustes';
+const SECCIONES: Array<{ id: Seccion; label: string; icono: string }> = [
+  { id: 'resumen', label: 'Resumen', icono: 'dashboard' },
+  { id: 'pedidos', label: 'Pedidos', icono: 'receipt_long' },
+  { id: 'productos', label: 'Productos', icono: 'inventory_2' },
+  { id: 'apariencia', label: 'Apariencia', icono: 'palette' },
+  { id: 'ajustes', label: 'Ajustes', icono: 'tune' },
+];
 
 export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }) => {
   const [datos, setDatos] = useState<any>(null);
@@ -35,6 +45,7 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
   const [ocupado, setOcupado] = useState('');
   const [propio, setPropio] = useState(PROPIO_VACIO);
   const [envio, setEnvio] = useState<Record<string, { transportista: string; tracking: string; url: string }>>({});
+  const [seccion, setSeccion] = useState<Seccion>('resumen');
 
   const llamar = async (method: string, body: object | undefined, action: string) => {
     const r = await adminFetch(method, body, action);
@@ -118,7 +129,7 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
     }
     setOcupado('propio');
     try {
-      const j = await llamar('POST', { ...propio, costo: Number(propio.costo), stock: Number(propio.stock) }, 'shop-own-product');
+      const j = await llamar('POST', { ...propio, costo: Number(propio.costo), stock: Number(propio.stock), precio_manual: propio.precio_manual ? Number(propio.precio_manual) : null }, 'shop-own-product');
       ok(`Producto creado como borrador (${j.sku}). Revísalo abajo y apruébalo para publicarlo.`);
       setPropio(PROPIO_VACIO);
       await cargar();
@@ -152,8 +163,10 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
       : <span className="material-icons-round text-slate-300 animate-spin">sync</span>;
   }
 
+  const porDespachar = datos.pedidos.filter((o: any) => o.despacho_estado === 'por_despachar').length;
+
   return (
-    <div className="space-y-5">
+    <div className="min-w-0 space-y-5">
       {aviso && (
         <div className={`rounded-2xl p-4 text-sm font-bold ${aviso.tipo === 'ok' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
           {aviso.texto}
@@ -161,7 +174,49 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
         </div>
       )}
 
-      {/* Ajustes */}
+      {/* Sub-pestañas de la tienda (se desplazan en móvil) */}
+      <nav className="-mx-1 flex gap-1 overflow-x-auto rounded-2xl bg-slate-100 p-1" aria-label="Secciones de la tienda">
+        {SECCIONES.map(t => (
+          <button key={t.id} onClick={() => setSeccion(t.id)} aria-current={seccion === t.id ? 'page' : undefined}
+            className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-widest ${seccion === t.id ? 'bg-white text-slate-900 shadow' : 'text-slate-500'}`}>
+            <span aria-hidden="true" className="material-icons-round text-base">{t.icono}</span>{t.label}
+            {t.id === 'pedidos' && porDespachar > 0 && <span className="rounded-full bg-amber-500 px-1.5 text-[10px] text-white">{porDespachar}</span>}
+          </button>
+        ))}
+      </nav>
+
+      {seccion === 'resumen' && (
+        <section className={caja}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="font-black text-slate-800">Resumen de la tienda</h3>
+            <span className={`rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-widest ${datos.ajustes.tiendaActiva ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+              {datos.ajustes.tiendaActiva ? 'Abierta al público' : 'Cerrada al público'}
+            </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { n: porDespachar, t: 'Por despachar', s: 'pedidos' as Seccion },
+              { n: datos.productos.filter((p: any) => p.estado === 'publicado').length, t: 'Publicados', s: 'productos' as Seccion },
+              { n: datos.productos.filter((p: any) => p.estado === 'borrador').length, t: 'En borrador', s: 'productos' as Seccion },
+              { n: datos.productos.filter((p: any) => p.estado === 'agotado').length, t: 'Agotados', s: 'productos' as Seccion },
+            ].map(k => (
+              <button key={k.t} onClick={() => setSeccion(k.s)} className="rounded-2xl bg-slate-50 p-4 text-left hover:bg-slate-100">
+                <p className="text-2xl font-black text-slate-900">{k.n}</p><p className="text-xs font-bold text-slate-500">{k.t}</p>
+              </button>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a href="/tienda?vista=previa" className={`${boton} bg-slate-800 text-white`}>Ver tienda como cliente</a>
+            <a href="/tienda?vista=previa" className={`${boton} bg-amber-400 text-amber-950`}>Compra de prueba</a>
+            <button onClick={() => setSeccion('apariencia')} className={`${boton} bg-slate-100 text-slate-700`}>Editar portada</button>
+          </div>
+          <p className="mt-3 text-xs text-slate-500">La compra de prueba usa la vista previa: agrega un producto y paga con MercadoPago. Es un pago real; el pedido queda marcado como PRUEBA.</p>
+        </section>
+      )}
+
+      {seccion === 'apariencia' && <EditorTienda adminFetch={adminFetch} inicial={datos.ajustes.contenido} alGuardar={cargar} />}
+
+      {seccion === 'ajustes' && (
       <section className={caja}>
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
           <h3 className="font-black text-slate-800">Ajustes de la tienda</h3>
@@ -202,6 +257,9 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
         </div>
       </section>
 
+      )}
+
+      {seccion === 'productos' && (<>
       {/* Importar productos desde el CSV de Shopify */}
       <ImportarShopify adminFetch={adminFetch} alTerminar={cargar} />
 
@@ -216,6 +274,7 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
           </select>
           <input className={input} type="number" min={1} placeholder="Costo por unidad (CLP)" required value={propio.costo} onChange={e => setPropio({ ...propio, costo: e.target.value })} />
           <input className={input} type="number" min={0} placeholder="Unidades en stock" required value={propio.stock} onChange={e => setPropio({ ...propio, stock: e.target.value })} />
+          <input className={input} type="number" min={1} placeholder="Precio fijo (opcional, reemplaza la fórmula)" value={propio.precio_manual} onChange={e => setPropio({ ...propio, precio_manual: e.target.value })} />
           <input className={input} placeholder={propio.categoria === 'suplementos' ? 'Registro sanitario (de la etiqueta)' : 'Registro sanitario (si aplica)'}
             value={propio.resolucion_sanitaria} onChange={e => setPropio({ ...propio, resolucion_sanitaria: e.target.value })} />
           <textarea className={`${input} lg:col-span-3`} rows={3} placeholder="Descripción para la tienda (sin prometer curas ni efectos terapéuticos)"
@@ -306,6 +365,10 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
                 <select className={input} value={p.categoria} onChange={e => editar(p.id, { categoria: e.target.value })} aria-label="Categoría">
                   {CATEGORIAS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
+                <label className="flex items-center gap-1 text-xs font-bold text-slate-600">Precio fijo
+                  <input type="number" min={1} className={`${input} w-24`} placeholder="fórmula" defaultValue={p.precio_manual ?? ''} key={`pm-${p.id}-${p.precio_manual}`}
+                    onBlur={e => { const v = e.target.value ? Number(e.target.value) : null; if (v !== (p.precio_manual ?? null)) editar(p.id, { precio_manual: v }, false, v ? 'Precio fijo guardado.' : 'Volvió al precio por fórmula.'); }} />
+                </label>
                 {p.categoria === 'suplementos' && (
                   <input className={input} placeholder="Resolución sanitaria (SEREMI)" defaultValue={p.resolucion_sanitaria || ''}
                     onBlur={e => e.target.value !== (p.resolucion_sanitaria || '') && editar(p.id, { resolucion_sanitaria: e.target.value || null })} />
@@ -336,7 +399,10 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
         </div>
       </section>
 
+      </>)}
+
       {/* Pedidos */}
+      {seccion === 'pedidos' && (
       <section className={caja}>
         <h3 className="font-black text-slate-800">Pedidos de la tienda ({datos.pedidos.length})</h3>
         {datos.pedidos.length === 0 && <p className="mt-3 text-sm text-slate-500">Todavía no hay pedidos.</p>}
@@ -348,7 +414,7 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
               <div key={o.id} className="rounded-xl border border-slate-100 p-3 text-sm">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-4">
                   <span className="text-slate-500">{new Date(o.created_at).toLocaleString('es-CL')}</span>
-                  <span className="flex-1 font-bold text-slate-800">{o.buyer_name} · {o.comuna}</span>
+                  <span className="min-w-0 flex-1 font-bold text-slate-800">{o.es_prueba && <span className="mr-2 rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-black text-amber-900">PRUEBA</span>}{o.buyer_name} · {o.comuna}</span>
                   <span>{clp(o.amount)} <span className="text-xs text-slate-500">(envío {clp(o.envio_monto)})</span></span>
                   <span className={`w-fit rounded-full px-3 py-1 text-[11px] font-black uppercase ${o.status === 'pagado' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{o.status}</span>
                   {o.despacho_estado && (
@@ -358,7 +424,13 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
                   )}
                 </div>
                 {o.status === 'pagado' && (
-                  <div className="mt-2 text-xs text-slate-600 space-y-1">
+                  <button onClick={() => { if (!imprimirPedido(o)) setAviso({ tipo: 'error', texto: 'El navegador bloqueó la ventana de impresión. Permite ventanas emergentes para este sitio.' }); }}
+                    className={`${boton} mt-2 inline-flex items-center gap-1 bg-slate-800 text-white`}>
+                    <span aria-hidden="true" className="material-icons-round text-sm">print</span> Imprimir etiqueta y detalle
+                  </button>
+                )}
+                {o.status === 'pagado' && (
+                  <div className="mt-2 text-xs text-slate-600 space-y-1 break-words">
                     <p>{(o.items || []).map((i: any) => `${i.cantidad} × ${i.nombre}`).join(' · ')}</p>
                     <p>{o.direccion}, {o.comuna}, {o.region} · {o.telefono || 'sin teléfono'} · {o.buyer_email}</p>
                     {o.tracking && <p>Enviado por {o.transportista} · seguimiento <b>{o.tracking}</b></p>}
@@ -381,6 +453,7 @@ export const TiendaAdmin: React.FC<{ adminFetch: AdminFetch }> = ({ adminFetch }
           })}
         </div>
       </section>
+      )}
     </div>
   );
 };

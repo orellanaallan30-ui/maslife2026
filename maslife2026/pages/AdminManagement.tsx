@@ -515,7 +515,7 @@ const AdminManagement: React.FC = () => {
         </div>
 
         {/* ── Tabs ── */}
-        <div className="flex gap-2 mb-6 bg-slate-100 p-1.5 rounded-2xl w-fit overflow-x-auto">
+        <div className="flex gap-2 mb-6 bg-slate-100 p-1.5 rounded-2xl w-fit max-w-full overflow-x-auto">
           {([
             { id: 'pending',       label: 'Pendientes',    icon: 'pending_actions', count: pending.length },
             { id: 'professionals', label: 'Profesionales', icon: 'groups',          count: 0 },
