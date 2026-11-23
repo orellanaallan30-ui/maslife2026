@@ -71,9 +71,10 @@ describe('publicación', () => {
   it('exige visto bueno', () => {
     expect(puedePublicar({ ...base, aprobado_at: null }, 5)).toEqual({ ok: false, motivo: 'Falta el visto bueno de Rodrigo' });
   });
-  it('exige resolución SEREMI a los suplementos', () => {
-    expect(puedePublicar({ ...base, categoria: 'suplementos' }, 5).ok).toBe(false);
+  it('publica suplementos con o sin resolución SEREMI (decisión de Rodrigo, nov 2026)', () => {
+    expect(puedePublicar({ ...base, categoria: 'suplementos' }, 5).ok).toBe(true);
     expect(puedePublicar({ ...base, categoria: 'suplementos', resolucion_sanitaria: 'Res. 1234/2026' }, 5).ok).toBe(true);
+    expect(puedePublicar({ ...base, categoria: 'suplementos', aprobado_at: null }, 5).ok).toBe(false);
   });
   it('no publica con stock bajo 5', () => {
     expect(puedePublicar({ ...base, stock: 4 }, 5).ok).toBe(false);

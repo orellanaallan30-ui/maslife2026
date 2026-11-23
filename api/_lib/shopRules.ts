@@ -125,13 +125,14 @@ export interface ProductoTienda {
 
 export const estaAgotado = (stock: number, umbral: number): boolean => stock < umbral;
 
-/** Un producto solo se publica con visto bueno, precio, stock y (si es suplemento) resolución SEREMI. */
+/**
+ * Un producto solo se publica con visto bueno, precio y stock. La resolución SEREMI de
+ * los suplementos es opcional (decisión de Rodrigo, nov 2026): si existe se muestra en
+ * la ficha; si no, no bloquea. El visto bueno sigue siendo obligatorio.
+ */
 export function puedePublicar(p: ProductoTienda, umbral: number): { ok: true } | { ok: false; motivo: string } {
   if (!CATEGORIAS_TIENDA.includes(p.categoria)) return { ok: false, motivo: 'Categoría no permitida' };
   if (!p.aprobado_at) return { ok: false, motivo: 'Falta el visto bueno de Rodrigo' };
-  if (p.categoria === 'suplementos' && !(p.resolucion_sanitaria || '').trim()) {
-    return { ok: false, motivo: 'Falta la resolución sanitaria (SEREMI)' };
-  }
   if (!(p.precio_venta > 0)) return { ok: false, motivo: 'Precio inválido' };
   if (estaAgotado(p.stock, umbral)) return { ok: false, motivo: 'Stock bajo el umbral' };
   return { ok: true };
