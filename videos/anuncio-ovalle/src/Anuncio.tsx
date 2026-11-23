@@ -30,11 +30,12 @@ function palabrasConTiempo(f: typeof FRASES[number]) {
   });
 }
 
-const Subtitulo: React.FC = () => {
+type Frase = typeof FRASES[number];
+const Subtitulo: React.FC<{ frases?: Frase[] }> = ({ frases = FRASES }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const t = frame / fps;
-  const frase = FRASES.find(f => t >= f.ini - 0.05 && t <= f.fin + 0.25);
+  const frase = frases.find(f => t >= f.ini - 0.05 && t <= f.fin + 0.25);
   if (!frase) return null;
   const palabras = palabrasConTiempo(frase);
   return (
@@ -139,7 +140,10 @@ export const Anuncio: React.FC = () => {
 };
 
 // v2: clip vertical 9:16 de 10 s nativo (más luminoso). Pantalla completa, sin recorte ni cámara lenta.
-export const AnuncioV2: React.FC = () => {
+/** Tiempos (s) de inicio/fin de cada frase, medidos con silencedetect sobre el audio elegido. */
+export type PropsV2 = { voz: string; tiempos: Array<[number, number]> };
+export const AnuncioV2: React.FC<PropsV2> = ({ voz, tiempos }) => {
+  const frases = FRASES.map((f, i) => ({ ...f, ini: tiempos[i]?.[0] ?? f.ini, fin: tiempos[i]?.[1] ?? f.fin }));
   const frame = useCurrentFrame();
   const zoom = interpolate(frame, [0, 300], [1, 1.06]);
   return (
@@ -148,11 +152,11 @@ export const AnuncioV2: React.FC = () => {
         <OffthreadVideo src={staticFile('escena2.mp4')} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </AbsoluteFill>
       <AbsoluteFill style={{ background: 'linear-gradient(180deg, rgba(0,0,0,.40) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 62%, rgba(0,0,0,.55) 82%, rgba(0,0,0,.7) 100%)' }} />
-      <Audio src={staticFile('voz.mp3')} />
+      <Audio src={staticFile(voz)} />
       <Sequence from={228}><Cierre /></Sequence>
       <Marca />
       <Sequence from={96}><Comunas /></Sequence>
-      <Subtitulo />
+      <Subtitulo frases={frases} />
     </AbsoluteFill>
   );
 };
