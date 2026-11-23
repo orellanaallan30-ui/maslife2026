@@ -144,12 +144,11 @@ describe('panel admin', () => {
     expect(await shop.importarProducto({ dropiId: 90, categoria: 'tecnologia' })).toMatchObject({ ok: false, code: 400 });
   });
 
-  it('no publica un suplemento sin resolución SEREMI ni sin visto bueno', async () => {
+  it('no publica un suplemento sin visto bueno; la resolución SEREMI es opcional', async () => {
     const sup = producto({ sku: 'ML-SUP', categoria: 'suplementos', estado: 'borrador', aprobado_at: null });
     db.tables.shop_products.push(sup);
     expect(await shop.actualizarProducto(sup.id, { estado: 'publicado' }, false)).toMatchObject({ ok: false, code: 409 });
-    expect(await shop.actualizarProducto(sup.id, { estado: 'publicado' }, true)).toMatchObject({ ok: false, code: 409 });
-    const ok = await shop.actualizarProducto(sup.id, { estado: 'publicado', resolucion_sanitaria: 'Res. 123/2026' }, true);
+    const ok = await shop.actualizarProducto(sup.id, { estado: 'publicado' }, true);
     expect(ok.ok).toBe(true);
   });
 
