@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- Figura humana estilizada -->
+  <g transform="translate(10, 5)">
+    <!-- Cabeza -->
+    <circle cx="30" cy="14" r="10" fill="#2563EB"/>
+    <!-- Cuerpo con brazos abiertos -->
+    <path d="M30 24 L30 50" stroke="#2563EB" stroke-width="4" stroke-linecap="round"/>
+    <path d="M30 32 L12 26" stroke="#2563EB" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M30 32 L48 26" stroke="#2563EB" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Piernas -->
+    <path d="M30 50 L18 68" stroke="#2563EB" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M30 50 L42 68" stroke="#2563EB" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Corazón pequeño -->
+    <path d="M30 38 C28 36, 25 37, 27 40 L30 43 L33 40 C35 37, 32 36, 30 38Z" fill="#EF4444"/>
+  </g>
+  <!-- Texto: Clínica -->
+  <text x="68" y="35" font-family="'Manrope', Arial, sans-serif" font-size="15" font-weight="600" fill="#64748B" letter-spacing="0.5">Clínica</text>
+  <!-- Texto: Mas Life -->
+  <text x="68" y="62" font-family="'Manrope', Arial, sans-serif" font-size="28" font-weight="800" fill="#0F172A" letter-spacing="-0.5">Mas </text>
+  <text x="137" y="62" font-family="'Manrope', Arial, sans-serif" font-size="28" font-weight="800" fill="#2563EB" letter-spacing="-0.5">Life</text>
+</svg>
