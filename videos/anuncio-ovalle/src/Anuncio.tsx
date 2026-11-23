@@ -137,3 +137,22 @@ export const Anuncio: React.FC = () => {
     </AbsoluteFill>
   );
 };
+
+// v2: clip vertical 9:16 de 10 s nativo (más luminoso). Pantalla completa, sin recorte ni cámara lenta.
+export const AnuncioV2: React.FC = () => {
+  const frame = useCurrentFrame();
+  const zoom = interpolate(frame, [0, 300], [1, 1.06]);
+  return (
+    <AbsoluteFill style={{ background: 'black' }}>
+      <AbsoluteFill style={{ transform: `scale(${zoom})` }}>
+        <OffthreadVideo src={staticFile('escena2.mp4')} muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </AbsoluteFill>
+      <AbsoluteFill style={{ background: 'linear-gradient(180deg, rgba(0,0,0,.40) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 62%, rgba(0,0,0,.55) 82%, rgba(0,0,0,.7) 100%)' }} />
+      <Audio src={staticFile('voz.mp3')} />
+      <Sequence from={228}><Cierre /></Sequence>
+      <Marca />
+      <Sequence from={96}><Comunas /></Sequence>
+      <Subtitulo />
+    </AbsoluteFill>
+  );
+};
